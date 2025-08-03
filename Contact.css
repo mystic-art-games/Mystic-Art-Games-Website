@@ -1,86 +1,85 @@
 .u-section-1 .u-sheet-1 {
-  min-height: 515px;
-}
-
-.u-section-1 .u-group-elements-1 {
-  width: 340px;
-  min-height: 48px;
-  height: auto;
-  margin: 72px auto 0;
+  min-height: 607px;
 }
 
 .u-section-1 .u-text-1 {
   line-height: 1;
   letter-spacing: 0px;
-  margin: 0 auto;
+  margin: 50px auto 0;
+}
+
+.u-section-1 .u-form-1 {
+  height: 339px;
+  margin: 35px 70px 0 500px;
+}
+
+.u-section-1 .u-btn-1 {
+  padding-top: 10px;
+  padding-bottom: 10px;
 }
 
 .u-section-1 .u-text-2 {
   font-weight: 400;
   line-height: 2.5;
   font-size: 1.5rem;
-  margin: 65px auto 60px;
+  margin: -366px auto 60px 156px;
 }
 
 @media (max-width: 1199px) {
-  .u-section-1 .u-sheet-1 {
-    min-height: 637px;
-  }
-
-  .u-section-1 .u-group-elements-1 {
-    margin-top: 50px;
+  .u-section-1 .u-form-1 {
+    margin-right: 0;
+    margin-left: 370px;
   }
 
   .u-section-1 .u-text-2 {
     width: auto;
-    margin-top: 111px;
-    margin-left: 50px;
+    margin-top: -360px;
+    margin-left: 61px;
   }
 }
 
 @media (max-width: 991px) {
   .u-section-1 .u-sheet-1 {
-    min-height: 434px;
+    min-height: 769px;
+  }
+
+  .u-section-1 .u-text-1 {
+    margin-top: 51px;
+  }
+
+  .u-section-1 .u-form-1 {
+    height: 431px;
+    width: 570px;
+    margin-top: 189px;
+    margin-left: auto;
+    margin-right: auto;
   }
 
   .u-section-1 .u-text-2 {
     font-size: 1.25rem;
-    margin-top: 60px;
+    margin-top: -581px;
     margin-left: auto;
   }
 }
 
 @media (max-width: 767px) {
-  .u-section-1 .u-sheet-1 {
-    min-height: 396px;
-  }
-
-  .u-section-1 .u-group-elements-1 {
-    width: 255px;
-    min-height: 36px;
-    margin-top: 52px;
+  .u-section-1 .u-form-1 {
+    width: 540px;
+    margin-top: 172px;
   }
 
   .u-section-1 .u-text-2 {
     font-size: 1.11111rem;
-    margin-top: 61px;
+    margin-top: -564px;
   }
 }
 
 @media (max-width: 575px) {
   .u-section-1 .u-sheet-1 {
-    min-height: 368px;
+    min-height: 751px;
   }
 
-  .u-section-1 .u-group-elements-1 {
-    min-height: 30px;
-    margin-top: 50px;
-    margin-right: initial;
-    margin-left: initial;
-    width: auto;
-  }
-
-  .u-section-1 .u-text-2 {
-    margin-top: 37px;
+  .u-section-1 .u-form-1 {
+    width: 340px;
   }
 }
