@@ -24,101 +24,7 @@
     <meta property="og:title" content="Contact">
     <meta property="og:description" content="">
     <meta property="og:type" content="website">
-  <meta name="referrer" content="origin"><script>
-    function gdprConfirmed() {
-        return true;
-    }
-    function dynamicLoadScript() {
-        var script = document.createElement('script');
-        script.src = 'https://www.google.com/recaptcha/api.js?render=6LcUNpkrAAAAAJ6O-Sa6UoCKxaJvqWOzZGQLyKik';
-        script.async = true;
-        document.body.appendChild(script);
-        script.onload = function() {
-            let event = new CustomEvent("recaptchaLoaded");
-            document.dispatchEvent(event);
-        };
-    }
-    function showRecaptchaError(error) {
-        error = error || '';
-        var formError = document.querySelector('.u-form-send-error');
-
-        if (formError) {
-            formError.innerText = 'Błąd właściciela witryny: ' + error.replace(/:[\s\S]*/, '');
-            formError.style.display = 'block';
-        }
-
-        console.error('Error in grecaptcha: ', error);
-    }
-    document.addEventListener('DOMContentLoaded', function () {
-        var confirmButton = document.querySelector('.u-cookies-consent .u-button-confirm');
-        if (confirmButton) {
-            confirmButton.onclick = dynamicLoadScript;
-        }
-    });
-    </script>
-    <script>
-        document.addEventListener("DOMContentLoaded", function(){
-            if (!gdprConfirmed()) {
-                return;
-            }
-            dynamicLoadScript();
-        });
-    </script>
-    <script>
-        document.addEventListener("recaptchaLoaded", function() {
-            if (!gdprConfirmed()) {
-                return;
-            }
-
-            (function (grecaptcha, sitekey, actions) {
-                var recaptcha = {
-                    execute: function (action, submitFormCb) {
-                        if (typeof grecaptcha === 'undefined' || typeof grecaptcha.execute !== 'function') {
-                            showRecaptchaError('reCAPTCHA script failed to load.');
-                            return;
-                        }
-
-                        grecaptcha.execute(sitekey, {action: action}).then((token) => {
-                            if (!token) {
-                                throw new Error('Empty token received from reCAPTCHA');
-                            }
-
-                            var forms = document.getElementsByTagName('form');
-
-                            for (var i = 0; i < forms.length; i++) {
-                                var response = forms[i].querySelector('[name="recaptchaResponse"]');
-
-                                if (!response) {
-                                    response = document.createElement('input');
-                                    response.setAttribute('type', 'hidden');
-                                    response.setAttribute('name', 'recaptchaResponse');
-                                    forms[i].appendChild(response);
-                                }
-
-                                response.value = token;
-                            }
-
-                            submitFormCb();
-                        }).catch((e) => {
-                            showRecaptchaError(e.message);
-                        });
-                    },
-
-                    executeContact: function (submitFormCb) {
-                        recaptcha.execute(actions['contact'], submitFormCb);
-                    }
-                };
-
-                window.recaptchaObject = recaptcha;
-            })(
-                grecaptcha,
-                
-                '6LcUNpkrAAAAAJ6O-Sa6UoCKxaJvqWOzZGQLyKik',
-                {'contact': 'contact'}
-            );
-        });
-    </script>
-<meta data-intl-tel-input-cdn-path="intlTelInput/"></head>
+  <meta data-intl-tel-input-cdn-path="intlTelInput/"></head>
   <body data-path-to-root="/" data-include-products="false" class="u-body u-clearfix u-xl-mode" data-lang="pl"><header class="u-clearfix u-gradient u-header u-header" id="header"><div class="u-clearfix u-sheet u-valign-middle-lg u-valign-middle-xs u-sheet-1">
         <a href="#" class="u-image u-logo u-image-1" data-image-width="650" data-image-height="450">
           <img src="/images/MysticArtLogoText_NoBg.png" class="u-logo-image u-logo-image-1">
@@ -179,32 +85,6 @@
       <div class="u-clearfix u-sheet u-sheet-1">
         <div class="u-align-center u-clearfix u-expanded-width-xs u-group-elements u-group-elements-1">
           <h2 class="u-align-left u-custom-font u-font-georgia u-text u-text-default u-text-1">Connect with us</h2>
-        </div>
-        <div class="u-expanded-width-sm u-expanded-width-xs u-form u-form-1">
-          <form action="https://forms.nicepagesrv.com/v2/form/process" class="u-clearfix u-form-spacing-10 u-form-vertical u-inner-form" source="email" name="form" style="padding: 10px;">
-            <div class="u-form-group u-form-name">
-              <label for="name-f401" class="u-custom-font u-font-georgia u-label">Name</label>
-              <input type="text" placeholder="Enter your name" id="name-f401" name="name" class="u-custom-font u-font-georgia u-input u-input-rectangle" required="">
-            </div>
-            <div class="u-form-email u-form-group">
-              <label for="email-f401" class="u-custom-font u-font-georgia u-label">E-mail</label>
-              <input type="email" placeholder="Enter your e-mail" id="email-f401" name="email" class="u-custom-font u-font-georgia u-input u-input-rectangle" required="">
-            </div>
-            <div class="u-form-group u-form-message">
-              <label for="message-f401" class="u-custom-font u-font-georgia u-label">Message</label>
-              <textarea placeholder="What's on your mind?" rows="4" cols="50" id="message-f401" name="message" class="u-custom-font u-font-georgia u-input u-input-rectangle" required=""></textarea>
-            </div>
-            <div class="u-align-left u-form-group u-form-submit">
-              <a href="#" class="u-btn u-btn-submit u-button-style">Send<br>
-              </a>
-              <input type="submit" value="submit" class="u-form-control-hidden">
-            </div>
-            <div class="u-form-send-message u-form-send-success"> Dziękujemy! Twoja wiadomość została wysłana! </div>
-            <div class="u-form-send-error u-form-send-message"> Przepraszamy, wiadomość nie mogła zostać wysłana. Popraw błędy i spróbuj ponownie. </div>
-            <input type="hidden" value="" name="recaptchaResponse">
-            <input type="hidden" name="formServices" value="98c47c38-f7de-aacd-a798-7f0f0d9e9077">
-            <input type="hidden" name="siteKey" value="6LcUNpkrAAAAAJ6O-Sa6UoCKxaJvqWOzZGQLyKik">
-          </form>
         </div>
         <p class="u-align-center u-custom-font u-font-georgia u-text u-text-default u-text-2">contact@mysticart.ga​mes<br>tel.: +48 662 110 068<br>Poland
         </p>
