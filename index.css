@@ -207,11 +207,13 @@
   .u-section-2 .u-text-1 {
     width: 340px;
     margin-top: 32px;
+    font-size: 1.5rem;
   }
 
   .u-section-2 .u-text-2 {
     width: 340px;
     margin-bottom: 45px;
+    font-size: 1rem;
   }
 } .u-section-3 {
   background-image: none;
