@@ -27,11 +27,7 @@
 
 .u-section-1 .u-btn-2 {
   background-image: none;
-  padding: 0;
-}
-
-.u-section-1 .u-btn-3 {
-  background-image: none;
+  margin-top: 16px;
   padding: 0;
 }
 
@@ -91,9 +87,5 @@
 
   .u-section-1 .u-form-1 {
     width: 340px;
-  }
-
-  .u-section-1 .u-text-2 {
-    font-size: 1.11111rem;
   }
 }
