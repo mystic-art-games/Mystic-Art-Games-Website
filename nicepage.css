@@ -47572,6 +47572,7 @@ a.u-link.u-text-hover-color-var:hover {
         
         
         
+        
         }
 
         /** common-rules **/
@@ -47705,6 +47706,10 @@ a.u-link.u-text-hover-color-var:hover {
         margin-top: 20px;
         margin-bottom: 20px;
         line-height: 1.6;
+        }
+        .u-body
+        {
+        background-attachment: fixed;
         }
         .u-input
         {
