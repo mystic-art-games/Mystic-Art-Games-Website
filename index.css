@@ -120,7 +120,7 @@ h1 em { color: var(--forest-soft); font-weight: 500; }
   .helianthe-visual img { width: min(66%, 180px); }
   .visual-caption { display: none; }
   .closing { display: grid; min-height: 0; padding-block: 54px; gap: 16px; }
-  .closing-symbol { font-size: 3rem; }
+  .closing-symbol { display: none; }
   .closing .text-link { margin: 7px 0 0; justify-self: start; }
   .footer-inner { padding-block: 40px; align-items: flex-start; flex-direction: column; gap: 24px; }
   .site-footer nav { justify-content: flex-start; }
