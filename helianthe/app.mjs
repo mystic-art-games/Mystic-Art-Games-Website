@@ -178,11 +178,15 @@ function selectCard(card, { openMobile = false } = {}) {
   renderPreview();
   void showArtwork(card);
   renderCardList();
-  if (openMobile) $('#cards-view').classList.add('mobile-editor-open');
+  if (openMobile) {
+    $('#cards-view').classList.add('mobile-editor-open');
+    document.body.classList.add('mobile-editor-visible');
+  }
 }
 
 function closeMobileEditor() {
   $('#cards-view').classList.remove('mobile-editor-open');
+  document.body.classList.remove('mobile-editor-visible');
 }
 
 function renderDeckList() {

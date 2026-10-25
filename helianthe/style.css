@@ -67,6 +67,14 @@ textarea { resize: vertical; }
   .workspace { grid-template-columns: 1fr; }
   .card-layout { grid-template-columns: 1fr; }
   #cards-view > .editor-panel { display: none; }
+  body.mobile-editor-visible { overflow: hidden; }
+  #cards-view.mobile-editor-open::before {
+    content: '';
+    position: fixed;
+    z-index: 39;
+    inset: 0;
+    background: rgba(8, 38, 31, .58);
+  }
   #cards-view.mobile-editor-open > .editor-panel {
     display: block;
     position: fixed;
