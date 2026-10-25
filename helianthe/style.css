@@ -32,7 +32,7 @@ textarea { resize: vertical; }
 #new-card:hover:not(:disabled) { background: #1d4939; }
 .form-hint { margin: -0.35rem 0 0.75rem; color: #68756d; font-size: 0.85rem; }
 .hint { color: #5a6e64; font-size: .88rem; line-height: 1.35; }
-.workspace { display: grid; grid-template-columns: minmax(230px, 310px) minmax(0, 1fr); gap: 1rem; max-width: 1450px; margin: 1rem auto; padding: 0 1rem; }
+.workspace { display: grid; grid-template-columns: minmax(300px, 390px) minmax(0, 1fr); gap: 1rem; max-width: 1450px; margin: 1rem auto; padding: 0 1rem; }
 .panel { background: #fffdf5; border: 1px solid #c4cebc; border-radius: 14px; padding: 1rem; min-width: 0; }
 .panel-head { display: flex; justify-content: space-between; align-items: center; gap: .7rem; }
 .panel-head h1, .panel-head h2 { margin: .2rem 0 .8rem; font-size: 1.7rem; }
