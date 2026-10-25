@@ -7,7 +7,8 @@ if (!window.supabase?.createClient) throw new Error('The Supabase client could n
 const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 const api = createCommunityApi(client);
 const ADMIN_EMAIL = 'dominik.zielinski3@gmail.com';
-const state = { user: null, isAdmin: false, cards: [], decks: [], profiles: [], card: null, deck: null, profile: null, deckCards: [], artworkUrl: null, artworkSerial: 0, renderSerial: 0, authVersion: 0 };
+const ADMIN_USER_ID = '7422e970-f1c1-4618-aa73-ea191d97e141';
+const state = { user: null, isAdmin: false, cards: [], decks: [], profiles: [], card: null, deck: null, profile: null, deckCards: [], artworkUrl: null, artworkSerial: 0, renderSerial: 0, authVersion: 0, realtimeChannel: null };
 const ARTWORK_UPLOAD_LIMIT = 100 * 1024;
 
 async function compressedArtwork(file) {
@@ -252,6 +253,26 @@ async function reloadCollections() {
   renderCardList(); renderDeckList(); renderProfileList();
 }
 
+function startRealtimeSync() {
+  if (state.realtimeChannel) return;
+  state.realtimeChannel = client.channel('helianthe-cards')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'cards' }, async () => {
+      const selectedId = state.card?.id;
+      try {
+        await reloadCollections();
+        if (selectedId) selectCard(state.cards.find(card => card.id === selectedId) || state.cards[0] || null);
+        else renderCardList();
+      } catch (cause) { status(cause.message, true); }
+    })
+    .subscribe();
+}
+
+function stopRealtimeSync() {
+  if (!state.realtimeChannel) return;
+  void client.removeChannel(state.realtimeChannel);
+  state.realtimeChannel = null;
+}
+
 async function loadWorkspace() {
   const version = ++state.authVersion;
   status('Loading your Helianthe workspace…');
@@ -259,9 +280,10 @@ async function loadWorkspace() {
     const user = await api.currentUser();
     if (!user || version !== state.authVersion) return;
     state.user = user;
-    state.isAdmin = user.email?.trim().toLowerCase() === ADMIN_EMAIL;
+    state.isAdmin = user.id === ADMIN_USER_ID || user.email?.trim().toLowerCase() === ADMIN_EMAIL;
     await api.ensureProfile(user);
     await reloadCollections();
+    startRealtimeSync();
     if (version !== state.authVersion) return;
     $('#auth-view').hidden = true;
     $('#tabs').hidden = false;
@@ -277,12 +299,14 @@ async function loadWorkspace() {
 
 async function loadPublicWorkspace() {
   ++state.authVersion;
+  stopRealtimeSync();
   state.user = null; state.isAdmin = false; state.cards = []; state.decks = []; state.profiles = [];
   state.card = null; state.deck = null; state.profile = null; ++state.artworkSerial; ++state.renderSerial;
   releaseArtwork();
   status('Loading public Helianthe cards…');
   try {
     await reloadCollections();
+    startRealtimeSync();
     $('#auth-view').hidden = true;
     $('#tabs').hidden = false;
     $('#sign-in').hidden = false;
