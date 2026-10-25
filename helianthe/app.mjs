@@ -53,6 +53,12 @@ function cardTypeIcon(card) {
   return `./assets/Entity_${terrain}.png`;
 }
 
+function eventIconColor(terrain) {
+  return {
+    Symbiosis: '#784997', Flow: '#428da7', Evergreen: '#68a66c', Radiance: '#e0b52f',
+  }[terrain] || '#909592';
+}
+
 function terrainClass(terrain) {
   return ['Symbiosis', 'Flow', 'Evergreen', 'Radiance'].includes(terrain) ? `terrain-${terrain.toLowerCase()}` : 'terrain-event';
 }
@@ -80,10 +86,10 @@ function renderCardList() {
   for (const card of state.cards.filter(item => `${item.title} ${item.effect}`.toLocaleLowerCase().includes(query))) {
     const row = button('', () => selectCard(card, { openMobile: true }), `card-list-item${state.card?.id === card.id ? ' selected' : ''}`);
     row.setAttribute('aria-label', `${card.card_type}: ${card.title}`);
-    const icon = document.createElement('img');
-    icon.className = 'card-type-icon';
-    icon.src = cardTypeIcon(card);
-    icon.alt = '';
+    const icon = card.card_type === 'Event' ? document.createElement('span') : document.createElement('img');
+    icon.className = `card-type-icon${card.card_type === 'Event' ? ' event-type-icon' : ''}`;
+    if (card.card_type === 'Event') icon.style.setProperty('--event-icon-color', eventIconColor(card.terrain));
+    else { icon.src = cardTypeIcon(card); icon.alt = ''; }
     icon.title = card.card_type;
     const title = document.createElement('span');
     title.className = `card-list-title ${terrainClass(card.terrain)}`;
