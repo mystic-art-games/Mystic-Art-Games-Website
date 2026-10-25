@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Chewy&family=Nunito:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;700;800&display=swap');
 
 :root { color-scheme: light; font: 16px Nunito, Arial, sans-serif; color: #163737; background: #e8e9df; }
 * { box-sizing: border-box; }
@@ -19,7 +19,7 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 .home-link:hover { background: #366150; }
 #sign-out { margin-left: auto; border-color: #749a88; }
 .auth-panel { max-width: 460px; margin: 7vh auto; background: #fffdf4; border: 1px solid #c1cbb9; border-radius: 18px; padding: 2rem; box-shadow: 0 8px 32px #23432d18; }
-.auth-panel h1, .panel h1, .panel h2 { font-family: Chewy, cursive; font-weight: 400; }
+.auth-panel h1, .panel h1, .panel h2 { font-family: Nunito, Arial, sans-serif; font-weight: 800; }
 .auth-panel h1 { margin-top: 0; font-size: 2.1rem; }
 form label { display: block; margin: .65rem 0; font-weight: 700; }
 input:not([type=checkbox]):not([type=file]), select, textarea { display: block; width: 100%; min-width: 0; margin-top: .25rem; border: 1px solid #a4b6a5; background: #fffefa; color: #163737; border-radius: 8px; padding: .6rem .7rem; }

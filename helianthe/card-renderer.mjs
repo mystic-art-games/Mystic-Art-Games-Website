@@ -5,7 +5,7 @@ const imageCache = new Map();
 const eventTints = new WeakMap();
 const terrainColors = { Symbiosis: '#784997', Flow: '#428da7', Evergreen: '#68a66c', Radiance: '#e0b52f' };
 const eventSymbolColors = { Symbiosis: '#784997', Flow: '#35758e', Evergreen: '#488057', Radiance: '#a87318' };
-const cardFont = 'Chewy';
+const cardFont = 'Nunito';
 const rulesFont = 'Nunito, Segoe UI, Arial, sans-serif';
 
 function asset(name) { return new URL(name, ASSETS).href; }
