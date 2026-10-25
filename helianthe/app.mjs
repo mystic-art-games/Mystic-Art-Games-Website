@@ -39,9 +39,7 @@ async function compressedArtwork(file) {
 }
 
 function status(message, error = false) {
-  const element = $('#app-status');
-  element.textContent = message;
-  element.classList.toggle('error', error);
+  // Status messages are intentionally not rendered in the public editor.
 }
 
 function ownerName(id) {
