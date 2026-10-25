@@ -53,6 +53,10 @@ function cardTypeIcon(card) {
   return `./assets/Entity_${terrain}.png`;
 }
 
+function terrainClass(terrain) {
+  return ['Symbiosis', 'Flow', 'Evergreen', 'Radiance'].includes(terrain) ? `terrain-${terrain.toLowerCase()}` : 'terrain-event';
+}
+
 function button(label, action, className = '') {
   const element = document.createElement('button');
   element.type = 'button';
@@ -82,11 +86,11 @@ function renderCardList() {
     icon.alt = '';
     icon.title = card.card_type;
     const title = document.createElement('span');
-    title.className = 'card-list-title';
+    title.className = `card-list-title ${terrainClass(card.terrain)}`;
     title.textContent = card.title;
     row.append(icon, title);
     const meta = document.createElement('small');
-    meta.textContent = `${card.terrain ? `${card.terrain} · ` : ''}${ownerName(card.owner_id)}`;
+    meta.textContent = ownerName(card.owner_id);
     row.append(meta);
     list.append(row);
   }

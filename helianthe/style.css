@@ -42,6 +42,11 @@ textarea { resize: vertical; }
 .card-list-item { display: grid; grid-template-columns: 2rem minmax(0, 1fr); column-gap: .55rem; align-items: center; }
 .card-list-item .card-type-icon { grid-row: 1 / span 2; width: 2rem; height: 2rem; object-fit: contain; }
 .card-list-item .card-list-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.card-list-title.terrain-symbiosis { color: #784997; }
+.card-list-title.terrain-flow { color: #35758e; }
+.card-list-title.terrain-evergreen { color: #488057; }
+.card-list-title.terrain-radiance { color: #a87318; }
+.card-list-title.terrain-event { color: #4d5b55; }
 .card-layout { display: grid; grid-template-columns: minmax(260px, 1fr) minmax(280px, 420px); gap: 1.6rem; }
 .two-cols { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; }
 .card-preview-shell { align-self: start; display: flex; flex-direction: column; align-items: center; gap: .4rem; min-width: 0; }
