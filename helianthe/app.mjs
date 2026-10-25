@@ -91,6 +91,7 @@ function renderCardList() {
     row.append(icon, title);
     const meta = document.createElement('small');
     meta.textContent = ownerName(card.owner_id);
+    meta.className = 'card-list-owner';
     row.append(meta);
     list.append(row);
   }
