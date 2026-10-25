@@ -6,11 +6,39 @@ const $ = selector => document.querySelector(selector);
 if (!window.supabase?.createClient) throw new Error('The Supabase client could not be loaded.');
 const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 const api = createCommunityApi(client);
-const state = { user: null, cards: [], decks: [], profiles: [], card: null, deck: null, profile: null, deckCards: [], artworkUrl: null, artworkSerial: 0, renderSerial: 0, authVersion: 0 };
+const ADMIN_EMAIL = 'dominik.zielinski3@gmail.com';
+const state = { user: null, isAdmin: false, cards: [], decks: [], profiles: [], card: null, deck: null, profile: null, deckCards: [], artworkUrl: null, artworkSerial: 0, renderSerial: 0, authVersion: 0 };
+const ARTWORK_UPLOAD_LIMIT = 100 * 1024;
+
+async function compressedArtwork(file) {
+  if (!file) return null;
+  if (file.size > 20 * 1024 * 1024) throw new Error('Artwork must be 20 MB or smaller before compression.');
+  const image = await createImageBitmap(file);
+  try {
+    let scale = 1;
+    for (let pass = 0; pass < 8; pass++) {
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(image.width * scale));
+      canvas.height = Math.max(1, Math.round(image.height * scale));
+      const context = canvas.getContext('2d', { alpha: true });
+      context.imageSmoothingEnabled = true;
+      context.imageSmoothingQuality = 'high';
+      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+      for (const quality of [0.88, 0.8, 0.72, 0.64, 0.56, 0.48, 0.4]) {
+        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/webp', quality));
+        if (blob && blob.size <= ARTWORK_UPLOAD_LIMIT) {
+          const name = file.name.replace(/\.[^.]+$/, '') + '.webp';
+          return new File([blob], name, { type: 'image/webp', lastModified: file.lastModified });
+        }
+      }
+      scale *= 0.82;
+    }
+  } finally { image.close(); }
+  throw new Error('Artwork could not be compressed below 100 KB.');
+}
 
 function status(message, error = false) {
   const element = $('#app-status');
-  element.hidden = !message && !error;
   element.textContent = message;
   element.classList.toggle('error', error);
 }
@@ -81,24 +109,14 @@ function releaseArtwork() {
 
 async function showArtwork(card) {
   const serial = ++state.artworkSerial;
-  if (!card?.artwork_id) {
-    releaseArtwork();
-    renderPreview();
-    return;
-  }
+  releaseArtwork();
+  if (!card?.artwork_id) return;
   try {
     const blob = await api.fetchArtwork(card.artwork_id);
     if (serial !== state.artworkSerial) return;
-    const previousArtworkUrl = state.artworkUrl;
     state.artworkUrl = URL.createObjectURL(blob);
     renderPreview();
-    if (previousArtworkUrl) URL.revokeObjectURL(previousArtworkUrl);
-  } catch (cause) {
-    if (serial !== state.artworkSerial) return;
-    releaseArtwork();
-    renderPreview();
-    status(cause.message, true);
-  }
+  } catch (cause) { if (serial === state.artworkSerial) status(cause.message, true); }
 }
 
 function renderPreview() {
@@ -112,17 +130,9 @@ function renderPreview() {
     author: form.elements.author.value,
   };
   $('#download-png').disabled = true;
-  const target = $('#card-canvas');
-  const buffer = document.createElement('canvas');
-  buffer.width = target.width;
-  buffer.height = target.height;
-  void renderCard(buffer, card, state.artworkUrl || '', () => serial === state.renderSerial)
+  void renderCard($('#card-canvas'), card, state.artworkUrl || '', () => serial === state.renderSerial)
     .then(result => {
       if (serial !== state.renderSerial || result.cancelled) return;
-      target.width = buffer.width;
-      target.height = buffer.height;
-      target.getContext('2d').drawImage(buffer, 0, 0);
-      target.setAttribute('aria-label', buffer.getAttribute('aria-label') || 'Card preview');
       $('#preview-note').textContent = result.clipped ? 'Text is too long — shorten the effect before exporting.' : '';
       $('#download-png').disabled = result.clipped;
     })
@@ -131,6 +141,7 @@ function renderPreview() {
 
 function selectCard(card) {
   ++state.artworkSerial;
+  releaseArtwork();
   state.card = card;
   const form = $('#card-form');
   form.reset();
@@ -142,8 +153,9 @@ function selectCard(card) {
   $('#card-heading').textContent = card?.title || 'New card';
   const mine = Boolean(state.user && card?.owner_id === state.user.id);
   $('#card-owner').textContent = card ? (mine ? 'Your card' : `By ${ownerName(card.owner_id)}`) : (state.user ? 'Your new card' : 'Sign in to create a card');
-  setCardFormEditable(Boolean(state.user && (!card || mine)));
+  setCardFormEditable(Boolean(state.user && (!card || mine || state.isAdmin)));
   syncTerrain();
+  renderPreview();
   void showArtwork(card);
   renderCardList();
 }
@@ -247,6 +259,7 @@ async function loadWorkspace() {
     const user = await api.currentUser();
     if (!user || version !== state.authVersion) return;
     state.user = user;
+    state.isAdmin = user.email?.trim().toLowerCase() === ADMIN_EMAIL;
     await api.ensureProfile(user);
     await reloadCollections();
     if (version !== state.authVersion) return;
@@ -264,7 +277,7 @@ async function loadWorkspace() {
 
 async function loadPublicWorkspace() {
   ++state.authVersion;
-  state.user = null; state.cards = []; state.decks = []; state.profiles = [];
+  state.user = null; state.isAdmin = false; state.cards = []; state.decks = []; state.profiles = [];
   state.card = null; state.deck = null; state.profile = null; ++state.artworkSerial; ++state.renderSerial;
   releaseArtwork();
   status('Loading public Helianthe cards…');
@@ -278,7 +291,7 @@ async function loadPublicWorkspace() {
     await selectDeck(state.decks[0] || null);
     if (state.profiles[0]) selectProfile(state.profiles[0]);
     showTab('cards');
-    status('');
+    status('Browsing publicly. Sign in to create cards and decks.');
   } catch (cause) { status(cause.message, true); }
 }
 
@@ -335,22 +348,32 @@ $('#card-form').addEventListener('submit', async event => {
   const form = event.currentTarget;
   const save = $('#save-card'); save.disabled = true;
   let persistedCard = null;
+  let cleanupWarning = '';
   try {
     const values = Object.fromEntries(new FormData(form));
-    const file = $('#card-artwork').files?.[0];
-    if (file && file.size > 5 * 1024 * 1024) throw new Error('Artwork must be 5 MB or smaller.');
+    const sourceFile = $('#card-artwork').files?.[0];
+    const file = sourceFile ? await compressedArtwork(sourceFile) : null;
+    const previousArtworkId = state.card?.artwork_id || null;
     let card = state.card
-      ? await api.saveCard(state.user.id, state.card.id, values)
+      ? await api.saveCard(state.user.id, state.card.id, values, state.isAdmin)
       : await api.createCard(state.user.id, values);
     persistedCard = card;
     if (file) {
       const artwork = await api.uploadArtwork(file);
-      card = await api.saveCard(state.user.id, card.id, { ...values, artwork_id: artwork.id });
+      try { card = await api.saveCard(state.user.id, card.id, { ...values, artwork_id: artwork.id }, state.isAdmin); }
+      catch (cause) {
+        await api.deleteArtwork(artwork.id).catch(error => console.error('New artwork cleanup failed', error));
+        throw cause;
+      }
       persistedCard = card;
+      if (previousArtworkId && previousArtworkId !== artwork.id) {
+        try { await api.deleteArtwork(previousArtworkId); }
+        catch (cause) { cleanupWarning = cause.message; console.error('Old artwork cleanup failed', cause); }
+      }
     }
     await reloadCollections();
     selectCard(state.cards.find(item => item.id === card.id) || card);
-    status('Card saved.');
+    status(cleanupWarning ? `Card saved. ${cleanupWarning}` : 'Card saved.', Boolean(cleanupWarning));
   } catch (cause) {
     if (persistedCard) {
       await reloadCollections().catch(console.error);

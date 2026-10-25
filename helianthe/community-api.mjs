@@ -57,7 +57,9 @@ export function createCommunityApi(client) {
 
     async saveProfile(userId, values) {
       if (!userId) throw new Error('Sign in first.');
-      const patch = { display_name: text(values.display_name, 60), bio: text(values.bio, 500), updated_at: new Date().toISOString() };
+      const displayName = text(values.display_name, 60);
+      if (displayName.length < 2) throw new Error('Display name must contain at least 2 characters.');
+      const patch = { display_name: displayName, bio: text(values.bio, 500), updated_at: new Date().toISOString() };
       return result(await client.from('profiles').update(patch).eq('id', userId).select('id,display_name,bio').single());
     },
 
@@ -71,13 +73,14 @@ export function createCommunityApi(client) {
       return result(await client.from('cards').insert(row).select().single());
     },
 
-    async saveCard(userId, cardId, values) {
+    async saveCard(userId, cardId, values, isAdmin = false) {
       if (!userId || !cardId) throw new Error('Select your own card.');
       const patch = { ...cardInput(values), updated_at: new Date().toISOString() };
       if (values.artwork_id !== undefined) patch.artwork_id = values.artwork_id || null;
-      // The owner filter improves error reporting; database RLS remains authoritative.
-      const rows = result(await client.from('cards').update(patch).eq('id', cardId).eq('owner_id', userId).select());
-      if (!rows?.length) throw new Error('Only the card creator can edit this card.');
+      let query = client.from('cards').update(patch).eq('id', cardId);
+      if (!isAdmin) query = query.eq('owner_id', userId);
+      const rows = result(await query.select());
+      if (!rows?.length) throw new Error('Only the card creator or designated administrator can edit this card.');
       return rows[0];
     },
 
@@ -130,6 +133,20 @@ export function createCommunityApi(client) {
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || 'Artwork upload failed.');
       return payload.artwork;
+    },
+
+    async deleteArtwork(artworkId) {
+      if (!artworkId) return;
+      const { data: { session }, error } = await client.auth.getSession();
+      if (error || !session) throw new Error('Sign in to delete artwork.');
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/card-art?id=${encodeURIComponent(artworkId)}`, {
+        method: 'DELETE',
+        headers: { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: `Bearer ${session.access_token}` },
+      });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload.error || 'Old artwork cleanup failed.');
+      }
     },
 
     async fetchArtwork(artworkId) {

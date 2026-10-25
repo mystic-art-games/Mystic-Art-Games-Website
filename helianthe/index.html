@@ -10,13 +10,13 @@
 </head>
 <body>
   <header class="masthead">
-    <div class="brand"><span class="brand-mark">✺</span><strong>Helianthe</strong></div>
+    <div class="brand"><span class="brand-mark">✺</span><div><strong>Helianthe</strong><small>Community Card Editor</small></div></div>
     <nav id="tabs" hidden aria-label="Editor views">
       <button type="button" data-tab="cards" class="active">Cards</button>
       <button type="button" data-tab="decks">Decks</button>
       <button type="button" data-tab="profiles">Profiles</button>
     </nav>
-    <a class="home-link" href="https://mysticart.games/" aria-label="Back to Mystic Art Games home">← Mystic Art Games</a>
+    <a class="home-link" href="/" aria-label="Back to Mystic Art Games home">← Mystic Art Games</a>
     <button id="sign-in" type="button" hidden>Sign in</button>
     <button id="sign-out" type="button" hidden>Sign out</button>
   </header>
@@ -49,7 +49,7 @@
           <label>Effect<textarea name="effect" rows="7" maxlength="6000"></textarea></label>
           <label>Author<input name="author" maxlength="500"></label>
           <label>Artwork<input id="card-artwork" type="file" accept="image/png,image/jpeg,image/webp"></label>
-          <p class="hint">Artwork can be up to 5 MB. Cards are publicly visible; only their creator can edit them.</p>
+          <p class="hint">Artwork is automatically compressed to 100 KB before upload. Source files can be up to 20 MB. Cards are publicly visible; only their creator or the designated administrator can edit them.</p>
           <button id="save-card" type="submit">Save card</button>
         </form>
         <section class="card-preview-shell" aria-label="Card preview and export">
@@ -87,7 +87,8 @@
     <section class="panel editor-panel">
       <div class="panel-head"><h2 id="profile-heading">Select a player</h2></div>
       <form id="profile-form" hidden>
-        <label>Display name<input name="display_name" maxlength="60"></label>
+        <label>Display name<input name="display_name" required minlength="2" maxlength="60" autocomplete="nickname"></label>
+        <p class="form-hint">Choose the name other players will see for your cards, decks, and profile.</p>
         <label>Bio<textarea name="bio" rows="3" maxlength="500"></textarea></label>
         <button type="submit">Save profile</button>
       </form>
