@@ -65,11 +65,12 @@ textarea { resize: vertical; }
   .card-layout { grid-template-columns: 1fr; }
   .masthead {
     display: grid;
-    grid-template-columns: 1fr auto;
+    grid-template-columns: auto auto;
+    justify-content: center;
     gap: .65rem .8rem;
     height: auto;
     min-height: 0;
-    padding: 1rem 1rem 1.1rem;
+    padding: 1.65rem 1rem 1.1rem;
   }
   .brand { grid-column: 1 / -1; justify-content: center; min-width: 0; }
   .masthead nav { grid-column: 1 / -1; justify-content: center; gap: .2rem; }
@@ -79,5 +80,5 @@ textarea { resize: vertical; }
 }
 
 @media (display-mode: standalone) {
-  .masthead { padding-top: calc(1rem + env(safe-area-inset-top)); }
+  .masthead { padding-top: calc(1.65rem + env(safe-area-inset-top)); }
 }
