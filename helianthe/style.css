@@ -48,7 +48,7 @@ textarea { resize: vertical; }
 .card-list-item { display: grid; grid-template-columns: 2rem minmax(0, 1fr) minmax(5.5rem, auto); column-gap: .55rem; align-items: center; }
 .card-list-item .card-type-icon { grid-column: 1; grid-row: 1; width: 2rem; height: 2rem; object-fit: contain; }
 .card-list-item .event-type-icon { background: var(--event-icon-color); -webkit-mask: url('./assets/Event.png') center / contain no-repeat; mask: url('./assets/Event.png') center / contain no-repeat; }
-.card-list-item .card-list-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.card-list-item .card-list-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
 .card-list-item .card-list-owner { grid-column: 3; grid-row: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; }
 .card-list-title.terrain-symbiosis { color: #784997; }
 .card-list-title.terrain-flow { color: #35758e; }
