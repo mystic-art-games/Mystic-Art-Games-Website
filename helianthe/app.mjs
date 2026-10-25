@@ -292,7 +292,7 @@ async function loadWorkspace() {
     selectProfile(state.profiles.find(profile => profile.id === user.id) || state.profiles[0]);
     showTab('cards');
     status('Ready.');
-  } catch (cause) { status(cause.message, true); }
+  } catch (cause) { console.error(cause); showSignIn(); }
 }
 
 async function loadPublicWorkspace() {
@@ -314,7 +314,7 @@ async function loadPublicWorkspace() {
     if (state.profiles[0]) selectProfile(state.profiles[0]);
     showTab('cards');
     status('Browsing publicly. Sign in to create cards and decks.');
-  } catch (cause) { status(cause.message, true); }
+  } catch (cause) { console.error(cause); showSignIn(); }
 }
 
 $('#auth-form').addEventListener('submit', async event => {

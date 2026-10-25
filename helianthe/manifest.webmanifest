@@ -1,0 +1,18 @@
+{
+  "name": "Helianthe",
+  "short_name": "Helianthe",
+  "description": "Helianthe community card editor",
+  "start_url": "/helianthe/",
+  "scope": "/helianthe/",
+  "display": "standalone",
+  "background_color": "#f7f1dc",
+  "theme_color": "#153f34",
+  "icons": [
+    {
+      "src": "../images/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
