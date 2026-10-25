@@ -310,7 +310,10 @@ async function loadWorkspace() {
     $('#sign-out').hidden = false;
     selectCard(state.cards[0] || null);
     await selectDeck(state.decks.find(deck => deck.owner_id === user.id) || state.decks[0] || null);
-    selectProfile(state.profiles.find(profile => profile.id === user.id) || state.profiles[0]);
+    const profile = state.profiles.find(profile => profile.id === user.id) || state.profiles[0];
+    selectProfile(profile);
+    $('#account-name').textContent = profile?.display_name || user.email || 'Profile';
+    $('#account-name').hidden = false;
     showTab('cards');
     status('Ready.');
   } catch (cause) { console.error(cause); showSignIn(); }
@@ -330,6 +333,7 @@ async function loadPublicWorkspace() {
     $('#tabs').hidden = false;
     $('#sign-in').hidden = false;
     $('#sign-out').hidden = true;
+    $('#account-name').hidden = true;
     selectCard(state.cards[0] || null);
     await selectDeck(state.decks[0] || null);
     if (state.profiles[0]) selectProfile(state.profiles[0]);

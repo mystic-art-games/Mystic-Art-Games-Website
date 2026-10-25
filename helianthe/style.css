@@ -15,9 +15,8 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 .masthead nav { display: flex; gap: .3rem; }
 .masthead nav button, #sign-out { background: transparent; color: #fff8e8; border-color: transparent; }
 .masthead nav button.active { background: #366150; }
-.home-link { margin-left: auto; color: #fff8e8; border: 1px solid #749a88; border-radius: 10px; padding: .55rem .8rem; text-decoration: none; white-space: nowrap; }
-.home-link:hover { background: #366150; }
-#sign-out { margin-left: auto; border-color: #749a88; }
+#account-name { margin-left: auto; color: #fff8e8; font-weight: 700; white-space: nowrap; }
+#sign-in, #sign-out { margin-left: auto; border-color: #749a88; }
 .auth-panel { max-width: 460px; margin: 7vh auto; background: #fffdf4; border: 1px solid #c1cbb9; border-radius: 18px; padding: 2rem; box-shadow: 0 8px 32px #23432d18; }
 .auth-panel h1, .panel h1, .panel h2 { font-family: Nunito, Arial, sans-serif; font-weight: 800; }
 .auth-panel h1 { margin-top: 0; font-size: 2.1rem; }
@@ -75,7 +74,7 @@ textarea { resize: vertical; }
   .brand { grid-column: 1 / -1; justify-content: center; min-width: 0; }
   .masthead nav { grid-column: 1 / -1; justify-content: center; gap: .2rem; }
   .masthead nav button { padding: .55rem .75rem; }
-  .home-link { grid-column: 1; grid-row: 3; margin-left: 0; justify-self: end; }
+  #account-name { grid-column: 1; grid-row: 3; margin-left: 0; justify-self: end; }
   #sign-in, #sign-out { grid-column: 2; grid-row: 3; margin-left: 0; justify-self: start; }
 }
 
