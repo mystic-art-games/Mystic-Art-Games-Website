@@ -28,7 +28,13 @@
         <a href="#games">Our games</a>
         <a href="about-us.html">About us</a>
         <a href="contact.html">Contact</a>
-        <button class="theme-toggle" id="theme-toggle" type="button" aria-pressed="false">Dark mode</button>
+        <div class="theme-control">
+          <span class="theme-label">Dark mode</span>
+          <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle dark mode" aria-pressed="false">
+            <span class="theme-state" aria-hidden="true">Off</span>
+            <span class="theme-knob" aria-hidden="true"></span>
+          </button>
+        </div>
       </nav>
     </div>
   </header>
@@ -113,7 +119,7 @@
     if (savedTheme === 'dark') document.body.classList.add('dark-mode');
     const syncThemeToggle = () => {
       const dark = document.body.classList.contains('dark-mode');
-      themeToggle.textContent = dark ? 'Light mode' : 'Dark mode';
+        themeToggle.querySelector('.theme-state').textContent = dark ? 'On' : 'Off';
       themeToggle.setAttribute('aria-pressed', String(dark));
     };
     syncThemeToggle();
