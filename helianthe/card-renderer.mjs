@@ -1,7 +1,7 @@
 // The hosted editor uses the same 750 × 1050 drawing geometry as the local
 // Card Editor. Preview and exported PNG both render onto a 1500 × 2100 canvas.
 const ASSETS = new URL('./assets/', import.meta.url);
-const DEFAULT_ARTWORK = asset('Poseidons_Chosen_One_Comic.png');
+const DEFAULT_ARTWORK = asset('Poseidons_Chosen_One_Comic.png?v=3');
 const imageCache = new Map();
 const eventTints = new WeakMap();
 const terrainColors = { Symbiosis: '#784997', Flow: '#428da7', Evergreen: '#68a66c', Radiance: '#e0b52f' };
