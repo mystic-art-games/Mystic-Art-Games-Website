@@ -11,8 +11,7 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 .masthead { display: flex; align-items: center; gap: 2rem; height: 84px; padding: 0 1.5rem; border-bottom: 1px solid rgba(132, 177, 139, .28); background: linear-gradient(115deg, #153f34, #246047 62%, #34735a); box-shadow: 0 5px 22px rgba(0, 19, 13, .2); color: #fff8e8; }
 .brand { display: flex; align-items: center; gap: .65rem; min-width: 230px; }
 .brand-mark { font-size: 2.4rem; color: #edc36b; }
-.brand strong { display: block; font: 2rem Chewy, cursive; line-height: 1; }
-.brand small { display: block; font-size: .7rem; letter-spacing: .06em; text-transform: uppercase; }
+.brand strong { display: block; font: 800 2rem Nunito, Arial, sans-serif; line-height: 1; }
 .masthead nav { display: flex; gap: .3rem; }
 .masthead nav button, #sign-out { background: transparent; color: #fff8e8; border-color: transparent; }
 .masthead nav button.active { background: #366150; }
