@@ -29,7 +29,7 @@ a:focus-visible { outline: 3px solid #a67722; outline-offset: 4px; }
 .site-nav a, .site-footer a { font-size: .82rem; font-weight: 600; text-decoration: none; transition: color .2s ease; }
 .site-nav a:hover, .site-footer a:hover { color: #a67722; }
 
-.intro { min-height: 0; margin-block: 14px; padding: 18px 24px 20px; border: 1px solid rgba(123, 169, 126, .3); border-radius: 18px; background: linear-gradient(112deg, rgba(34, 82, 62, .98), rgba(16, 48, 38, .96)); box-shadow: 0 12px 32px rgba(0, 22, 15, .22); }
+.intro { min-height: 0; margin-block: 14px; padding: 18px 24px 20px; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
 .intro-copy { position: relative; z-index: 1; max-width: none; display: grid; grid-template-columns: minmax(300px, 1.2fr) minmax(260px, .8fr); align-items: end; column-gap: 8%; }
 .intro-copy .eyebrow { grid-column: 1 / -1; }
 .eyebrow { display: inline-flex; gap: 12px; align-items: center; color: var(--forest-soft); font-size: .72rem; font-weight: 700; letter-spacing: .15em; text-transform: uppercase; }
@@ -162,7 +162,7 @@ body.dark-mode .theme-knob { transform: translateX(31px); background: #d5e6cf; }
 body.dark-mode .theme-state { margin-left: 0; }
 body:not(.dark-mode) { background: linear-gradient(145deg, #f4f1e6 0%, #e7eddf 52%, #d2e0d0 100%) fixed; color: #1d3b33; }
 body:not(.dark-mode) .site-header { border-bottom-color: #c8d5c4; background: linear-gradient(90deg, rgba(245, 243, 233, .98), rgba(220, 232, 216, .98)); box-shadow: 0 5px 22px rgba(25, 61, 46, .055); }
-body:not(.dark-mode) .intro { border-color: rgba(79, 112, 90, .18); background: linear-gradient(112deg, rgba(255, 253, 244, .94), rgba(225, 234, 211, .82)); box-shadow: 0 12px 32px rgba(30, 67, 51, .075); }
+body:not(.dark-mode) .intro { border: 0; background: transparent; box-shadow: none; }
 body:not(.dark-mode) .intro h1, body:not(.dark-mode) .section-heading h2, body:not(.dark-mode) .game-card h3, body:not(.dark-mode) .closing h2 { color: #1d3b33; }
 body:not(.dark-mode) .site-nav a, body:not(.dark-mode) .theme-toggle { color: #1d3b33; }
 body:not(.dark-mode) .theme-label { color: #1d3b33; }
