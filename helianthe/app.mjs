@@ -8,7 +8,7 @@ const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_K
 const api = createCommunityApi(client);
 const ADMIN_EMAIL = 'dominik.zielinski3@gmail.com';
 const ADMIN_USER_ID = '7422e970-f1c1-4618-aa73-ea191d97e141';
-const state = { user: null, isAdmin: false, cards: [], decks: [], profiles: [], card: null, deck: null, profile: null, deckCards: [], artworkUrl: null, artworkSerial: 0, renderSerial: 0, authVersion: 0, realtimeChannel: null };
+const state = { user: null, isAdmin: false, cards: [], decks: [], profiles: [], card: null, deck: null, profile: null, deckCards: [], artworkUrl: null, artworkSerial: 0, renderSerial: 0, authVersion: 0, realtimeChannel: null, cardFormDirty: false };
 const ARTWORK_UPLOAD_LIMIT = 100 * 1024;
 
 async function compressedArtwork(file) {
@@ -187,6 +187,7 @@ function selectCard(card, { openMobile = false } = {}) {
   ++state.artworkSerial;
   releaseArtwork();
   state.card = card;
+  state.cardFormDirty = false;
   const form = $('#card-form');
   form.reset();
   form.elements.title.value = card?.title || '';
@@ -313,7 +314,7 @@ function startRealtimeSync() {
       const selectedId = state.card?.id;
       try {
         await reloadCollections();
-        if (selectedId) selectCard(state.cards.find(card => card.id === selectedId) || state.cards[0] || null);
+        if (selectedId && !state.cardFormDirty) selectCard(state.cards.find(card => card.id === selectedId) || state.cards[0] || null);
         else renderCardList();
       } catch (cause) { status(cause.message, true); }
     })
@@ -412,11 +413,12 @@ $('#card-search').addEventListener('input', renderCardList);
 for (const filter of document.querySelectorAll('#card-filter-type, #card-filter-author, #card-filter-terrain')) filter.addEventListener('change', renderCardList);
 $('#new-card').addEventListener('click', () => { if (requireAccount()) selectCard(null, { openMobile: true }); });
 $('#close-mobile-editor').addEventListener('click', closeMobileEditor);
-$('#card-form').addEventListener('input', renderPreview);
+$('#card-form').addEventListener('input', () => { state.cardFormDirty = true; renderPreview(); });
 $('#card-form').elements.card_type.addEventListener('change', () => { if ($('#card-form').elements.card_type.value === 'Event') $('#card-form').elements.terrain.value = ''; syncTerrain(); renderPreview(); });
 $('#card-artwork').addEventListener('change', event => {
   const file = event.target.files?.[0];
   if (!file) return;
+  state.cardFormDirty = true;
   ++state.artworkSerial; releaseArtwork();
   state.artworkUrl = URL.createObjectURL(file);
   renderPreview();
@@ -454,6 +456,7 @@ $('#card-form').addEventListener('submit', async event => {
         catch (cause) { cleanupWarning = cause.message; console.error('Old artwork cleanup failed', cause); }
       }
     }
+    state.cardFormDirty = false;
     await reloadCollections();
     selectCard(state.cards.find(item => item.id === card.id) || card);
     status(cleanupWarning ? `Card saved. ${cleanupWarning}` : 'Card saved.', Boolean(cleanupWarning));
