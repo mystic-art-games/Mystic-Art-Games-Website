@@ -12,7 +12,7 @@
 
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
-body { margin: 0; background: linear-gradient(145deg, #173f32 0%, #102f27 48%, #08261f 100%) fixed; color: var(--ink); font-family: "DM Sans", sans-serif; }
+body { margin: 0; background: linear-gradient(145deg, #173f32 0%, #102f27 48%, #08261f 100%) fixed; color: var(--ink); font-family: "Nunito", sans-serif; }
 img { max-width: 100%; display: block; }
 a { color: inherit; }
 a:focus-visible { outline: 3px solid #a67722; outline-offset: 4px; }
@@ -35,7 +35,7 @@ a:focus-visible { outline: 3px solid #a67722; outline-offset: 4px; }
 .eyebrow { display: inline-flex; gap: 12px; align-items: center; color: var(--forest-soft); font-size: .72rem; font-weight: 700; letter-spacing: .15em; text-transform: uppercase; }
 .eyebrow-line { width: 28px; height: 1px; background: var(--sun); }
 h1, h2, h3, p { margin-top: 0; }
-h1, h2, h3 { font-family: Fraunces, Georgia, serif; font-weight: 500; letter-spacing: -.055em; }
+h1, h2, h3 { font-family: "Nunito", sans-serif; font-weight: 800; letter-spacing: -.045em; }
 h1 { font-size: clamp(2.15rem, 3.7vw, 3.45rem); line-height: 1; margin: 8px 0 0; }
 h1 em { color: var(--forest-soft); font-weight: 500; }
 .intro-copy p { max-width: 620px; color: var(--muted); font-size: .88rem; line-height: 1.5; margin: 0 0 2px; }
@@ -91,7 +91,7 @@ h1 em { color: var(--forest-soft); font-weight: 500; }
 .site-footer { background: linear-gradient(115deg, #041b16, #0b3328 62%, #174a38); color: #e4ece3; }
 .footer-inner { min-height: 170px; display: flex; align-items: center; justify-content: space-between; gap: 28px; }
 .footer-brand { display: grid; gap: 8px; }
-.footer-brand strong { font-family: Fraunces, Georgia, serif; font-size: 1.3rem; font-weight: 500; }
+.footer-brand strong { font-family: "Nunito", sans-serif; font-size: 1.3rem; font-weight: 800; }
 .footer-brand span, .copyright { color: #b9cfc1; font-size: .8rem; }
 .site-footer nav { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px 24px; }
 .site-footer a { font-size: .8rem; }
@@ -155,7 +155,7 @@ h1 em { color: var(--forest-soft); font-weight: 500; }
 .logo-dark { display: none; }
 .theme-control { display: grid; justify-items: center; gap: 3px; }
 .theme-label { color: var(--ink); font-size: .58rem; font-weight: 700; letter-spacing: .08em; line-height: 1; text-transform: uppercase; }
-.theme-toggle { position: relative; width: 64px; height: 28px; display: flex; align-items: center; justify-content: space-between; padding: 0 8px; border: 1px solid rgba(35, 87, 61, .35); border-radius: 999px; background: rgba(35, 87, 61, .09); color: var(--ink); font: 700 .55rem "DM Sans", sans-serif; cursor: pointer; transition: background .2s ease, color .2s ease, border-color .2s ease; }
+.theme-toggle { position: relative; width: 64px; height: 28px; display: flex; align-items: center; justify-content: space-between; padding: 0 8px; border: 1px solid rgba(35, 87, 61, .35); border-radius: 999px; background: rgba(35, 87, 61, .09); color: var(--ink); font: 700 .55rem "Nunito", sans-serif; cursor: pointer; transition: background .2s ease, color .2s ease, border-color .2s ease; }
 .theme-toggle:hover { background: rgba(52, 100, 84, .18); border-color: var(--forest-soft); }
 .theme-state { position: relative; z-index: 1; margin-left: auto; text-transform: uppercase; }
 .theme-knob { position: absolute; top: 5px; left: 4px; width: 24px; height: 16px; border-radius: 9px; background: #fffdf4; box-shadow: 0 2px 5px rgba(20, 49, 38, .22); transition: transform .22s ease, background .22s ease; }
