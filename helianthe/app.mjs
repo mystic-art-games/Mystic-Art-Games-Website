@@ -78,7 +78,7 @@ function renderCardList() {
   const list = $('#card-list');
   list.replaceChildren();
   for (const card of state.cards.filter(item => `${item.title} ${item.effect}`.toLocaleLowerCase().includes(query))) {
-    const row = button('', () => selectCard(card), `card-list-item${state.card?.id === card.id ? ' selected' : ''}`);
+    const row = button('', () => selectCard(card, { openMobile: true }), `card-list-item${state.card?.id === card.id ? ' selected' : ''}`);
     row.setAttribute('aria-label', `${card.card_type}: ${card.title}`);
     const icon = document.createElement('img');
     icon.className = 'card-type-icon';
@@ -159,7 +159,7 @@ function renderPreview() {
     .catch(cause => { if (serial === state.renderSerial) $('#preview-note').textContent = cause.message; });
 }
 
-function selectCard(card) {
+function selectCard(card, { openMobile = false } = {}) {
   ++state.artworkSerial;
   releaseArtwork();
   state.card = card;
@@ -178,6 +178,11 @@ function selectCard(card) {
   renderPreview();
   void showArtwork(card);
   renderCardList();
+  if (openMobile) $('#cards-view').classList.add('mobile-editor-open');
+}
+
+function closeMobileEditor() {
+  $('#cards-view').classList.remove('mobile-editor-open');
 }
 
 function renderDeckList() {
@@ -375,7 +380,8 @@ $('#browse-without-account').addEventListener('click', loadPublicWorkspace);
 
 for (const tab of $('#tabs').querySelectorAll('button[data-tab]')) tab.addEventListener('click', () => showTab(tab.dataset.tab));
 $('#card-search').addEventListener('input', renderCardList);
-$('#new-card').addEventListener('click', () => { if (requireAccount()) selectCard(null); });
+$('#new-card').addEventListener('click', () => { if (requireAccount()) selectCard(null, { openMobile: true }); });
+$('#close-mobile-editor').addEventListener('click', closeMobileEditor);
 $('#card-form').addEventListener('input', renderPreview);
 $('#card-form').elements.card_type.addEventListener('change', () => { if ($('#card-form').elements.card_type.value === 'Event') $('#card-form').elements.terrain.value = ''; syncTerrain(); renderPreview(); });
 $('#card-artwork').addEventListener('change', event => {
