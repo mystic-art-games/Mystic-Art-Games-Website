@@ -53,6 +53,19 @@ function setCardFormEditable(canEdit) {
   for (const field of $('#card-form').querySelectorAll('input,select,textarea,button')) field.disabled = !canEdit;
 }
 
+function showSignIn() {
+  $('#auth-view').hidden = false;
+  for (const tab of ['cards', 'decks', 'profiles']) $(`#${tab}-view`).hidden = true;
+  $('#tabs').hidden = true;
+  status('Sign in or create an account to contribute.');
+}
+
+function requireAccount() {
+  if (state.user) return true;
+  showSignIn();
+  return false;
+}
+
 function syncTerrain() {
   const form = $('#card-form');
   const required = form.elements.card_type.value === 'Entity';
@@ -109,8 +122,9 @@ function selectCard(card) {
   form.elements.effect.value = card?.effect || '';
   form.elements.author.value = card?.author || '';
   $('#card-heading').textContent = card?.title || 'New card';
-  $('#card-owner').textContent = card ? (card.owner_id === state.user?.id ? 'Your card' : `By ${ownerName(card.owner_id)}`) : 'Your new card';
-  setCardFormEditable(!card || card.owner_id === state.user?.id);
+  const mine = Boolean(state.user && card?.owner_id === state.user.id);
+  $('#card-owner').textContent = card ? (mine ? 'Your card' : `By ${ownerName(card.owner_id)}`) : (state.user ? 'Your new card' : 'Sign in to create a card');
+  setCardFormEditable(Boolean(state.user && (!card || mine)));
   syncTerrain();
   renderPreview();
   void showArtwork(card);
@@ -173,10 +187,10 @@ async function selectDeck(deck) {
   form.elements.name.value = deck?.name || '';
   form.elements.patron_name.value = deck?.patron_name || '';
   form.elements.is_public.checked = deck?.is_public || false;
-  const mine = !deck || deck.owner_id === state.user?.id;
+  const mine = Boolean(state.user && (!deck || deck.owner_id === state.user.id));
   for (const field of form.querySelectorAll('input,button')) field.disabled = !mine;
   $('#deck-heading').textContent = deck?.name || 'New deck';
-  $('#deck-owner').textContent = deck ? (mine ? 'Your deck' : `By ${ownerName(deck.owner_id)}`) : 'Private by default';
+  $('#deck-owner').textContent = deck ? (mine ? 'Your deck' : `By ${ownerName(deck.owner_id)}`) : (state.user ? 'Private by default' : 'Sign in to create a deck');
   state.deckCards = deck ? await api.listDeckCards(deck.id) : [];
   renderDeckList();
   renderDeckCards();
@@ -221,6 +235,7 @@ async function loadWorkspace() {
     if (version !== state.authVersion) return;
     $('#auth-view').hidden = true;
     $('#tabs').hidden = false;
+    $('#sign-in').hidden = true;
     $('#sign-out').hidden = false;
     selectCard(state.cards[0] || null);
     await selectDeck(state.decks.find(deck => deck.owner_id === user.id) || state.decks[0] || null);
@@ -230,16 +245,24 @@ async function loadWorkspace() {
   } catch (cause) { status(cause.message, true); }
 }
 
-function signedOut() {
+async function loadPublicWorkspace() {
   ++state.authVersion;
   state.user = null; state.cards = []; state.decks = []; state.profiles = [];
   state.card = null; state.deck = null; state.profile = null; ++state.artworkSerial; ++state.renderSerial;
   releaseArtwork();
-  $('#download-png').disabled = true;
-  $('#auth-view').hidden = false;
-  for (const tab of ['cards', 'decks', 'profiles']) $(`#${tab}-view`).hidden = true;
-  $('#tabs').hidden = true; $('#sign-out').hidden = true;
-  status('Sign in to continue.');
+  status('Loading public Helianthe cards…');
+  try {
+    await reloadCollections();
+    $('#auth-view').hidden = true;
+    $('#tabs').hidden = false;
+    $('#sign-in').hidden = false;
+    $('#sign-out').hidden = true;
+    selectCard(state.cards[0] || null);
+    await selectDeck(state.decks[0] || null);
+    if (state.profiles[0]) selectProfile(state.profiles[0]);
+    showTab('cards');
+    status('Browsing publicly. Sign in to create cards and decks.');
+  } catch (cause) { status(cause.message, true); }
 }
 
 $('#auth-form').addEventListener('submit', async event => {
@@ -267,12 +290,15 @@ $('#sign-up').addEventListener('click', async () => {
 $('#sign-out').addEventListener('click', async () => {
   const { error } = await client.auth.signOut();
   if (error) status(error.message, true);
-  else signedOut();
+  else await loadPublicWorkspace();
 });
+
+$('#sign-in').addEventListener('click', showSignIn);
+$('#browse-without-account').addEventListener('click', loadPublicWorkspace);
 
 for (const tab of $('#tabs').querySelectorAll('button[data-tab]')) tab.addEventListener('click', () => showTab(tab.dataset.tab));
 $('#card-search').addEventListener('input', renderCardList);
-$('#new-card').addEventListener('click', () => selectCard(null));
+$('#new-card').addEventListener('click', () => { if (requireAccount()) selectCard(null); });
 $('#card-form').addEventListener('input', renderPreview);
 $('#card-form').elements.card_type.addEventListener('change', () => { if ($('#card-form').elements.card_type.value === 'Event') $('#card-form').elements.terrain.value = ''; syncTerrain(); renderPreview(); });
 $('#card-artwork').addEventListener('change', event => {
@@ -318,7 +344,7 @@ $('#card-form').addEventListener('submit', async event => {
   finally { save.disabled = false; }
 });
 
-$('#new-deck').addEventListener('click', () => { void selectDeck(null); });
+$('#new-deck').addEventListener('click', () => { if (requireAccount()) void selectDeck(null); });
 $('#deck-form').addEventListener('submit', async event => {
   event.preventDefault();
   const form = event.currentTarget;
@@ -345,9 +371,9 @@ $('#profile-form').addEventListener('submit', async event => {
 });
 
 client.auth.onAuthStateChange((event, session) => {
-  if (event === 'SIGNED_OUT') signedOut();
+  if (event === 'SIGNED_OUT') void loadPublicWorkspace();
 });
 const { data: { session }, error } = await client.auth.getSession();
 if (error) status(error.message, true);
 else if (session) await loadWorkspace();
-else signedOut();
+else await loadPublicWorkspace();

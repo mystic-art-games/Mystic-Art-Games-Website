@@ -135,9 +135,10 @@ export function createCommunityApi(client) {
     async fetchArtwork(artworkId) {
       if (!artworkId) return null;
       const { data: { session }, error } = await client.auth.getSession();
-      if (error || !session) throw new Error('Sign in to view artwork.');
+      if (error) throw new Error(error.message);
       const url = `${SUPABASE_URL}/functions/v1/card-art?id=${encodeURIComponent(artworkId)}`;
-      const response = await fetch(url, { headers: { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: `Bearer ${session.access_token}` } });
+      const token = session?.access_token || SUPABASE_PUBLISHABLE_KEY;
+      const response = await fetch(url, { headers: { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: `Bearer ${token}` } });
       if (!response.ok) throw new Error('Could not load artwork.');
       return response.blob();
     },
