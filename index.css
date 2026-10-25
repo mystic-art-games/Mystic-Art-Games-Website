@@ -25,6 +25,7 @@ a:focus-visible { outline: 3px solid #a67722; outline-offset: 4px; }
 .brand { display: block; width: 102px; padding-block: 4px; overflow: hidden; }
 .brand img { width: 102px; height: auto; }
 .site-nav { display: flex; align-items: center; gap: clamp(18px, 3vw, 38px); }
+.site-nav > a { display: flex; align-items: center; line-height: 1.15; }
 .site-nav a, .site-footer a { font-size: .82rem; font-weight: 600; text-decoration: none; transition: color .2s ease; }
 .site-nav a:hover, .site-footer a:hover { color: #a67722; }
 
@@ -108,7 +109,8 @@ h1 em { color: var(--forest-soft); font-weight: 500; }
   .header-inner { min-height: 62px; }
   .brand { width: 82px; padding-block: 3px; }
   .brand img { width: 82px; }
-  .site-nav { gap: 15px; }
+  .site-nav { flex: 1; justify-content: space-between; gap: 8px; }
+  .site-nav > a { justify-content: center; text-align: center; }
   .site-nav a { font-size: .75rem; }
   .intro { margin-block: 10px; padding: 14px 16px 15px; border-radius: 14px; }
   .intro-copy { display: block; }
