@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Helianthe Card Editor</title>
+  <link rel="stylesheet" href="./style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script type="module" src="./app.mjs"></script>
+</head>
+<body>
+  <header class="masthead">
+    <div class="brand"><span class="brand-mark">✺</span><div><strong>Helianthe</strong><small>Community Card Editor</small></div></div>
+    <nav id="tabs" hidden aria-label="Editor views">
+      <button type="button" data-tab="cards" class="active">Cards</button>
+      <button type="button" data-tab="decks">Decks</button>
+      <button type="button" data-tab="profiles">Profiles</button>
+    </nav>
+    <button id="sign-out" type="button" hidden>Sign out</button>
+  </header>
+  <p id="app-status" role="status" aria-live="polite"></p>
+
+  <main id="auth-view" class="auth-panel">
+    <h1>Join the Helianthe alpha</h1>
+    <p>Sign in to create cards, build your own decks, and browse other players' public decks.</p>
+    <form id="auth-form">
+      <label>Email<input name="email" type="email" autocomplete="email" required></label>
+      <label>Password<input name="password" type="password" autocomplete="current-password" required minlength="6"></label>
+      <div class="actions"><button type="submit">Sign in</button><button id="sign-up" type="button">Create account</button></div>
+    </form>
+    <p class="hint">After creating an account, confirm your email address before signing in.</p>
+  </main>
+
+  <main id="cards-view" class="workspace" hidden>
+    <aside class="panel sidebar">
+      <div class="panel-head"><h1>Cards</h1><button id="new-card" type="button">New card</button></div>
+      <input id="card-search" type="search" placeholder="Search cards…" aria-label="Search cards">
+      <div id="card-list" class="item-list" role="list"></div>
+    </aside>
+    <section class="panel editor-panel" aria-label="Card editor">
+      <div class="panel-head"><h2 id="card-heading">Select a card</h2><span id="card-owner" class="tag"></span></div>
+      <div class="card-layout">
+        <form id="card-form">
+          <label>Title<input name="title" required maxlength="200"></label>
+          <div class="two-cols"><label>Type<select name="card_type"><option>Entity</option><option>Event</option></select></label><label>Terrain<select name="terrain"><option value="">None</option><option>Symbiosis</option><option>Flow</option><option>Evergreen</option><option>Radiance</option></select></label></div>
+          <label>Effect<textarea name="effect" rows="7" maxlength="6000"></textarea></label>
+          <label>Author<input name="author" maxlength="500"></label>
+          <label>Artwork<input id="card-artwork" type="file" accept="image/png,image/jpeg,image/webp"></label>
+          <p class="hint">Artwork can be up to 5 MB. Cards are shared with signed-in testers; only their creator can edit them.</p>
+          <button id="save-card" type="submit">Save card</button>
+        </form>
+        <section class="card-preview-shell" aria-label="Card preview and export">
+          <canvas id="card-canvas" width="1500" height="2100" aria-label="Card preview"></canvas>
+          <p id="preview-note" role="status"></p>
+          <button id="download-png" type="button" disabled>Download PNG</button>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <main id="decks-view" class="workspace" hidden>
+    <aside class="panel sidebar">
+      <div class="panel-head"><h1>Decks</h1><button id="new-deck" type="button">New deck</button></div>
+      <div id="deck-list" class="item-list" role="list"></div>
+    </aside>
+    <section class="panel editor-panel">
+      <div class="panel-head"><h2 id="deck-heading">Select a deck</h2><span id="deck-owner" class="tag"></span></div>
+      <form id="deck-form">
+        <div class="two-cols"><label>Deck name<input name="name" required maxlength="100"></label><label>Patron<input name="patron_name" maxlength="200" placeholder="Optional"></label></div>
+        <label class="checkbox-line"><input name="is_public" type="checkbox"> Public — other players can browse this deck</label>
+        <p class="hint">New decks are private until you turn on public visibility and save.</p>
+        <button id="save-deck" type="submit">Save deck</button>
+      </form>
+      <h3>Cards in this deck</h3>
+      <div id="deck-cards" class="deck-cards"></div>
+    </section>
+  </main>
+
+  <main id="profiles-view" class="workspace" hidden>
+    <aside class="panel sidebar">
+      <div class="panel-head"><h1>Players</h1></div>
+      <div id="profile-list" class="item-list" role="list"></div>
+    </aside>
+    <section class="panel editor-panel">
+      <div class="panel-head"><h2 id="profile-heading">Select a player</h2></div>
+      <form id="profile-form" hidden>
+        <label>Display name<input name="display_name" maxlength="60"></label>
+        <label>Bio<textarea name="bio" rows="3" maxlength="500"></textarea></label>
+        <button type="submit">Save profile</button>
+      </form>
+      <p id="profile-bio"></p>
+      <h3>Public decks</h3>
+      <div id="profile-decks" class="item-list"></div>
+    </section>
+  </main>
+</body>
+</html>
