@@ -80,14 +80,24 @@ function releaseArtwork() {
 
 async function showArtwork(card) {
   const serial = ++state.artworkSerial;
-  releaseArtwork();
-  if (!card?.artwork_id) return;
+  if (!card?.artwork_id) {
+    releaseArtwork();
+    renderPreview();
+    return;
+  }
   try {
     const blob = await api.fetchArtwork(card.artwork_id);
     if (serial !== state.artworkSerial) return;
+    const previousArtworkUrl = state.artworkUrl;
     state.artworkUrl = URL.createObjectURL(blob);
     renderPreview();
-  } catch (cause) { if (serial === state.artworkSerial) status(cause.message, true); }
+    if (previousArtworkUrl) URL.revokeObjectURL(previousArtworkUrl);
+  } catch (cause) {
+    if (serial !== state.artworkSerial) return;
+    releaseArtwork();
+    renderPreview();
+    status(cause.message, true);
+  }
 }
 
 function renderPreview() {
@@ -101,9 +111,17 @@ function renderPreview() {
     author: form.elements.author.value,
   };
   $('#download-png').disabled = true;
-  void renderCard($('#card-canvas'), card, state.artworkUrl || '', () => serial === state.renderSerial)
+  const target = $('#card-canvas');
+  const buffer = document.createElement('canvas');
+  buffer.width = target.width;
+  buffer.height = target.height;
+  void renderCard(buffer, card, state.artworkUrl || '', () => serial === state.renderSerial)
     .then(result => {
       if (serial !== state.renderSerial || result.cancelled) return;
+      target.width = buffer.width;
+      target.height = buffer.height;
+      target.getContext('2d').drawImage(buffer, 0, 0);
+      target.setAttribute('aria-label', buffer.getAttribute('aria-label') || 'Card preview');
       $('#preview-note').textContent = result.clipped ? 'Text is too long — shorten the effect before exporting.' : '';
       $('#download-png').disabled = result.clipped;
     })
@@ -112,7 +130,6 @@ function renderPreview() {
 
 function selectCard(card) {
   ++state.artworkSerial;
-  releaseArtwork();
   state.card = card;
   const form = $('#card-form');
   form.reset();
@@ -126,7 +143,6 @@ function selectCard(card) {
   $('#card-owner').textContent = card ? (mine ? 'Your card' : `By ${ownerName(card.owner_id)}`) : (state.user ? 'Your new card' : 'Sign in to create a card');
   setCardFormEditable(Boolean(state.user && (!card || mine)));
   syncTerrain();
-  renderPreview();
   void showArtwork(card);
   renderCardList();
 }
