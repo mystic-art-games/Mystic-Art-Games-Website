@@ -28,20 +28,21 @@ a:focus-visible { outline: 3px solid #a67722; outline-offset: 4px; }
 .site-nav a, .site-footer a { font-size: .9rem; font-weight: 600; text-decoration: none; transition: color .2s ease; }
 .site-nav a:hover, .site-footer a:hover { color: #a67722; }
 
-.intro { min-height: 530px; display: grid; grid-template-columns: 1.02fr .98fr; align-items: center; gap: 7%; padding-block: 54px 62px; }
-.intro-copy { position: relative; z-index: 1; max-width: 580px; }
+.intro { min-height: 0; padding-block: 22px 20px; }
+.intro-copy { position: relative; z-index: 1; max-width: none; display: grid; grid-template-columns: minmax(280px, 1fr) minmax(280px, 1fr); align-items: end; column-gap: 7%; }
+.intro-copy .eyebrow { grid-column: 1 / -1; }
 .eyebrow { display: inline-flex; gap: 12px; align-items: center; color: var(--forest-soft); font-size: .72rem; font-weight: 700; letter-spacing: .15em; text-transform: uppercase; }
 .eyebrow-line { width: 28px; height: 1px; background: var(--sun); }
 h1, h2, h3, p { margin-top: 0; }
 h1, h2, h3 { font-family: Fraunces, Georgia, serif; font-weight: 500; letter-spacing: -.055em; }
-h1 { font-size: clamp(4rem, 7.6vw, 7rem); line-height: .99; margin: 27px 0 30px; }
+h1 { font-size: clamp(2.4rem, 4.8vw, 4.5rem); line-height: .99; margin: 10px 0 0; }
 h1 em { color: var(--forest-soft); font-weight: 500; }
-.intro-copy p { max-width: 510px; color: var(--muted); font-size: 1.12rem; line-height: 1.75; margin-bottom: 29px; }
+.intro-copy p { max-width: 510px; color: var(--muted); font-size: .95rem; line-height: 1.5; margin: 0 0 3px; }
 .text-link { display: inline-flex; align-items: center; gap: 14px; border-bottom: 1px solid var(--forest); padding: 0 0 8px; color: var(--forest); font-size: .96rem; font-weight: 700; text-decoration: none; transition: gap .2s ease; }
 .text-link:hover { gap: 21px; }
 .text-link span { font-size: 1.15em; }
 
-.intro-art { height: 470px; position: relative; isolation: isolate; overflow: hidden; border-radius: 50% 50% 44% 44%; background: radial-gradient(circle at 62% 36%, #fff8db 0 12%, #e8e9ca 36%, #dce6d4 72%); }
+.intro-art { display: none; }
 .orbit { position: absolute; width: 85%; aspect-ratio: 1; left: 7%; top: 3%; border: 1px solid rgba(53, 99, 79, .25); border-radius: 50%; }
 .orbit-two { width: 65%; left: 17%; top: 13%; }
 .sun-disc { position: absolute; width: 36%; aspect-ratio: 1; left: 32%; top: 26%; border-radius: 50%; background: #e6bc69; box-shadow: 0 0 0 20px rgba(245, 225, 166, .43), 0 0 0 49px rgba(245, 225, 166, .25); }
@@ -53,7 +54,7 @@ h1 em { color: var(--forest-soft); font-weight: 500; }
 .leaf-one { right: 3%; bottom: 15%; transform: rotate(-33deg); }
 .leaf-two { right: 17%; bottom: 4%; transform: rotate(20deg); background: #94b387; }
 
-.games-section { background: #ebeee3; border-block: 1px solid #e0e4d5; padding: 54px 0 62px; }
+.games-section { background: #ebeee3; border-block: 1px solid #e0e4d5; padding: 28px 0 42px; }
 .section-heading { display: flex; align-items: end; justify-content: space-between; gap: 28px; margin-bottom: 22px; }
 .section-heading h2 { font-size: clamp(3.2rem, 5vw, 5rem); line-height: 1; margin: 10px 0 0; }
 .section-heading p { color: var(--muted); max-width: 270px; line-height: 1.55; margin-bottom: 6px; }
@@ -89,8 +90,7 @@ h1 em { color: var(--forest-soft); font-weight: 500; }
 
 @media (max-width: 900px) {
   .shell { width: min(100% - 40px, 1240px); }
-  .intro { grid-template-columns: 1fr .75fr; min-height: 520px; gap: 2%; }
-  .intro-art { height: 360px; }
+  .intro { padding-block: 20px 18px; }
   .game-card { grid-template-columns: 48% 52%; }
   .game-copy { padding: 34px; }
   .closing { flex-wrap: wrap; justify-content: flex-start; }
@@ -102,10 +102,11 @@ h1 em { color: var(--forest-soft); font-weight: 500; }
   .brand, .brand img { width: 118px; }
   .site-nav { gap: 15px; }
   .site-nav a { font-size: .75rem; }
-  .intro { display: flex; flex-direction: column; align-items: stretch; min-height: 0; gap: 35px; padding-block: 66px 70px; }
-  h1 { font-size: clamp(3.8rem, 14vw, 5.5rem); }
-  .intro-art { height: min(72vw, 420px); }
-  .games-section { padding: 68px 0 72px; }
+  .intro { padding-block: 18px 16px; }
+  .intro-copy { display: block; }
+  .intro-copy p { margin-top: 10px; }
+  h1 { font-size: clamp(2.25rem, 10vw, 3.6rem); }
+  .games-section { padding: 22px 0 36px; }
   .section-heading { align-items: flex-start; flex-direction: column; gap: 12px; }
   .section-heading p { max-width: none; }
   .games-grid { gap: 10px; }
