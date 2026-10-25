@@ -22,8 +22,8 @@ a:focus-visible { outline: 3px solid #a67722; outline-offset: 4px; }
 
 .site-header { border-bottom: 1px solid rgba(132, 177, 139, .28); position: relative; z-index: 2; background: linear-gradient(90deg, rgba(26, 70, 53, .98), rgba(12, 43, 34, .98)); box-shadow: 0 5px 22px rgba(0, 19, 13, .2); }
 .header-inner { min-height: 72px; display: flex; justify-content: space-between; align-items: center; gap: 24px; }
-.brand { display: block; width: 122px; padding: 4px 8px; overflow: hidden; border-radius: 10px; background: rgba(222, 235, 216, .92); box-shadow: 0 3px 10px rgba(0, 19, 13, .16); }
-.brand img { width: 122px; height: auto; }
+.brand { display: block; width: 112px; padding: 0; overflow: hidden; }
+.brand img { width: 112px; height: auto; }
 .site-nav { display: flex; align-items: center; gap: clamp(18px, 3vw, 38px); }
 .site-nav a, .site-footer a { font-size: .82rem; font-weight: 600; text-decoration: none; transition: color .2s ease; }
 .site-nav a:hover, .site-footer a:hover { color: #a67722; }
