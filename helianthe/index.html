@@ -13,9 +13,9 @@
   <link rel="apple-touch-icon" href="../images/helianthe-home-icon.png">
   <link rel="manifest" href="./manifest.webmanifest">
   <title>Helianthe</title>
-  <link rel="stylesheet" href="./style.css?v=helianthe-ui-9">
+  <link rel="stylesheet" href="./style.css?v=helianthe-ui-10">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script type="module" src="./app.mjs?v=helianthe-ui-9"></script>
+  <script type="module" src="./app.mjs?v=helianthe-ui-10"></script>
 </head>
 <body>
   <header class="masthead">
@@ -50,6 +50,11 @@
     <aside class="panel sidebar">
       <div class="panel-head"><h1>Cards</h1><button id="new-card" type="button">+ New card</button></div>
       <input id="card-search" type="search" placeholder="Search cards…" aria-label="Search cards">
+      <div class="card-filters" aria-label="Filter cards">
+        <label>Type<select id="card-filter-type"><option value="">All types</option><option value="Entity">Entity</option><option value="Event">Event</option></select></label>
+        <label>Author<select id="card-filter-author"><option value="">All authors</option></select></label>
+        <label>Color<select id="card-filter-terrain"><option value="">All colors</option><option value="Symbiosis">Symbiosis</option><option value="Flow">Flow</option><option value="Evergreen">Evergreen</option><option value="Radiance">Radiance</option><option value="none">No color</option></select></label>
+      </div>
       <div id="card-list" class="item-list" role="list"></div>
     </aside>
     <section class="panel editor-panel" aria-label="Card editor">

@@ -39,6 +39,9 @@ textarea { resize: vertical; }
 .panel-head h1, .panel-head h2 { margin: .2rem 0 .8rem; font-size: 1.7rem; }
 .tag { font-size: .82rem; color: #50705e; }
 .item-list { display: flex; flex-direction: column; gap: .35rem; margin-top: .8rem; }
+.card-filters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .45rem; margin-top: .65rem; }
+.card-filters label { margin: 0; color: #5a6e64; font-size: .78rem; font-weight: 700; }
+.card-filters select { margin-top: .2rem; padding: .45rem .4rem; font-size: .82rem; }
 .item-list button { text-align: left; background: #f7f7ee; border-color: #d9dfd2; }
 .item-list button.selected { background: #dceadd; border-color: #6f9c80; }
 .item-list small { display: block; color: #6b796d; font-size: .76rem; }
@@ -103,6 +106,7 @@ textarea { resize: vertical; }
 }
 
 @media (max-width: 430px) {
+  .card-filters { grid-template-columns: 1fr; }
   .masthead { padding-inline: .65rem; }
   .masthead nav button, #sign-in, #sign-out { padding: .5rem .6rem; }
   .header-controls { gap: .1rem; }

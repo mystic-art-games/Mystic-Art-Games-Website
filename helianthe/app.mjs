@@ -79,11 +79,29 @@ function showTab(name) {
   }
 }
 
+function refreshCardAuthorFilter() {
+  const select = $('#card-filter-author');
+  const current = select.value;
+  const authors = [...new Set(state.cards.map(card => ownerName(card.owner_id)))].sort((a, b) => a.localeCompare(b));
+  select.replaceChildren(new Option('All authors', ''));
+  for (const author of authors) select.append(new Option(author, author));
+  select.value = authors.includes(current) ? current : '';
+}
+
 function renderCardList() {
   const query = $('#card-search').value.trim().toLocaleLowerCase();
+  const type = $('#card-filter-type').value;
+  const author = $('#card-filter-author').value;
+  const terrain = $('#card-filter-terrain').value;
   const list = $('#card-list');
   list.replaceChildren();
-  for (const card of state.cards.filter(item => `${item.title} ${item.effect}`.toLocaleLowerCase().includes(query))) {
+  for (const card of state.cards.filter(item => {
+    const matchesSearch = `${item.title} ${item.effect}`.toLocaleLowerCase().includes(query);
+    const matchesType = !type || item.card_type === type;
+    const matchesAuthor = !author || ownerName(item.owner_id) === author;
+    const matchesTerrain = !terrain || (terrain === 'none' ? !item.terrain : item.terrain === terrain);
+    return matchesSearch && matchesType && matchesAuthor && matchesTerrain;
+  })) {
     const row = button('', () => selectCard(card, { openMobile: true }), `card-list-item${state.card?.id === card.id ? ' selected' : ''}`);
     row.setAttribute('aria-label', `${card.card_type}: ${card.title}`);
     const icon = card.card_type === 'Event' ? document.createElement('span') : document.createElement('img');
@@ -284,6 +302,7 @@ function selectProfile(profile) {
 
 async function reloadCollections() {
   [state.cards, state.decks, state.profiles] = await Promise.all([api.listCards(), api.listDecks(), api.listProfiles()]);
+  refreshCardAuthorFilter();
   renderCardList(); renderDeckList(); renderProfileList();
 }
 
@@ -390,6 +409,7 @@ $('#browse-without-account').addEventListener('click', loadPublicWorkspace);
 
 for (const tab of $('#tabs').querySelectorAll('button[data-tab]')) tab.addEventListener('click', () => showTab(tab.dataset.tab));
 $('#card-search').addEventListener('input', renderCardList);
+for (const filter of document.querySelectorAll('#card-filter-type, #card-filter-author, #card-filter-terrain')) filter.addEventListener('change', renderCardList);
 $('#new-card').addEventListener('click', () => { if (requireAccount()) selectCard(null, { openMobile: true }); });
 $('#close-mobile-editor').addEventListener('click', closeMobileEditor);
 $('#card-form').addEventListener('input', renderPreview);
