@@ -9,9 +9,9 @@
   "theme_color": "#153f34",
   "icons": [
     {
-      "src": "../images/favicon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "../images/helianthe-sunflower.png",
+      "sizes": "1254x1254",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ]
