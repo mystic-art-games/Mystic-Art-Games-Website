@@ -64,18 +64,18 @@ textarea { resize: vertical; }
   .card-layout { grid-template-columns: 1fr; }
   .masthead {
     display: grid;
-    grid-template-columns: auto auto;
-    justify-content: center;
+    grid-template-columns: 1fr auto;
+    justify-content: stretch;
     gap: .65rem .8rem;
     height: auto;
     min-height: 0;
     padding: 1.65rem 1rem 1.1rem;
   }
   .brand { grid-column: 1 / -1; justify-content: center; min-width: 0; }
-  .masthead nav { grid-column: 1 / -1; justify-content: center; gap: .2rem; }
+  .masthead nav { grid-column: 1; grid-row: 2; justify-content: center; gap: .2rem; }
   .masthead nav button { padding: .55rem .75rem; }
-  #account-name { grid-column: 1; grid-row: 3; margin-left: 0; justify-self: end; }
-  #sign-in, #sign-out { grid-column: 2; grid-row: 3; margin-left: 0; justify-self: start; }
+  #account-name { grid-column: 1; grid-row: 2; margin-left: 0; justify-self: end; align-self: center; }
+  #sign-in, #sign-out { grid-column: 2; grid-row: 2; margin-left: 0; justify-self: start; align-self: center; }
 }
 
 @media (display-mode: standalone) {
