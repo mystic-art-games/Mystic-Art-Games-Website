@@ -55,7 +55,7 @@ function cardTypeIcon(card) {
 
 function eventIconColor(terrain) {
   return {
-    Symbiosis: '#784997', Flow: '#428da7', Evergreen: '#68a66c', Radiance: '#e0b52f',
+    Symbiosis: '#9a61b0', Flow: '#6996bf', Evergreen: '#65a838', Radiance: '#e6d65e',
   }[terrain] || '#909592';
 }
 
