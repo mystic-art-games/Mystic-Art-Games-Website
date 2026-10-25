@@ -1,6 +1,7 @@
 // The hosted editor uses the same 750 × 1050 drawing geometry as the local
 // Card Editor. Preview and exported PNG both render onto a 1500 × 2100 canvas.
 const ASSETS = new URL('./assets/', import.meta.url);
+const DEFAULT_ARTWORK = asset('Poseidons_Chosen_One_Comic.png');
 const imageCache = new Map();
 const eventTints = new WeakMap();
 const terrainColors = { Symbiosis: '#784997', Flow: '#428da7', Evergreen: '#68a66c', Radiance: '#e0b52f' };
@@ -54,7 +55,7 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
   const frameName = `Frame_${terrain || 'Event'}.svg`;
   const symbolName = type === 'Event' ? 'Event.png' : `Entity_${terrain || 'Flow'}.png`;
   const [frame, art, symbol] = await Promise.all([
-    loadImage(asset(frameName)), loadImage(artworkUrl), loadImage(asset(symbolName)), fontsReady().catch(() => null),
+    loadImage(asset(frameName)), loadImage(artworkUrl || DEFAULT_ARTWORK), loadImage(asset(symbolName)), fontsReady().catch(() => null),
   ]);
   if (!shouldDraw()) return { cancelled: true };
   if (!frame) throw new Error('The card frame could not be loaded.');
