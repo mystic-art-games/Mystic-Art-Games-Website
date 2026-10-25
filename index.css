@@ -111,10 +111,11 @@ h1 em { color: var(--forest-soft); font-weight: 500; }
   .brand img { width: 82px; }
   .site-nav { flex: 1; justify-content: space-between; gap: 8px; }
   .site-nav > a { justify-content: center; text-align: center; }
+  .theme-label { white-space: nowrap; }
   .site-nav a { font-size: .75rem; }
   .intro { margin-block: 10px; padding: 14px 16px 15px; border-radius: 14px; }
   .intro-copy { display: block; }
-  .intro-copy p { max-width: 34rem; margin: 10px auto 0; text-align: center; }
+  .intro-copy p { max-width: none; margin: 10px auto 0; font-size: .78rem; line-height: 1.42; text-align: center; }
   h1 { font-size: clamp(1.85rem, 8vw, 2.55rem); }
   .games-section { padding: 22px 0 36px; }
   .section-heading { align-items: flex-start; flex-direction: column; gap: 12px; }
