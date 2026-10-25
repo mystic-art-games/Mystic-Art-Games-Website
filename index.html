@@ -21,12 +21,14 @@
   <header class="site-header">
     <div class="shell header-inner">
       <a class="brand" href="./" aria-label="Mystic Art Games home">
-        <img src="images/MysticArtLogoWhiteText_NoBg.png" alt="Mystic Art Games" width="184" height="127">
+        <img class="logo-light" src="images/MysticArtLogoText_NoBg.png" alt="Mystic Art Games" width="184" height="127">
+        <img class="logo-dark" src="images/MysticArtLogoWhiteText_NoBg.png" alt="" width="184" height="127" aria-hidden="true">
       </a>
       <nav class="site-nav" aria-label="Main navigation">
         <a href="#games">Our games</a>
         <a href="about-us.html">About us</a>
         <a href="contact.html">Contact</a>
+        <button class="theme-toggle" id="theme-toggle" type="button" aria-pressed="false">Dark mode</button>
       </nav>
     </div>
   </header>
@@ -105,5 +107,21 @@
       <span class="copyright">© 2026 Mystic Art Games</span>
     </div>
   </footer>
+  <script>
+    const themeToggle = document.getElementById('theme-toggle');
+    const savedTheme = localStorage.getItem('mystic-art-theme');
+    if (savedTheme === 'dark') document.body.classList.add('dark-mode');
+    const syncThemeToggle = () => {
+      const dark = document.body.classList.contains('dark-mode');
+      themeToggle.textContent = dark ? 'Light mode' : 'Dark mode';
+      themeToggle.setAttribute('aria-pressed', String(dark));
+    };
+    syncThemeToggle();
+    themeToggle.addEventListener('click', () => {
+      const dark = document.body.classList.toggle('dark-mode');
+      localStorage.setItem('mystic-art-theme', dark ? 'dark' : 'light');
+      syncThemeToggle();
+    });
+  </script>
 </body>
 </html>
