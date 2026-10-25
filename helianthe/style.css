@@ -12,6 +12,7 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 .brand { display: flex; align-items: center; gap: .65rem; min-width: 230px; }
 .brand-mark { display: block; width: 2.4rem; height: 2.4rem; object-fit: contain; }
 .brand strong { display: block; font: 800 2rem Nunito, Arial, sans-serif; line-height: 1; }
+.header-controls { display: flex; align-items: center; gap: .75rem; flex: 1; min-width: 0; }
 .masthead nav { display: flex; gap: .3rem; }
 .masthead nav button, #sign-out { background: transparent; color: #fff8e8; border-color: transparent; }
 .masthead nav button.active { background: #366150; }
@@ -63,19 +64,26 @@ textarea { resize: vertical; }
   .workspace { grid-template-columns: 1fr; }
   .card-layout { grid-template-columns: 1fr; }
   .masthead {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    justify-content: stretch;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     gap: .65rem .8rem;
     height: auto;
     min-height: 0;
     padding: 1.65rem 1rem 1.1rem;
   }
-  .brand { grid-column: 1 / -1; justify-content: center; min-width: 0; }
-  .masthead nav { grid-column: 1; grid-row: 2; justify-content: center; gap: .2rem; }
+  .brand { justify-content: center; min-width: 0; }
+  .header-controls { width: 100%; flex: none; justify-content: center; gap: .25rem; white-space: nowrap; }
+  .masthead nav { flex: none; justify-content: center; gap: .05rem; }
   .masthead nav button { padding: .55rem .75rem; }
-  #account-name { grid-column: 1; grid-row: 2; margin-left: 0; justify-self: end; align-self: center; }
-  #sign-in, #sign-out { grid-column: 2; grid-row: 2; margin-left: 0; justify-self: start; align-self: center; }
+  #account-name { margin-left: .25rem; }
+  #sign-in, #sign-out { margin-left: .25rem; }
+}
+
+@media (max-width: 430px) {
+  .masthead { padding-inline: .65rem; }
+  .masthead nav button, #sign-in, #sign-out { padding: .5rem .6rem; }
+  .header-controls { gap: .1rem; }
 }
 
 @media (display-mode: standalone) {

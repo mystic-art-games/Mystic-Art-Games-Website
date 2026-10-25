@@ -13,21 +13,23 @@
   <link rel="apple-touch-icon" href="../images/helianthe-home-icon.png">
   <link rel="manifest" href="./manifest.webmanifest">
   <title>Helianthe</title>
-  <link rel="stylesheet" href="./style.css?v=helianthe-ui-2">
+  <link rel="stylesheet" href="./style.css?v=helianthe-ui-3">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script type="module" src="./app.mjs?v=helianthe-ui-2"></script>
 </head>
 <body>
   <header class="masthead">
     <div class="brand"><img class="brand-mark" src="../images/helianthe-sunflower.png" alt=""><div><strong>Helianthe</strong></div></div>
-    <nav id="tabs" hidden aria-label="Editor views">
-      <button type="button" data-tab="cards" class="active">Cards</button>
-      <button type="button" data-tab="decks">Decks</button>
-      <button type="button" data-tab="profiles">Profiles</button>
-    </nav>
-    <span id="account-name" hidden></span>
-    <button id="sign-in" type="button" hidden>Sign in</button>
-    <button id="sign-out" type="button" hidden>Log out</button>
+    <div class="header-controls">
+      <nav id="tabs" hidden aria-label="Editor views">
+        <button type="button" data-tab="cards" class="active">Cards</button>
+        <button type="button" data-tab="decks">Decks</button>
+        <button type="button" data-tab="profiles">Profiles</button>
+      </nav>
+      <span id="account-name" hidden></span>
+      <button id="sign-in" type="button" hidden>Sign in</button>
+      <button id="sign-out" type="button" hidden>Log out</button>
+    </div>
   </header>
 
   <main id="auth-view" class="auth-panel" hidden>
