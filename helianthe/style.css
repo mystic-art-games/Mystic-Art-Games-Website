@@ -16,6 +16,8 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 .masthead nav { display: flex; gap: .3rem; }
 .masthead nav button, #sign-out { background: transparent; color: #fff8e8; border-color: transparent; }
 .masthead nav button.active { background: #366150; }
+.home-link { margin-left: auto; color: #fff8e8; border: 1px solid #749a88; border-radius: 10px; padding: .55rem .8rem; text-decoration: none; white-space: nowrap; }
+.home-link:hover { background: #366150; }
 #sign-out { margin-left: auto; border-color: #749a88; }
 #app-status { min-height: 2.4rem; margin: 0; padding: .55rem 1.5rem; background: #d5e4d9; }
 #app-status.error { background: #f7d7cf; color: #8f3326; }
