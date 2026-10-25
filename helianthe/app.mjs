@@ -414,7 +414,7 @@ for (const filter of document.querySelectorAll('#card-filter-type, #card-filter-
 $('#new-card').addEventListener('click', () => { if (requireAccount()) selectCard(null, { openMobile: true }); });
 $('#close-mobile-editor').addEventListener('click', closeMobileEditor);
 $('#card-form').addEventListener('input', () => { state.cardFormDirty = true; renderPreview(); });
-$('#card-form').elements.card_type.addEventListener('change', () => { if ($('#card-form').elements.card_type.value === 'Event') $('#card-form').elements.terrain.value = ''; syncTerrain(); renderPreview(); });
+$('#card-form').elements.card_type.addEventListener('change', () => { syncTerrain(); renderPreview(); });
 $('#card-artwork').addEventListener('change', event => {
   const file = event.target.files?.[0];
   if (!file) return;

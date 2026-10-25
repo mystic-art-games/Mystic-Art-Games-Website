@@ -99,7 +99,7 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
   canvas.setAttribute('aria-label', `${title}, ${type} card preview`);
   let titleSize = 12;
   for (let size = 56; size >= 12; size--) {
-    ctx.font = `${size}px ${cardFont}`;
+    ctx.font = `700 ${size}px ${cardFont}`;
     if (ctx.measureText(title).width <= 500) { titleSize = size; break; }
   }
   const plate = new Path2D();
@@ -119,7 +119,7 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
     ctx.restore();
   }
   drawTypeIcon(78); drawTypeIcon(672);
-  ctx.font = `${titleSize}px ${cardFont}`;
+  ctx.font = `700 ${titleSize}px ${cardFont}`;
   ctx.fillStyle = type === 'Event' ? '#3b3b3b' : '#123747'; ctx.textAlign = 'center';
   ctx.fillText(title, 375, 105, 500); ctx.textAlign = 'left';
 
