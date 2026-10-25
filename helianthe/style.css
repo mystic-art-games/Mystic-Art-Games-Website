@@ -60,4 +60,20 @@ textarea { resize: vertical; }
 .deck-cards { max-height: 480px; overflow: auto; border-top: 1px solid #d4dbcd; }
 .deck-card-row { display: flex; justify-content: space-between; gap: .8rem; align-items: center; padding: .45rem .2rem; border-bottom: 1px solid #e5e9df; }
 .deck-card-row select { width: 80px; margin: 0; }
-@media (max-width: 850px) { .workspace { grid-template-columns: 1fr; } .card-layout { grid-template-columns: 1fr; } .masthead { height: auto; min-height: 62px; flex-wrap: wrap; gap: .5rem 1rem; } }
+@media (max-width: 850px) {
+  .workspace { grid-template-columns: 1fr; }
+  .card-layout { grid-template-columns: 1fr; }
+  .masthead {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: .65rem .8rem;
+    height: auto;
+    min-height: 0;
+    padding: 1rem 1rem 1.1rem;
+  }
+  .brand { grid-column: 1 / -1; justify-content: center; min-width: 0; }
+  .masthead nav { grid-column: 1 / -1; justify-content: center; gap: .2rem; }
+  .masthead nav button { padding: .55rem .75rem; }
+  .home-link { grid-column: 1; grid-row: 3; margin-left: 0; justify-self: end; }
+  #sign-in, #sign-out { grid-column: 2; grid-row: 3; margin-left: 0; justify-self: start; }
+}
