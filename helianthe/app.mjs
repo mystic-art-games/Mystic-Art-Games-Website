@@ -47,6 +47,12 @@ function ownerName(id) {
   return state.profiles.find(profile => profile.id === id)?.display_name || 'Player';
 }
 
+function cardTypeIcon(card) {
+  if (card.card_type === 'Event') return './assets/Event.png';
+  const terrain = ['Symbiosis', 'Flow', 'Evergreen', 'Radiance'].includes(card.terrain) ? card.terrain : 'Flow';
+  return `./assets/Entity_${terrain}.png`;
+}
+
 function button(label, action, className = '') {
   const element = document.createElement('button');
   element.type = 'button';
@@ -68,9 +74,19 @@ function renderCardList() {
   const list = $('#card-list');
   list.replaceChildren();
   for (const card of state.cards.filter(item => `${item.title} ${item.effect}`.toLocaleLowerCase().includes(query))) {
-    const row = button(card.title, () => selectCard(card), state.card?.id === card.id ? 'selected' : '');
+    const row = button('', () => selectCard(card), `card-list-item${state.card?.id === card.id ? ' selected' : ''}`);
+    row.setAttribute('aria-label', `${card.card_type}: ${card.title}`);
+    const icon = document.createElement('img');
+    icon.className = 'card-type-icon';
+    icon.src = cardTypeIcon(card);
+    icon.alt = '';
+    icon.title = card.card_type;
+    const title = document.createElement('span');
+    title.className = 'card-list-title';
+    title.textContent = card.title;
+    row.append(icon, title);
     const meta = document.createElement('small');
-    meta.textContent = `${card.card_type}${card.terrain ? ` · ${card.terrain}` : ''} · ${ownerName(card.owner_id)}`;
+    meta.textContent = `${card.terrain ? `${card.terrain} · ` : ''}${ownerName(card.owner_id)}`;
     row.append(meta);
     list.append(row);
   }

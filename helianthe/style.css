@@ -39,6 +39,9 @@ textarea { resize: vertical; }
 .item-list button { text-align: left; background: #f7f7ee; border-color: #d9dfd2; }
 .item-list button.selected { background: #dceadd; border-color: #6f9c80; }
 .item-list small { display: block; color: #6b796d; font-size: .76rem; }
+.card-list-item { display: grid; grid-template-columns: 2rem minmax(0, 1fr); column-gap: .55rem; align-items: center; }
+.card-list-item .card-type-icon { grid-row: 1 / span 2; width: 2rem; height: 2rem; object-fit: contain; }
+.card-list-item .card-list-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .card-layout { display: grid; grid-template-columns: minmax(260px, 1fr) minmax(280px, 420px); gap: 1.6rem; }
 .two-cols { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; }
 .card-preview-shell { align-self: start; display: flex; flex-direction: column; align-items: center; gap: .4rem; min-width: 0; }
