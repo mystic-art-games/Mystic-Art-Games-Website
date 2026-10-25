@@ -10,6 +10,7 @@ const state = { user: null, cards: [], decks: [], profiles: [], card: null, deck
 
 function status(message, error = false) {
   const element = $('#app-status');
+  element.hidden = !message && !error;
   element.textContent = message;
   element.classList.toggle('error', error);
 }
@@ -277,7 +278,7 @@ async function loadPublicWorkspace() {
     await selectDeck(state.decks[0] || null);
     if (state.profiles[0]) selectProfile(state.profiles[0]);
     showTab('cards');
-    status('Browsing publicly. Sign in to create cards and decks.');
+    status('');
   } catch (cause) { status(cause.message, true); }
 }
 
