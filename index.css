@@ -20,8 +20,8 @@ a:focus-visible { outline: 3px solid #a67722; outline-offset: 4px; }
 .skip-link { position: absolute; z-index: 20; top: -100px; left: 12px; padding: 10px 16px; background: white; }
 .skip-link:focus { top: 12px; }
 
-.site-header { border-bottom: 1px solid rgba(132, 177, 139, .28); position: relative; z-index: 2; background: linear-gradient(90deg, rgba(26, 70, 53, .98), rgba(12, 43, 34, .98)); box-shadow: 0 5px 22px rgba(0, 19, 13, .2); }
-.header-inner { min-height: 72px; display: flex; justify-content: space-between; align-items: center; gap: 24px; }
+.site-header { height: 84px; border-bottom: 1px solid rgba(132, 177, 139, .28); position: relative; z-index: 2; background: linear-gradient(90deg, rgba(26, 70, 53, .98), rgba(12, 43, 34, .98)); box-shadow: 0 5px 22px rgba(0, 19, 13, .2); }
+.header-inner { height: 100%; display: flex; justify-content: space-between; align-items: center; gap: 24px; }
 .brand { display: block; width: 102px; padding-block: 4px; overflow: hidden; }
 .brand img { width: 102px; height: auto; }
 .site-nav { display: flex; align-items: center; gap: clamp(18px, 3vw, 38px); }
