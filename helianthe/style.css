@@ -13,7 +13,7 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 .brand-mark { display: block; width: 2.4rem; height: 2.4rem; object-fit: contain; }
 .brand strong { display: block; font: 800 2rem Nunito, Arial, sans-serif; line-height: 1; }
 .header-controls { display: flex; align-items: center; gap: .75rem; flex: 1; min-width: 0; }
-.account-controls { display: flex; align-items: center; gap: .55rem; margin-left: auto; padding-left: .85rem; border-left: 1px solid rgba(132, 177, 139, .45); }
+.account-controls { display: flex; align-items: center; gap: .55rem; margin-left: 0; padding-left: .85rem; border-left: 1px solid rgba(132, 177, 139, .45); }
 .theme-control { display: grid; justify-items: center; gap: 3px; margin-left: auto; }
 .theme-label { color: #e5eee0; font-size: .58rem; font-weight: 700; letter-spacing: .08em; line-height: 1; text-transform: uppercase; }
 .theme-toggle { position: relative; display: flex; align-items: center; justify-content: space-between; width: 64px; height: 28px; padding: 0 8px; border: 1px solid rgba(213, 232, 201, .42); border-radius: 999px; background: rgba(213, 232, 201, .08); color: #e5eee0; font-size: .55rem; font-weight: 700; cursor: pointer; transition: background .2s ease, border-color .2s ease; }
