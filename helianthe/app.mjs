@@ -423,6 +423,12 @@ $('#sign-out').addEventListener('click', async () => {
 });
 
 $('#sign-in').addEventListener('click', showSignIn);
+$('#account-name').addEventListener('click', () => {
+  if (!state.user) return;
+  showTab('profiles');
+  const ownProfile = state.profiles.find(profile => profile.id === state.user.id);
+  if (ownProfile) selectProfile(ownProfile);
+});
 $('#close-auth-modal').addEventListener('click', hideSignIn);
 $('#close-auth-dialog').addEventListener('click', hideSignIn);
 $('#browse-without-account').addEventListener('click', loadPublicWorkspace);
