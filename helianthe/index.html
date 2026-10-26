@@ -150,7 +150,7 @@
         <label>Favorite card<select name="favorite_card_id"></select></label>
         <label>Profile photo<input id="profile-avatar" type="file" accept="image/png,image/jpeg,image/webp"></label>
         <p class="hint">The photo is cropped to a square and automatically compressed before upload.</p>
-        <button type="submit">Save profile</button>
+        <div class="profile-save-actions"><button type="submit">Save profile</button><span id="profile-save-status" class="profile-save-status" role="status" hidden>Saved ✓</span></div>
       </form>
       <p id="profile-bio"></p>
       <p id="profile-favorite-card" class="profile-favorite-card"></p>

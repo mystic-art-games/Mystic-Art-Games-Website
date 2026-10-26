@@ -12,6 +12,7 @@ const api = createCommunityApi(client);
 const ADMIN_EMAIL = 'dominik.zielinski3@gmail.com';
 const ADMIN_USER_ID = '7422e970-f1c1-4618-aa73-ea191d97e141';
 let authMode = 'sign-in';
+let profileSaveStatusTimer = null;
 const state = { user: null, isAdmin: false, cards: [], decks: [], profiles: [], card: null, deck: null, profile: null, deckCards: [], deckPreviewCard: null, deckPreviewArtworkUrl: null, deckPreviewSerial: 0, artworkUrl: null, artworkSerial: 0, renderSerial: 0, authVersion: 0, realtimeChannel: null, cardFormDirty: false };
 const ARTWORK_UPLOAD_LIMIT = 100 * 1024;
 const AVATAR_UPLOAD_LIMIT = 80 * 1024;
@@ -597,7 +598,14 @@ function selectProfile(profile) {
 async function reloadCollections() {
   [state.cards, state.decks, state.profiles] = await Promise.all([api.listCards(), api.listDecks(), api.listProfiles()]);
   refreshCardAuthorFilter();
-  renderCardList(); renderDeckList(); renderProfileList();
+  renderCardList(); renderDeckList(); renderDeckCards(); renderProfileList();
+}
+
+function showProfileSaveStatus() {
+  const statusElement = $('#profile-save-status');
+  statusElement.hidden = false;
+  clearTimeout(profileSaveStatusTimer);
+  profileSaveStatusTimer = setTimeout(() => { statusElement.hidden = true; }, 2600);
 }
 
 function startRealtimeSync() {
@@ -903,11 +911,17 @@ $('#profile-form').addEventListener('submit', async event => {
     renderAccountButton(ownProfile);
     $('#profile-avatar').value = '';
     if (uploadedAvatar && previousAvatarId && previousAvatarId !== uploadedAvatar.id) await api.deleteArtwork(previousAvatarId).catch(console.error);
+    showProfileSaveStatus();
     status('Profile saved.');
   } catch (cause) {
     if (uploadedAvatar) await api.deleteArtwork(uploadedAvatar.id).catch(console.error);
     status(cause.message, true);
   }
+});
+
+$('#profile-form').addEventListener('input', () => {
+  $('#profile-save-status').hidden = true;
+  clearTimeout(profileSaveStatusTimer);
 });
 
 client.auth.onAuthStateChange((event, session) => {
