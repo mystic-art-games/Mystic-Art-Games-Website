@@ -73,6 +73,15 @@ function selectedAuthorIds(container) {
   return [...container.querySelectorAll('input:checked')].map(input => input.value);
 }
 
+function cardTypeIconElement(card) {
+  const icon = card.card_type === 'Event' ? document.createElement('span') : document.createElement('img');
+  icon.className = `card-type-icon${card.card_type === 'Event' ? ' event-type-icon' : ''}`;
+  if (card.card_type === 'Event') icon.style.setProperty('--event-icon-color', eventIconColor(card.terrain));
+  else { icon.src = cardTypeIcon(card); icon.alt = ''; }
+  icon.title = card.card_type;
+  return icon;
+}
+
 function cardTypeIcon(card) {
   if (card.card_type === 'Event') return './assets/Event.png';
   const terrain = ['Symbiosis', 'Flow', 'Evergreen', 'Radiance'].includes(card.terrain) ? card.terrain : 'Flow';
@@ -149,11 +158,7 @@ function renderCardList() {
   })) {
     const row = button('', () => selectCard(card, { openMobile: true }), `card-list-item${state.card?.id === card.id ? ' selected' : ''}`);
     row.setAttribute('aria-label', `${card.card_type}: ${card.title}`);
-    const icon = card.card_type === 'Event' ? document.createElement('span') : document.createElement('img');
-    icon.className = `card-type-icon${card.card_type === 'Event' ? ' event-type-icon' : ''}`;
-    if (card.card_type === 'Event') icon.style.setProperty('--event-icon-color', eventIconColor(card.terrain));
-    else { icon.src = cardTypeIcon(card); icon.alt = ''; }
-    icon.title = card.card_type;
+    const icon = cardTypeIconElement(card);
     const title = document.createElement('span');
     title.className = `card-list-title ${terrainClass(card.terrain)}`;
     title.textContent = card.title;
@@ -297,9 +302,11 @@ function renderDeckCards() {
   for (const card of state.cards) {
     const copies = state.deckCards.find(item => item.card_id === card.id)?.copies || 0;
     if (!mine && !copies) continue;
-    const row = document.createElement('div'); row.className = 'deck-card-row';
-    const label = document.createElement('span'); label.textContent = `${card.title} · ${card.card_type}${card.terrain ? ` · ${card.terrain}` : ''}`;
-    row.append(label);
+    const row = document.createElement('div'); row.className = 'card-list-item deck-card-row';
+    row.append(cardTypeIconElement(card));
+    const label = document.createElement('span'); label.className = `card-list-title ${terrainClass(card.terrain)}`; label.textContent = card.title;
+    const author = document.createElement('small'); author.className = 'card-list-owner'; author.textContent = authorNames(card.author_ids, card.owner_id).join(', ');
+    row.append(label, author);
     if (mine) {
       const select = document.createElement('select');
       select.setAttribute('aria-label', `Copies of ${card.title}`);
