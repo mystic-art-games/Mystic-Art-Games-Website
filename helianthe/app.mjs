@@ -49,6 +49,29 @@ function ownerName(id) {
   return state.profiles.find(profile => profile.id === id)?.display_name || 'Player';
 }
 
+function authorNames(ids, fallbackId) {
+  const profileIds = Array.isArray(ids) && ids.length ? ids : (fallbackId ? [fallbackId] : []);
+  return profileIds.map(id => ownerName(id)).filter(Boolean);
+}
+
+function renderAuthorOptions(container, selectedIds) {
+  container.replaceChildren();
+  for (const profile of state.profiles) {
+    const label = document.createElement('label');
+    label.className = 'author-option';
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.value = profile.id;
+    input.checked = selectedIds.includes(profile.id);
+    label.append(input, document.createTextNode(profile.display_name || 'Player'));
+    container.append(label);
+  }
+}
+
+function selectedAuthorIds(container) {
+  return [...container.querySelectorAll('input:checked')].map(input => input.value);
+}
+
 function cardTypeIcon(card) {
   if (card.card_type === 'Event') return './assets/Event.png';
   const terrain = ['Symbiosis', 'Flow', 'Evergreen', 'Radiance'].includes(card.terrain) ? card.terrain : 'Flow';
@@ -84,7 +107,7 @@ function showTab(name) {
 function refreshCardAuthorFilter() {
   const select = $('#card-filter-author');
   const current = select.value;
-  const authors = [...new Set(state.cards.map(card => ownerName(card.owner_id)))].sort((a, b) => a.localeCompare(b));
+  const authors = [...new Set(state.cards.flatMap(card => authorNames(card.author_ids, card.owner_id)))].sort((a, b) => a.localeCompare(b));
   select.replaceChildren(new Option('All authors', ''));
   for (const author of authors) select.append(new Option(author, author));
   select.value = authors.includes(current) ? current : '';
@@ -100,7 +123,7 @@ function renderCardList() {
   for (const card of state.cards.filter(item => {
     const matchesSearch = `${item.title} ${item.effect}`.toLocaleLowerCase().includes(query);
     const matchesType = !type || item.card_type === type;
-    const matchesAuthor = !author || ownerName(item.owner_id) === author;
+    const matchesAuthor = !author || authorNames(item.author_ids, item.owner_id).includes(author);
     const matchesTerrain = !terrain || (terrain === 'none' ? !item.terrain : item.terrain === terrain);
     return matchesSearch && matchesType && matchesAuthor && matchesTerrain;
   })) {
@@ -116,7 +139,7 @@ function renderCardList() {
     title.textContent = card.title;
     row.append(icon, title);
     const meta = document.createElement('small');
-    meta.textContent = ownerName(card.owner_id);
+    meta.textContent = authorNames(card.author_ids, card.owner_id).join(', ');
     meta.className = 'card-list-owner';
     row.append(meta);
     list.append(row);
@@ -186,7 +209,7 @@ function renderPreview() {
     card_type: form.elements.card_type.value,
     terrain: form.elements.terrain.value,
     effect: form.elements.effect.value,
-    author: form.elements.author.value,
+    author: authorNames(selectedAuthorIds($('#card-author-options')), state.user?.id).join(', '),
   };
   $('#download-png').disabled = true;
   void renderCard($('#card-canvas'), card, state.artworkUrl || '', () => serial === state.renderSerial)
@@ -209,7 +232,7 @@ function selectCard(card, { openMobile = false } = {}) {
   form.elements.card_type.value = card?.card_type || 'Entity';
   form.elements.terrain.value = card?.terrain || (card?.card_type === 'Event' ? '' : 'Symbiosis');
   form.elements.effect.value = card?.effect || '';
-  form.elements.author.value = card?.author || '';
+  renderAuthorOptions($('#card-author-options'), card?.author_ids || (card?.owner_id ? [card.owner_id] : [state.user?.id].filter(Boolean)));
   $('#card-heading').textContent = card?.title || 'New card';
   const mine = Boolean(state.user && card?.owner_id === state.user.id);
   $('#card-owner').textContent = card ? (mine ? 'Your card' : `By ${ownerName(card.owner_id)}`) : (state.user ? 'Your new card' : 'Sign in to create a card');
@@ -239,7 +262,7 @@ function renderDeckList() {
     title.textContent = deck.name;
     const meta = document.createElement('small');
     meta.className = 'deck-list-owner';
-    meta.textContent = ownerName(deck.owner_id);
+    meta.textContent = authorNames(deck.author_ids, deck.owner_id).join(', ');
     row.append(title, meta);
     list.append(row);
   }
@@ -288,11 +311,11 @@ async function selectDeck(deck) {
   form.reset();
   form.elements.name.value = deck?.name || '';
   form.elements.patron_name.value = deck?.patron_name || '';
-  form.elements.is_public.checked = deck?.is_public || false;
+  renderAuthorOptions($('#deck-author-options'), deck?.author_ids || (deck?.owner_id ? [deck.owner_id] : [state.user?.id].filter(Boolean)));
   const mine = Boolean(state.user && (!deck || deck.owner_id === state.user.id));
   for (const field of form.querySelectorAll('input,button')) field.disabled = !mine;
   $('#deck-heading').textContent = deck?.name || 'New deck';
-  $('#deck-owner').textContent = deck ? (mine ? 'Your deck' : `By ${ownerName(deck.owner_id)}`) : (state.user ? 'Private by default' : 'Sign in to create a deck');
+  $('#deck-owner').textContent = deck ? (mine ? 'Your deck' : `By ${ownerName(deck.owner_id)}`) : (state.user ? 'Your new deck' : 'Sign in to create a deck');
   state.deckCards = deck ? await api.listDeckCards(deck.id) : [];
   renderDeckList();
   renderDeckCards();
@@ -514,6 +537,8 @@ $('#card-form').addEventListener('submit', async event => {
   let cleanupWarning = '';
   try {
     const values = Object.fromEntries(new FormData(form));
+    values.author_ids = selectedAuthorIds($('#card-author-options'));
+    values.author = authorNames(values.author_ids, state.user?.id).join(', ');
     const sourceFile = $('#card-artwork').files?.[0];
     const file = sourceFile ? await compressedArtwork(sourceFile) : null;
     const previousArtworkId = state.card?.artwork_id || null;
@@ -554,7 +579,7 @@ $('#deck-form').addEventListener('submit', async event => {
   const form = event.currentTarget;
   const save = $('#save-deck'); save.disabled = true;
   try {
-    const values = { ...Object.fromEntries(new FormData(form)), is_public: true };
+    const values = { ...Object.fromEntries(new FormData(form)), is_public: true, author_ids: selectedAuthorIds($('#deck-author-options')) };
     const wasNew = !state.deck;
     const deck = state.deck ? await api.saveDeck(state.user.id, state.deck.id, values) : await api.createDeck(state.user.id, values);
     await reloadCollections();

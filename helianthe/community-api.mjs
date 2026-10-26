@@ -24,13 +24,14 @@ export function cardInput(form) {
     title, card_type, terrain,
     effect: text(form.effect, 6000),
     author: text(form.author, 500),
+    author_ids: Array.isArray(form.author_ids) ? form.author_ids : [],
   };
 }
 
 export function deckInput(form) {
   const name = text(form.name, 100);
   if (!name) throw new Error('Deck name is required.');
-  return { name, patron_name: text(form.patron_name, 200), is_public: true };
+  return { name, patron_name: text(form.patron_name, 200), is_public: true, author_ids: Array.isArray(form.author_ids) ? form.author_ids : [] };
 }
 
 export function createCommunityApi(client) {
@@ -69,7 +70,12 @@ export function createCommunityApi(client) {
     },
 
     async listCards() {
-      return result(await client.from('cards').select('id,owner_id,source_path,title,polish_name,card_type,terrain,effect,author,artwork_id,legacy_image_ref,updated_at').order('title', { ascending: true }));
+      try {
+        return result(await client.from('cards').select('id,owner_id,source_path,title,polish_name,card_type,terrain,effect,author,author_ids,artwork_id,legacy_image_ref,updated_at').order('title', { ascending: true }));
+      } catch {
+        const cards = result(await client.from('cards').select('id,owner_id,source_path,title,polish_name,card_type,terrain,effect,author,artwork_id,legacy_image_ref,updated_at').order('title', { ascending: true }));
+        return cards.map(card => ({ ...card, author_ids: card.owner_id ? [card.owner_id] : [] }));
+      }
     },
 
     async createCard(userId, values) {
@@ -90,7 +96,12 @@ export function createCommunityApi(client) {
     },
 
     async listDecks() {
-      return result(await client.from('decks').select('id,owner_id,name,patron_name,is_public,created_at,updated_at').order('created_at', { ascending: false }));
+      try {
+        return result(await client.from('decks').select('id,owner_id,name,patron_name,author_ids,is_public,created_at,updated_at').order('created_at', { ascending: false }));
+      } catch {
+        const decks = result(await client.from('decks').select('id,owner_id,name,patron_name,is_public,created_at,updated_at').order('created_at', { ascending: false }));
+        return decks.map(deck => ({ ...deck, author_ids: deck.owner_id ? [deck.owner_id] : [] }));
+      }
     },
 
     async createDeck(userId, values) {

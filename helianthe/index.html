@@ -80,7 +80,7 @@
           <label>Title<input name="title" required maxlength="200"></label>
           <div class="two-cols"><label>Type<select name="card_type"><option>Entity</option><option>Event</option></select></label><label>Terrain<select name="terrain"><option value="">None</option><option>Symbiosis</option><option>Flow</option><option>Evergreen</option><option>Radiance</option></select></label></div>
           <label>Effect<textarea name="effect" rows="7" maxlength="6000"></textarea></label>
-          <label>Author<input name="author" maxlength="500"></label>
+        <fieldset class="author-picker"><legend>Authors</legend><div id="card-author-options"></div></fieldset>
           <label>Artwork<input id="card-artwork" type="file" accept="image/png,image/jpeg,image/webp"></label>
           <p class="hint">Artwork is automatically compressed to 100 KB before upload. Source files can be up to 20 MB. Cards are publicly visible; only their creator or the designated administrator can edit them.</p>
           <button id="save-card" type="submit">Save card</button>
@@ -104,6 +104,7 @@
       <div class="panel-head"><h2 id="deck-heading">Select a deck</h2><span id="deck-owner" class="tag"></span></div>
       <form id="deck-form">
         <div class="two-cols"><label>Deck name<input name="name" required maxlength="100"></label><label>Patron<input name="patron_name" maxlength="200" placeholder="Optional"></label></div>
+        <fieldset class="author-picker"><legend>Authors</legend><div id="deck-author-options"></div></fieldset>
         <p class="hint">All decks are public and visible to other players.</p>
         <button id="save-deck" type="submit">Save deck</button>
       </form>
@@ -121,7 +122,6 @@
       <div class="panel-head"><h2 id="profile-heading">Select a player</h2></div>
       <form id="profile-form" hidden>
         <label>Display name<input name="display_name" required minlength="2" maxlength="60" autocomplete="nickname"></label>
-        <p class="form-hint">Choose the name other players will see for your cards, decks, and profile.</p>
         <label>Bio<textarea name="bio" rows="3" maxlength="500"></textarea></label>
         <button type="submit">Save profile</button>
       </form>
