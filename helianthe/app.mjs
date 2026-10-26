@@ -4,7 +4,9 @@ import { renderCard, downloadCardPNG } from './card-renderer.mjs';
 
 const $ = selector => document.querySelector(selector);
 if (!window.supabase?.createClient) throw new Error('The Supabase client could not be loaded.');
-const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false },
+});
 const api = createCommunityApi(client);
 const ADMIN_EMAIL = 'dominik.zielinski3@gmail.com';
 const ADMIN_USER_ID = '7422e970-f1c1-4618-aa73-ea191d97e141';
@@ -377,13 +379,24 @@ async function loadWorkspace() {
     await selectDeck(state.decks.find(deck => deck.owner_id === user.id) || state.decks[0] || null);
     const profile = state.profiles.find(profile => profile.id === user.id) || state.profiles[0];
     selectProfile(profile);
-    $('#account-name').textContent = profile?.display_name || user.email || 'Profile';
+    $('#account-name').textContent = profile?.display_name || 'Profile';
     $('#account-name').hidden = false;
     showTab('cards');
     status('Ready.');
   } catch (cause) {
     console.error(cause);
-    await loadPublicWorkspace();
+    if (state.user) {
+      hideSignIn();
+      $('#auth-view').hidden = true;
+      $('#tabs').hidden = false;
+      $('#sign-in').hidden = true;
+      $('#sign-out').hidden = false;
+      $('#account-name').textContent = state.profiles.find(profile => profile.id === state.user.id)?.display_name || 'Profile';
+      $('#account-name').hidden = false;
+      status('Your session is active, but some workspace data could not be loaded.', true);
+    } else {
+      await loadPublicWorkspace();
+    }
   }
 }
 
