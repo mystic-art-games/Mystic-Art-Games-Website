@@ -289,7 +289,21 @@ async function selectDeck(deck) {
 function renderProfileList() {
   const list = $('#profile-list');
   list.replaceChildren();
-  for (const profile of state.profiles) list.append(button(profile.display_name || 'Player', () => selectProfile(profile), state.profile?.id === profile.id ? 'selected' : ''));
+  const ownProfile = state.profiles.find(profile => profile.id === state.user?.id);
+  const otherProfiles = state.profiles.filter(profile => profile.id !== state.user?.id);
+  const addGroup = (label, profiles, className = '') => {
+    if (!profiles.length) return;
+    const heading = document.createElement('div');
+    heading.className = 'profile-group-title';
+    heading.textContent = label;
+    list.append(heading);
+    for (const profile of profiles) {
+      const classes = [className, state.profile?.id === profile.id ? 'selected' : ''].filter(Boolean).join(' ');
+      list.append(button(profile.display_name || 'Player', () => selectProfile(profile), classes));
+    }
+  };
+  addGroup('Your profile', ownProfile ? [ownProfile] : [], 'profile-own');
+  addGroup('Other profiles', otherProfiles);
 }
 
 function selectProfile(profile) {

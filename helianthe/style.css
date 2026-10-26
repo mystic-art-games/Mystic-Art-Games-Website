@@ -50,6 +50,9 @@ textarea { resize: vertical; }
 .panel-head h1, .panel-head h2 { margin: .2rem 0 .8rem; font-size: 1.7rem; }
 .tag { font-size: .82rem; color: #50705e; }
 .item-list { display: flex; flex-direction: column; gap: .35rem; margin-top: .8rem; }
+.profile-group-title { margin-top: .9rem; color: #50705e; font-size: .78rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+.profile-group-title:first-child { margin-top: .2rem; }
+.profile-own { background: #e0ebda !important; border-color: #8eae91 !important; box-shadow: inset 3px 0 #265847; font-weight: 800; }
 .card-filters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .45rem; margin-top: .65rem; }
 .card-filters label { margin: 0; color: #5a6e64; font-size: .78rem; font-weight: 700; }
 .card-filters select { margin-top: .2rem; padding: .45rem .4rem; font-size: .82rem; }
