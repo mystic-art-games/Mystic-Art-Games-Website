@@ -354,7 +354,7 @@ function selectProfile(profile) {
   for (const deck of state.decks.filter(item => item.owner_id === profile.id && item.is_public)) {
     list.append(button(deck.name, () => { showTab('decks'); void selectDeck(deck); }));
   }
-  if (!list.childElementCount) list.textContent = 'No public decks yet.';
+  if (!list.childElementCount) list.textContent = 'No decks yet.';
   renderProfileList();
 }
 
