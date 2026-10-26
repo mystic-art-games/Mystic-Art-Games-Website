@@ -235,7 +235,7 @@ function renderDeckList() {
   for (const deck of state.decks) {
     const row = button(deck.name, () => void selectDeck(deck), state.deck?.id === deck.id ? 'selected' : '');
     const meta = document.createElement('small');
-    meta.textContent = `${deck.is_public ? 'Public' : 'Private'} · ${ownerName(deck.owner_id)}`;
+    meta.textContent = `${deck.is_public ? 'Public' : 'Private'} · By ${ownerName(deck.owner_id)}`;
     row.append(meta);
     list.append(row);
   }
