@@ -31,6 +31,7 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 .auth-modal-card h1 { margin: 0; font-size: 2rem; }
 .auth-modal-close { flex: 0 0 auto; padding: .15rem .55rem; border: 0; background: transparent; font-size: 1.7rem; line-height: 1; }
 .auth-modal-close:hover:not(:disabled) { background: #e0ebda; }
+.auth-error { margin: 1rem 0 -.5rem; color: #a23d35; font-size: .9rem; font-weight: 700; }
 body.auth-modal-open { overflow: hidden; }
 form label { display: block; margin: .65rem 0; font-weight: 700; }
 input:not([type=checkbox]):not([type=file]), select, textarea { display: block; width: 100%; min-width: 0; margin-top: .25rem; border: 1px solid #a4b6a5; background: #fffefa; color: #163737; border-radius: 8px; padding: .6rem .7rem; }

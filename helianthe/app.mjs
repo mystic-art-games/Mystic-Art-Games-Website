@@ -128,6 +128,8 @@ function setCardFormEditable(canEdit) {
 
 function showSignIn() {
   $('#auth-modal').hidden = false;
+  $('#auth-error-message').hidden = true;
+  $('#auth-error-message').textContent = '';
   document.body.classList.add('auth-modal-open');
   $('#auth-modal-form').elements.email.focus();
   status('Sign in or create an account to contribute.');
@@ -388,8 +390,11 @@ async function submitAuthForm(event) {
   const form = event.currentTarget;
   status('Signing in…');
   const { error } = await client.auth.signInWithPassword({ email: form.elements.email.value.trim(), password: form.elements.password.value });
-  if (error) status(error.message, true);
-  else await loadWorkspace();
+  if (error) {
+    const message = 'No account was found for this email address, or the password is incorrect.';
+    $('#auth-error-message').textContent = message;
+    $('#auth-error-message').hidden = false;
+  } else await loadWorkspace();
 }
 
 $('#auth-form').addEventListener('submit', submitAuthForm);
