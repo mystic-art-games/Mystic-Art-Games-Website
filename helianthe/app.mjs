@@ -127,10 +127,15 @@ function setCardFormEditable(canEdit) {
 }
 
 function showSignIn() {
-  $('#auth-view').hidden = false;
-  for (const tab of ['cards', 'decks', 'profiles']) $(`#${tab}-view`).hidden = true;
-  $('#tabs').hidden = true;
+  $('#auth-modal').hidden = false;
+  document.body.classList.add('auth-modal-open');
+  $('#auth-modal-form').elements.email.focus();
   status('Sign in or create an account to contribute.');
+}
+
+function hideSignIn() {
+  $('#auth-modal').hidden = true;
+  document.body.classList.remove('auth-modal-open');
 }
 
 function requireAccount() {
@@ -340,6 +345,7 @@ async function loadWorkspace() {
     startRealtimeSync();
     if (version !== state.authVersion) return;
     $('#auth-view').hidden = true;
+    hideSignIn();
     $('#tabs').hidden = false;
     $('#sign-in').hidden = true;
     $('#sign-out').hidden = false;
@@ -377,17 +383,20 @@ async function loadPublicWorkspace() {
   } catch (cause) { console.error(cause); showSignIn(); }
 }
 
-$('#auth-form').addEventListener('submit', async event => {
+async function submitAuthForm(event) {
   event.preventDefault();
   const form = event.currentTarget;
   status('Signing in…');
   const { error } = await client.auth.signInWithPassword({ email: form.elements.email.value.trim(), password: form.elements.password.value });
   if (error) status(error.message, true);
   else await loadWorkspace();
-});
+}
 
-$('#sign-up').addEventListener('click', async () => {
-  const form = $('#auth-form');
+$('#auth-form').addEventListener('submit', submitAuthForm);
+$('#auth-modal-form').addEventListener('submit', submitAuthForm);
+
+async function submitSignUp() {
+  const form = document.activeElement?.form?.id === 'auth-modal-form' ? $('#auth-modal-form') : $('#auth-form');
   if (!form.reportValidity()) return;
   status('Creating account…');
   const { data, error } = await client.auth.signUp({
@@ -397,7 +406,10 @@ $('#sign-up').addEventListener('click', async () => {
   if (error) status(error.message, true);
   else if (data.session) await loadWorkspace();
   else status('Account created. Check your email to confirm it, then sign in.');
-});
+}
+
+$('#sign-up').addEventListener('click', submitSignUp);
+$('#modal-sign-up').addEventListener('click', submitSignUp);
 
 $('#sign-out').addEventListener('click', async () => {
   const { error } = await client.auth.signOut();
@@ -406,6 +418,8 @@ $('#sign-out').addEventListener('click', async () => {
 });
 
 $('#sign-in').addEventListener('click', showSignIn);
+$('#close-auth-modal').addEventListener('click', hideSignIn);
+$('#close-auth-dialog').addEventListener('click', hideSignIn);
 $('#browse-without-account').addEventListener('click', loadPublicWorkspace);
 
 for (const tab of $('#tabs').querySelectorAll('button[data-tab]')) tab.addEventListener('click', () => showTab(tab.dataset.tab));
