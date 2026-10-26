@@ -57,6 +57,7 @@ textarea { resize: vertical; }
 .panel { background: #fffdf5; border: 1px solid #c4cebc; border-radius: 14px; padding: 1rem; min-width: 0; }
 .panel-head { display: flex; justify-content: space-between; align-items: center; gap: .7rem; }
 .panel-head h1, .panel-head h2 { margin: .2rem 0 .8rem; font-size: 1.7rem; }
+#profile-heading { display: flex; align-items: center; gap: .6rem; }
 .tag { display: inline-flex; align-items: center; gap: .35rem; font-size: .82rem; color: #50705e; }
 .item-list { display: flex; flex-direction: column; gap: .35rem; margin-top: .8rem; }
 .profile-group-title { margin-top: .9rem; color: #50705e; font-size: .78rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
