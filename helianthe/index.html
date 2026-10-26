@@ -13,9 +13,9 @@
   <link rel="apple-touch-icon" href="../images/helianthe-home-icon.png">
   <link rel="manifest" href="./manifest.webmanifest">
   <title>Helianthe</title>
-  <link rel="stylesheet" href="./style.css?v=helianthe-ui-23">
+  <link rel="stylesheet" href="./style.css?v=helianthe-ui-24">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script type="module" src="./app.mjs?v=helianthe-ui-23"></script>
+  <script type="module" src="./app.mjs?v=helianthe-ui-24"></script>
 </head>
 <body>
   <header class="masthead">
@@ -59,6 +59,8 @@
           <label>Display name<input name="display_name" autocomplete="nickname" minlength="2" maxlength="60"></label>
           <label>Bio<textarea name="bio" rows="3" maxlength="500"></textarea></label>
           <label>Favorite card<select name="favorite_card_id"></select></label>
+          <label>Profile photo<input id="sign-up-avatar" type="file" accept="image/png,image/jpeg,image/webp"></label>
+          <p class="hint">The photo is cropped to a square and uploaded after your first confirmed sign-in in this browser.</p>
         </div>
         <p id="auth-error-message" class="auth-error" role="alert" hidden></p>
         <div class="actions"><button id="auth-submit" type="submit">Sign in</button><button id="auth-mode-toggle" type="button">Create account</button></div>
@@ -139,6 +141,8 @@
         <label>Display name<input name="display_name" required minlength="2" maxlength="60" autocomplete="nickname"></label>
         <label>Bio<textarea name="bio" rows="3" maxlength="500"></textarea></label>
         <label>Favorite card<select name="favorite_card_id"></select></label>
+        <label>Profile photo<input id="profile-avatar" type="file" accept="image/png,image/jpeg,image/webp"></label>
+        <p class="hint">The photo is cropped to a square and automatically compressed before upload.</p>
         <button type="submit">Save profile</button>
       </form>
       <p id="profile-bio"></p>

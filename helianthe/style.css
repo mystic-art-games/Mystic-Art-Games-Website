@@ -14,7 +14,7 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 .brand strong { display: block; font: 800 2rem Nunito, Arial, sans-serif; line-height: 1; }
 .header-controls { display: flex; align-items: center; gap: .75rem; flex: 1; min-width: 0; }
 .account-controls { display: flex; align-items: center; gap: .55rem; margin-left: auto; padding-left: .85rem; border-left: 1px solid rgba(132, 177, 139, .45); }
-#account-name { text-align: right; }
+#account-name { display: inline-flex; align-items: center; gap: .45rem; text-align: right; }
 .masthead nav { display: flex; gap: .3rem; }
 .masthead nav button, #sign-out { background: transparent; color: #fff8e8; border-color: transparent; }
 .masthead nav button.active { background: #366150; }
@@ -49,13 +49,22 @@ textarea { resize: vertical; }
 .panel { background: #fffdf5; border: 1px solid #c4cebc; border-radius: 14px; padding: 1rem; min-width: 0; }
 .panel-head { display: flex; justify-content: space-between; align-items: center; gap: .7rem; }
 .panel-head h1, .panel-head h2 { margin: .2rem 0 .8rem; font-size: 1.7rem; }
-.tag { font-size: .82rem; color: #50705e; }
+.tag { display: inline-flex; align-items: center; gap: .35rem; font-size: .82rem; color: #50705e; }
 .item-list { display: flex; flex-direction: column; gap: .35rem; margin-top: .8rem; }
 .profile-group-title { margin-top: .9rem; color: #50705e; font-size: .78rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
 .profile-group-title:first-child { margin-top: .2rem; }
 .profile-list-entry { display: flex; flex-direction: column; gap: .15rem; }
+.profile-list-main { display: flex; align-items: center; gap: .55rem; min-width: 0; }
+.profile-list-copy { display: flex; flex-direction: column; min-width: 0; }
 .profile-list-entry small { color: #5a6e64; font-size: .76rem; font-weight: 500; }
 .profile-favorite-card { color: #456151; font-weight: 700; }
+.user-avatar { position: relative; display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; width: 2rem; height: 2rem; overflow: hidden; border: 1px solid #8eaa98; border-radius: 50%; background: #dceadd; color: #315f4b; font-size: .82rem; font-weight: 800; line-height: 1; vertical-align: middle; }
+.user-avatar.small { width: 1.25rem; height: 1.25rem; font-size: .62rem; }
+.user-avatar.header-avatar { width: 1.65rem; height: 1.65rem; border-color: #91b8a2; }
+.user-avatar img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.user-avatar.has-image { color: transparent; }
+.author-display { display: inline-flex; flex-wrap: wrap; justify-content: flex-end; gap: .2rem .45rem; min-width: 0; }
+.author-person { display: inline-flex; align-items: center; gap: .25rem; min-width: 0; white-space: nowrap; }
 .profile-decks-head { display: flex; align-items: center; justify-content: space-between; gap: .75rem; margin-top: 1rem; }
 .profile-decks-head h3 { margin: 0; }
 #profile-new-deck { background: #265847; color: white; border-color: #265847; }
@@ -76,10 +85,10 @@ textarea { resize: vertical; }
 .card-list-item .card-type-icon { grid-column: 1; grid-row: 1; width: 2rem; height: 2rem; object-fit: contain; }
 .card-list-item .event-type-icon { background: var(--event-icon-color); -webkit-mask: url('./assets/Event.png') center / contain no-repeat; mask: url('./assets/Event.png') center / contain no-repeat; }
 .card-list-item .card-list-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
-.card-list-item .card-list-owner { grid-column: 3; grid-row: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; }
+.card-list-item .card-list-owner { grid-column: 3; grid-row: 1; display: flex; justify-content: flex-end; min-width: 0; overflow: hidden; text-align: right; }
 .deck-list-item { display: grid; grid-template-columns: minmax(0, 1fr) minmax(5.5rem, auto); column-gap: .55rem; align-items: center; }
 .deck-list-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
-.deck-list-owner { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; }
+.deck-list-owner { display: flex; justify-content: flex-end; min-width: 0; overflow: hidden; text-align: right; }
 .card-list-title.terrain-symbiosis { color: #784997; }
 .card-list-title.terrain-flow { color: #35758e; }
 .card-list-title.terrain-evergreen { color: #488057; }

@@ -14,6 +14,7 @@ const ADMIN_USER_ID = '7422e970-f1c1-4618-aa73-ea191d97e141';
 let authMode = 'sign-in';
 const state = { user: null, isAdmin: false, cards: [], decks: [], profiles: [], card: null, deck: null, profile: null, deckCards: [], deckPreviewCard: null, deckPreviewArtworkUrl: null, deckPreviewSerial: 0, artworkUrl: null, artworkSerial: 0, renderSerial: 0, authVersion: 0, realtimeChannel: null, cardFormDirty: false };
 const ARTWORK_UPLOAD_LIMIT = 100 * 1024;
+const AVATAR_UPLOAD_LIMIT = 80 * 1024;
 
 async function compressedArtwork(file) {
   if (!file) return null;
@@ -42,6 +43,49 @@ async function compressedArtwork(file) {
   throw new Error('Artwork could not be compressed below 100 KB.');
 }
 
+async function compressedAvatar(file) {
+  if (!file) return null;
+  if (file.size > 10 * 1024 * 1024) throw new Error('Profile photo must be 10 MB or smaller before compression.');
+  const image = await createImageBitmap(file);
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 256;
+    const context = canvas.getContext('2d', { alpha: false });
+    const sourceSize = Math.min(image.width, image.height);
+    const sourceX = (image.width - sourceSize) / 2;
+    const sourceY = (image.height - sourceSize) / 2;
+    context.fillStyle = '#fffdf5';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.drawImage(image, sourceX, sourceY, sourceSize, sourceSize, 0, 0, canvas.width, canvas.height);
+    for (const quality of [0.86, 0.76, 0.66, 0.56, 0.46]) {
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/webp', quality));
+      if (blob && blob.size <= AVATAR_UPLOAD_LIMIT) return new File([blob], 'profile-photo.webp', { type: 'image/webp' });
+    }
+  } finally { image.close(); }
+  throw new Error('Profile photo could not be compressed below 80 KB.');
+}
+
+function fileDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error('Could not prepare the profile photo.'));
+    reader.readAsDataURL(file);
+  });
+}
+
+function fileFromDataUrl(dataUrl) {
+  const [header, encoded] = dataUrl.split(',');
+  const type = header.match(/^data:([^;]+);base64$/)?.[1] || 'image/webp';
+  const bytes = Uint8Array.from(atob(encoded), character => character.charCodeAt(0));
+  return new File([bytes], 'profile-photo.webp', { type });
+}
+
+function pendingAvatarKey(email) {
+  return `helianthe-pending-avatar:${String(email || '').trim().toLowerCase()}`;
+}
+
 function status(message, error = false) {
   // Status messages are intentionally not rendered in the public editor.
 }
@@ -49,6 +93,51 @@ function status(message, error = false) {
 function ownerName(id) {
   if (!id) return 'Helianthe';
   return state.profiles.find(profile => profile.id === id)?.display_name || 'Player';
+}
+
+function profileById(id) {
+  return state.profiles.find(profile => profile.id === id) || null;
+}
+
+function avatarElement(profile, className = '') {
+  const avatar = document.createElement('span');
+  avatar.className = `user-avatar ${className}`.trim();
+  avatar.textContent = (profile?.display_name || 'P').trim().charAt(0).toUpperCase() || 'P';
+  if (profile?.avatar_id) {
+    const image = document.createElement('img');
+    image.src = api.mediaUrl(profile.avatar_id);
+    image.alt = '';
+    image.addEventListener('load', () => avatar.classList.add('has-image'));
+    image.addEventListener('error', () => image.remove());
+    avatar.append(image);
+  }
+  return avatar;
+}
+
+function authorDisplayElement(ids, fallbackId) {
+  const display = document.createElement('span');
+  display.className = 'author-display';
+  const profileIds = Array.isArray(ids) && ids.length ? ids : (fallbackId ? [fallbackId] : []);
+  for (const id of profileIds) {
+    const profile = profileById(id);
+    const person = document.createElement('span');
+    person.className = 'author-person';
+    person.append(avatarElement(profile, 'small'), document.createTextNode(profile?.display_name || ownerName(id)));
+    display.append(person);
+  }
+  return display;
+}
+
+function renderAccountButton(profile) {
+  const account = $('#account-name');
+  account.replaceChildren(avatarElement(profile, 'header-avatar'), document.createTextNode(profile?.display_name || 'Profile'));
+  account.setAttribute('aria-label', `Open profile for ${profile?.display_name || 'current user'}`);
+}
+
+function renderOwnerTag(element, label, profileId = null) {
+  element.replaceChildren();
+  if (profileId) element.append(avatarElement(profileById(profileId), 'small'));
+  element.append(document.createTextNode(label));
 }
 
 function favoriteCardName(cardId) {
@@ -75,7 +164,7 @@ function renderAuthorOptions(container, selectedIds) {
     input.type = 'checkbox';
     input.value = profile.id;
     input.checked = selectedIds.includes(profile.id);
-    label.append(input, document.createTextNode(profile.display_name || 'Player'));
+    label.append(input, avatarElement(profile, 'small'), document.createTextNode(profile.display_name || 'Player'));
     container.append(label);
   }
 }
@@ -176,8 +265,8 @@ function renderCardList() {
     title.textContent = card.title;
     row.append(icon, title);
     const meta = document.createElement('small');
-    meta.textContent = authorNames(card.author_ids, card.owner_id).join(', ');
     meta.className = 'card-list-owner';
+    meta.append(authorDisplayElement(card.author_ids, card.owner_id));
     row.append(meta);
     list.append(row);
   }
@@ -302,7 +391,7 @@ function selectCard(card, { openMobile = false } = {}) {
   renderAuthorOptions($('#card-author-options'), card?.author_ids || (card?.owner_id ? [card.owner_id] : [state.user?.id].filter(Boolean)));
   $('#card-heading').textContent = card?.title || 'New card';
   const mine = Boolean(state.user && card?.owner_id === state.user.id);
-  $('#card-owner').textContent = card ? (mine ? 'Your card' : `By ${ownerName(card.owner_id)}`) : (state.user ? 'Your new card' : 'Sign in to create a card');
+  renderOwnerTag($('#card-owner'), card ? (mine ? 'Your card' : `By ${ownerName(card.owner_id)}`) : (state.user ? 'Your new card' : 'Sign in to create a card'), card && !mine ? card.owner_id : null);
   setCardFormEditable(Boolean(state.user && (!card || mine || state.isAdmin)));
   syncTerrain();
   renderPreview();
@@ -340,7 +429,7 @@ function renderDeckList() {
     title.textContent = deck.name;
     const meta = document.createElement('small');
     meta.className = 'deck-list-owner';
-    meta.textContent = authorNames(deck.author_ids, deck.owner_id).join(', ');
+    meta.append(authorDisplayElement(deck.author_ids, deck.owner_id));
     row.append(title, meta);
     list.append(row);
   }
@@ -362,7 +451,7 @@ function renderDeckCards() {
     row.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); showDeckCardPreview(card); } });
     row.append(cardTypeIconElement(card));
     const label = document.createElement('span'); label.className = `card-list-title ${terrainClass(card.terrain)}`; label.textContent = card.title;
-    const author = document.createElement('small'); author.className = 'card-list-owner'; author.textContent = authorNames(card.author_ids, card.owner_id).join(', ');
+    const author = document.createElement('small'); author.className = 'card-list-owner'; author.append(authorDisplayElement(card.author_ids, card.owner_id));
     row.append(label, author);
     if (mine) {
       const select = document.createElement('select');
@@ -431,7 +520,7 @@ async function selectDeck(deck) {
   for (const field of form.querySelectorAll('input,button')) field.disabled = !mine;
   $('#duplicate-deck').disabled = !deck || !state.user;
   $('#deck-heading').textContent = deck?.name || 'New deck';
-  $('#deck-owner').textContent = deck ? (mine ? 'Your deck' : `By ${ownerName(deck.owner_id)}`) : (state.user ? 'Your new deck' : 'Sign in to create a deck');
+  renderOwnerTag($('#deck-owner'), deck ? (mine ? 'Your deck' : `By ${ownerName(deck.owner_id)}`) : (state.user ? 'Your new deck' : 'Sign in to create a deck'), deck && !mine ? deck.owner_id : null);
   state.deckCards = deck ? await api.listDeckCards(deck.id) : [];
   renderDeckList();
   renderDeckCards();
@@ -451,11 +540,17 @@ function renderProfileList() {
     for (const profile of profiles) {
       const classes = [className, state.profile?.id === profile.id ? 'selected' : ''].filter(Boolean).join(' ');
       const entry = button('', () => selectProfile(profile), `profile-list-entry ${classes}`.trim());
+      const main = document.createElement('span');
+      main.className = 'profile-list-main';
+      const copy = document.createElement('span');
+      copy.className = 'profile-list-copy';
       const name = document.createElement('span');
       name.textContent = profile.display_name || 'Player';
       const favorite = document.createElement('small');
       favorite.textContent = `Favorite card: ${favoriteCardName(profile.favorite_card_id)}`;
-      entry.append(name, favorite);
+      copy.append(name, favorite);
+      main.append(avatarElement(profile), copy);
+      entry.append(main);
       list.append(entry);
     }
   };
@@ -465,7 +560,7 @@ function renderProfileList() {
 
 function selectProfile(profile) {
   state.profile = profile;
-  $('#profile-heading').textContent = profile.display_name || 'Player';
+  $('#profile-heading').replaceChildren(avatarElement(profile), document.createTextNode(profile.display_name || 'Player'));
   const mine = profile.id === state.user?.id;
   $('#profile-form').hidden = !mine;
   $('#profile-new-deck').hidden = !mine;
@@ -510,6 +605,29 @@ function stopRealtimeSync() {
   state.realtimeChannel = null;
 }
 
+async function applyPendingAvatar(user, profile) {
+  let dataUrl = '';
+  try { dataUrl = localStorage.getItem(pendingAvatarKey(user.email)) || ''; }
+  catch { return profile; }
+  if (!dataUrl) return profile;
+  let artwork = null;
+  try {
+    artwork = await api.uploadArtwork(fileFromDataUrl(dataUrl));
+    const saved = await api.saveProfile(user.id, {
+      display_name: profile.display_name,
+      bio: profile.bio,
+      favorite_card_id: profile.favorite_card_id,
+      avatar_id: artwork.id,
+    });
+    localStorage.removeItem(pendingAvatarKey(user.email));
+    return saved;
+  } catch (cause) {
+    if (artwork) await api.deleteArtwork(artwork.id).catch(console.error);
+    console.error('Pending profile photo upload failed', cause);
+    return profile;
+  }
+}
+
 async function loadWorkspace() {
   const version = ++state.authVersion;
   status('Loading your Helianthe workspace…');
@@ -518,7 +636,8 @@ async function loadWorkspace() {
     if (!user || version !== state.authVersion) return;
     state.user = user;
     state.isAdmin = user.id === ADMIN_USER_ID || user.email?.trim().toLowerCase() === ADMIN_EMAIL;
-    await api.ensureProfile(user);
+    let ensuredProfile = await api.ensureProfile(user);
+    ensuredProfile = await applyPendingAvatar(user, ensuredProfile);
     await api.publishOwnedDecks(user.id).catch(error => console.error('Could not publish existing decks:', error));
     await reloadCollections();
     startRealtimeSync();
@@ -533,7 +652,7 @@ async function loadWorkspace() {
     await selectDeck(state.decks.find(deck => deck.owner_id === user.id) || state.decks[0] || null);
     const profile = state.profiles.find(profile => profile.id === user.id) || state.profiles[0];
     selectProfile(profile);
-    $('#account-name').textContent = profile?.display_name || 'Profile';
+    renderAccountButton(profile);
     $('#account-name').hidden = false;
     status('Ready.');
   } catch (cause) {
@@ -544,7 +663,7 @@ async function loadWorkspace() {
       $('#tabs').hidden = false;
       $('#sign-in').hidden = true;
       $('#sign-out').hidden = false;
-      $('#account-name').textContent = state.profiles.find(profile => profile.id === state.user.id)?.display_name || 'Profile';
+      renderAccountButton(state.profiles.find(profile => profile.id === state.user.id));
       $('#account-name').hidden = false;
       showTab('cards');
       renderCardList();
@@ -606,6 +725,14 @@ async function submitSignUp(event) {
   const form = event?.currentTarget || $('#auth-modal-form');
   if (!form.reportValidity()) return;
   status('Creating account…');
+  let avatar = null;
+  try {
+    const sourceAvatar = $('#sign-up-avatar').files?.[0];
+    avatar = sourceAvatar ? await compressedAvatar(sourceAvatar) : null;
+  } catch (cause) {
+    showAuthMessage(cause.message, true);
+    return;
+  }
   const { data, error } = await client.auth.signUp({
     email: form.elements.email.value.trim(), password: form.elements.password.value,
     options: {
@@ -618,8 +745,14 @@ async function submitSignUp(event) {
     },
   });
   if (error) showAuthMessage(error.message, true);
-  else if (data.session) await loadWorkspace();
-  else showAuthMessage('Account created. Check your email to confirm it, then sign in.');
+  else {
+    if (avatar) {
+      try { localStorage.setItem(pendingAvatarKey(form.elements.email.value), await fileDataUrl(avatar)); }
+      catch { showAuthMessage('Account created, but the profile photo could not be retained. Add it after signing in.', true); return; }
+    }
+    if (data.session) await loadWorkspace();
+    else showAuthMessage('Account created. Check your email to confirm it, then sign in. Your profile photo will be uploaded after sign-in.');
+  }
 }
 
 $('#sign-up').addEventListener('click', showSignUp);
@@ -741,12 +874,25 @@ $('#deck-form').addEventListener('submit', async event => {
 
 $('#profile-form').addEventListener('submit', async event => {
   event.preventDefault();
+  let uploadedAvatar = null;
   try {
-    await api.saveProfile(state.user.id, Object.fromEntries(new FormData(event.currentTarget)));
+    const values = Object.fromEntries(new FormData(event.currentTarget));
+    const previousAvatarId = state.profile?.avatar_id || null;
+    const sourceAvatar = $('#profile-avatar').files?.[0];
+    if (sourceAvatar) uploadedAvatar = await api.uploadArtwork(await compressedAvatar(sourceAvatar));
+    values.avatar_id = uploadedAvatar?.id || previousAvatarId;
+    await api.saveProfile(state.user.id, values);
     await reloadCollections();
-    selectProfile(state.profiles.find(item => item.id === state.user.id));
+    const ownProfile = state.profiles.find(item => item.id === state.user.id);
+    selectProfile(ownProfile);
+    renderAccountButton(ownProfile);
+    $('#profile-avatar').value = '';
+    if (uploadedAvatar && previousAvatarId && previousAvatarId !== uploadedAvatar.id) await api.deleteArtwork(previousAvatarId).catch(console.error);
     status('Profile saved.');
-  } catch (cause) { status(cause.message, true); }
+  } catch (cause) {
+    if (uploadedAvatar) await api.deleteArtwork(uploadedAvatar.id).catch(console.error);
+    status(cause.message, true);
+  }
 });
 
 client.auth.onAuthStateChange((event, session) => {

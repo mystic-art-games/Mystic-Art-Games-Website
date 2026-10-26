@@ -46,15 +46,19 @@ export function createCommunityApi(client) {
       if (!user?.id) throw new Error('Sign in first.');
       let existing;
       try {
-        existing = result(await client.from('profiles').select('id,display_name,bio,favorite_card_id').eq('id', user.id).maybeSingle());
+        existing = result(await client.from('profiles').select('id,display_name,bio,favorite_card_id,avatar_id').eq('id', user.id).maybeSingle());
       } catch {
-        existing = result(await client.from('profiles').select('id,display_name,bio').eq('id', user.id).maybeSingle());
+        try {
+          existing = result(await client.from('profiles').select('id,display_name,bio,favorite_card_id').eq('id', user.id).maybeSingle());
+        } catch {
+          existing = result(await client.from('profiles').select('id,display_name,bio').eq('id', user.id).maybeSingle());
+        }
       }
       if (existing) return existing;
       const metadata = user.user_metadata || {};
       const displayName = text(metadata.display_name, 60) || `Player ${user.id.slice(0, 6)}`;
       const row = { id: user.id, display_name: displayName, bio: text(metadata.bio, 500), favorite_card_id: text(metadata.favorite_card_id, 36) || null };
-      let response = await client.from('profiles').insert(row).select('id,display_name,bio,favorite_card_id').single();
+      let response = await client.from('profiles').insert(row).select('id,display_name,bio,favorite_card_id,avatar_id').single();
       if (response.error && /favorite_card_id/i.test(response.error.message || '')) {
         response = await client.from('profiles').insert({ id: row.id, display_name: row.display_name, bio: row.bio }).select('id,display_name,bio').single();
       }
@@ -69,10 +73,15 @@ export function createCommunityApi(client) {
 
     async listProfiles() {
       try {
-        return result(await client.from('profiles').select('id,display_name,bio,favorite_card_id,created_at').order('created_at', { ascending: true }));
+        return result(await client.from('profiles').select('id,display_name,bio,favorite_card_id,avatar_id,created_at').order('created_at', { ascending: true }));
       } catch {
-        const profiles = result(await client.from('profiles').select('id,display_name,bio,created_at').order('created_at', { ascending: true }));
-        return profiles.map(profile => ({ ...profile, favorite_card_id: null }));
+        try {
+          const profiles = result(await client.from('profiles').select('id,display_name,bio,favorite_card_id,created_at').order('created_at', { ascending: true }));
+          return profiles.map(profile => ({ ...profile, avatar_id: null }));
+        } catch {
+          const profiles = result(await client.from('profiles').select('id,display_name,bio,created_at').order('created_at', { ascending: true }));
+          return profiles.map(profile => ({ ...profile, favorite_card_id: null, avatar_id: null }));
+        }
       }
     },
 
@@ -80,8 +89,8 @@ export function createCommunityApi(client) {
       if (!userId) throw new Error('Sign in first.');
       const displayName = text(values.display_name, 60);
       if (displayName.length < 2) throw new Error('Display name must contain at least 2 characters.');
-      const patch = { display_name: displayName, bio: text(values.bio, 500), favorite_card_id: text(values.favorite_card_id, 36) || null, updated_at: new Date().toISOString() };
-      return result(await client.from('profiles').update(patch).eq('id', userId).select('id,display_name,bio,favorite_card_id').single());
+      const patch = { display_name: displayName, bio: text(values.bio, 500), favorite_card_id: text(values.favorite_card_id, 36) || null, avatar_id: text(values.avatar_id, 36) || null, updated_at: new Date().toISOString() };
+      return result(await client.from('profiles').update(patch).eq('id', userId).select('id,display_name,bio,favorite_card_id,avatar_id').single());
     },
 
     async listCards() {
@@ -206,6 +215,10 @@ export function createCommunityApi(client) {
       const response = await fetch(url, { headers: { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: `Bearer ${token}` } });
       if (!response.ok) throw new Error('Could not load artwork.');
       return response.blob();
+    },
+
+    mediaUrl(artworkId) {
+      return artworkId ? `${SUPABASE_URL}/functions/v1/card-art?id=${encodeURIComponent(artworkId)}` : '';
     },
   };
 }
