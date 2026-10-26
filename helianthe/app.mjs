@@ -375,13 +375,13 @@ async function loadWorkspace() {
     $('#tabs').hidden = false;
     $('#sign-in').hidden = true;
     $('#sign-out').hidden = false;
+    showTab('cards');
     selectCard(state.cards[0] || null);
     await selectDeck(state.decks.find(deck => deck.owner_id === user.id) || state.decks[0] || null);
     const profile = state.profiles.find(profile => profile.id === user.id) || state.profiles[0];
     selectProfile(profile);
     $('#account-name').textContent = profile?.display_name || 'Profile';
     $('#account-name').hidden = false;
-    showTab('cards');
     status('Ready.');
   } catch (cause) {
     console.error(cause);
@@ -393,6 +393,8 @@ async function loadWorkspace() {
       $('#sign-out').hidden = false;
       $('#account-name').textContent = state.profiles.find(profile => profile.id === state.user.id)?.display_name || 'Profile';
       $('#account-name').hidden = false;
+      showTab('cards');
+      renderCardList();
       status('Your session is active, but some workspace data could not be loaded.', true);
     } else {
       await loadPublicWorkspace();
