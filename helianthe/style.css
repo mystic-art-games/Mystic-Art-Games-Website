@@ -16,7 +16,7 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 .account-controls { display: flex; align-items: center; gap: .55rem; margin-left: 0; padding-left: .85rem; border-left: 1px solid rgba(132, 177, 139, .45); }
 .theme-control { display: grid; justify-items: center; gap: 3px; margin-left: auto; }
 .theme-label { color: #e5eee0; font-size: .58rem; font-weight: 700; letter-spacing: .08em; line-height: 1; text-transform: uppercase; }
-.theme-toggle { position: relative; display: flex; align-items: center; justify-content: space-between; width: 64px; height: 28px; padding: 0 8px; border: 1px solid rgba(213, 232, 201, .42); border-radius: 999px; background: rgba(213, 232, 201, .08); color: #e5eee0; font-size: .55rem; font-weight: 700; cursor: pointer; transition: background .2s ease, border-color .2s ease; }
+.theme-toggle { position: relative; display: flex; align-items: center; justify-content: space-between; width: 72px; height: 28px; padding: 0 9px; border: 1px solid rgba(213, 232, 201, .42); border-radius: 999px; background: rgba(213, 232, 201, .08); color: #e5eee0; font-size: .55rem; font-weight: 700; cursor: pointer; transition: background .2s ease, border-color .2s ease; }
 .theme-toggle:hover:not(:disabled) { background: rgba(213, 232, 201, .16); border-color: #9bc2a8; }
 .theme-state { position: relative; z-index: 1; margin-left: auto; text-transform: uppercase; }
 .theme-knob { position: absolute; top: 5px; left: 4px; width: 24px; height: 16px; border-radius: 9px; background: #fffdf4; box-shadow: 0 2px 5px rgba(20, 49, 38, .22); transition: transform .22s ease, background .22s ease; }
