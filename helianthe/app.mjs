@@ -233,10 +233,14 @@ function renderDeckList() {
   const list = $('#deck-list');
   list.replaceChildren();
   for (const deck of state.decks) {
-    const row = button(deck.name, () => void selectDeck(deck), state.deck?.id === deck.id ? 'selected' : '');
+    const row = button('', () => void selectDeck(deck), `deck-list-item${state.deck?.id === deck.id ? ' selected' : ''}`);
+    const title = document.createElement('span');
+    title.className = 'deck-list-title';
+    title.textContent = deck.name;
     const meta = document.createElement('small');
-    meta.textContent = `${deck.is_public ? 'Public' : 'Private'} · By ${ownerName(deck.owner_id)}`;
-    row.append(meta);
+    meta.className = 'deck-list-owner';
+    meta.textContent = ownerName(deck.owner_id);
+    row.append(title, meta);
     list.append(row);
   }
   if (!list.childElementCount) list.textContent = 'No decks yet.';

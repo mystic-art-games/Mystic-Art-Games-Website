@@ -70,6 +70,7 @@
         <label>Author<select id="card-filter-author"><option value="">All authors</option></select></label>
         <label>Color<select id="card-filter-terrain"><option value="">All colors</option><option value="Symbiosis">Symbiosis</option><option value="Flow">Flow</option><option value="Evergreen">Evergreen</option><option value="Radiance">Radiance</option><option value="none">No color</option></select></label>
       </div>
+      <div class="list-table-head card-list-head" aria-hidden="true"><span></span><span>Card name</span><span>Author</span></div>
       <div id="card-list" class="item-list" role="list"></div>
     </aside>
     <section class="panel editor-panel" aria-label="Card editor">
@@ -96,6 +97,7 @@
   <main id="decks-view" class="workspace" hidden>
     <aside class="panel sidebar">
       <div class="panel-head"><h1>Decks</h1><button id="new-deck" type="button">New deck</button></div>
+      <div class="list-table-head deck-list-head" aria-hidden="true"><span>Deck name</span><span>Author</span></div>
       <div id="deck-list" class="item-list" role="list"></div>
     </aside>
     <section class="panel editor-panel">
