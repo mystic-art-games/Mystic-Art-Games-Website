@@ -27,12 +27,13 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 .auth-modal { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 1rem; }
 .auth-modal-backdrop { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; border-radius: 0; background: rgba(10, 35, 27, .58); }
 .auth-modal-backdrop:hover:not(:disabled) { background: rgba(10, 35, 27, .58); }
-.auth-modal-card { position: relative; width: min(100%, 460px); background: #fffdf4; border: 1px solid #c1cbb9; border-radius: 18px; padding: 2rem; box-shadow: 0 18px 60px rgba(10, 35, 27, .32); }
+.auth-modal-card { position: relative; width: min(100%, 460px); max-height: calc(100vh - 2rem); overflow: auto; background: #fffdf4; border: 1px solid #c1cbb9; border-radius: 18px; padding: 2rem; box-shadow: 0 18px 60px rgba(10, 35, 27, .32); }
 .auth-modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
 .auth-modal-card h1 { margin: 0; font-size: 2rem; }
 .auth-modal-close { flex: 0 0 auto; padding: .15rem .55rem; border: 0; background: transparent; font-size: 1.7rem; line-height: 1; }
 .auth-modal-close:hover:not(:disabled) { background: #e0ebda; }
 .auth-error { margin: 1rem 0 -.5rem; color: #a23d35; font-size: .9rem; font-weight: 700; }
+.auth-error.success { color: #2f6b4c; }
 body.auth-modal-open { overflow: hidden; }
 form label { display: block; margin: .65rem 0; font-weight: 700; }
 input:not([type=checkbox]):not([type=file]), select, textarea { display: block; width: 100%; min-width: 0; margin-top: .25rem; border: 1px solid #a4b6a5; background: #fffefa; color: #163737; border-radius: 8px; padding: .6rem .7rem; }
@@ -52,6 +53,9 @@ textarea { resize: vertical; }
 .item-list { display: flex; flex-direction: column; gap: .35rem; margin-top: .8rem; }
 .profile-group-title { margin-top: .9rem; color: #50705e; font-size: .78rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
 .profile-group-title:first-child { margin-top: .2rem; }
+.profile-list-entry { display: flex; flex-direction: column; gap: .15rem; }
+.profile-list-entry small { color: #5a6e64; font-size: .76rem; font-weight: 500; }
+.profile-favorite-card { color: #456151; font-weight: 700; }
 .profile-decks-head { display: flex; align-items: center; justify-content: space-between; gap: .75rem; margin-top: 1rem; }
 .profile-decks-head h3 { margin: 0; }
 #profile-new-deck { background: #265847; color: white; border-color: #265847; }

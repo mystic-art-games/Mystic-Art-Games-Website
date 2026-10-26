@@ -13,9 +13,9 @@
   <link rel="apple-touch-icon" href="../images/helianthe-home-icon.png">
   <link rel="manifest" href="./manifest.webmanifest">
   <title>Helianthe</title>
-  <link rel="stylesheet" href="./style.css?v=helianthe-ui-22">
+  <link rel="stylesheet" href="./style.css?v=helianthe-ui-23">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script type="module" src="./app.mjs?v=helianthe-ui-22"></script>
+  <script type="module" src="./app.mjs?v=helianthe-ui-23"></script>
 </head>
 <body>
   <header class="masthead">
@@ -51,12 +51,17 @@
     <button id="close-auth-modal" class="auth-modal-backdrop" type="button" aria-label="Close sign-in dialog"></button>
     <section class="auth-modal-card" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
       <div class="auth-modal-head"><h1 id="auth-modal-title">Sign in to Helianthe</h1><button id="close-auth-dialog" class="auth-modal-close" type="button" aria-label="Close sign-in dialog">×</button></div>
-      <p>Sign in to create cards and build your own decks.</p>
+      <p id="auth-modal-description">Sign in to create cards and build your own decks.</p>
       <form id="auth-modal-form">
         <label>Email<input name="email" type="email" autocomplete="email" required></label>
         <label>Password<input name="password" type="password" autocomplete="current-password" required minlength="6"></label>
+        <div id="sign-up-fields" hidden>
+          <label>Display name<input name="display_name" autocomplete="nickname" minlength="2" maxlength="60"></label>
+          <label>Bio<textarea name="bio" rows="3" maxlength="500"></textarea></label>
+          <label>Favorite card<select name="favorite_card_id"></select></label>
+        </div>
         <p id="auth-error-message" class="auth-error" role="alert" hidden></p>
-        <div class="actions"><button type="submit">Sign in</button><button id="modal-sign-up" type="button">Create account</button></div>
+        <div class="actions"><button id="auth-submit" type="submit">Sign in</button><button id="auth-mode-toggle" type="button">Create account</button></div>
       </form>
       <p class="hint">After creating an account, confirm your email address before signing in.</p>
     </section>
@@ -133,9 +138,11 @@
       <form id="profile-form" hidden>
         <label>Display name<input name="display_name" required minlength="2" maxlength="60" autocomplete="nickname"></label>
         <label>Bio<textarea name="bio" rows="3" maxlength="500"></textarea></label>
+        <label>Favorite card<select name="favorite_card_id"></select></label>
         <button type="submit">Save profile</button>
       </form>
       <p id="profile-bio"></p>
+      <p id="profile-favorite-card" class="profile-favorite-card"></p>
       <div class="profile-decks-head"><h3>Decks</h3><button id="profile-new-deck" type="button" hidden>Add new deck</button></div>
       <div id="profile-decks" class="item-list"></div>
     </section>

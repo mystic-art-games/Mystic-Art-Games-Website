@@ -11,6 +11,7 @@ const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_K
 const api = createCommunityApi(client);
 const ADMIN_EMAIL = 'dominik.zielinski3@gmail.com';
 const ADMIN_USER_ID = '7422e970-f1c1-4618-aa73-ea191d97e141';
+let authMode = 'sign-in';
 const state = { user: null, isAdmin: false, cards: [], decks: [], profiles: [], card: null, deck: null, profile: null, deckCards: [], deckPreviewCard: null, deckPreviewArtworkUrl: null, deckPreviewSerial: 0, artworkUrl: null, artworkSerial: 0, renderSerial: 0, authVersion: 0, realtimeChannel: null, cardFormDirty: false };
 const ARTWORK_UPLOAD_LIMIT = 100 * 1024;
 
@@ -48,6 +49,16 @@ function status(message, error = false) {
 function ownerName(id) {
   if (!id) return 'Helianthe';
   return state.profiles.find(profile => profile.id === id)?.display_name || 'Player';
+}
+
+function favoriteCardName(cardId) {
+  return state.cards.find(card => card.id === cardId)?.title || 'Not selected';
+}
+
+function populateFavoriteCards(select, selectedId = '') {
+  select.replaceChildren(new Option('Choose a card', ''));
+  for (const card of state.cards) select.append(new Option(card.title, card.id));
+  select.value = selectedId || '';
 }
 
 function authorNames(ids, fallbackId) {
@@ -185,11 +196,41 @@ function showSignIn() {
   $('#sign-out').hidden = true;
   $('#account-name').hidden = true;
   $('#auth-modal').hidden = false;
-  $('#auth-error-message').hidden = true;
-  $('#auth-error-message').textContent = '';
+  setAuthMode('sign-in');
   document.body.classList.add('auth-modal-open');
   $('#auth-modal-form').elements.email.focus();
   status('Sign in or create an account to contribute.');
+}
+
+function showAuthMessage(message, error = false) {
+  const element = $('#auth-error-message');
+  element.textContent = message;
+  element.classList.toggle('success', !error);
+  element.hidden = !message;
+}
+
+function setAuthMode(mode) {
+  authMode = mode;
+  const signingUp = mode === 'sign-up';
+  const form = $('#auth-modal-form');
+  $('#auth-modal-title').textContent = signingUp ? 'Create your Helianthe account' : 'Sign in to Helianthe';
+  $('#auth-modal-description').textContent = signingUp
+    ? 'Create your profile and choose the card that represents you best.'
+    : 'Sign in to create cards and build your own decks.';
+  $('#sign-up-fields').hidden = !signingUp;
+  form.elements.display_name.required = signingUp;
+  form.elements.favorite_card_id.required = signingUp;
+  form.elements.password.autocomplete = signingUp ? 'new-password' : 'current-password';
+  $('#auth-submit').textContent = signingUp ? 'Create account' : 'Sign in';
+  $('#auth-mode-toggle').textContent = signingUp ? 'Back to sign in' : 'Create account';
+  if (signingUp) populateFavoriteCards(form.elements.favorite_card_id, form.elements.favorite_card_id.value);
+  showAuthMessage('');
+}
+
+function showSignUp() {
+  if ($('#auth-modal').hidden) showSignIn();
+  setAuthMode('sign-up');
+  $('#auth-modal-form').elements.email.focus();
 }
 
 function hideSignIn() {
@@ -409,7 +450,13 @@ function renderProfileList() {
     list.append(heading);
     for (const profile of profiles) {
       const classes = [className, state.profile?.id === profile.id ? 'selected' : ''].filter(Boolean).join(' ');
-      list.append(button(profile.display_name || 'Player', () => selectProfile(profile), classes));
+      const entry = button('', () => selectProfile(profile), `profile-list-entry ${classes}`.trim());
+      const name = document.createElement('span');
+      name.textContent = profile.display_name || 'Player';
+      const favorite = document.createElement('small');
+      favorite.textContent = `Favorite card: ${favoriteCardName(profile.favorite_card_id)}`;
+      entry.append(name, favorite);
+      list.append(entry);
     }
   };
   addGroup('Your profile', ownProfile ? [ownProfile] : [], 'profile-own');
@@ -424,8 +471,11 @@ function selectProfile(profile) {
   $('#profile-new-deck').hidden = !mine;
   $('#profile-form').elements.display_name.value = profile.display_name;
   $('#profile-form').elements.bio.value = profile.bio;
+  populateFavoriteCards($('#profile-form').elements.favorite_card_id, profile.favorite_card_id);
   $('#profile-bio').hidden = mine;
   $('#profile-bio').textContent = profile.bio || (mine ? 'Add a short bio to your profile.' : 'No bio yet.');
+  $('#profile-favorite-card').hidden = mine;
+  $('#profile-favorite-card').textContent = `Favorite card: ${favoriteCardName(profile.favorite_card_id)}`;
   const list = $('#profile-decks'); list.replaceChildren();
   for (const deck of state.decks.filter(item => item.owner_id === profile.id && item.is_public)) {
     list.append(button(deck.name, () => { showTab('decks'); void selectDeck(deck); }));
@@ -544,29 +594,36 @@ async function submitAuthForm(event) {
   const { error } = await client.auth.signInWithPassword({ email: form.elements.email.value.trim(), password: form.elements.password.value });
   if (error) {
     const message = 'No account was found for this email address, or the password is incorrect.';
-    $('#auth-error-message').textContent = message;
-    $('#auth-error-message').hidden = false;
+    showAuthMessage(message, true);
   } else await loadWorkspace();
 }
 
 $('#auth-form').addEventListener('submit', submitAuthForm);
-$('#auth-modal-form').addEventListener('submit', submitAuthForm);
+$('#auth-modal-form').addEventListener('submit', event => authMode === 'sign-up' ? submitSignUp(event) : submitAuthForm(event));
 
-async function submitSignUp() {
-  const form = document.activeElement?.form?.id === 'auth-modal-form' ? $('#auth-modal-form') : $('#auth-form');
+async function submitSignUp(event) {
+  event?.preventDefault();
+  const form = event?.currentTarget || $('#auth-modal-form');
   if (!form.reportValidity()) return;
   status('Creating account…');
   const { data, error } = await client.auth.signUp({
     email: form.elements.email.value.trim(), password: form.elements.password.value,
-    options: { emailRedirectTo: 'https://mysticart.games/helianthe/' },
+    options: {
+      emailRedirectTo: 'https://mysticart.games/helianthe/',
+      data: {
+        display_name: form.elements.display_name.value.trim(),
+        bio: form.elements.bio.value.trim(),
+        favorite_card_id: form.elements.favorite_card_id.value,
+      },
+    },
   });
-  if (error) status(error.message, true);
+  if (error) showAuthMessage(error.message, true);
   else if (data.session) await loadWorkspace();
-  else status('Account created. Check your email to confirm it, then sign in.');
+  else showAuthMessage('Account created. Check your email to confirm it, then sign in.');
 }
 
-$('#sign-up').addEventListener('click', submitSignUp);
-$('#modal-sign-up').addEventListener('click', submitSignUp);
+$('#sign-up').addEventListener('click', showSignUp);
+$('#auth-mode-toggle').addEventListener('click', () => authMode === 'sign-up' ? setAuthMode('sign-in') : showSignUp());
 
 $('#sign-out').addEventListener('click', async () => {
   const { error } = await client.auth.signOut();
