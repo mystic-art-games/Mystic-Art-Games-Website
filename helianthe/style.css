@@ -52,6 +52,10 @@ textarea { resize: vertical; }
 .item-list { display: flex; flex-direction: column; gap: .35rem; margin-top: .8rem; }
 .profile-group-title { margin-top: .9rem; color: #50705e; font-size: .78rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
 .profile-group-title:first-child { margin-top: .2rem; }
+.profile-decks-head { display: flex; align-items: center; justify-content: space-between; gap: .75rem; margin-top: 1rem; }
+.profile-decks-head h3 { margin: 0; }
+#profile-new-deck { background: #265847; color: white; border-color: #265847; }
+#profile-new-deck:hover:not(:disabled) { background: #1d4939; }
 .card-filters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .45rem; margin-top: .65rem; }
 .card-filters label { margin: 0; color: #5a6e64; font-size: .78rem; font-weight: 700; }
 .card-filters select { margin-top: .2rem; padding: .45rem .4rem; font-size: .82rem; }

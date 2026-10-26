@@ -421,6 +421,7 @@ function selectProfile(profile) {
   $('#profile-heading').textContent = profile.display_name || 'Player';
   const mine = profile.id === state.user?.id;
   $('#profile-form').hidden = !mine;
+  $('#profile-new-deck').hidden = !mine;
   $('#profile-form').elements.display_name.value = profile.display_name;
   $('#profile-form').elements.bio.value = profile.bio;
   $('#profile-bio').hidden = mine;
@@ -650,6 +651,11 @@ $('#card-form').addEventListener('submit', async event => {
 });
 
 $('#new-deck').addEventListener('click', () => { if (requireAccount()) void selectDeck(null); });
+$('#profile-new-deck').addEventListener('click', () => {
+  if (!requireAccount()) return;
+  showTab('decks');
+  void selectDeck(null);
+});
 $('#duplicate-deck').addEventListener('click', async () => {
   if (!state.user || !state.deck) return;
   const duplicate = $('#duplicate-deck'); duplicate.disabled = true;
