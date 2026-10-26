@@ -358,6 +358,7 @@ async function loadWorkspace() {
     state.user = user;
     state.isAdmin = user.id === ADMIN_USER_ID || user.email?.trim().toLowerCase() === ADMIN_EMAIL;
     await api.ensureProfile(user);
+    await api.publishOwnedDecks(user.id);
     await reloadCollections();
     startRealtimeSync();
     if (version !== state.authVersion) return;
@@ -516,12 +517,12 @@ $('#deck-form').addEventListener('submit', async event => {
   const form = event.currentTarget;
   const save = $('#save-deck'); save.disabled = true;
   try {
-    const values = { ...Object.fromEntries(new FormData(form)), is_public: form.elements.is_public.checked };
+    const values = { ...Object.fromEntries(new FormData(form)), is_public: true };
     const wasNew = !state.deck;
     const deck = state.deck ? await api.saveDeck(state.user.id, state.deck.id, values) : await api.createDeck(state.user.id, values);
     await reloadCollections();
     await selectDeck(state.decks.find(item => item.id === deck.id) || deck);
-    status(wasNew ? 'Private deck created. Turn on Public and save when you want to share it.' : 'Deck saved.');
+    status(wasNew ? 'Public deck created.' : 'Deck saved.');
   } catch (cause) { status(cause.message, true); }
   finally { save.disabled = false; }
 });

@@ -30,7 +30,7 @@ export function cardInput(form) {
 export function deckInput(form) {
   const name = text(form.name, 100);
   if (!name) throw new Error('Deck name is required.');
-  return { name, patron_name: text(form.patron_name, 200), is_public: form.is_public === true };
+  return { name, patron_name: text(form.patron_name, 200), is_public: true };
 }
 
 export function createCommunityApi(client) {
@@ -49,6 +49,11 @@ export function createCommunityApi(client) {
       const { data, error } = await client.from('profiles').insert({ id: user.id, display_name: fallback }).select('id,display_name,bio').single();
       if (error?.code === '23505') return result(await client.from('profiles').select('id,display_name,bio').eq('id', user.id).single());
       return result({ data, error });
+    },
+
+    async publishOwnedDecks(userId) {
+      if (!userId) throw new Error('Sign in first.');
+      return result(await client.from('decks').update({ is_public: true }).eq('owner_id', userId).eq('is_public', false).select('id'));
     },
 
     async listProfiles() {
@@ -90,8 +95,7 @@ export function createCommunityApi(client) {
 
     async createDeck(userId, values) {
       if (!userId) throw new Error('Sign in first.');
-      // New decks stay private, regardless of the form's current checkbox.
-      const row = { ...deckInput(values), owner_id: userId, is_public: false };
+      const row = { ...deckInput(values), owner_id: userId, is_public: true };
       return result(await client.from('decks').insert(row).select().single());
     },
 
