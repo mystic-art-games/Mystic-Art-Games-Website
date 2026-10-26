@@ -108,6 +108,7 @@ function button(label, action, className = '') {
 }
 
 function showTab(name) {
+  if (name !== 'decks') closeDeckCardPreview();
   for (const tab of ['cards', 'decks', 'profiles', 'patrons']) {
     $(`#${tab}-view`).hidden = tab !== name;
     $(`[data-tab="${tab}"]`).classList.toggle('active', tab === name);
@@ -277,6 +278,17 @@ function closeMobileEditor() {
   document.body.classList.remove('mobile-editor-visible');
 }
 
+function openDeckCardPreview() {
+  if (!window.matchMedia('(max-width: 850px)').matches) return;
+  $('#decks-view').classList.add('mobile-card-preview-open');
+  document.body.classList.add('mobile-card-preview-visible');
+}
+
+function closeDeckCardPreview() {
+  $('#decks-view')?.classList.remove('mobile-card-preview-open');
+  document.body.classList.remove('mobile-card-preview-visible');
+}
+
 function renderDeckList() {
   const list = $('#deck-list');
   list.replaceChildren();
@@ -344,9 +356,11 @@ async function showDeckCardPreview(card) {
   state.deckPreviewArtworkUrl = null;
   renderDeckCards();
   if (!card) {
+    closeDeckCardPreview();
     $('#deck-card-preview-note').textContent = 'Select a card to preview it.';
     return;
   }
+  openDeckCardPreview();
   const previewCard = { ...card, author: authorNames(card.author_ids, card.owner_id).join(', ') };
   $('#deck-card-preview-note').textContent = '';
   await renderCard($('#deck-card-canvas'), previewCard, '', () => serial === state.deckPreviewSerial).catch(() => {});
@@ -575,6 +589,7 @@ $('#card-search').addEventListener('input', renderCardList);
 for (const filter of document.querySelectorAll('#card-filter-type, #card-filter-author, #card-filter-terrain')) filter.addEventListener('change', renderCardList);
 $('#new-card').addEventListener('click', () => { if (requireAccount()) selectCard(null, { openMobile: true }); });
 $('#close-mobile-editor').addEventListener('click', closeMobileEditor);
+$('#close-deck-card-preview').addEventListener('click', closeDeckCardPreview);
 $('#card-form').addEventListener('input', () => { state.cardFormDirty = true; renderPreview(); });
 $('#card-form').elements.card_type.addEventListener('change', () => { syncTerrain(); renderPreview(); });
 $('#card-artwork').addEventListener('change', event => {

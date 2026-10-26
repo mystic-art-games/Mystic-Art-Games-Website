@@ -13,9 +13,9 @@
   <link rel="apple-touch-icon" href="../images/helianthe-home-icon.png">
   <link rel="manifest" href="./manifest.webmanifest">
   <title>Helianthe</title>
-  <link rel="stylesheet" href="./style.css?v=helianthe-ui-20">
+  <link rel="stylesheet" href="./style.css?v=helianthe-ui-21">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script type="module" src="./app.mjs?v=helianthe-ui-20"></script>
+  <script type="module" src="./app.mjs?v=helianthe-ui-21"></script>
 </head>
 <body>
   <header class="masthead">
@@ -115,6 +115,7 @@
           <div id="deck-cards" class="deck-cards"></div>
         </section>
         <section class="deck-card-preview-shell" aria-label="Selected card preview">
+          <button id="close-deck-card-preview" class="deck-card-preview-close" type="button" aria-label="Close card preview">×</button>
           <canvas id="deck-card-canvas" width="1500" height="2100" aria-label="Selected card preview"></canvas>
           <p id="deck-card-preview-note">Select a card to preview it.</p>
         </section>
