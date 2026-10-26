@@ -364,7 +364,7 @@ async function loadWorkspace() {
     state.user = user;
     state.isAdmin = user.id === ADMIN_USER_ID || user.email?.trim().toLowerCase() === ADMIN_EMAIL;
     await api.ensureProfile(user);
-    await api.publishOwnedDecks(user.id);
+    await api.publishOwnedDecks(user.id).catch(error => console.error('Could not publish existing decks:', error));
     await reloadCollections();
     startRealtimeSync();
     if (version !== state.authVersion) return;
@@ -381,7 +381,10 @@ async function loadWorkspace() {
     $('#account-name').hidden = false;
     showTab('cards');
     status('Ready.');
-  } catch (cause) { console.error(cause); showSignIn(); }
+  } catch (cause) {
+    console.error(cause);
+    await loadPublicWorkspace();
+  }
 }
 
 async function loadPublicWorkspace() {
@@ -404,7 +407,15 @@ async function loadPublicWorkspace() {
     if (state.profiles[0]) selectProfile(state.profiles[0]);
     showTab('cards');
     status('Browsing publicly. Sign in to create cards and decks.');
-  } catch (cause) { console.error(cause); showSignIn(); }
+  } catch (cause) {
+    console.error(cause);
+    $('#auth-view').hidden = true;
+    $('#tabs').hidden = false;
+    $('#sign-in').hidden = false;
+    $('#sign-out').hidden = true;
+    $('#account-name').hidden = true;
+    hideSignIn();
+  }
 }
 
 async function submitAuthForm(event) {
