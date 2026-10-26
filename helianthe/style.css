@@ -79,6 +79,8 @@ textarea { resize: vertical; }
 .card-list-title.terrain-event { color: #4d5b55; }
 .card-layout { display: grid; grid-template-columns: minmax(260px, 1fr) minmax(280px, 420px); gap: 1.6rem; }
 .two-cols { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; }
+.deck-meta-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(180px, 1fr); gap: .8rem; align-items: start; }
+.deck-meta-row .author-picker { margin: .65rem 0; }
 .card-preview-shell { align-self: start; display: flex; flex-direction: column; align-items: center; gap: .4rem; min-width: 0; }
 .mobile-editor-close { display: none; }
 #card-canvas { width: min(100%, 420px); height: auto; aspect-ratio: 5 / 7; border-radius: 18px; box-shadow: 0 10px 24px #2225; background: #ece6d8; }
@@ -147,6 +149,7 @@ textarea { resize: vertical; }
 
 @media (max-width: 430px) {
   .card-filters { grid-template-columns: 1fr; }
+  .deck-meta-row { grid-template-columns: 1fr; }
   .masthead { padding-inline: .65rem; }
   .masthead nav button, #sign-in, #sign-out { padding: .5rem .6rem; }
   .header-controls { gap: .1rem; }
