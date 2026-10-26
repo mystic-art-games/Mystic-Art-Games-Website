@@ -13,9 +13,9 @@
   <link rel="apple-touch-icon" href="../images/helianthe-home-icon.png">
   <link rel="manifest" href="./manifest.webmanifest">
   <title>Helianthe</title>
-  <link rel="stylesheet" href="./style.css?v=helianthe-ui-24">
+  <link rel="stylesheet" href="./style.css?v=helianthe-ui-25">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script type="module" src="./app.mjs?v=helianthe-ui-24"></script>
+  <script type="module" src="./app.mjs?v=helianthe-ui-25"></script>
 </head>
 <body>
   <header class="masthead">
@@ -27,6 +27,13 @@
         <button type="button" data-tab="profiles">Profiles</button>
         <button type="button" data-tab="patrons">Patrons</button>
       </nav>
+      <div class="theme-control">
+        <span class="theme-label">Dark mode</span>
+        <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle dark mode" aria-pressed="false">
+          <span class="theme-state" aria-hidden="true">Off</span>
+          <span class="theme-knob" aria-hidden="true"></span>
+        </button>
+      </div>
       <div class="account-controls">
         <button id="account-name" type="button" hidden></button>
         <button id="sign-in" type="button" hidden>Sign in</button>

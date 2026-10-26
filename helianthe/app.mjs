@@ -16,6 +16,21 @@ const state = { user: null, isAdmin: false, cards: [], decks: [], profiles: [], 
 const ARTWORK_UPLOAD_LIMIT = 100 * 1024;
 const AVATAR_UPLOAD_LIMIT = 80 * 1024;
 
+function applyTheme(dark) {
+  document.body.classList.toggle('dark-mode', dark);
+  const toggle = $('#theme-toggle');
+  toggle.querySelector('.theme-state').textContent = dark ? 'On' : 'Off';
+  toggle.setAttribute('aria-pressed', String(dark));
+  document.querySelector('meta[name="theme-color"]').content = dark ? '#102f27' : '#153f34';
+}
+
+applyTheme(localStorage.getItem('mystic-art-theme') === 'dark');
+$('#theme-toggle').addEventListener('click', () => {
+  const dark = !document.body.classList.contains('dark-mode');
+  localStorage.setItem('mystic-art-theme', dark ? 'dark' : 'light');
+  applyTheme(dark);
+});
+
 async function compressedArtwork(file) {
   if (!file) return null;
   if (file.size > 20 * 1024 * 1024) throw new Error('Artwork must be 20 MB or smaller before compression.');
