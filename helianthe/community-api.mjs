@@ -118,6 +118,24 @@ export function createCommunityApi(client) {
       return rows[0];
     },
 
+    async duplicateDeck(userId, deck, cards) {
+      if (!userId || !deck?.id) throw new Error('Select a deck to duplicate.');
+      const copy = await this.createDeck(userId, {
+        name: `${deck.name} Copy`.slice(0, 100),
+        patron_name: deck.patron_name,
+        author_ids: [userId],
+      });
+      if (!cards?.length) return copy;
+      const rows = cards.map(card => ({ deck_id: copy.id, card_id: card.card_id, copies: card.copies }));
+      try {
+        result(await client.from('deck_cards').insert(rows));
+      } catch (error) {
+        await client.from('decks').delete().eq('id', copy.id).eq('owner_id', userId);
+        throw error;
+      }
+      return copy;
+    },
+
     async deleteDeck(userId, deckId) {
       if (!userId || !deckId) throw new Error('Select your own deck.');
       const rows = result(await client.from('decks').delete().eq('id', deckId).eq('owner_id', userId).select('id'));

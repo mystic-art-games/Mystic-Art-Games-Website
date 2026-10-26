@@ -13,9 +13,9 @@
   <link rel="apple-touch-icon" href="../images/helianthe-home-icon.png">
   <link rel="manifest" href="./manifest.webmanifest">
   <title>Helianthe</title>
-  <link rel="stylesheet" href="./style.css?v=helianthe-ui-19">
+  <link rel="stylesheet" href="./style.css?v=helianthe-ui-20">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script type="module" src="./app.mjs?v=helianthe-ui-19"></script>
+  <script type="module" src="./app.mjs?v=helianthe-ui-20"></script>
 </head>
 <body>
   <header class="masthead">
@@ -25,6 +25,7 @@
         <button type="button" data-tab="cards" class="active">Cards</button>
         <button type="button" data-tab="decks">Decks</button>
         <button type="button" data-tab="profiles">Profiles</button>
+        <button type="button" data-tab="patrons">Patrons</button>
       </nav>
       <div class="account-controls">
         <button id="account-name" type="button" hidden></button>
@@ -103,10 +104,10 @@
     <section class="panel editor-panel">
       <div class="panel-head"><h2 id="deck-heading">Select a deck</h2><span id="deck-owner" class="tag"></span></div>
       <form id="deck-form">
-        <div class="two-cols"><label>Deck name<input name="name" required maxlength="100"></label><label>Patron<input name="patron_name" maxlength="200" placeholder="Optional"></label></div>
+        <div class="two-cols"><label>Deck name<input name="name" required maxlength="100"></label><label>Patron<select name="patron_name"></select></label></div>
         <fieldset class="author-picker"><legend>Authors</legend><div id="deck-author-options"></div></fieldset>
         <p class="hint">All decks are public and visible to other players.</p>
-        <button id="save-deck" type="submit">Save deck</button>
+        <div class="actions"><button id="save-deck" type="submit">Save deck</button><button id="duplicate-deck" type="button">Duplicate deck</button></div>
       </form>
       <h3>Cards in this deck</h3>
       <div id="deck-cards" class="deck-cards"></div>
@@ -128,6 +129,13 @@
       <p id="profile-bio"></p>
       <h3>Decks</h3>
       <div id="profile-decks" class="item-list"></div>
+    </section>
+  </main>
+
+  <main id="patrons-view" class="patrons-workspace" hidden>
+    <section class="panel patrons-panel">
+      <div class="panel-head"><h1>Patrons</h1></div>
+      <div id="patron-list" class="patron-list"></div>
     </section>
   </main>
 </body>

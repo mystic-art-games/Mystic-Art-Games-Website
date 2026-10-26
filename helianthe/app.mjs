@@ -1,6 +1,7 @@
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.mjs';
 import { createCommunityApi } from './community-api.mjs';
 import { renderCard, downloadCardPNG } from './card-renderer.mjs';
+import { PATRONS } from './patrons.mjs';
 
 const $ = selector => document.querySelector(selector);
 if (!window.supabase?.createClient) throw new Error('The Supabase client could not be loaded.');
@@ -98,9 +99,28 @@ function button(label, action, className = '') {
 }
 
 function showTab(name) {
-  for (const tab of ['cards', 'decks', 'profiles']) {
+  for (const tab of ['cards', 'decks', 'profiles', 'patrons']) {
     $(`#${tab}-view`).hidden = tab !== name;
     $(`[data-tab="${tab}"]`).classList.toggle('active', tab === name);
+  }
+  if (name === 'patrons') renderPatrons();
+}
+
+function renderPatrons() {
+  const list = $('#patron-list');
+  list.replaceChildren();
+  for (const patron of PATRONS) {
+    const article = document.createElement('article');
+    article.className = 'patron-card';
+    article.innerHTML = `<h3></h3><p class="patron-faction"></p><blockquote></blockquote><h4>Scoring</h4><p class="patron-scoring"></p><h4 class="patron-ability-heading">Ability</h4><p class="patron-ability"></p>`;
+    article.querySelector('h3').textContent = patron.name;
+    article.querySelector('.patron-faction').textContent = patron.faction;
+    article.querySelector('blockquote').textContent = `“${patron.credo}”`;
+    article.querySelector('.patron-scoring').textContent = patron.scoring;
+    article.querySelector('.patron-ability').textContent = patron.ability || '—';
+    article.querySelector('.patron-ability-heading').hidden = !patron.ability;
+    article.querySelector('.patron-ability').hidden = !patron.ability;
+    list.append(article);
   }
 }
 
@@ -310,10 +330,14 @@ async function selectDeck(deck) {
   const form = $('#deck-form');
   form.reset();
   form.elements.name.value = deck?.name || '';
-  form.elements.patron_name.value = deck?.patron_name || '';
+  const patronSelect = form.elements.patron_name;
+  patronSelect.replaceChildren(new Option('No Patron', ''));
+  for (const patron of PATRONS) patronSelect.append(new Option(patron.name, patron.name));
+  patronSelect.value = deck?.patron_name || '';
   renderAuthorOptions($('#deck-author-options'), deck?.author_ids || (deck?.owner_id ? [deck.owner_id] : [state.user?.id].filter(Boolean)));
   const mine = Boolean(state.user && (!deck || deck.owner_id === state.user.id));
   for (const field of form.querySelectorAll('input,button')) field.disabled = !mine;
+  $('#duplicate-deck').disabled = !deck || !state.user;
   $('#deck-heading').textContent = deck?.name || 'New deck';
   $('#deck-owner').textContent = deck ? (mine ? 'Your deck' : `By ${ownerName(deck.owner_id)}`) : (state.user ? 'Your new deck' : 'Sign in to create a deck');
   state.deckCards = deck ? await api.listDeckCards(deck.id) : [];
@@ -574,6 +598,17 @@ $('#card-form').addEventListener('submit', async event => {
 });
 
 $('#new-deck').addEventListener('click', () => { if (requireAccount()) void selectDeck(null); });
+$('#duplicate-deck').addEventListener('click', async () => {
+  if (!state.user || !state.deck) return;
+  const duplicate = $('#duplicate-deck'); duplicate.disabled = true;
+  try {
+    const deck = await api.duplicateDeck(state.user.id, state.deck, state.deckCards);
+    await reloadCollections();
+    await selectDeck(state.decks.find(item => item.id === deck.id) || deck);
+    status('Deck duplicated.');
+  } catch (cause) { status(cause.message, true); }
+  finally { duplicate.disabled = !state.deck || !state.user; }
+});
 $('#deck-form').addEventListener('submit', async event => {
   event.preventDefault();
   const form = event.currentTarget;
