@@ -427,6 +427,7 @@ async function loadPublicWorkspace() {
     $('#sign-in').hidden = false;
     $('#sign-out').hidden = true;
     $('#account-name').hidden = true;
+    showTab('cards');
     hideSignIn();
   }
 }
