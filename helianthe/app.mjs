@@ -127,6 +127,12 @@ function setCardFormEditable(canEdit) {
 }
 
 function showSignIn() {
+  state.user = null;
+  state.isAdmin = false;
+  stopRealtimeSync();
+  $('#sign-in').hidden = false;
+  $('#sign-out').hidden = true;
+  $('#account-name').hidden = true;
   $('#auth-modal').hidden = false;
   $('#auth-error-message').hidden = true;
   $('#auth-error-message').textContent = '';
