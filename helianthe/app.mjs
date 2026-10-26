@@ -313,6 +313,7 @@ function selectProfile(profile) {
   $('#profile-form').hidden = !mine;
   $('#profile-form').elements.display_name.value = profile.display_name;
   $('#profile-form').elements.bio.value = profile.bio;
+  $('#profile-bio').hidden = mine;
   $('#profile-bio').textContent = profile.bio || (mine ? 'Add a short bio to your profile.' : 'No bio yet.');
   const list = $('#profile-decks'); list.replaceChildren();
   for (const deck of state.decks.filter(item => item.owner_id === profile.id && item.is_public)) {
