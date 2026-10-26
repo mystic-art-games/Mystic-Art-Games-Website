@@ -601,11 +601,13 @@ async function reloadCollections() {
   renderCardList(); renderDeckList(); renderDeckCards(); renderProfileList();
 }
 
-function showProfileSaveStatus() {
+function showProfileSaveStatus(message = 'Saved ✓', error = false) {
   const statusElement = $('#profile-save-status');
+  statusElement.textContent = message;
+  statusElement.classList.toggle('error', error);
   statusElement.hidden = false;
   clearTimeout(profileSaveStatusTimer);
-  profileSaveStatusTimer = setTimeout(() => { statusElement.hidden = true; }, 2600);
+  profileSaveStatusTimer = setTimeout(() => { statusElement.hidden = true; }, error ? 6000 : 2600);
 }
 
 function startRealtimeSync() {
@@ -915,6 +917,7 @@ $('#profile-form').addEventListener('submit', async event => {
     status('Profile saved.');
   } catch (cause) {
     if (uploadedAvatar) await api.deleteArtwork(uploadedAvatar.id).catch(console.error);
+    showProfileSaveStatus(cause.message || 'Could not save profile.', true);
     status(cause.message, true);
   }
 });
