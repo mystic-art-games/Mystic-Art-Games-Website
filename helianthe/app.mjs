@@ -11,7 +11,7 @@ const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_K
 const api = createCommunityApi(client);
 const ADMIN_EMAIL = 'dominik.zielinski3@gmail.com';
 const ADMIN_USER_ID = '7422e970-f1c1-4618-aa73-ea191d97e141';
-const state = { user: null, isAdmin: false, cards: [], decks: [], profiles: [], card: null, deck: null, profile: null, deckCards: [], artworkUrl: null, artworkSerial: 0, renderSerial: 0, authVersion: 0, realtimeChannel: null, cardFormDirty: false };
+const state = { user: null, isAdmin: false, cards: [], decks: [], profiles: [], card: null, deck: null, profile: null, deckCards: [], deckPreviewCard: null, deckPreviewArtworkUrl: null, deckPreviewSerial: 0, artworkUrl: null, artworkSerial: 0, renderSerial: 0, authVersion: 0, realtimeChannel: null, cardFormDirty: false };
 const ARTWORK_UPLOAD_LIMIT = 100 * 1024;
 
 async function compressedArtwork(file) {
@@ -302,7 +302,11 @@ function renderDeckCards() {
   for (const card of state.cards) {
     const copies = state.deckCards.find(item => item.card_id === card.id)?.copies || 0;
     if (!mine && !copies) continue;
-    const row = document.createElement('div'); row.className = 'card-list-item deck-card-row';
+    const row = document.createElement('div'); row.className = `card-list-item deck-card-row${state.deckPreviewCard?.id === card.id ? ' selected' : ''}`;
+    row.setAttribute('role', 'button');
+    row.tabIndex = 0;
+    row.addEventListener('click', () => showDeckCardPreview(card));
+    row.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); showDeckCardPreview(card); } });
     row.append(cardTypeIconElement(card));
     const label = document.createElement('span'); label.className = `card-list-title ${terrainClass(card.terrain)}`; label.textContent = card.title;
     const author = document.createElement('small'); author.className = 'card-list-owner'; author.textContent = authorNames(card.author_ids, card.owner_id).join(', ');
@@ -323,6 +327,7 @@ function renderDeckCards() {
         } catch (cause) { status(cause.message, true); }
         renderDeckCards();
       });
+       select.addEventListener('click', event => event.stopPropagation());
       row.append(select);
     } else {
       const count = document.createElement('strong'); count.textContent = `×${copies}`; row.append(count);
@@ -332,8 +337,33 @@ function renderDeckCards() {
   if (!list.childElementCount) list.textContent = 'This deck has no cards.';
 }
 
+async function showDeckCardPreview(card) {
+  const serial = ++state.deckPreviewSerial;
+  state.deckPreviewCard = card;
+  if (state.deckPreviewArtworkUrl) URL.revokeObjectURL(state.deckPreviewArtworkUrl);
+  state.deckPreviewArtworkUrl = null;
+  renderDeckCards();
+  if (!card) {
+    $('#deck-card-preview-note').textContent = 'Select a card to preview it.';
+    return;
+  }
+  const previewCard = { ...card, author: authorNames(card.author_ids, card.owner_id).join(', ') };
+  $('#deck-card-preview-note').textContent = '';
+  await renderCard($('#deck-card-canvas'), previewCard, '', () => serial === state.deckPreviewSerial).catch(() => {});
+  if (!card.artwork_id) return;
+  try {
+    const blob = await api.fetchArtwork(card.artwork_id);
+    if (serial !== state.deckPreviewSerial) return;
+    state.deckPreviewArtworkUrl = URL.createObjectURL(blob);
+    await renderCard($('#deck-card-canvas'), previewCard, state.deckPreviewArtworkUrl, () => serial === state.deckPreviewSerial);
+  } catch (cause) {
+    if (serial === state.deckPreviewSerial) $('#deck-card-preview-note').textContent = cause.message;
+  }
+}
+
 async function selectDeck(deck) {
   state.deck = deck;
+  await showDeckCardPreview(null);
   const form = $('#deck-form');
   form.reset();
   form.elements.name.value = deck?.name || '';

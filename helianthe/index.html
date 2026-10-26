@@ -108,9 +108,17 @@
         <p class="hint">All decks are public and visible to other players.</p>
         <div class="actions"><button id="save-deck" type="submit">Save deck</button><button id="duplicate-deck" type="button">Duplicate deck</button></div>
       </form>
-      <h3>Cards in this deck</h3>
-      <div class="list-table-head deck-card-list-head" aria-hidden="true"><span></span><span>Card name</span><span>Author</span><span>Copies</span></div>
-      <div id="deck-cards" class="deck-cards"></div>
+      <div class="deck-card-layout">
+        <section class="deck-card-table" aria-label="Cards in this deck">
+          <h3>Cards in this deck</h3>
+          <div class="list-table-head deck-card-list-head" aria-hidden="true"><span></span><span>Card name</span><span>Author</span><span>Copies</span></div>
+          <div id="deck-cards" class="deck-cards"></div>
+        </section>
+        <section class="deck-card-preview-shell" aria-label="Selected card preview">
+          <canvas id="deck-card-canvas" width="1500" height="2100" aria-label="Selected card preview"></canvas>
+          <p id="deck-card-preview-note">Select a card to preview it.</p>
+        </section>
+      </div>
     </section>
   </main>
 

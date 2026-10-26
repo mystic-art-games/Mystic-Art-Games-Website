@@ -61,7 +61,7 @@ textarea { resize: vertical; }
 .list-table-head { display: grid; align-items: center; gap: .55rem; margin: .8rem .8rem -.35rem; color: #5a6e64; font-size: .75rem; font-weight: 800; }
 .card-list-head { grid-template-columns: 2rem minmax(0, 1fr) minmax(5.5rem, auto); }
 .card-list-head span:last-child, .deck-list-head span:last-child { text-align: right; }
-.deck-card-list-head { grid-template-columns: 2rem minmax(0, 1fr) minmax(5.5rem, auto) 4rem; }
+.deck-card-list-head { grid-template-columns: 2rem minmax(0, 1fr) minmax(5.5rem, auto) 4rem; margin-left: .2rem; margin-right: .2rem; }
 .deck-card-list-head span:nth-child(3), .deck-card-list-head span:last-child { text-align: right; }
 .deck-list-head { grid-template-columns: minmax(0, 1fr) minmax(5.5rem, auto); }
 .card-list-item { display: grid; grid-template-columns: 2rem minmax(0, 1fr) minmax(5.5rem, auto); column-gap: .55rem; align-items: center; }
@@ -81,6 +81,12 @@ textarea { resize: vertical; }
 .two-cols { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; }
 .deck-meta-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(180px, 1fr); gap: .8rem; align-items: start; }
 .deck-meta-row .author-picker { margin: .65rem 0; }
+.deck-card-layout { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(240px, .8fr); gap: 1rem; align-items: start; }
+.deck-card-table { min-width: 0; }
+.deck-card-table h3 { margin: 1.2rem 0 .2rem; }
+.deck-card-preview-shell { display: flex; flex-direction: column; align-items: center; gap: .45rem; min-width: 0; padding-top: 1.2rem; }
+#deck-card-canvas { width: min(100%, 300px); height: auto; aspect-ratio: 5 / 7; border-radius: 14px; box-shadow: 0 8px 20px #2225; background: #ece6d8; }
+#deck-card-preview-note { min-height: 1.3rem; margin: 0; color: #68756d; text-align: center; font-size: .82rem; }
 .card-preview-shell { align-self: start; display: flex; flex-direction: column; align-items: center; gap: .4rem; min-width: 0; }
 .mobile-editor-close { display: none; }
 #card-canvas { width: min(100%, 420px); height: auto; aspect-ratio: 5 / 7; border-radius: 18px; box-shadow: 0 10px 24px #2225; background: #ece6d8; }
@@ -108,6 +114,7 @@ textarea { resize: vertical; }
 .deck-card-row select { width: 4rem; margin: 0; grid-column: 4; }
 .deck-card-row strong { grid-column: 4; text-align: right; }
 @media (max-width: 850px) {
+  .deck-card-layout { grid-template-columns: 1fr; }
   .workspace { grid-template-columns: 1fr; }
   .card-layout { grid-template-columns: 1fr; }
   #cards-view > .editor-panel { display: none; }
