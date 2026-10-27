@@ -20,6 +20,7 @@ let profileSaveStatusTimer = null;
 const state = { user: null, isAdmin: false, cards: [], decks: [], profiles: [], card: null, deck: null, profile: null, deckCards: [], deckPreviewCard: null, deckPreviewArtworkUrl: null, deckPreviewSerial: 0, artworkUrl: null, artworkSerial: 0, renderSerial: 0, authVersion: 0, realtimeChannel: null, cardFormDirty: false };
 const ARTWORK_UPLOAD_LIMIT = 100 * 1024;
 const AVATAR_UPLOAD_LIMIT = 80 * 1024;
+const DECK_PATRONS_KEY = 'helianthe-deck-patrons';
 
 function applyTheme(dark) {
   document.body.classList.toggle('dark-mode', dark);
@@ -130,7 +131,24 @@ function ownerName(id) {
 }
 
 function patronByName(name) {
-  return PATRONS.find(patron => patron.name === name) || null;
+  const normalized = String(name || '').trim().toLowerCase();
+  if (!normalized) return null;
+  return PATRONS.find(patron => {
+    const fullName = patron.name.toLowerCase();
+    const shortName = patron.name.split(',')[0].trim().toLowerCase();
+    return fullName === normalized || shortName === normalized;
+  }) || null;
+}
+
+function savedDeckPatrons() {
+  try { return JSON.parse(localStorage.getItem(DECK_PATRONS_KEY) || '{}'); } catch { return {}; }
+}
+
+function rememberDeckPatron(deckId, patronName) {
+  const saved = savedDeckPatrons();
+  if (patronName) saved[deckId] = patronName;
+  else delete saved[deckId];
+  localStorage.setItem(DECK_PATRONS_KEY, JSON.stringify(saved));
 }
 
 function patronFactionClass(faction) {
@@ -141,7 +159,7 @@ function deckPatronElement(deck, className = 'deck-patron') {
   const patron = patronByName(deck?.patron_name);
   const label = document.createElement('span');
   label.className = `${className}${patron ? ` ${patronFactionClass(patron.faction)}` : ''}`;
-  label.textContent = patron ? `Patron: ${patron.name} · ${patron.faction}` : 'No Patron';
+  label.textContent = patron ? patron.name : 'No Patron';
   return label;
 }
 
@@ -722,7 +740,7 @@ async function selectDeck(deck) {
   const patronSelect = form.elements.patron_name;
   patronSelect.replaceChildren(new Option('No Patron', ''));
   for (const patron of PATRONS) patronSelect.append(new Option(patron.name, patron.name));
-  patronSelect.value = deck?.patron_name || '';
+  patronSelect.value = patronByName(deck?.patron_name)?.name || '';
   renderAuthorOptions($('#deck-author-options'), deck?.author_ids || (deck?.owner_id ? [deck.owner_id] : [state.user?.id].filter(Boolean)));
   const mine = Boolean(state.user && (!deck || deck.owner_id === state.user.id));
   for (const field of form.querySelectorAll('input,button')) field.disabled = !mine;
@@ -749,12 +767,21 @@ async function autosaveDeck() {
   const saved = state.deck
     ? await api.saveDeck(state.user.id, state.deck.id, values)
     : await api.createDeck(state.user.id, values);
+  rememberDeckPatron(saved.id, values.patron_name);
   await reloadCollections();
   await selectDeck(state.decks.find(item => item.id === saved.id) || saved);
   status('Deck saved.');
 }
 
 function queueDeckSave() {
+  if (state.deck) {
+    const updatedDeck = { ...state.deck, ...deckFormValues() };
+    rememberDeckPatron(updatedDeck.id, updatedDeck.patron_name);
+    state.deck = updatedDeck;
+    state.decks = state.decks.map(deck => deck.id === updatedDeck.id ? updatedDeck : deck);
+    renderDeckList();
+    if (state.profile) selectProfile(state.profiles.find(profile => profile.id === state.profile.id) || null);
+  }
   deckSaveQueue = deckSaveQueue.catch(() => {}).then(autosaveDeck);
   return deckSaveQueue;
 }
@@ -814,8 +841,11 @@ function selectProfile(profile) {
 
 async function reloadCollections() {
   [state.cards, state.decks, state.profiles] = await Promise.all([api.listCards(), api.listDecks(), api.listProfiles()]);
+  const savedPatrons = savedDeckPatrons();
+  state.decks = state.decks.map(deck => deck.patron_name || !savedPatrons[deck.id] ? deck : { ...deck, patron_name: savedPatrons[deck.id] });
   refreshCardAuthorFilter();
   renderCardList(); renderDeckList(); renderDeckCards(); renderProfileList();
+  if (state.profile) selectProfile(state.profiles.find(profile => profile.id === state.profile.id) || null);
 }
 
 function showProfileSaveStatus(message = 'Saved ✓', error = false) {

@@ -202,6 +202,7 @@ body.dark-mode .profile-save-status.error { color: #ef9187; }
 .deck-card-list-head { grid-template-columns: 2rem minmax(0, 1fr) minmax(5.5rem, auto) 4rem; margin: .8rem .35rem .3rem; min-height: 1.15rem; line-height: 1.15; }
 .deck-card-list-head span:nth-child(3), .deck-card-list-head span:last-child { text-align: right; }
 .deck-list-head { grid-template-columns: minmax(0, 1fr) minmax(5.5rem, auto); }
+.deck-list-head span:last-child { justify-self: start; }
 .card-list-item { display: grid; grid-template-columns: 2rem minmax(0, 1fr) minmax(5.5rem, auto); column-gap: .55rem; align-items: center; }
 .card-list-item .card-type-icon { grid-column: 1; grid-row: 1; width: 2rem; height: 2rem; object-fit: contain; }
 .card-list-item .event-type-icon { background: var(--event-icon-color); -webkit-mask: url('./assets/Event.png') center / contain no-repeat; mask: url('./assets/Event.png') center / contain no-repeat; }
