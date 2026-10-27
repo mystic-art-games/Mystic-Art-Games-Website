@@ -595,7 +595,6 @@ function selectCard(card, { openMobile = false } = {}) {
   renderAuthorOptions($('#card-author-options'), card?.author_ids || (card?.owner_id ? [card.owner_id] : [state.user?.id].filter(Boolean)));
   $('#card-heading').textContent = card?.title || 'New card';
   const mine = Boolean(state.user && card?.owner_id === state.user.id);
-  renderOwnerTag($('#card-owner'), card ? (mine ? 'Your card' : `By ${ownerName(card.owner_id)}`) : (state.user ? 'Your new card' : 'Sign in to create a card'), card && !mine ? card.owner_id : null);
   setCardFormEditable(Boolean(state.user && (!card || mine || state.isAdmin)));
   syncTerrain();
   renderPreview();
