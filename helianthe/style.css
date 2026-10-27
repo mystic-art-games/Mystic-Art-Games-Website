@@ -51,6 +51,7 @@ input:not([type=checkbox]):not([type=file]), select, textarea { display: block; 
 .favorite-card-native { position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0; pointer-events: none; }
 .favorite-card-trigger { display: flex; align-items: center; gap: .55rem; width: 100%; min-height: 2.55rem; margin: 0; text-align: left; }
 .favorite-card-trigger .card-type-icon, .favorite-card-option .card-type-icon { width: 1.6rem; height: 1.6rem; object-fit: contain; flex: 0 0 auto; }
+.favorite-card-option .event-type-icon { background: var(--event-icon-color); -webkit-mask: url('./assets/Event.png') center / contain no-repeat; mask: url('./assets/Event.png') center / contain no-repeat; }
 .favorite-card-option { display: flex; align-items: center; gap: .55rem; width: 100%; border: 0; border-radius: 0; background: transparent; text-align: left; }
 .favorite-card-option:hover:not(:disabled) { background: #e0ebda; }
 .favorite-card-option-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -282,6 +283,9 @@ body.dark-mode .masthead nav button.active { background: #366150; }
 body.dark-mode input:not([type=checkbox]):not([type=file]),
 body.dark-mode select,
 body.dark-mode textarea { border-color: #587965; background: #0d2b23; color: #e5eee0; }
+body.dark-mode .favorite-card-trigger { border-color: #587965; background: #0d2b23; color: #e5eee0; }
+body.dark-mode .favorite-card-menu { border-color: #587965; background: #12372c; box-shadow: 0 10px 24px #0008; }
+body.dark-mode .favorite-card-option:hover:not(:disabled) { background: #285944; }
 body.dark-mode input::placeholder,
 body.dark-mode textarea::placeholder { color: #8fa99b; }
 body.dark-mode .item-list button,

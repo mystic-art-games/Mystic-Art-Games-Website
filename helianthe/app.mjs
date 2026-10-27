@@ -144,17 +144,27 @@ function profileById(id) {
   return state.profiles.find(profile => profile.id === id) || null;
 }
 
+const avatarArtworkUrls = new Map();
+
 function avatarElement(profile, className = '') {
   const avatar = document.createElement('span');
   avatar.className = `user-avatar ${className}`.trim();
   avatar.textContent = (profile?.display_name || 'P').trim().charAt(0).toUpperCase() || 'P';
   if (profile?.avatar_id) {
     const image = document.createElement('img');
-    image.src = api.mediaUrl(profile.avatar_id);
     image.alt = '';
-    image.addEventListener('load', () => avatar.classList.add('has-image'));
-    image.addEventListener('error', () => image.remove());
     avatar.append(image);
+    const cachedUrl = avatarArtworkUrls.get(profile.avatar_id);
+    if (cachedUrl) {
+      image.src = cachedUrl;
+    } else {
+      void api.fetchArtwork(profile.avatar_id).then(blob => {
+        const url = URL.createObjectURL(blob);
+        avatarArtworkUrls.set(profile.avatar_id, url);
+        image.src = url;
+      }).catch(() => image.remove());
+    }
+    image.addEventListener('load', () => avatar.classList.add('has-image'));
   }
   return avatar;
 }
@@ -190,24 +200,29 @@ function favoriteCardName(cardId) {
 }
 
 let favoritePreviewSerial = 0;
+let favoritePreviewCard = null;
 const favoritePickerStates = new WeakMap();
 
 function hideFavoriteCardPreview() {
   favoritePreviewSerial += 1;
+  favoritePreviewCard = null;
   $('#favorite-card-preview').hidden = true;
 }
 
-async function showFavoriteCardPreview(card, target) {
+function positionFavoriteCardPreview(x, y) {
   const preview = $('#favorite-card-preview');
-  const canvas = $('#favorite-card-preview-canvas');
-  const serial = ++favoritePreviewSerial;
-  const bounds = target.getBoundingClientRect();
   const width = 250;
   const height = 350;
-  const left = Math.min(bounds.right + 12, window.innerWidth - width - 12);
-  const top = Math.max(12, Math.min(bounds.top, window.innerHeight - height - 12));
-  preview.style.left = `${Math.max(12, left)}px`;
-  preview.style.top = `${top}px`;
+  preview.style.left = `${Math.max(12, Math.min(x + 16, window.innerWidth - width - 12))}px`;
+  preview.style.top = `${Math.max(12, Math.min(y + 16, window.innerHeight - height - 12))}px`;
+}
+
+async function showFavoriteCardPreview(card, event) {
+  const preview = $('#favorite-card-preview');
+  const canvas = $('#favorite-card-preview-canvas');
+  favoritePreviewCard = card;
+  const serial = ++favoritePreviewSerial;
+  positionFavoriteCardPreview(event.clientX, event.clientY);
   preview.hidden = false;
   const previewCard = { ...card, author: authorNames(card.author_ids, card.owner_id).join(', ') };
   await renderCard(canvas, previewCard, '', () => serial === favoritePreviewSerial).catch(() => {});
@@ -267,7 +282,10 @@ function populateFavoriteCards(select, selectedId = '') {
     label.className = card ? `favorite-card-option-label card-list-title ${terrainClass(card.terrain)}` : 'favorite-card-option-label';
     label.textContent = card ? card.title : 'Choose a card';
     option.append(label);
-    option.addEventListener('mouseenter', () => card && void showFavoriteCardPreview(card, option));
+    option.addEventListener('mouseenter', event => card && void showFavoriteCardPreview(card, event));
+    option.addEventListener('mousemove', event => {
+      if (favoritePreviewCard === card && !$('#favorite-card-preview').hidden) positionFavoriteCardPreview(event.clientX, event.clientY);
+    });
     option.addEventListener('click', () => {
       select.value = value;
       select.dispatchEvent(new Event('change', { bubbles: true }));
