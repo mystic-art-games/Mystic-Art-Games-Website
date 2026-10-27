@@ -973,6 +973,24 @@ $('#profile-form').addEventListener('input', () => {
   clearTimeout(profileSaveStatusTimer);
 });
 
+$('#delete-account').addEventListener('click', async () => {
+  if (!state.user) return;
+  const confirmed = window.confirm('Delete your Helianthe account permanently? This removes your profile, cards, decks, and uploaded artwork.');
+  if (!confirmed) return;
+  const button = $('#delete-account');
+  button.disabled = true;
+  try {
+    const { error } = await client.rpc('delete_current_user');
+    if (error) throw new Error(error.message || 'Could not delete the account.');
+    try { localStorage.removeItem(pendingAvatarKey(state.user.email)); } catch {}
+    await client.auth.signOut({ scope: 'local' }).catch(() => {});
+    await loadPublicWorkspace();
+  } catch (cause) {
+    showProfileSaveStatus(cause.message || 'Could not delete the account.', true);
+    button.disabled = false;
+  }
+});
+
 client.auth.onAuthStateChange((event, session) => {
   if (event === 'SIGNED_OUT') void loadPublicWorkspace();
 });
