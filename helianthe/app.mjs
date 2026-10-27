@@ -735,6 +735,29 @@ async function selectDeck(deck) {
   else renderDeckCards();
 }
 
+let deckSaveQueue = Promise.resolve();
+
+function deckFormValues() {
+  const form = $('#deck-form');
+  return { ...Object.fromEntries(new FormData(form)), is_public: true, author_ids: selectedAuthorIds($('#deck-author-options')) };
+}
+
+async function autosaveDeck() {
+  if (!state.user) return;
+  const values = deckFormValues();
+  const saved = state.deck
+    ? await api.saveDeck(state.user.id, state.deck.id, values)
+    : await api.createDeck(state.user.id, values);
+  await reloadCollections();
+  await selectDeck(state.decks.find(item => item.id === saved.id) || saved);
+  status('Deck saved.');
+}
+
+function queueDeckSave() {
+  deckSaveQueue = deckSaveQueue.catch(() => {}).then(autosaveDeck);
+  return deckSaveQueue;
+}
+
 function renderProfileList() {
   const list = $('#profile-list');
   list.replaceChildren();
@@ -826,9 +849,26 @@ function startRealtimeSync() {
       for (const input of $('#deck-author-options').querySelectorAll('input')) input.disabled = !deckEditable;
     } catch (cause) { status(cause.message, true); }
   };
+  const refreshDecks = async () => {
+    const selectedDeckId = state.deck?.id;
+    const selectedPreviewId = state.deckPreviewCard?.id;
+    try {
+      await reloadCollections();
+      if (!selectedDeckId) return;
+      const updatedDeck = state.decks.find(deck => deck.id === selectedDeckId);
+      if (!updatedDeck) { state.deck = null; renderDeckCards(); return; }
+      state.deck = updatedDeck;
+      state.deckCards = await api.listDeckCards(updatedDeck.id);
+      const previewCard = state.cards.find(card => card.id === selectedPreviewId);
+      if (previewCard) await showDeckCardPreview(previewCard);
+      else renderDeckCards();
+    } catch (cause) { status(cause.message, true); }
+  };
   state.realtimeChannel = client.channel('helianthe-workspace')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'cards' }, refreshCards)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, refreshProfiles)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'decks' }, refreshDecks)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'deck_cards' }, refreshDecks)
     .subscribe();
 }
 
@@ -1102,20 +1142,11 @@ $('#duplicate-deck').addEventListener('click', async () => {
   } catch (cause) { status(cause.message, true); }
   finally { duplicate.disabled = !state.deck || !state.user; }
 });
-$('#deck-form').addEventListener('submit', async event => {
-  event.preventDefault();
-  const form = event.currentTarget;
-  const save = $('#save-deck'); save.disabled = true;
-  try {
-    const values = { ...Object.fromEntries(new FormData(form)), is_public: true, author_ids: selectedAuthorIds($('#deck-author-options')) };
-    const wasNew = !state.deck;
-    const deck = state.deck ? await api.saveDeck(state.user.id, state.deck.id, values) : await api.createDeck(state.user.id, values);
-    await reloadCollections();
-    await selectDeck(state.decks.find(item => item.id === deck.id) || deck);
-    status(wasNew ? 'Public deck created.' : 'Deck saved.');
-  } catch (cause) { status(cause.message, true); }
-  finally { save.disabled = false; }
-});
+for (const field of [$('#deck-form').elements.name, $('#deck-form').elements.patron_name]) {
+  field.addEventListener('change', () => { void queueDeckSave().catch(cause => status(cause.message, true)); });
+}
+$('#deck-author-options').addEventListener('change', () => { void queueDeckSave().catch(cause => status(cause.message, true)); });
+$('#deck-form').addEventListener('submit', event => event.preventDefault());
 
 $('#profile-form').addEventListener('submit', async event => {
   event.preventDefault();
