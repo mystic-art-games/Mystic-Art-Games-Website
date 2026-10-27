@@ -120,7 +120,8 @@ function pendingAvatarKey(email) {
 }
 
 function status(message, error = false) {
-  // Status messages are intentionally not rendered in the public editor.
+  const method = error ? 'error' : 'info';
+  console[method](`[Helianthe] ${message}`);
 }
 
 function ownerName(id) {
@@ -1221,6 +1222,51 @@ $('#confirm-delete-account').addEventListener('click', async () => {
 document.addEventListener('keydown', event => {
   if (event.key === 'Escape' && !$('#delete-account-modal').hidden) closeDeleteAccountModal();
 });
+
+function initArtDecoScrollbars() {
+  for (const element of document.querySelectorAll('.item-list, .deck-cards')) {
+    if (element.parentElement?.classList.contains('art-scroll-wrap')) continue;
+    const wrapper = document.createElement('div');
+    wrapper.className = 'art-scroll-wrap';
+    element.parentNode.insertBefore(wrapper, element);
+    wrapper.append(element);
+    const rail = document.createElement('div');
+    rail.className = 'art-scroll-rail';
+    rail.setAttribute('aria-hidden', 'true');
+    const thumb = document.createElement('button');
+    thumb.className = 'art-scroll-thumb';
+    thumb.type = 'button';
+    thumb.tabIndex = -1;
+    rail.append(thumb);
+    wrapper.append(rail);
+    const update = () => {
+      const maxScroll = element.scrollHeight - element.clientHeight;
+      const railHeight = rail.clientHeight;
+      const thumbHeight = Math.max(58, Math.min(railHeight, railHeight * element.clientHeight / Math.max(element.scrollHeight, 1)));
+      thumb.style.height = `${thumbHeight}px`;
+      thumb.style.display = maxScroll > 0 ? '' : 'none';
+      thumb.style.transform = `translateY(${maxScroll > 0 ? (element.scrollTop / maxScroll) * (railHeight - thumbHeight) : 0}px)`;
+    };
+    element.addEventListener('scroll', update, { passive: true });
+    new ResizeObserver(update).observe(element);
+    thumb.addEventListener('pointerdown', event => {
+      event.preventDefault();
+      thumb.setPointerCapture(event.pointerId);
+      const startY = event.clientY;
+      const startScroll = element.scrollTop;
+      const move = moveEvent => {
+        const maxScroll = element.scrollHeight - element.clientHeight;
+        const travel = rail.clientHeight - thumb.offsetHeight;
+        if (maxScroll > 0 && travel > 0) element.scrollTop = startScroll + (moveEvent.clientY - startY) * maxScroll / travel;
+      };
+      thumb.addEventListener('pointermove', move);
+      thumb.addEventListener('pointerup', () => thumb.removeEventListener('pointermove', move), { once: true });
+    });
+    update();
+  }
+}
+
+initArtDecoScrollbars();
 
 client.auth.onAuthStateChange((event, session) => {
   if (event === 'SIGNED_OUT') void loadPublicWorkspace();

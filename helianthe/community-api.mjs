@@ -115,16 +115,29 @@ export function createCommunityApi(client) {
     async createCard(userId, values) {
       if (!userId) throw new Error('Sign in first.');
       const row = { ...cardInput(values), owner_id: userId };
-      return result(await client.from('cards').insert(row).select().single());
+      let response = await client.from('cards').insert(row).select().single();
+      if (response.error && /author_ids/i.test(response.error.message || '')) {
+        const { author_ids, ...legacyRow } = row;
+        response = await client.from('cards').insert(legacyRow).select().single();
+      }
+      return result(response);
     },
 
     async saveCard(userId, cardId, values, isAdmin = false) {
       if (!userId || !cardId) throw new Error('Select your own card.');
       const patch = { ...cardInput(values), updated_at: new Date().toISOString() };
       if (values.artwork_id !== undefined) patch.artwork_id = values.artwork_id || null;
-      let query = client.from('cards').update(patch).eq('id', cardId);
-      if (!isAdmin) query = query.eq('owner_id', userId);
-      const rows = result(await query.select());
+      const update = async valuesToSave => {
+        let query = client.from('cards').update(valuesToSave).eq('id', cardId);
+        if (!isAdmin) query = query.eq('owner_id', userId);
+        return query.select();
+      };
+      let response = await update(patch);
+      if (response.error && /author_ids/i.test(response.error.message || '')) {
+        const { author_ids, ...legacyPatch } = patch;
+        response = await update(legacyPatch);
+      }
+      const rows = result(response);
       if (!rows?.length) throw new Error('Only the card creator or designated administrator can edit this card.');
       return rows[0];
     },
