@@ -13,9 +13,9 @@
   <link rel="apple-touch-icon" href="../images/helianthe-home-icon.png">
   <link rel="manifest" href="./manifest.webmanifest">
   <title>Helianthe</title>
-  <link rel="stylesheet" href="./style.css?v=helianthe-ui-34">
+  <link rel="stylesheet" href="./style.css?v=helianthe-ui-35">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script type="module" src="./app.mjs?v=helianthe-ui-34"></script>
+  <script type="module" src="./app.mjs?v=helianthe-ui-35"></script>
 </head>
 <body>
   <header class="masthead">
@@ -107,10 +107,10 @@
         <form id="card-form">
           <label>Title<input name="title" required maxlength="200"></label>
           <div class="two-cols"><label>Type<select name="card_type"><option>Entity</option><option>Event</option></select></label><label>Terrain<select name="terrain"><option value="">None</option><option>Symbiosis</option><option>Flow</option><option>Evergreen</option><option>Radiance</option></select></label></div>
-          <label>Effect<textarea name="effect" rows="7" maxlength="6000"></textarea></label>
+          <label>Effect<textarea name="effect" rows="5" maxlength="6000"></textarea></label>
         <fieldset class="author-picker"><legend>Authors</legend><div id="card-author-options"></div></fieldset>
           <label>Artwork<input id="card-artwork" type="file" accept="image/png,image/jpeg,image/webp"></label>
-          <p class="hint">Artwork is automatically compressed to 100 KB before upload. Source files can be up to 20 MB. Cards are publicly visible; only their creator or the designated administrator can edit them.</p>
+          <p class="hint">Artwork is automatically compressed to 100 KB before upload. Source files can be up to 20 MB.</p>
           <button id="save-card" type="submit">Save card</button>
         </form>
         <section class="card-preview-shell" aria-label="Card preview and export">
