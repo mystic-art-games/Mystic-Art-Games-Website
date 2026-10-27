@@ -26,7 +26,7 @@ body.dark-mode .theme-state { margin-left: 0; }
 #account-name { display: inline-flex; align-items: center; gap: .45rem; text-align: right; }
 .masthead nav { display: flex; gap: .3rem; }
 .masthead nav button, #sign-out { background: transparent; color: #fff8e8; border-color: transparent; }
-.masthead nav button.active { background: #366150; }
+.masthead nav button.active { border-color: transparent; background: transparent url('./assets/active-tab-frame.png') center / 100% 100% no-repeat; color: #f2c96b; }
 #account-name { margin-left: auto; color: #fff8e8; font-weight: 700; white-space: nowrap; border: 0; background: transparent; padding: .35rem .5rem; }
 #account-name:hover:not(:disabled) { background: rgba(255, 248, 232, .14); }
 #sign-in, #sign-out { border-color: #749a88; }
@@ -323,7 +323,7 @@ body.dark-mode button:hover:not(:disabled) { background: #23503f; }
 body.dark-mode .masthead nav button,
 body.dark-mode #sign-out,
 body.dark-mode #account-name { background: transparent; color: #fff8e8; }
-body.dark-mode .masthead nav button.active { background: #366150; }
+body.dark-mode .masthead nav button.active { background: transparent url('./assets/active-tab-frame.png') center / 100% 100% no-repeat; color: #f2c96b; }
 body.dark-mode input:not([type=checkbox]):not([type=file]),
 body.dark-mode select,
 body.dark-mode textarea { border-color: #587965; background: #0d2b23; color: #e5eee0; }
