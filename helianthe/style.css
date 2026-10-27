@@ -174,10 +174,13 @@ body.dark-mode .profile-save-status.error { color: #ef9187; }
 .deck-card-row select { width: 4rem; margin: 0; grid-column: 4; }
 .deck-card-row strong { grid-column: 4; text-align: right; }
 @media (min-width: 851px) {
-  #cards-view.workspace { height: calc(100vh - 100px); min-height: 0; }
-  #cards-view > .sidebar { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
-  #cards-view > .sidebar #card-list { flex: 1 1 auto; min-height: 0; overflow-x: hidden; overflow-y: auto; padding-right: .2rem; }
-  #cards-view > .editor-panel { min-height: 0; overflow-x: hidden; overflow-y: auto; }
+  html, body { height: 100%; overflow: hidden; }
+  .workspace, .patrons-workspace { height: calc(100vh - 116px); min-height: 0; overflow: hidden; }
+  .workspace > .sidebar, .workspace > .editor-panel, .patrons-panel { min-width: 0; min-height: 0; overflow-x: hidden; overflow-y: auto; }
+  .workspace > .sidebar { display: flex; flex-direction: column; }
+  .workspace > .sidebar > .item-list { flex: 1 1 auto; min-height: 0; overflow-x: hidden; overflow-y: auto; }
+  #cards-view > .sidebar #card-list { padding-right: .2rem; }
+  .patrons-panel { height: 100%; }
 }
 @media (max-width: 850px) {
   .deck-card-layout { grid-template-columns: 1fr; }
