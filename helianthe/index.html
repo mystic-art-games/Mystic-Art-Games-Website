@@ -76,6 +76,15 @@
     </section>
   </div>
 
+  <div id="delete-account-modal" class="auth-modal" hidden>
+    <button id="delete-account-backdrop" class="auth-modal-backdrop" type="button" aria-label="Close delete account dialog"></button>
+    <section class="auth-modal-card danger-modal-card" role="dialog" aria-modal="true" aria-labelledby="delete-account-title" aria-describedby="delete-account-description">
+      <div class="auth-modal-head"><h1 id="delete-account-title">Delete account?</h1><button id="close-delete-account" class="auth-modal-close" type="button" aria-label="Close delete account dialog">×</button></div>
+      <p id="delete-account-description">Deleting your account permanently removes your profile, cards, decks, and uploaded artwork.</p>
+      <div class="actions danger-modal-actions"><button id="confirm-delete-account" type="button">Delete permanently</button><button id="cancel-delete-account" type="button">Cancel</button></div>
+    </section>
+  </div>
+
   <main id="cards-view" class="workspace" hidden>
     <aside class="panel sidebar">
       <div class="panel-head"><h1>Cards</h1><button id="new-card" type="button">+ New card</button></div>

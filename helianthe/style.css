@@ -53,6 +53,10 @@ textarea { resize: vertical; }
 .actions button:first-child, #save-card, #save-deck, #profile-form button { background: #265847; color: white; border-color: #265847; }
 #profile-form #delete-account { background: #a23d35; border-color: #a23d35; }
 #profile-form #delete-account:hover:not(:disabled) { background: #842f2a; border-color: #842f2a; }
+.danger-modal-card { border-color: #d49a91; }
+.danger-modal-actions { justify-content: flex-end; }
+.danger-modal-actions button:first-child { background: #a23d35; border-color: #a23d35; }
+.danger-modal-actions button:first-child:hover:not(:disabled) { background: #842f2a; border-color: #842f2a; }
 #new-card { background: #265847; color: white; border-color: #265847; }
 #new-card:hover:not(:disabled) { background: #1d4939; }
 .form-hint { margin: -0.35rem 0 0.75rem; color: #68756d; font-size: 0.85rem; }

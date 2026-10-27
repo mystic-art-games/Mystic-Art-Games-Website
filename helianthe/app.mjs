@@ -968,12 +968,33 @@ $('#profile-form').addEventListener('input', () => {
   clearTimeout(profileSaveStatusTimer);
 });
 
-$('#delete-account').addEventListener('click', async () => {
+const closeDeleteAccountModal = () => {
+  $('#delete-account-modal').hidden = true;
+  document.body.classList.remove('auth-modal-open');
+};
+
+const openDeleteAccountModal = () => {
+  $('#delete-account-modal').hidden = false;
+  document.body.classList.add('auth-modal-open');
+  $('#cancel-delete-account').focus();
+};
+
+$('#delete-account').addEventListener('click', () => {
   if (!state.user) return;
-  const confirmed = window.confirm('Deleting your account permanently removes your profile, cards, decks, and uploaded artwork.\n\nDo you want to continue?');
-  if (!confirmed) return;
+  openDeleteAccountModal();
+});
+
+$('#delete-account-backdrop').addEventListener('click', closeDeleteAccountModal);
+$('#close-delete-account').addEventListener('click', closeDeleteAccountModal);
+$('#cancel-delete-account').addEventListener('click', closeDeleteAccountModal);
+
+$('#confirm-delete-account').addEventListener('click', async () => {
+  if (!state.user) return;
   const button = $('#delete-account');
+  const confirmButton = $('#confirm-delete-account');
+  closeDeleteAccountModal();
   button.disabled = true;
+  confirmButton.disabled = true;
   try {
     const { error } = await client.rpc('delete_current_user');
     if (error) throw new Error(error.message || 'Could not delete the account.');
@@ -983,7 +1004,12 @@ $('#delete-account').addEventListener('click', async () => {
   } catch (cause) {
     showProfileSaveStatus(cause.message || 'Could not delete the account.', true);
     button.disabled = false;
+    confirmButton.disabled = false;
   }
+});
+
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && !$('#delete-account-modal').hidden) closeDeleteAccountModal();
 });
 
 client.auth.onAuthStateChange((event, session) => {
