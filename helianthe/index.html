@@ -13,9 +13,9 @@
   <link rel="apple-touch-icon" href="../images/helianthe-sunflower.png?v=helianthe-favicon-2">
   <link rel="manifest" href="./manifest.webmanifest">
   <title>Helianthe</title>
-  <link rel="stylesheet" href="./style.css?v=helianthe-ui-38">
+  <link rel="stylesheet" href="./style.css?v=helianthe-ui-39">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script type="module" src="./app.mjs?v=helianthe-ui-38"></script>
+  <script type="module" src="./app.mjs?v=helianthe-ui-39"></script>
 </head>
 <body>
   <header class="masthead">
@@ -96,7 +96,7 @@
       <div class="card-filters" aria-label="Filter cards">
         <label>Type<select id="card-filter-type"><option value="">All types</option><option value="Entity">Entity</option><option value="Event">Event</option></select></label>
         <label>Author<select id="card-filter-author"><option value="">All authors</option></select></label>
-        <label>Color<select id="card-filter-terrain"><option value="">All colors</option><option value="Symbiosis">Symbiosis</option><option value="Flow">Flow</option><option value="Evergreen">Evergreen</option><option value="Radiance">Radiance</option><option value="none">No color</option></select></label>
+        <label>Color<select id="card-filter-terrain"><option value="">All colors</option><option value="Symbiosis">Symbiosis</option><option value="Flow">Flow</option><option value="Verdant">Verdant</option><option value="Radiance">Radiance</option><option value="none">No color</option></select></label>
       </div>
       <div class="list-table-head card-list-head" aria-hidden="true"><span></span><span>Card name</span><span>Author</span></div>
       <div id="card-list" class="item-list" role="list"></div>
@@ -106,7 +106,7 @@
       <div class="card-layout">
         <form id="card-form">
           <label>Title<input name="title" required maxlength="200"></label>
-          <div class="two-cols"><label>Type<select name="card_type"><option>Entity</option><option>Event</option></select></label><label>Terrain<select name="terrain"><option value="">None</option><option>Symbiosis</option><option>Flow</option><option>Evergreen</option><option>Radiance</option></select></label></div>
+          <div class="two-cols"><label>Type<select name="card_type"><option>Entity</option><option>Event</option></select></label><label>Terrain<select name="terrain"><option value="">None</option><option>Symbiosis</option><option>Flow</option><option>Verdant</option><option>Radiance</option></select></label></div>
           <label>Effect<textarea name="effect" rows="5" maxlength="6000"></textarea></label>
         <fieldset class="author-picker"><legend>Authors</legend><div id="card-author-options"></div></fieldset>
           <label>Artwork<input id="card-artwork" type="file" accept="image/png,image/jpeg,image/webp"></label>

@@ -4,8 +4,8 @@ const ASSETS = new URL('./assets/', import.meta.url);
 const DEFAULT_ARTWORK = asset('Poseidons_Chosen_One_Comic.png?v=3');
 const imageCache = new Map();
 const eventTints = new WeakMap();
-const terrainColors = { Symbiosis: '#784997', Flow: '#428da7', Evergreen: '#68a66c', Radiance: '#e0b52f' };
-const eventSymbolColors = { Symbiosis: '#784997', Flow: '#35758e', Evergreen: '#488057', Radiance: '#a87318' };
+const terrainColors = { Symbiosis: '#784997', Flow: '#428da7', Verdant: '#68a66c', Radiance: '#e0b52f' };
+const eventSymbolColors = { Symbiosis: '#784997', Flow: '#35758e', Verdant: '#488057', Radiance: '#a87318' };
 const cardFont = 'Nunito';
 const rulesFont = 'Nunito, Segoe UI, Arial, sans-serif';
 
@@ -157,7 +157,7 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
   for (const line of fitted.lines) {
     let x = 59;
     const baseColor = ctx.fillStyle;
-    for (const part of line.split(/(Dusk:|\b\d+\b|Symbiosis|Flow|Evergreen|Radiance)/g)) {
+    for (const part of line.split(/(Dusk:|\b\d+\b|Symbiosis|Flow|Verdant|Radiance)/g)) {
       if (!part) continue;
       ctx.fillStyle = terrainColors[part] || baseColor;
       ctx.font = `${/^(Dusk:|\d+)$/.test(part) ? 700 : 500} ${fitted.size}px ${rulesFont}`;

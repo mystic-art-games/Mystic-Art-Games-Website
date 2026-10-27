@@ -1,6 +1,6 @@
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.mjs';
 
-const TERRAINS = new Set(['Symbiosis', 'Flow', 'Evergreen', 'Radiance']);
+const TERRAINS = new Set(['Symbiosis', 'Flow', 'Verdant', 'Radiance']);
 const CARD_TYPES = new Set(['Entity', 'Event']);
 
 function result(response) {

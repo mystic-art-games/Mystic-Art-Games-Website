@@ -138,10 +138,10 @@ body.dark-mode .profile-save-status.error { color: #ef9187; }
 .patron-faction-flowbound { color: #35758e; }
 .patron-faction-brightworks { color: #a87318; }
 .patron-faction-dreamwardens { color: #784997; }
-.patron-faction-evergreen { color: #488057; }
+.patron-faction-verdant { color: #488057; }
 .card-list-title.terrain-symbiosis { color: #784997; }
 .card-list-title.terrain-flow { color: #35758e; }
-.card-list-title.terrain-evergreen { color: #488057; }
+.card-list-title.terrain-verdant { color: #488057; }
 .card-list-title.terrain-radiance { color: #a87318; }
 .card-list-title.terrain-event { color: #4d5b55; }
 .card-layout { display: grid; grid-template-columns: minmax(260px, 1fr) minmax(280px, 420px); gap: 1.6rem; }
@@ -333,7 +333,7 @@ body.dark-mode .deck-card-row.selected { background: #285944; box-shadow: inset 
 body.dark-mode .deck-card-row.selected:hover { background: #30634d; }
 body.dark-mode .card-list-title.terrain-symbiosis { color: #c18ad5; }
 body.dark-mode .card-list-title.terrain-flow { color: #83bfd1; }
-body.dark-mode .card-list-title.terrain-evergreen { color: #8fc99a; }
+body.dark-mode .card-list-title.terrain-verdant { color: #8fc99a; }
 body.dark-mode .card-list-title.terrain-radiance { color: #e2bd70; }
 body.dark-mode .card-list-title.terrain-event { color: #c0cec7; }
 body.dark-mode #decks-view.mobile-card-preview-open .deck-card-preview-shell { border-color: #416853; background: #12372c; }

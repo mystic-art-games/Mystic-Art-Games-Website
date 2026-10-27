@@ -358,18 +358,18 @@ function cardTypeIconElement(card) {
 
 function cardTypeIcon(card) {
   if (card.card_type === 'Event') return './assets/Event.png';
-  const terrain = ['Symbiosis', 'Flow', 'Evergreen', 'Radiance'].includes(card.terrain) ? card.terrain : 'Flow';
+  const terrain = ['Symbiosis', 'Flow', 'Verdant', 'Radiance'].includes(card.terrain) ? card.terrain : 'Flow';
   return `./assets/Entity_${terrain}.png`;
 }
 
 function eventIconColor(terrain) {
   return {
-    Symbiosis: '#9a61b0', Flow: '#6996bf', Evergreen: '#65a838', Radiance: '#d2c23f',
+    Symbiosis: '#9a61b0', Flow: '#6996bf', Verdant: '#65a838', Radiance: '#d2c23f',
   }[terrain] || '#909592';
 }
 
 function terrainClass(terrain) {
-  return ['Symbiosis', 'Flow', 'Evergreen', 'Radiance'].includes(terrain) ? `terrain-${terrain.toLowerCase()}` : 'terrain-event';
+  return ['Symbiosis', 'Flow', 'Verdant', 'Radiance'].includes(terrain) ? `terrain-${terrain.toLowerCase()}` : 'terrain-event';
 }
 
 function button(label, action, className = '') {
