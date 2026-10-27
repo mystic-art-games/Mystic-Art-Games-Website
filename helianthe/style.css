@@ -127,7 +127,8 @@ body.dark-mode .profile-save-status.error { color: #ef9187; }
 #cards-view #card-list .card-list-item.selected { background: #dceadd; border-bottom-color: #c6d8c8; }
 #cards-view #card-list .card-type-icon { width: 1.65rem; height: 1.65rem; }
 #cards-view #card-list .card-list-title { font-size: .9rem; }
-#cards-view #card-list .card-list-owner { font-size: .7rem; }
+#cards-view .card-list-head span:last-child { text-align: left; }
+#cards-view #card-list .card-list-owner { justify-content: flex-start; font-size: .7rem; text-align: left; }
 .deck-list-item { display: grid; grid-template-columns: minmax(0, 1fr) minmax(5.5rem, auto); column-gap: .55rem; align-items: center; }
 .deck-list-title-wrap { display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
 .deck-list-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

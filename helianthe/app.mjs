@@ -3,6 +3,10 @@ import { createCommunityApi } from './community-api.mjs';
 import { renderCard, downloadCardPNG } from './card-renderer.mjs';
 import { PATRONS } from './patrons.mjs';
 
+document.title = ['127.0.0.1', 'localhost', '::1'].includes(window.location.hostname)
+  ? 'Helianthe — Local Preview'
+  : 'Helianthe';
+
 const $ = selector => document.querySelector(selector);
 if (!window.supabase?.createClient) throw new Error('The Supabase client could not be loaded.');
 const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
