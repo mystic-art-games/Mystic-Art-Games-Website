@@ -124,6 +124,22 @@ function ownerName(id) {
   return state.profiles.find(profile => profile.id === id)?.display_name || 'Player';
 }
 
+function patronByName(name) {
+  return PATRONS.find(patron => patron.name === name) || null;
+}
+
+function patronFactionClass(faction) {
+  return `patron-faction-${String(faction || '').toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+}
+
+function deckPatronElement(deck, className = 'deck-patron') {
+  const patron = patronByName(deck?.patron_name);
+  const label = document.createElement('span');
+  label.className = `${className}${patron ? ` ${patronFactionClass(patron.faction)}` : ''}`;
+  label.textContent = patron ? `Patron: ${patron.name} · ${patron.faction}` : 'No Patron';
+  return label;
+}
+
 function profileById(id) {
   return state.profiles.find(profile => profile.id === id) || null;
 }
@@ -488,8 +504,11 @@ function renderDeckList() {
   for (const deck of state.decks) {
     const row = button('', () => void selectDeck(deck), `deck-list-item${state.deck?.id === deck.id ? ' selected' : ''}`);
     const title = document.createElement('span');
-    title.className = 'deck-list-title';
-    title.textContent = deck.name;
+    title.className = 'deck-list-title-wrap';
+    const name = document.createElement('strong');
+    name.className = 'deck-list-title';
+    name.textContent = deck.name;
+    title.append(name, deckPatronElement(deck));
     const meta = document.createElement('small');
     meta.className = 'deck-list-owner';
     meta.append(authorDisplayElement(deck.author_ids, deck.owner_id));
@@ -631,7 +650,12 @@ function selectProfile(profile) {
   $('#profile-favorite-card').textContent = `Favorite card: ${favoriteCardName(profile.favorite_card_id)}`;
   const list = $('#profile-decks'); list.replaceChildren();
   for (const deck of state.decks.filter(item => item.owner_id === profile.id && item.is_public)) {
-    list.append(button(deck.name, () => { showTab('decks'); void selectDeck(deck); }));
+    const deckButton = button('', () => { showTab('decks'); void selectDeck(deck); });
+    const deckName = document.createElement('strong');
+    deckName.className = 'profile-deck-name';
+    deckName.textContent = deck.name;
+    deckButton.append(deckName, deckPatronElement(deck, 'profile-deck-patron'));
+    list.append(deckButton);
   }
   if (!list.childElementCount) list.textContent = 'No decks yet.';
   renderProfileList();

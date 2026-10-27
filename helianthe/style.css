@@ -107,8 +107,15 @@ body.dark-mode .profile-save-status.error { color: #ef9187; }
 .card-list-item .card-list-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
 .card-list-item .card-list-owner { grid-column: 3; grid-row: 1; display: flex; justify-content: flex-end; min-width: 0; overflow: hidden; text-align: right; }
 .deck-list-item { display: grid; grid-template-columns: minmax(0, 1fr) minmax(5.5rem, auto); column-gap: .55rem; align-items: center; }
-.deck-list-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
+.deck-list-title-wrap { display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+.deck-list-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .deck-list-owner { display: flex; justify-content: flex-end; min-width: 0; overflow: hidden; text-align: right; }
+.deck-patron, .profile-deck-patron { display: block; overflow: hidden; color: #68756d; font-size: .74rem; font-weight: 700; line-height: 1.25; text-overflow: ellipsis; white-space: nowrap; }
+.profile-deck-name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.patron-faction-flowbound { color: #35758e; }
+.patron-faction-brightworks { color: #a87318; }
+.patron-faction-dreamwardens { color: #784997; }
+.patron-faction-evergreen { color: #488057; }
 .card-list-title.terrain-symbiosis { color: #784997; }
 .card-list-title.terrain-flow { color: #35758e; }
 .card-list-title.terrain-evergreen { color: #488057; }
