@@ -78,14 +78,10 @@ textarea { resize: vertical; }
 .workspace,
 .patrons-workspace {
   background: transparent;
-  border: solid transparent;
-  border-width: 70px;
-  border-image-source: url('./assets/panel-frame.png');
-  border-image-slice: 100;
-  border-image-width: 70px;
-  border-image-repeat: stretch;
+  border: 0;
 }
-.workspace { display: grid; grid-template-columns: minmax(300px, 390px) minmax(0, 1fr); width: 100%; max-width: 1450px; gap: 1rem; margin: 1rem auto; padding: 1rem; }
+.workspace { display: grid; grid-template-columns: minmax(300px, 390px) minmax(0, 1fr); width: 100%; max-width: 1450px; gap: .35rem; margin: 1rem auto; padding: .25rem; }
+#cards-view.workspace { grid-template-columns: minmax(360px, 470px) minmax(0, 1fr); }
 .workspace,
 .patrons-workspace { width: calc(100% - 2rem); }
 .workspace > .panel,
@@ -125,6 +121,53 @@ textarea { resize: vertical; }
 .art-scroll-thumb { position: absolute; top: 0; width: 14px; height: 44px; border: 0; padding: 0; background: transparent url('./assets/art-deco-scroll-thumb-vertical.png') center / 100% 100% no-repeat; cursor: grab; pointer-events: auto; touch-action: none; }
 .art-scroll-thumb:hover:not(:disabled) { background: transparent url('./assets/art-deco-scroll-thumb-vertical.png') center / 100% 100% no-repeat; filter: brightness(.9); }
 .art-scroll-thumb:active { cursor: grabbing; }
+@media (min-width: 851px) {
+  .workspace,
+  .patrons-workspace {
+    background: transparent;
+    border: 0;
+    padding: .25rem;
+  }
+  #cards-view .cards-sidebar {
+    border: solid transparent;
+    border-width: 28px;
+    border-image-source: url('./assets/card-table-frame.png');
+    border-image-slice: 90;
+    border-image-width: 28px;
+    border-image-repeat: stretch;
+    padding: .45rem;
+    overflow: hidden;
+  }
+  #cards-view > .editor-panel {
+    border: solid transparent;
+    border-width: 28px;
+    border-image-source: url('./assets/card-table-frame.png');
+    border-image-slice: 90;
+    border-image-width: 28px;
+    border-image-repeat: stretch;
+    padding: .45rem;
+    overflow: hidden;
+    font-size: .9rem;
+  }
+  #cards-view > .editor-panel .card-layout { gap: .8rem; }
+  #cards-view > .editor-panel form label { margin: .25rem 0; }
+  #cards-view > .editor-panel .actions { margin-top: .65rem; }
+  #cards-view > .editor-panel #card-canvas { width: min(100%, 360px); }
+  #cards-view > .editor-panel textarea { min-height: 82px; }
+  #cards-view .card-table-shell {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+    padding: 0;
+  }
+  #cards-view .card-table-shell > .art-scroll-wrap { flex: 1 1 auto; min-height: 0; }
+  #cards-view .card-table-shell > .list-table-head { flex: 0 0 auto; margin-top: .7rem; }
+  #cards-view .card-table-shell .art-scroll-wrap > .item-list {
+    width: calc(100% - 24px);
+    padding-right: 2.5rem;
+  }
+}
 .profile-group-title { margin-top: .9rem; color: #50705e; font-size: .78rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
 .profile-group-title:first-child { margin-top: .2rem; }
 .profile-list-entry { display: flex; flex-direction: column; gap: .15rem; }
@@ -211,7 +254,7 @@ body.dark-mode .profile-save-status.error { color: #ef9187; }
 .author-picker > div { display: flex; flex-direction: column; align-items: flex-start; gap: .4rem; }
 .author-option { display: flex; align-items: center; gap: .4rem; margin: 0; font-weight: 500; }
 .author-option input { width: auto; margin: 0; }
-.patrons-workspace { max-width: 1100px; margin: 1rem auto; padding: 1rem; }
+.patrons-workspace { max-width: 1100px; margin: 1rem auto; padding: .25rem; }
 .patrons-panel { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; }
 .patron-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; }
 .patron-card { padding: 1.1rem; border: 1px solid #c4cebc; border-radius: 12px; background: #f7f7ee; }
@@ -246,6 +289,8 @@ body.dark-mode .deck-card-row.selected { border-bottom-color: #416853; backgroun
   .patrons-panel { height: 100%; }
 }
 @media (max-width: 850px) {
+  .workspace,
+  .patrons-workspace { background: transparent; border: 0; padding: .5rem; }
   .art-scroll-rail { display: none !important; }
   .art-scroll-wrap > .item-list,
   .art-scroll-wrap > .deck-cards { width: 100%; padding-right: 0; }

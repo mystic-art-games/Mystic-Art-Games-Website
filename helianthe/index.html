@@ -90,7 +90,7 @@
   </div>
 
   <main id="cards-view" class="workspace" hidden>
-    <aside class="panel sidebar">
+    <aside class="panel sidebar cards-sidebar">
       <div class="panel-head"><h1>Cards</h1><button id="new-card" type="button">+ New card</button></div>
       <input id="card-search" type="search" placeholder="Search cards…" aria-label="Search cards">
       <div class="card-filters" aria-label="Filter cards">
@@ -98,8 +98,10 @@
         <label>Author<select id="card-filter-author"><option value="">All authors</option></select></label>
         <label>Color<select id="card-filter-terrain"><option value="">All colors</option><option value="Symbiosis">Symbiosis</option><option value="Flow">Flow</option><option value="Verdant">Verdant</option><option value="Radiance">Radiance</option><option value="none">No color</option></select></label>
       </div>
-      <div class="list-table-head card-list-head" aria-hidden="true"><span></span><span>Card name</span><span>Author</span></div>
-      <div id="card-list" class="item-list" role="list"></div>
+      <div class="card-table-shell">
+        <div class="list-table-head card-list-head" aria-hidden="true"><span></span><span>Card name</span><span>Author</span></div>
+        <div id="card-list" class="item-list" role="list"></div>
+      </div>
     </aside>
     <section class="panel editor-panel" aria-label="Card editor">
       <div class="panel-head"><h2 id="card-heading">Select a card</h2><button id="close-mobile-editor" class="mobile-editor-close" type="button" aria-label="Close card editor">×</button></div>
