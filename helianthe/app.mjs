@@ -1242,8 +1242,9 @@ function initArtDecoScrollbars() {
     const update = () => {
       const maxScroll = element.scrollHeight - element.clientHeight;
       const railHeight = rail.clientHeight;
-      const thumbHeight = Math.max(58, Math.min(railHeight, railHeight * element.clientHeight / Math.max(element.scrollHeight, 1)));
+      const thumbHeight = Math.min(railHeight, 44);
       thumb.style.height = `${thumbHeight}px`;
+      rail.style.display = maxScroll > 0 ? '' : 'none';
       thumb.style.display = maxScroll > 0 ? '' : 'none';
       thumb.style.transform = `translateY(${maxScroll > 0 ? (element.scrollTop / maxScroll) * (railHeight - thumbHeight) : 0}px)`;
     };

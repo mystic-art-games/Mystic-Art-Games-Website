@@ -91,14 +91,14 @@ textarea { resize: vertical; }
 .deck-cards::-webkit-scrollbar { display: none; }
 .art-scroll-wrap { position: relative; min-height: 0; }
 .art-scroll-wrap > .item-list,
-.art-scroll-wrap > .deck-cards { scrollbar-width: none; }
+.art-scroll-wrap > .deck-cards { scrollbar-width: none; width: calc(100% - 18px); padding-right: 2.25rem; box-sizing: border-box; }
 .workspace > .sidebar > .art-scroll-wrap { flex: 1 1 auto; overflow: hidden; }
 .art-scroll-wrap > .item-list { height: 100%; overflow-y: auto; }
 .art-scroll-wrap > .deck-cards { max-height: 480px; overflow-y: auto; }
-.art-scroll-rail { position: absolute; z-index: 2; top: .25rem; right: -.1rem; bottom: .25rem; width: 18px; display: flex; justify-content: center; pointer-events: none; }
-.art-scroll-rail::before { content: ''; position: absolute; top: 0; bottom: 0; width: 2px; background: #c9a84f; opacity: .42; }
-.art-scroll-thumb { position: absolute; top: 0; width: 18px; height: 72px; border: 0; padding: 0; background: transparent url('./assets/art-deco-scroll-thumb-vertical.svg') center / 18px 72px no-repeat; cursor: grab; pointer-events: auto; }
-.art-scroll-thumb:hover { filter: brightness(1.12); }
+.art-scroll-rail { position: absolute; z-index: 2; top: .25rem; right: 0; bottom: .25rem; width: 18px; display: flex; justify-content: center; pointer-events: none; }
+.art-scroll-rail::before { content: ''; position: absolute; top: 0; bottom: 0; left: 50%; width: 1px; transform: translateX(-50%); background: rgba(200,164,59,.72); }
+.art-scroll-thumb { position: absolute; top: 0; width: 14px; height: 44px; border: 0; padding: 0; background: transparent url('./assets/art-deco-scroll-thumb-vertical.png') center / 100% 100% no-repeat; cursor: grab; pointer-events: auto; touch-action: none; }
+.art-scroll-thumb:hover:not(:disabled) { background: transparent url('./assets/art-deco-scroll-thumb-vertical.png') center / 100% 100% no-repeat; filter: brightness(.9); }
 .art-scroll-thumb:active { cursor: grabbing; }
 .profile-group-title { margin-top: .9rem; color: #50705e; font-size: .78rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
 .profile-group-title:first-child { margin-top: .2rem; }
