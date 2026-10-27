@@ -120,6 +120,14 @@ body.dark-mode .profile-save-status.error { color: #ef9187; }
 .card-list-item .event-type-icon { background: var(--event-icon-color); -webkit-mask: url('./assets/Event.png') center / contain no-repeat; mask: url('./assets/Event.png') center / contain no-repeat; }
 .card-list-item .card-list-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
 .card-list-item .card-list-owner { grid-column: 3; grid-row: 1; display: flex; justify-content: flex-end; min-width: 0; overflow: hidden; text-align: right; }
+#cards-view #card-list { gap: 0; margin-top: .55rem; }
+#cards-view #card-list .card-list-item { min-height: 2.25rem; padding: .22rem .3rem; border: 0; border-bottom: 1px solid #e0e5dc; border-radius: 0; background: transparent; }
+#cards-view #card-list .card-list-item:last-child { border-bottom-color: transparent; }
+#cards-view #card-list .card-list-item:hover:not(:disabled) { background: #eef3e8; }
+#cards-view #card-list .card-list-item.selected { background: #dceadd; border-bottom-color: #c6d8c8; }
+#cards-view #card-list .card-type-icon { width: 1.65rem; height: 1.65rem; }
+#cards-view #card-list .card-list-title { font-size: .9rem; }
+#cards-view #card-list .card-list-owner { font-size: .7rem; }
 .deck-list-item { display: grid; grid-template-columns: minmax(0, 1fr) minmax(5.5rem, auto); column-gap: .55rem; align-items: center; }
 .deck-list-title-wrap { display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
 .deck-list-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -301,6 +309,9 @@ body.dark-mode .item-list button,
 body.dark-mode .patron-card { border-color: #355947; background: #173f32; color: #e5eee0; }
 body.dark-mode .item-list button:hover:not(:disabled) { background: #204b3b; }
 body.dark-mode .item-list button.selected { border-color: #76a889; background: #285944; }
+body.dark-mode #cards-view #card-list .card-list-item { border-bottom-color: #355947; background: transparent; }
+body.dark-mode #cards-view #card-list .card-list-item:hover:not(:disabled) { background: #204b3b; }
+body.dark-mode #cards-view #card-list .card-list-item.selected { border-bottom-color: #416853; background: #285944; }
 body.dark-mode .item-list small,
 body.dark-mode .hint,
 body.dark-mode .tag,
