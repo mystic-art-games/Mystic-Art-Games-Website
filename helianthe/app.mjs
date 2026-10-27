@@ -55,14 +55,14 @@ async function compressedArtwork(file) {
       }
       scale *= 0.82;
     }
-  } finally { image.close(); }
+  } finally { image.close?.(); }
   throw new Error('Artwork could not be compressed below 100 KB.');
 }
 
 async function compressedAvatar(file) {
   if (!file) return null;
   if (file.size > 10 * 1024 * 1024) throw new Error('Profile photo must be 10 MB or smaller before compression.');
-  const image = await createImageBitmap(file);
+  const image = await decodeImage(file);
   try {
     const canvas = document.createElement('canvas');
     canvas.width = 256;
@@ -78,8 +78,21 @@ async function compressedAvatar(file) {
       const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/webp', quality));
       if (blob && blob.size <= AVATAR_UPLOAD_LIMIT) return new File([blob], 'profile-photo.webp', { type: 'image/webp' });
     }
-  } finally { image.close(); }
+  } finally { image.close?.(); }
   throw new Error('Profile photo could not be compressed below 80 KB.');
+}
+
+async function decodeImage(file) {
+  if (typeof createImageBitmap === 'function') {
+    try { return await createImageBitmap(file); } catch {}
+  }
+  const url = URL.createObjectURL(file);
+  try {
+    const image = new Image();
+    image.src = url;
+    await image.decode();
+    return image;
+  } finally { URL.revokeObjectURL(url); }
 }
 
 function fileDataUrl(file) {

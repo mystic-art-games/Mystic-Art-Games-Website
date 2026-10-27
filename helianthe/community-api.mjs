@@ -187,8 +187,9 @@ export function createCommunityApi(client) {
         headers: { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: `Bearer ${session.access_token}`, 'Content-Type': file.type || 'application/octet-stream' },
         body: file,
       });
-      const payload = await response.json();
-      if (!response.ok) throw new Error(payload.error || 'Artwork upload failed.');
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.error || `Artwork upload failed (HTTP ${response.status}).`);
+      if (!payload.artwork?.id) throw new Error('Artwork upload returned no image ID.');
       return payload.artwork;
     },
 
