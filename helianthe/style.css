@@ -3,7 +3,8 @@
 :root { color-scheme: light; font: 16px Nunito, Arial, sans-serif; color: #163737; background: #e8e9df; }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
-body { margin: 0; min-height: 100vh; scrollbar-gutter: stable; }
+html { overflow-x: hidden; }
+body { margin: 0; min-height: 100vh; scrollbar-gutter: stable; overflow-x: hidden; }
 button, input, select, textarea { font: inherit; }
 button { cursor: pointer; border: 1px solid #819e8d; border-radius: 10px; background: #f4f5e9; color: #163737; padding: .55rem .8rem; }
 button:hover:not(:disabled) { background: #e0ebda; }
@@ -56,7 +57,7 @@ textarea { resize: vertical; }
 #new-card:hover:not(:disabled) { background: #1d4939; }
 .form-hint { margin: -0.35rem 0 0.75rem; color: #68756d; font-size: 0.85rem; }
 .hint { color: #5a6e64; font-size: .88rem; line-height: 1.35; }
-.workspace { display: grid; grid-template-columns: minmax(300px, 390px) minmax(0, 1fr); gap: 1rem; max-width: 1450px; margin: 1rem auto; padding: 0 1rem; }
+.workspace { display: grid; grid-template-columns: minmax(300px, 390px) minmax(0, 1fr); width: 100%; max-width: 1450px; gap: 1rem; margin: 1rem auto; padding: 0 1rem; }
 .panel { background: #fffdf5; border: 1px solid #c4cebc; border-radius: 14px; padding: 1rem; min-width: 0; }
 .panel-head { display: flex; justify-content: space-between; align-items: center; gap: .7rem; }
 .panel-head h1, .panel-head h2 { margin: .2rem 0 .8rem; font-size: 1.7rem; }
@@ -110,6 +111,7 @@ body.dark-mode .profile-save-status.error { color: #ef9187; }
 .card-list-title.terrain-radiance { color: #a87318; }
 .card-list-title.terrain-event { color: #4d5b55; }
 .card-layout { display: grid; grid-template-columns: minmax(260px, 1fr) minmax(280px, 420px); gap: 1.6rem; }
+.card-layout > *, .deck-meta-row > *, .deck-card-layout > * { min-width: 0; }
 .two-cols { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; }
 .deck-meta-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(180px, 1fr); gap: .8rem; align-items: start; }
 .deck-meta-row .author-picker { margin: .65rem 0; }
@@ -149,6 +151,12 @@ body.dark-mode .profile-save-status.error { color: #ef9187; }
 .deck-card-row .card-list-owner { grid-column: 3; }
 .deck-card-row select { width: 4rem; margin: 0; grid-column: 4; }
 .deck-card-row strong { grid-column: 4; text-align: right; }
+@media (min-width: 851px) {
+  #cards-view.workspace { height: calc(100vh - 100px); min-height: 0; }
+  #cards-view > .sidebar { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+  #cards-view > .sidebar #card-list { flex: 1 1 auto; min-height: 0; overflow-x: hidden; overflow-y: auto; padding-right: .2rem; }
+  #cards-view > .editor-panel { min-height: 0; overflow-x: hidden; overflow-y: auto; }
+}
 @media (max-width: 850px) {
   .deck-card-layout { grid-template-columns: 1fr; }
   .deck-card-preview-shell { display: none; }
