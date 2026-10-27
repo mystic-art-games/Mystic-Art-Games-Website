@@ -592,14 +592,9 @@ function renderProfileList() {
       const entry = button('', () => selectProfile(profile), `profile-list-entry ${classes}`.trim());
       const main = document.createElement('span');
       main.className = 'profile-list-main';
-      const copy = document.createElement('span');
-      copy.className = 'profile-list-copy';
       const name = document.createElement('span');
       name.textContent = profile.display_name || 'Player';
-      const favorite = document.createElement('small');
-      favorite.textContent = `Favorite card: ${favoriteCardName(profile.favorite_card_id)}`;
-      copy.append(name, favorite);
-      main.append(avatarElement(profile), copy);
+      main.append(avatarElement(profile), name);
       entry.append(main);
       list.append(entry);
     }

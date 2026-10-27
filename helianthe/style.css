@@ -68,8 +68,6 @@ textarea { resize: vertical; }
 .profile-group-title:first-child { margin-top: .2rem; }
 .profile-list-entry { display: flex; flex-direction: column; gap: .15rem; }
 .profile-list-main { display: flex; align-items: center; gap: .55rem; min-width: 0; }
-.profile-list-copy { display: flex; flex-direction: column; min-width: 0; }
-.profile-list-entry small { color: #5a6e64; font-size: .76rem; font-weight: 500; }
 .profile-favorite-card { color: #456151; font-weight: 700; }
 .profile-save-actions { display: flex; align-items: center; gap: .7rem; margin-top: 1.25rem; }
 .profile-save-actions button { margin-top: 0; }
@@ -269,7 +267,6 @@ body.dark-mode .list-table-head,
 body.dark-mode .card-filters label,
 body.dark-mode .profile-group-title,
 body.dark-mode #deck-card-preview-note,
-body.dark-mode .profile-list-entry small,
 body.dark-mode .patron-faction { color: #bfd1be; }
 body.dark-mode .author-picker { border-color: #587965; }
 body.dark-mode .profile-favorite-card { color: #c7d9c4; }
