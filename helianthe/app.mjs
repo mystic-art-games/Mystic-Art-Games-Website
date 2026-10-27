@@ -407,7 +407,10 @@ function renderPatrons() {
 function refreshCardAuthorFilter() {
   const select = $('#card-filter-author');
   const current = select.value;
-  const authors = [...new Set(state.cards.flatMap(card => authorNames(card.author_ids, card.owner_id)))].sort((a, b) => a.localeCompare(b));
+  const authors = [...new Set([
+    ...state.profiles.map(profile => profile.display_name || ownerName(profile.id)),
+    ...state.cards.flatMap(card => authorNames(card.author_ids, card.owner_id)),
+  ].filter(Boolean))].sort((a, b) => a.localeCompare(b));
   select.replaceChildren(new Option('All authors', ''));
   for (const author of authors) select.append(new Option(author, author));
   select.value = authors.includes(current) ? current : '';
@@ -802,15 +805,30 @@ function showProfileSaveStatus(message = 'Saved ✓', error = false) {
 
 function startRealtimeSync() {
   if (state.realtimeChannel) return;
-  state.realtimeChannel = client.channel('helianthe-cards')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'cards' }, async () => {
-      const selectedId = state.card?.id;
-      try {
-        await reloadCollections();
-        if (selectedId && !state.cardFormDirty) selectCard(state.cards.find(card => card.id === selectedId) || state.cards[0] || null);
-        else renderCardList();
-      } catch (cause) { status(cause.message, true); }
-    })
+  const refreshCards = async () => {
+    const selectedId = state.card?.id;
+    try {
+      await reloadCollections();
+      if (selectedId && !state.cardFormDirty) selectCard(state.cards.find(card => card.id === selectedId) || state.cards[0] || null);
+      else renderCardList();
+    } catch (cause) { status(cause.message, true); }
+  };
+  const refreshProfiles = async () => {
+    const selectedCardAuthors = selectedAuthorIds($('#card-author-options'));
+    const selectedDeckAuthors = selectedAuthorIds($('#deck-author-options'));
+    try {
+      await reloadCollections();
+      renderAuthorOptions($('#card-author-options'), selectedCardAuthors);
+      renderAuthorOptions($('#deck-author-options'), selectedDeckAuthors);
+      const cardEditable = Boolean(state.user && (!state.card || state.card.owner_id === state.user.id || state.isAdmin));
+      const deckEditable = Boolean(state.user && (!state.deck || state.deck.owner_id === state.user.id));
+      for (const input of $('#card-author-options').querySelectorAll('input')) input.disabled = !cardEditable;
+      for (const input of $('#deck-author-options').querySelectorAll('input')) input.disabled = !deckEditable;
+    } catch (cause) { status(cause.message, true); }
+  };
+  state.realtimeChannel = client.channel('helianthe-workspace')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'cards' }, refreshCards)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, refreshProfiles)
     .subscribe();
 }
 
