@@ -320,6 +320,8 @@ body.dark-mode .auth-panel,
 body.dark-mode .auth-modal-card { border-color: #416853; background: #12372c; box-shadow: 0 12px 34px rgba(0, 18, 12, .28); }
 body.dark-mode button { border-color: #587965; background: #173f32; color: #e5eee0; }
 body.dark-mode button:hover:not(:disabled) { background: #23503f; }
+body.dark-mode .art-scroll-thumb,
+body.dark-mode .art-scroll-thumb:hover:not(:disabled) { background: transparent url('./assets/art-deco-scroll-thumb-vertical.png') center / 100% 100% no-repeat; }
 body.dark-mode .masthead nav button,
 body.dark-mode #sign-out,
 body.dark-mode #account-name { background: transparent; color: #fff8e8; }
