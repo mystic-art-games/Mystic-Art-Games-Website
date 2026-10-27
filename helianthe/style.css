@@ -47,6 +47,16 @@ body.dark-mode .theme-state { margin-left: 0; }
 body.auth-modal-open { overflow: hidden; }
 form label { display: block; margin: .65rem 0; font-weight: 700; }
 input:not([type=checkbox]):not([type=file]), select, textarea { display: block; width: 100%; min-width: 0; margin-top: .25rem; border: 1px solid #a4b6a5; background: #fffefa; color: #163737; border-radius: 8px; padding: .6rem .7rem; }
+.favorite-card-picker { position: relative; margin-top: .25rem; }
+.favorite-card-native { position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0; pointer-events: none; }
+.favorite-card-trigger { display: flex; align-items: center; gap: .55rem; width: 100%; min-height: 2.55rem; margin: 0; text-align: left; }
+.favorite-card-trigger .card-type-icon, .favorite-card-option .card-type-icon { width: 1.6rem; height: 1.6rem; object-fit: contain; flex: 0 0 auto; }
+.favorite-card-option { display: flex; align-items: center; gap: .55rem; width: 100%; border: 0; border-radius: 0; background: transparent; text-align: left; }
+.favorite-card-option:hover:not(:disabled) { background: #e0ebda; }
+.favorite-card-option-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.favorite-card-menu { position: absolute; z-index: 25; top: calc(100% + .25rem); left: 0; right: 0; max-height: 280px; overflow-y: auto; padding: .25rem; border: 1px solid #a4b6a5; border-radius: 10px; background: #fffefa; box-shadow: 0 10px 24px #16373733; }
+.favorite-card-hover-preview { position: fixed; z-index: 60; width: 250px; height: 350px; pointer-events: none; filter: drop-shadow(0 10px 20px #16373755); }
+.favorite-card-hover-preview canvas { display: block; width: 100%; height: 100%; border-radius: 12px; background: #ece6d8; }
 input[type=file] { display: block; width: 100%; margin-top: .3rem; font-weight: 400; }
 textarea { resize: vertical; }
 .actions { display: flex; gap: .6rem; margin-top: 1.25rem; }

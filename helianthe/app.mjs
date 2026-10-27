@@ -189,11 +189,118 @@ function favoriteCardName(cardId) {
   return state.cards.find(card => card.id === cardId)?.title || 'Not selected';
 }
 
+let favoritePreviewSerial = 0;
+const favoritePickerStates = new WeakMap();
+
+function hideFavoriteCardPreview() {
+  favoritePreviewSerial += 1;
+  $('#favorite-card-preview').hidden = true;
+}
+
+async function showFavoriteCardPreview(card, target) {
+  const preview = $('#favorite-card-preview');
+  const canvas = $('#favorite-card-preview-canvas');
+  const serial = ++favoritePreviewSerial;
+  const bounds = target.getBoundingClientRect();
+  const width = 250;
+  const height = 350;
+  const left = Math.min(bounds.right + 12, window.innerWidth - width - 12);
+  const top = Math.max(12, Math.min(bounds.top, window.innerHeight - height - 12));
+  preview.style.left = `${Math.max(12, left)}px`;
+  preview.style.top = `${top}px`;
+  preview.hidden = false;
+  const previewCard = { ...card, author: authorNames(card.author_ids, card.owner_id).join(', ') };
+  await renderCard(canvas, previewCard, '', () => serial === favoritePreviewSerial).catch(() => {});
+  if (serial !== favoritePreviewSerial || !card.artwork_id) return;
+  try {
+    const blob = await api.fetchArtwork(card.artwork_id);
+    if (serial !== favoritePreviewSerial) return;
+    const artworkUrl = URL.createObjectURL(blob);
+    await renderCard(canvas, previewCard, artworkUrl, () => serial === favoritePreviewSerial);
+    URL.revokeObjectURL(artworkUrl);
+  } catch {}
+}
+
+function setupFavoriteCardPicker(select) {
+  if (favoritePickerStates.has(select)) return favoritePickerStates.get(select);
+  const wrapper = document.createElement('div');
+  wrapper.className = 'favorite-card-picker';
+  select.classList.add('favorite-card-native');
+  select.parentElement.insertBefore(wrapper, select);
+  wrapper.append(select);
+  const trigger = document.createElement('button');
+  trigger.type = 'button';
+  trigger.className = 'favorite-card-trigger';
+  trigger.setAttribute('aria-haspopup', 'listbox');
+  trigger.setAttribute('aria-expanded', 'false');
+  const menu = document.createElement('div');
+  menu.className = 'favorite-card-menu';
+  menu.setAttribute('role', 'listbox');
+  menu.hidden = true;
+  wrapper.append(trigger, menu);
+  const stateForPicker = { wrapper, trigger, menu };
+  favoritePickerStates.set(select, stateForPicker);
+  trigger.addEventListener('click', event => {
+    event.stopPropagation();
+    const open = !menu.hidden;
+    document.querySelectorAll('.favorite-card-menu').forEach(item => { item.hidden = true; });
+    menu.hidden = open;
+    trigger.setAttribute('aria-expanded', String(!open));
+  });
+  wrapper.addEventListener('mouseleave', hideFavoriteCardPreview);
+  return stateForPicker;
+}
+
 function populateFavoriteCards(select, selectedId = '') {
+  const picker = setupFavoriteCardPicker(select);
   select.replaceChildren(new Option('Choose a card', ''));
   for (const card of state.cards) select.append(new Option(card.title, card.id));
   select.value = selectedId || '';
+  picker.menu.replaceChildren();
+  const addOption = (card, value = '') => {
+    const option = document.createElement('button');
+    option.type = 'button';
+    option.className = 'favorite-card-option';
+    option.setAttribute('role', 'option');
+    option.append(card ? cardTypeIconElement(card) : document.createElement('span'));
+    const label = document.createElement('span');
+    label.className = card ? `favorite-card-option-label card-list-title ${terrainClass(card.terrain)}` : 'favorite-card-option-label';
+    label.textContent = card ? card.title : 'Choose a card';
+    option.append(label);
+    option.addEventListener('mouseenter', () => card && void showFavoriteCardPreview(card, option));
+    option.addEventListener('click', () => {
+      select.value = value;
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+      updateFavoriteCardTrigger(select);
+      picker.menu.hidden = true;
+      picker.trigger.setAttribute('aria-expanded', 'false');
+      hideFavoriteCardPreview();
+    });
+    picker.menu.append(option);
+  };
+  addOption(null);
+  for (const card of state.cards) addOption(card, card.id);
+  updateFavoriteCardTrigger(select);
 }
+
+function updateFavoriteCardTrigger(select) {
+  const picker = favoritePickerStates.get(select);
+  if (!picker) return;
+  const card = state.cards.find(item => item.id === select.value);
+  picker.trigger.replaceChildren();
+  if (card) {
+    picker.trigger.append(cardTypeIconElement(card));
+    const label = document.createElement('span');
+    label.className = `favorite-card-option-label ${terrainClass(card.terrain)}`;
+    label.textContent = card.title;
+    picker.trigger.append(label);
+  } else picker.trigger.textContent = 'Choose a card';
+}
+
+document.addEventListener('click', event => {
+  if (event.target.closest('.favorite-card-picker')) return;
+  document.querySelectorAll('.favorite-card-menu').forEach(menu => { menu.hidden = true; });
+});
 
 function authorNames(ids, fallbackId) {
   const profileIds = Array.isArray(ids) && ids.length ? ids : (fallbackId ? [fallbackId] : []);

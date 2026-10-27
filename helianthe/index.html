@@ -13,9 +13,9 @@
   <link rel="apple-touch-icon" href="../images/helianthe-home-icon.png">
   <link rel="manifest" href="./manifest.webmanifest">
   <title>Helianthe</title>
-  <link rel="stylesheet" href="./style.css?v=helianthe-ui-29">
+  <link rel="stylesheet" href="./style.css?v=helianthe-ui-30">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script type="module" src="./app.mjs?v=helianthe-ui-29"></script>
+  <script type="module" src="./app.mjs?v=helianthe-ui-30"></script>
 </head>
 <body>
   <header class="masthead">
@@ -83,6 +83,10 @@
       <p id="delete-account-description">Deleting your account permanently removes your profile, cards, decks, and uploaded artwork.</p>
       <div class="actions danger-modal-actions"><button id="confirm-delete-account" type="button">Delete permanently</button><button id="cancel-delete-account" type="button">Cancel</button></div>
     </section>
+  </div>
+
+  <div id="favorite-card-preview" class="favorite-card-hover-preview" hidden aria-hidden="true">
+    <canvas id="favorite-card-preview-canvas" width="1500" height="2100"></canvas>
   </div>
 
   <main id="cards-view" class="workspace" hidden>
