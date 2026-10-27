@@ -970,7 +970,7 @@ $('#profile-form').addEventListener('input', () => {
 
 $('#delete-account').addEventListener('click', async () => {
   if (!state.user) return;
-  const confirmed = window.confirm('Delete your Helianthe account permanently? This removes your profile, cards, decks, and uploaded artwork.');
+  const confirmed = window.confirm('Deleting your account permanently removes your profile, cards, decks, and uploaded artwork.\n\nDo you want to continue?');
   if (!confirmed) return;
   const button = $('#delete-account');
   button.disabled = true;
