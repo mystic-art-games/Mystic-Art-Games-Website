@@ -1,10 +1,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;700;800&display=swap');
 
-:root { color-scheme: light; font: 16px Nunito, Arial, sans-serif; color: #163737; background: #e8e9df; }
+:root { --light-page-bg: #fff; color-scheme: light; font: 16px Nunito, Arial, sans-serif; color: #163737; background: var(--light-page-bg); }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 html { overflow-x: hidden; }
-body { margin: 0; min-height: 100vh; scrollbar-gutter: stable; overflow-x: hidden; }
+body { margin: 0; min-height: 100vh; scrollbar-gutter: stable; overflow-x: hidden; background: var(--light-page-bg); }
 button, input, select, textarea { font: inherit; }
 button { cursor: pointer; border: 1px solid #819e8d; border-radius: 10px; background: #f4f5e9; color: #163737; padding: .55rem .8rem; }
 button:hover:not(:disabled) { background: #e0ebda; }
@@ -26,6 +26,7 @@ body.dark-mode .theme-state { margin-left: 0; }
 #account-name { display: inline-flex; align-items: center; gap: .45rem; text-align: right; }
 .masthead nav { display: flex; gap: .3rem; }
 .masthead nav button, #sign-out { background: transparent; color: #fff8e8; border-color: transparent; }
+.masthead nav button:not(.active):hover:not(:disabled) { border-color: transparent; background: transparent; box-shadow: none; color: #f2c96b; }
 .masthead nav button.active { border-color: transparent; background: transparent url('./assets/active-tab-frame.png') center / 100% 100% no-repeat; color: #f2c96b; }
 #account-name { margin-left: auto; color: #fff8e8; font-weight: 700; white-space: nowrap; border: 0; background: transparent; padding: .35rem .5rem; }
 #account-name:hover:not(:disabled) { background: rgba(255, 248, 232, .14); }
@@ -82,6 +83,7 @@ textarea { resize: vertical; }
 }
 .workspace { display: grid; grid-template-columns: minmax(300px, 390px) minmax(0, 1fr); width: 100%; max-width: 1450px; gap: .35rem; margin: 1rem auto; padding: .25rem; }
 #cards-view.workspace { grid-template-columns: minmax(360px, 470px) minmax(0, 1fr); }
+#decks-view.workspace { grid-template-columns: minmax(390px, 520px) minmax(0, 1fr); }
 .workspace,
 .patrons-workspace { width: calc(100% - 2rem); }
 .workspace > .panel,
@@ -129,23 +131,23 @@ textarea { resize: vertical; }
     padding: .25rem;
   }
   #cards-view .cards-sidebar {
-    border: solid transparent;
-    border-width: 28px;
-    border-image-source: url('./assets/card-table-frame.png');
-    border-image-slice: 90;
-    border-image-width: 28px;
-    border-image-repeat: stretch;
-    padding: .45rem;
+    border: 1px solid rgba(55, 91, 78, .46);
+    border-radius: 22px;
+    background: linear-gradient(145deg, rgba(255, 255, 255, .9) 0%, rgba(224, 234, 229, .66) 46%, rgba(202, 219, 211, .42) 100%);
+    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 1), inset -1px -1px 0 rgba(97, 135, 120, .26), 0 14px 36px rgba(31, 62, 51, .22);
+    backdrop-filter: blur(22px) saturate(1.35);
+    -webkit-backdrop-filter: blur(22px) saturate(1.35);
+    padding: .8rem;
     overflow: hidden;
   }
   #cards-view > .editor-panel {
-    border: solid transparent;
-    border-width: 28px;
-    border-image-source: url('./assets/card-table-frame.png');
-    border-image-slice: 90;
-    border-image-width: 28px;
-    border-image-repeat: stretch;
-    padding: .45rem;
+    border: 1px solid rgba(55, 91, 78, .46);
+    border-radius: 22px;
+    background: linear-gradient(145deg, rgba(255, 255, 255, .9) 0%, rgba(224, 234, 229, .66) 46%, rgba(202, 219, 211, .42) 100%);
+    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 1), inset -1px -1px 0 rgba(97, 135, 120, .26), 0 14px 36px rgba(31, 62, 51, .22);
+    backdrop-filter: blur(22px) saturate(1.35);
+    -webkit-backdrop-filter: blur(22px) saturate(1.35);
+    padding: .8rem;
     overflow: hidden;
     font-size: .9rem;
   }
@@ -154,6 +156,22 @@ textarea { resize: vertical; }
   #cards-view > .editor-panel .actions { margin-top: .65rem; }
   #cards-view > .editor-panel #card-canvas { width: min(100%, 360px); }
   #cards-view > .editor-panel textarea { min-height: 82px; }
+  #decks-view > .sidebar,
+  #decks-view > .editor-panel {
+    border: 1px solid rgba(55, 91, 78, .46);
+    border-radius: 22px;
+    background: linear-gradient(145deg, rgba(255, 255, 255, .9) 0%, rgba(224, 234, 229, .66) 46%, rgba(202, 219, 211, .42) 100%);
+    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 1), inset -1px -1px 0 rgba(97, 135, 120, .26), 0 14px 36px rgba(31, 62, 51, .22);
+    backdrop-filter: blur(22px) saturate(1.35);
+    -webkit-backdrop-filter: blur(22px) saturate(1.35);
+    padding: .8rem;
+  }
+  #decks-view > .sidebar { overflow: hidden; }
+  #decks-view > .editor-panel { display: flex; flex-direction: column; overflow: hidden; font-size: .9rem; }
+  #decks-view > .editor-panel .deck-meta-row { gap: .65rem; }
+  #decks-view > .editor-panel .deck-meta-row .author-picker { margin: .4rem 0; padding: .55rem; }
+  #decks-view > .editor-panel .actions { margin-top: .45rem; }
+  #decks-view > .editor-panel .deck-card-layout { flex: 1 1 auto; min-height: 0; gap: .8rem; }
   #cards-view .card-table-shell {
     display: flex;
     flex: 1 1 auto;
@@ -167,6 +185,24 @@ textarea { resize: vertical; }
     width: calc(100% - 24px);
     padding-right: 2.5rem;
   }
+  #decks-view .deck-table-shell,
+  #decks-view .deck-card-table-shell {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+  }
+  #decks-view .deck-table-shell > .art-scroll-wrap,
+  #decks-view .deck-card-table-shell > .art-scroll-wrap { flex: 1 1 auto; min-height: 0; }
+  #decks-view .deck-table-shell > .list-table-head,
+  #decks-view .deck-card-table-shell > .list-table-head { flex: 0 0 auto; margin-top: .7rem; }
+  #decks-view .deck-table-shell .art-scroll-wrap > .item-list,
+  #decks-view .deck-card-table-shell .art-scroll-wrap > .deck-cards {
+    width: calc(100% - 24px);
+    padding-right: 2.5rem;
+  }
+  #decks-view .deck-card-table { display: flex; flex-direction: column; min-height: 0; }
+  #decks-view .deck-card-table-shell .art-scroll-wrap > .deck-cards { height: 100%; max-height: none; overflow-y: auto; }
 }
 .profile-group-title { margin-top: .9rem; color: #50705e; font-size: .78rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
 .profile-group-title:first-child { margin-top: .2rem; }
@@ -201,7 +237,7 @@ body.dark-mode .profile-save-status.error { color: #ef9187; }
 .deck-list-head span:last-child { text-align: left; }
 .deck-card-list-head { grid-template-columns: 2rem minmax(0, 1fr) minmax(5.5rem, auto) 4rem; margin: .8rem .35rem .3rem; min-height: 1.15rem; line-height: 1.15; }
 .deck-card-list-head span:nth-child(3), .deck-card-list-head span:last-child { text-align: right; }
-.deck-list-head { grid-template-columns: minmax(0, 1fr) minmax(5.5rem, auto); }
+.deck-list-head { grid-template-columns: minmax(0, 1fr) 7rem; }
 .deck-list-head span:last-child { justify-self: start; }
 .card-list-item { display: grid; grid-template-columns: 2rem minmax(0, 1fr) minmax(5.5rem, auto); column-gap: .55rem; align-items: center; }
 .card-list-item .card-type-icon { grid-column: 1; grid-row: 1; width: 2rem; height: 2rem; object-fit: contain; }
@@ -217,10 +253,19 @@ body.dark-mode .profile-save-status.error { color: #ef9187; }
 #cards-view #card-list .card-list-title { font-size: .9rem; }
 #cards-view .card-list-head span:last-child { text-align: left; }
 #cards-view #card-list .card-list-owner { justify-content: flex-start; font-size: .7rem; text-align: left; }
-.deck-list-item { display: grid; grid-template-columns: minmax(0, 1fr) minmax(5.5rem, auto); column-gap: .55rem; align-items: center; }
+.deck-list-item { display: grid; grid-template-columns: minmax(0, 1fr) 7rem; column-gap: .55rem; align-items: center; }
 .deck-list-title-wrap { display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
 .deck-list-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .deck-list-owner { display: flex; justify-content: flex-start; min-width: 0; overflow: hidden; text-align: left; }
+#decks-view #deck-list { gap: 0; margin-top: .55rem; }
+#decks-view .deck-list-head { margin-left: .3rem; margin-right: calc(24px + 2.5rem + .3rem); }
+#decks-view #deck-list .deck-list-item { min-height: 2.75rem; padding: .32rem .3rem; border: 0; border-bottom: 1px solid #e0e5dc; border-radius: 0; background: transparent; }
+#decks-view #deck-list .deck-list-item:last-child { border-bottom-color: transparent; }
+#decks-view #deck-list .deck-list-item:hover:not(:disabled) { background: #eef3e8; }
+#decks-view #deck-list .deck-list-item.selected { background: #dceadd; border-bottom-color: #c6d8c8; }
+#decks-view #deck-list .deck-list-title { font-size: .9rem; line-height: 1.15; }
+#decks-view #deck-list .deck-patron { font-size: .68rem; line-height: 1.15; }
+#decks-view #deck-list .deck-list-owner { font-size: .7rem; }
 .deck-patron, .profile-deck-patron { display: block; overflow: hidden; color: #68756d; font-size: .74rem; font-weight: 700; line-height: 1.25; text-overflow: ellipsis; white-space: nowrap; }
 .profile-deck-name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .patron-faction-flowbound { color: #35758e; }
@@ -239,7 +284,7 @@ body.dark-mode .profile-save-status.error { color: #ef9187; }
 .deck-meta-row .author-picker { margin: .65rem 0; }
 .deck-card-layout { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(240px, .8fr); gap: 1rem; align-items: start; }
 .deck-card-table { min-width: 0; }
-.deck-card-table h3 { margin: 1.2rem 0 .2rem; }
+.deck-card-table h3 { margin: .75rem 0 .1rem; }
 .deck-card-preview-shell { display: flex; flex-direction: column; align-items: center; gap: .45rem; min-width: 0; padding-top: 1.2rem; }
 .deck-card-preview-close { display: none; }
 #deck-card-canvas { width: min(100%, 300px); height: auto; aspect-ratio: 5 / 7; border-radius: 14px; box-shadow: 0 8px 20px #2225; background: #ece6d8; }
@@ -385,7 +430,7 @@ body.dark-mode .deck-card-row.selected { border-bottom-color: #416853; backgroun
   .theme-control { top: calc(.55rem + env(safe-area-inset-top)); }
 }
 
-body.dark-mode { color-scheme: dark; background: linear-gradient(145deg, #173f32 0%, #102f27 48%, #08261f 100%) fixed; color: #e5eee0; }
+body.dark-mode { color-scheme: dark; background: linear-gradient(135deg, #102f27 0%, #173f32 48%, #0a2420 100%) fixed; color: #e5eee0; }
 body.dark-mode .panel,
 body.dark-mode .auth-panel,
 body.dark-mode .auth-modal-card { border-color: #416853; background: #12372c; box-shadow: 0 12px 34px rgba(0, 18, 12, .28); }
@@ -416,6 +461,9 @@ body.dark-mode .item-list button.selected { border-color: #76a889; background: #
 body.dark-mode #cards-view #card-list .card-list-item { border-bottom-color: #355947; background: transparent; }
 body.dark-mode #cards-view #card-list .card-list-item:hover:not(:disabled) { background: #204b3b; }
 body.dark-mode #cards-view #card-list .card-list-item.selected { border-bottom-color: #416853; background: #285944; }
+body.dark-mode #decks-view #deck-list .deck-list-item { border-bottom-color: #355947; background: transparent; }
+body.dark-mode #decks-view #deck-list .deck-list-item:hover:not(:disabled) { background: #204b3b; }
+body.dark-mode #decks-view #deck-list .deck-list-item.selected { border-bottom-color: #416853; background: #285944; }
 body.dark-mode .item-list small,
 body.dark-mode .hint,
 body.dark-mode .tag,
@@ -440,3 +488,11 @@ body.dark-mode .card-list-title.terrain-verdant { color: #8fc99a; }
 body.dark-mode .card-list-title.terrain-radiance { color: #e2bd70; }
 body.dark-mode .card-list-title.terrain-event { color: #c0cec7; }
 body.dark-mode #decks-view.mobile-card-preview-open .deck-card-preview-shell { border-color: #416853; background: #12372c; }
+body.dark-mode #cards-view .cards-sidebar,
+body.dark-mode #cards-view > .editor-panel,
+body.dark-mode #decks-view > .sidebar,
+body.dark-mode #decks-view > .editor-panel {
+  border-color: rgba(226, 246, 235, .34);
+  background: linear-gradient(145deg, rgba(185, 220, 200, .22) 0%, rgba(65, 111, 88, .18) 46%, rgba(12, 45, 35, .3) 100%);
+  box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .28), inset -1px -1px 0 rgba(210, 239, 222, .06), 0 12px 32px rgba(0, 0, 0, .24);
+}

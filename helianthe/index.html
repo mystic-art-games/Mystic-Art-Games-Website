@@ -125,10 +125,12 @@
   </main>
 
   <main id="decks-view" class="workspace" hidden>
-    <aside class="panel sidebar">
+    <aside class="panel sidebar decks-sidebar">
       <div class="panel-head"><h1>Decks</h1><button id="new-deck" type="button">New deck</button></div>
-      <div class="list-table-head deck-list-head" aria-hidden="true"><span>Deck name</span><span>Author</span></div>
-      <div id="deck-list" class="item-list" role="list"></div>
+      <div class="deck-table-shell">
+        <div class="list-table-head deck-list-head" aria-hidden="true"><span>Deck name</span><span>Author</span></div>
+        <div id="deck-list" class="item-list" role="list"></div>
+      </div>
     </aside>
     <section class="panel editor-panel">
       <div class="panel-head"><h2 id="deck-heading">Select a deck</h2></div>
@@ -139,8 +141,10 @@
       <div class="deck-card-layout">
         <section class="deck-card-table" aria-label="Cards in this deck">
           <h3>Cards in this deck</h3>
-          <div class="list-table-head deck-card-list-head" aria-hidden="true"><span></span><span>Card name</span><span>Author</span><span>Copies</span></div>
-          <div id="deck-cards" class="deck-cards"></div>
+          <div class="deck-card-table-shell">
+            <div class="list-table-head deck-card-list-head" aria-hidden="true"><span></span><span>Card name</span><span>Author</span><span>Copies</span></div>
+            <div id="deck-cards" class="deck-cards"></div>
+          </div>
         </section>
         <section class="deck-card-preview-shell" aria-label="Selected card preview">
           <button id="close-deck-card-preview" class="deck-card-preview-close" type="button" aria-label="Close card preview">×</button>
