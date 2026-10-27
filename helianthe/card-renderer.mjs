@@ -112,16 +112,21 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
   ctx.fillStyle = '#fff6e3'; ctx.strokeStyle = '#9d835d'; ctx.lineWidth = 7; ctx.lineJoin = 'round';
   ctx.fill(plate); ctx.stroke(plate); ctx.strokeStyle = '#fff9e9'; ctx.lineWidth = 3; ctx.stroke(plate);
 
+  const titleCenterY = 90;
+  const leftIconX = 78;
+  const rightIconX = 672;
   function drawTypeIcon(x) {
-    ctx.save(); ctx.translate(x, 90); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.save(); ctx.translate(x, titleCenterY); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     if (type === 'Event') { if (symbol) ctx.drawImage(tintedEventSymbol(symbol, terrain), -23, -23, 46, 46); }
     else if (symbol) ctx.drawImage(symbol, -27, -27, 54, 54);
     ctx.restore();
   }
-  drawTypeIcon(78); drawTypeIcon(672);
+  drawTypeIcon(leftIconX); drawTypeIcon(rightIconX);
   ctx.font = `700 ${titleSize}px ${cardFont}`;
   ctx.fillStyle = type === 'Event' ? '#3b3b3b' : '#123747'; ctx.textAlign = 'center';
-  ctx.fillText(title, 375, 105, 500); ctx.textAlign = 'left';
+  const titleMetrics = ctx.measureText(title);
+  const titleBaseline = titleCenterY + (titleMetrics.actualBoundingBoxAscent - titleMetrics.actualBoundingBoxDescent) / 2;
+  ctx.fillText(title, (leftIconX + rightIconX) / 2, titleBaseline, 500); ctx.textAlign = 'left';
 
   function wrapText(value, maxWidth) {
     const lines = [];
