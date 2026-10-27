@@ -221,6 +221,9 @@ body.dark-mode .deck-card-row.selected { border-bottom-color: #416853; backgroun
   .patrons-panel { height: 100%; }
 }
 @media (max-width: 850px) {
+  .art-scroll-rail { display: none !important; }
+  .art-scroll-wrap > .item-list,
+  .art-scroll-wrap > .deck-cards { width: 100%; padding-right: 0; }
   .deck-card-layout { grid-template-columns: 1fr; }
   .deck-card-preview-shell { display: none; }
   body.mobile-card-preview-visible { overflow: hidden; }
