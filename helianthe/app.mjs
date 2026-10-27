@@ -314,6 +314,40 @@ function showAuthMessage(message, error = false) {
   element.hidden = !message;
 }
 
+function validateSignUpForm(form) {
+  const fields = [form.elements.email, form.elements.password, form.elements.display_name, form.elements.favorite_card_id];
+  const issues = [];
+  const markInvalid = (field, message) => { field.setAttribute('aria-invalid', 'true'); issues.push([field, message]); };
+  for (const field of fields) field.removeAttribute('aria-invalid');
+
+  const email = form.elements.email.value.trim();
+  if (!email) markInvalid(form.elements.email, 'Email is required.');
+  else if (!form.elements.email.checkValidity()) markInvalid(form.elements.email, 'Email must be a valid email address.');
+
+  const password = form.elements.password.value;
+  if (!password) markInvalid(form.elements.password, 'Password is required.');
+  else if (password.length < form.elements.password.minLength) markInvalid(form.elements.password, `Password must contain at least ${form.elements.password.minLength} characters.`);
+
+  const displayName = form.elements.display_name.value.trim();
+  if (!displayName) markInvalid(form.elements.display_name, 'Display name is required.');
+  else if (displayName.length < form.elements.display_name.minLength) markInvalid(form.elements.display_name, `Display name must contain at least ${form.elements.display_name.minLength} characters.`);
+
+  if (!form.elements.favorite_card_id.value) markInvalid(form.elements.favorite_card_id, 'Favorite card is required.');
+  if (!issues.length) return true;
+  showAuthMessage(`Please correct the highlighted fields: ${issues.map(([, message]) => message).join(' ')}`, true);
+  issues[0][0].focus();
+  return false;
+}
+
+function signUpErrorMessage(error) {
+  const message = String(error?.message || 'The request failed.');
+  if (/already registered|already exists/i.test(message)) return 'An account already exists for this email address. Sign in instead.';
+  if (/rate limit/i.test(message)) return 'Too many registration attempts were made. Wait a few minutes and try again.';
+  if (/email/i.test(message)) return `Email could not be accepted: ${message}`;
+  if (/password/i.test(message)) return `Password could not be accepted: ${message}`;
+  return `Could not create the account: ${message}`;
+}
+
 function setAuthMode(mode) {
   authMode = mode;
   const signingUp = mode === 'sign-up';
@@ -744,11 +778,16 @@ async function submitAuthForm(event) {
 
 $('#auth-form').addEventListener('submit', submitAuthForm);
 $('#auth-modal-form').addEventListener('submit', event => authMode === 'sign-up' ? submitSignUp(event) : submitAuthForm(event));
+for (const field of $('#auth-modal-form').querySelectorAll('input, select, textarea')) {
+  const clearError = () => { field.removeAttribute('aria-invalid'); showAuthMessage(''); };
+  field.addEventListener('input', clearError);
+  field.addEventListener('change', clearError);
+}
 
 async function submitSignUp(event) {
   event?.preventDefault();
   const form = event?.currentTarget || $('#auth-modal-form');
-  if (!form.reportValidity()) return;
+  if (!validateSignUpForm(form)) return;
   status('Creating account…');
   let avatar = null;
   try {
@@ -758,18 +797,25 @@ async function submitSignUp(event) {
     showAuthMessage(cause.message, true);
     return;
   }
-  const { data, error } = await client.auth.signUp({
-    email: form.elements.email.value.trim(), password: form.elements.password.value,
-    options: {
-      emailRedirectTo: 'https://mysticart.games/helianthe/',
-      data: {
-        display_name: form.elements.display_name.value.trim(),
-        bio: form.elements.bio.value.trim(),
-        favorite_card_id: form.elements.favorite_card_id.value,
+  let response;
+  try {
+    response = await client.auth.signUp({
+      email: form.elements.email.value.trim(), password: form.elements.password.value,
+      options: {
+        emailRedirectTo: 'https://mysticart.games/helianthe/',
+        data: {
+          display_name: form.elements.display_name.value.trim(),
+          bio: form.elements.bio.value.trim(),
+          favorite_card_id: form.elements.favorite_card_id.value,
+        },
       },
-    },
-  });
-  if (error) showAuthMessage(error.message, true);
+    });
+  } catch (cause) {
+    showAuthMessage(signUpErrorMessage(cause), true);
+    return;
+  }
+  const { data, error } = response;
+  if (error) showAuthMessage(signUpErrorMessage(error), true);
   else {
     if (avatar) {
       try { localStorage.setItem(pendingAvatarKey(form.elements.email.value), await fileDataUrl(avatar)); }
