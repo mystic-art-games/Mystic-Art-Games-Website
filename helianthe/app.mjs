@@ -193,12 +193,6 @@ function renderAccountButton(profile) {
   account.setAttribute('aria-label', `Open profile for ${profile?.display_name || 'current user'}`);
 }
 
-function renderOwnerTag(element, label, profileId = null) {
-  element.replaceChildren();
-  if (profileId) element.append(avatarElement(profileById(profileId), 'small'));
-  element.append(document.createTextNode(label));
-}
-
 function favoriteCardName(cardId) {
   return state.cards.find(card => card.id === cardId)?.title || 'Not selected';
 }
@@ -733,7 +727,6 @@ async function selectDeck(deck) {
   for (const field of form.querySelectorAll('input,button')) field.disabled = !mine;
   $('#duplicate-deck').disabled = !deck || !state.user;
   $('#deck-heading').textContent = deck?.name || 'New deck';
-  renderOwnerTag($('#deck-owner'), deck ? (mine ? 'Your deck' : `By ${ownerName(deck.owner_id)}`) : (state.user ? 'Your new deck' : 'Sign in to create a deck'), deck && !mine ? deck.owner_id : null);
   state.deckCards = deck ? await api.listDeckCards(deck.id) : [];
   renderDeckList();
   renderDeckCards();
