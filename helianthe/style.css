@@ -62,6 +62,9 @@ input[type=file] { display: block; width: 100%; margin-top: .3rem; font-weight: 
 textarea { resize: vertical; }
 .actions { display: flex; gap: .6rem; margin-top: 1.25rem; }
 .actions button:first-child, #save-card, #save-deck, #profile-form button { background: #265847; color: white; border-color: #265847; }
+#profile-form .favorite-card-trigger { background: #f4f5e9; color: #163737; border-color: #819e8d; }
+#profile-form .favorite-card-option { background: transparent; color: #163737; border-color: transparent; }
+#profile-form .favorite-card-option:hover:not(:disabled) { background: #e0ebda; color: #163737; }
 #profile-form #delete-account { background: #a23d35; border-color: #a23d35; }
 #profile-form #delete-account:hover:not(:disabled) { background: #842f2a; border-color: #842f2a; }
 .danger-modal-card { border-color: #d49a91; }
@@ -289,6 +292,9 @@ body.dark-mode textarea { border-color: #587965; background: #0d2b23; color: #e5
 body.dark-mode .favorite-card-trigger { border-color: #587965; background: #0d2b23; color: #e5eee0; }
 body.dark-mode .favorite-card-menu { border-color: #587965; background: #12372c; box-shadow: 0 10px 24px #0008; }
 body.dark-mode .favorite-card-option:hover:not(:disabled) { background: #285944; }
+body.dark-mode #profile-form .favorite-card-trigger { border-color: #587965; background: #0d2b23; color: #e5eee0; }
+body.dark-mode #profile-form .favorite-card-option { background: transparent; color: #e5eee0; border-color: transparent; }
+body.dark-mode #profile-form .favorite-card-option:hover:not(:disabled) { background: #285944; color: #e5eee0; }
 body.dark-mode input::placeholder,
 body.dark-mode textarea::placeholder { color: #8fa99b; }
 body.dark-mode .item-list button,
