@@ -2,6 +2,7 @@ import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.mjs';
 
 const TERRAINS = new Set(['Symbiosis', 'Flow', 'Verdant', 'Radiance']);
 const CARD_TYPES = new Set(['Entity', 'Event']);
+const PREVIOUS_VERDANT_NAME = ['Ever', 'green'].join('');
 
 function result(response) {
   if (response.error) throw new Error(response.error.message || 'The request failed.');
@@ -10,6 +11,15 @@ function result(response) {
 
 function text(value, maxLength) {
   return String(value ?? '').trim().slice(0, maxLength);
+}
+
+function normalizeCardTerrain(card) {
+  if (card?.terrain !== PREVIOUS_VERDANT_NAME) return card;
+  return {
+    ...card,
+    terrain: 'Verdant',
+    effect: typeof card.effect === 'string' ? card.effect.replaceAll(PREVIOUS_VERDANT_NAME, 'Verdant') : card.effect,
+  };
 }
 
 export function cardInput(form) {
@@ -95,10 +105,10 @@ export function createCommunityApi(client) {
 
     async listCards() {
       try {
-        return result(await client.from('cards').select('id,owner_id,source_path,title,polish_name,card_type,terrain,effect,author,author_ids,artwork_id,legacy_image_ref,updated_at').order('title', { ascending: true }));
+        return result(await client.from('cards').select('id,owner_id,source_path,title,polish_name,card_type,terrain,effect,author,author_ids,artwork_id,legacy_image_ref,updated_at').order('title', { ascending: true })).map(normalizeCardTerrain);
       } catch {
         const cards = result(await client.from('cards').select('id,owner_id,source_path,title,polish_name,card_type,terrain,effect,author,artwork_id,legacy_image_ref,updated_at').order('title', { ascending: true }));
-        return cards.map(card => ({ ...card, author_ids: card.owner_id ? [card.owner_id] : [] }));
+        return cards.map(card => normalizeCardTerrain({ ...card, author_ids: card.owner_id ? [card.owner_id] : [] }));
       }
     },
 
