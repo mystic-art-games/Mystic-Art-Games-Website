@@ -112,6 +112,7 @@ body.dark-mode .profile-save-status.error { color: #ef9187; }
 .list-table-head { display: grid; align-items: center; gap: .55rem; margin: .8rem .8rem -.35rem; color: #5a6e64; font-size: .75rem; font-weight: 800; }
 .card-list-head { grid-template-columns: 2rem minmax(0, 1fr) minmax(5.5rem, auto); }
 .card-list-head span:last-child, .deck-list-head span:last-child { text-align: right; }
+.deck-list-head span:last-child { text-align: left; }
 .deck-card-list-head { grid-template-columns: 2rem minmax(0, 1fr) minmax(5.5rem, auto) 4rem; margin: .8rem .35rem .3rem; min-height: 1.15rem; line-height: 1.15; }
 .deck-card-list-head span:nth-child(3), .deck-card-list-head span:last-child { text-align: right; }
 .deck-list-head { grid-template-columns: minmax(0, 1fr) minmax(5.5rem, auto); }
@@ -132,7 +133,7 @@ body.dark-mode .profile-save-status.error { color: #ef9187; }
 .deck-list-item { display: grid; grid-template-columns: minmax(0, 1fr) minmax(5.5rem, auto); column-gap: .55rem; align-items: center; }
 .deck-list-title-wrap { display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
 .deck-list-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.deck-list-owner { display: flex; justify-content: flex-end; min-width: 0; overflow: hidden; text-align: right; }
+.deck-list-owner { display: flex; justify-content: flex-start; min-width: 0; overflow: hidden; text-align: left; }
 .deck-patron, .profile-deck-patron { display: block; overflow: hidden; color: #68756d; font-size: .74rem; font-weight: 700; line-height: 1.25; text-overflow: ellipsis; white-space: nowrap; }
 .profile-deck-name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .patron-faction-flowbound { color: #35758e; }
