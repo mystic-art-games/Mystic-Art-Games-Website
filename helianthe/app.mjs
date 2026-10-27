@@ -1250,6 +1250,7 @@ function initArtDecoScrollbars() {
     };
     element.addEventListener('scroll', update, { passive: true });
     new ResizeObserver(update).observe(element);
+    new MutationObserver(update).observe(element, { childList: true, subtree: true });
     thumb.addEventListener('pointerdown', event => {
       event.preventDefault();
       thumb.setPointerCapture(event.pointerId);
@@ -1264,6 +1265,7 @@ function initArtDecoScrollbars() {
       thumb.addEventListener('pointerup', () => thumb.removeEventListener('pointermove', move), { once: true });
     });
     update();
+    requestAnimationFrame(update);
   }
 }
 
