@@ -729,7 +729,10 @@ async function selectDeck(deck) {
   $('#deck-heading').textContent = deck?.name || 'New deck';
   state.deckCards = deck ? await api.listDeckCards(deck.id) : [];
   renderDeckList();
-  renderDeckCards();
+  const deckIsMine = state.deck.owner_id === state.user?.id;
+  const firstDeckCard = state.cards.find(card => deckIsMine || state.deckCards.some(item => item.card_id === card.id && item.copies > 0));
+  if (firstDeckCard) await showDeckCardPreview(firstDeckCard);
+  else renderDeckCards();
 }
 
 function renderProfileList() {

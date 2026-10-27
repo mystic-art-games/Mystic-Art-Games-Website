@@ -179,10 +179,17 @@ body.dark-mode .profile-save-status.error { color: #ef9187; }
 .patron-card p { line-height: 1.45; }
 .checkbox-line input { width: 1.1rem; height: 1.1rem; }
 .deck-cards { max-height: 480px; overflow: auto; border-top: 1px solid #d4dbcd; }
-.deck-card-row { grid-template-columns: 2rem minmax(0, 1fr) minmax(5.5rem, auto) 4rem; padding: .45rem .35rem; border-radius: 8px; cursor: pointer; transition: background-color .15s ease, box-shadow .15s ease; }
-.deck-card-row:hover { background: #eef3e8; box-shadow: inset 0 0 0 1px #d2ddce; }
-.deck-card-row.selected { background: #dceadd; box-shadow: inset 0 0 0 1px #6f9c80; }
+.deck-card-row { grid-template-columns: 1.65rem minmax(0, 1fr) minmax(5.5rem, auto) 4rem; min-height: 2.25rem; padding: .22rem .3rem; border: 0; border-bottom: 1px solid #e0e5dc; border-radius: 0; background: transparent; cursor: pointer; transition: background-color .15s ease; }
+.deck-card-row:last-child { border-bottom-color: transparent; }
+.deck-card-row .card-type-icon { width: 1.65rem; height: 1.65rem; }
+.deck-card-row .card-list-title { font-size: .9rem; }
+.deck-card-row .card-list-owner { justify-content: flex-start; font-size: .7rem; text-align: left; }
+.deck-card-row:hover { background: #eef3e8; }
+.deck-card-row.selected { background: #dceadd; border-bottom-color: #c6d8c8; }
 .deck-card-row.selected:hover { background: #d4e5d6; }
+body.dark-mode .deck-card-row { border-bottom-color: #355947; background: transparent; }
+body.dark-mode .deck-card-row:hover { background: #204b3b; }
+body.dark-mode .deck-card-row.selected { border-bottom-color: #416853; background: #285944; }
 .deck-card-row .card-list-owner { grid-column: 3; }
 .deck-card-row select { width: 4rem; margin: 0; grid-column: 4; }
 .deck-card-row strong { grid-column: 4; text-align: right; }
