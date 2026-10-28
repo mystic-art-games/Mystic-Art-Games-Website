@@ -438,7 +438,8 @@ body.dark-mode .deck-card-row.selected { border-bottom-color: #416853; backgroun
     line-height: 1;
   }
   #decks-view.mobile-card-preview-open #deck-card-canvas { width: min(100%, 420px); }
-  .workspace { grid-template-columns: 1fr; }
+  .workspace,
+  #decks-view.workspace { grid-template-columns: 1fr; }
   .card-layout { grid-template-columns: 1fr; }
   #cards-view > .editor-panel { display: none; }
   body.mobile-editor-visible { overflow: hidden; }
