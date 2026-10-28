@@ -396,7 +396,7 @@ function button(label, action, className = '') {
 
 function showTab(name) {
   if (name !== 'decks') closeDeckCardPreview();
-  for (const tab of ['cards', 'decks', 'profiles', 'patrons']) {
+  for (const tab of ['cards', 'decks', 'profiles', 'patrons', 'about']) {
     $(`#${tab}-view`).hidden = tab !== name;
     $(`[data-tab="${tab}"]`).classList.toggle('active', tab === name);
   }
@@ -951,7 +951,7 @@ async function loadWorkspace() {
     $('#tabs').hidden = false;
     $('#sign-in').hidden = true;
     $('#sign-out').hidden = false;
-    showTab('cards');
+    showTab('about');
     selectCard(state.cards[0] || null);
     await selectDeck(state.decks.find(deck => deck.owner_id === user.id) || state.decks[0] || null);
     const profile = state.profiles.find(profile => profile.id === user.id) || state.profiles[0];
@@ -969,7 +969,7 @@ async function loadWorkspace() {
       $('#sign-out').hidden = false;
       renderAccountButton(state.profiles.find(profile => profile.id === state.user.id));
       $('#account-name').hidden = false;
-      showTab('cards');
+      showTab('about');
       renderCardList();
       status('Your session is active, but some workspace data could not be loaded.', true);
     } else {
@@ -996,7 +996,7 @@ async function loadPublicWorkspace() {
     selectCard(state.cards[0] || null);
     await selectDeck(state.decks[0] || null);
     if (state.profiles[0]) selectProfile(state.profiles[0]);
-    showTab('cards');
+    showTab('about');
     status('Browsing publicly. Sign in to create cards and decks.');
   } catch (cause) {
     console.error(cause);
@@ -1005,7 +1005,7 @@ async function loadPublicWorkspace() {
     $('#sign-in').hidden = false;
     $('#sign-out').hidden = true;
     $('#account-name').hidden = true;
-    showTab('cards');
+    showTab('about');
     hideSignIn();
   }
 }
@@ -1254,21 +1254,27 @@ document.addEventListener('keydown', event => {
 });
 
 function initArtDecoScrollbars() {
-  for (const element of document.querySelectorAll('.item-list, .deck-cards')) {
-    if (element.parentElement?.classList.contains('art-scroll-wrap')) continue;
-    const wrapper = document.createElement('div');
-    wrapper.className = 'art-scroll-wrap';
-    element.parentNode.insertBefore(wrapper, element);
-    wrapper.append(element);
-    const rail = document.createElement('div');
+  for (const element of document.querySelectorAll('.item-list, .deck-cards, .about-content')) {
+    const existingWrapper = element.parentElement?.classList.contains('art-scroll-wrap') ? element.parentElement : null;
+    if (existingWrapper && element.dataset.artScrollReady === 'true') continue;
+    const wrapper = existingWrapper || document.createElement('div');
+    if (!existingWrapper) {
+      wrapper.className = 'art-scroll-wrap';
+      element.parentNode.insertBefore(wrapper, element);
+      wrapper.append(element);
+    }
+    const rail = existingWrapper?.querySelector('.art-scroll-rail') || document.createElement('div');
     rail.className = 'art-scroll-rail';
     rail.setAttribute('aria-hidden', 'true');
-    const thumb = document.createElement('button');
+    const thumb = existingWrapper?.querySelector('.art-scroll-thumb') || document.createElement('button');
     thumb.className = 'art-scroll-thumb';
     thumb.type = 'button';
     thumb.tabIndex = -1;
-    rail.append(thumb);
-    wrapper.append(rail);
+    if (!existingWrapper) {
+      rail.append(thumb);
+      wrapper.append(rail);
+    }
+    element.dataset.artScrollReady = 'true';
     const update = () => {
       const maxScroll = element.scrollHeight - element.clientHeight;
       const railHeight = rail.clientHeight;

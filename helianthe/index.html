@@ -13,7 +13,7 @@
   <link rel="apple-touch-icon" href="../images/helianthe-sunflower.png?v=helianthe-favicon-2">
   <link rel="manifest" href="./manifest.webmanifest">
   <title>Helianthe</title>
-  <link rel="stylesheet" href="./style.css?v=helianthe-ui-44">
+  <link rel="stylesheet" href="./style.css?v=helianthe-ui-57">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script type="module" src="./app.mjs?v=helianthe-ui-45"></script>
 </head>
@@ -22,7 +22,8 @@
     <div class="brand"><img class="brand-mark" src="../images/helianthe-sunflower.png" alt=""><div><strong>Helianthe</strong></div></div>
     <div class="header-controls">
       <nav id="tabs" hidden aria-label="Editor views">
-        <button type="button" data-tab="cards" class="active">Cards</button>
+        <button type="button" data-tab="about" class="active">About</button>
+        <button type="button" data-tab="cards">Cards</button>
         <button type="button" data-tab="decks">Decks</button>
         <button type="button" data-tab="profiles">Profiles</button>
         <button type="button" data-tab="patrons">Patrons</button>
@@ -181,6 +182,27 @@
     <section class="panel patrons-panel">
       <div class="panel-head"><h1>Patrons</h1></div>
       <div id="patron-list" class="patron-list"></div>
+    </section>
+  </main>
+
+  <main id="about-view" class="about-workspace" hidden>
+    <section class="panel about-panel">
+      <div class="art-scroll-wrap about-scroll-wrap">
+        <div class="about-content">
+        <div class="panel-head"><h1>About</h1><span class="about-kicker">Helianthe</span></div>
+        <div class="about-intro">
+          <p class="about-lead">Helianthe is a competitive card game about rebuilding a shared world. Two Patrons shape the same hexagonal realm, but each wants the future to take a different form.</p>
+          <p>The board begins almost empty. Over successive Seasons, habitats, places, characters, and events appear — and the traces of those decisions become a map of the entire game.</p>
+        </div>
+        <div class="about-grid">
+          <article class="about-section"><h2>Vision</h2><p>Helianthe is a game about a future built together with the living world, not at its expense. Every match should leave behind a readable landscape: where the first forest grew, which settlement became dependent on solar energy, and which fields survived through cooperation.</p></article>
+          <article class="about-section"><h2>Ideology</h2><p>The game does not treat nature and technology as opposites. Symbiosis, flowing water, community renewal, and managed energy are different paths toward regeneration. Victory belongs to the vision that becomes most visible on the shared board.</p></article>
+          <article class="about-section"><h2>Design philosophy</h2><ul><li>One board, many visions — players share the geography and change it for different purposes.</li><li>Cards are changes, not units — every card describes an influence on the world.</li><li>Spatial decisions matter more than combat arithmetic.</li><li>Regeneration replaces extraction as the primary language of development.</li><li>The world reacts — neighboring Fields and the Dusk phase matter.</li></ul></article>
+          <article class="about-section"><h2>Rules at a glance</h2><ol><li>The game lasts up to six Seasons. Each Season moves through Dawn, Play, Tend, and Dusk.</li><li>The board has 37 hexagonal Nodes. Terrain shapes a blank Node, and each new field must extend the connected world.</li><li>Place an Entity on matching Terrain, or archive it to create its Terrain in a legal location.</li><li>Events can always be played; they resolve a one-time change and then go to the discard.</li><li>During Dusk, check the Patrons’ victory goals. Myrr seeks a connected group of five occupied Symbiosis fields, while Solen seeks eight Solar counters across Radiance fields.</li></ol></article>
+        </div>
+        </div>
+        <div class="art-scroll-rail" aria-hidden="true"><button class="art-scroll-thumb" type="button" tabindex="-1"></button></div>
+      </div>
     </section>
   </main>
 </body>
