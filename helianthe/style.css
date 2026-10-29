@@ -717,7 +717,7 @@ body.dark-mode .deck-card-row.selected {
 
 body.dark-mode .masthead nav button:not(.active),
 body.dark-mode .masthead nav button:not(.active):hover:not(:disabled) {
-  border-color: transparent !important;
+  border: 0 !important;
   background: transparent !important;
   box-shadow: none !important;
 }
