@@ -835,6 +835,8 @@ body.dark-mode .mobile-menu-panel:has(.mobile-menu-open) {
 /* Dark mode uses the same deep green glass as the About workspace. */
 body.dark-mode .workspace > .panel,
 body.dark-mode .patrons-workspace > .panel,
+body.dark-mode .workspace,
+body.dark-mode .patrons-workspace,
 body.dark-mode #cards-view .cards-sidebar,
 body.dark-mode #cards-view > .editor-panel,
 body.dark-mode #decks-view > .sidebar,
