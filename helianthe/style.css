@@ -933,6 +933,12 @@ body.dark-mode .patrons-workspace {
   box-shadow: none;
   backdrop-filter: none;
 }
+
+body:not(.dark-mode) #cards-view #card-list .card-list-item.selected {
+  border-bottom-color: #5c9f69 !important;
+  background: #92c99a !important;
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .58), 0 2px 8px rgba(34, 98, 49, .2) !important;
+}
 @media (max-width: 850px) {
   body.dark-mode #about-view > .about-panel {
     backdrop-filter: none !important;
