@@ -454,7 +454,7 @@ body.dark-mode .masthead nav.mobile-menu-open button.active {
   .about-intro p { text-align: justify; }
   .terrain-icon { width: 100px; height: 70px; }
   .workspace,
-  .patrons-workspace { background: transparent; border: 0; padding: .5rem; }
+  .patrons-workspace { background: transparent; border: 0; padding: 0; }
   .workspace,
   .patrons-workspace { margin: 1rem auto; }
   .workspace > .panel,
