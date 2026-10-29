@@ -876,6 +876,7 @@ body.dark-mode .patrons-workspace {
 @media (max-width: 850px) {
   body.dark-mode #about-view > .about-panel {
     backdrop-filter: none !important;
+    box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .28) !important;
   }
 
   .masthead nav.mobile-menu-open button.active {
