@@ -1257,7 +1257,15 @@ $('#card-canvas').tabIndex = 0;
 $('#card-canvas').addEventListener('click', event => openCardField(cardFieldAt(event)));
 $('#card-canvas').addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openCardField('identity'); } });
 $('#close-card-field').addEventListener('click', closeCardField);
-$('#card-field-save').addEventListener('click', () => closeCardField(true));
+$('#card-field-save').addEventListener('click', () => {
+  closeCardField(true);
+  const form = $('#card-form');
+  if (!form.elements.title.value.trim()) {
+    status('Add a card title to save it.');
+    return;
+  }
+  form.requestSubmit();
+});
 $('#card-field-cancel').addEventListener('click', () => closeCardField(false));
 $('#card-field-modal .card-field-backdrop').addEventListener('click', closeCardField);
 document.addEventListener('keydown', event => { if (event.key === 'Escape' && !$('#card-field-modal').hidden) { event.stopPropagation(); closeCardField(false); } });
@@ -1280,6 +1288,7 @@ $('#download-png').addEventListener('click', async () => {
 $('#card-form').addEventListener('submit', async event => {
   event.preventDefault();
   const form = event.currentTarget;
+  const isNewCard = !state.card;
   const save = $('#save-card'); save.disabled = true;
   let persistedCard = null;
   let cleanupWarning = '';
@@ -1309,6 +1318,12 @@ $('#card-form').addEventListener('submit', async event => {
     }
     state.cardFormDirty = false;
     await reloadCollections();
+    if (isNewCard) {
+      $('#card-search').value = '';
+      $('#card-filter-type').value = '';
+      $('#card-filter-author').value = '';
+      $('#card-filter-terrain').value = '';
+    }
     selectCard(state.cards.find(item => item.id === card.id) || card);
     renderCardList();
     status(cleanupWarning ? `Card saved. ${cleanupWarning}` : 'Card saved.', Boolean(cleanupWarning));
