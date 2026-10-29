@@ -575,6 +575,8 @@ body.dark-mode .masthead nav.mobile-menu-open button.active {
   .about-grid { grid-template-columns: 1fr; }
   .about-principles { display: block; }
   .about-principles > h2 { text-align: center; }
+  .about-section h2,
+  .about-section h3 { text-align: center; }
   .about-principles .vision-layout { display: grid; row-gap: .35rem; }
   .about-section.about-principles > h3:first-of-type { margin-top: 1.5rem; }
   .about-section p, .about-section li { text-align: justify; }
