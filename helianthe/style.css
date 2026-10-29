@@ -585,6 +585,7 @@ body.dark-mode .masthead nav.mobile-menu-open button.active {
   .terrain-reference { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; height: auto; min-height: 0; aspect-ratio: 1.24 / 1; padding-top: 0; background-size: 100% auto; background-position: center; }
   .about-intro { margin: 0 auto; }
   .about-intro p:first-child { margin-top: 0; }
+  .about-intro p:first-child { text-align: center; }
 }
 
 @media (max-width: 430px) {
