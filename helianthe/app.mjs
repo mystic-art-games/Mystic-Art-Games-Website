@@ -489,6 +489,16 @@ function renderCardList() {
   if (!list.childElementCount) list.textContent = 'No cards found.';
 }
 
+function scrollToCardRow(cardId) {
+  requestAnimationFrame(() => {
+    const list = $('#card-list');
+    const row = [...list.children].find(item => item.dataset.cardId === cardId);
+    if (!row) return;
+    const distance = row.getBoundingClientRect().top - list.getBoundingClientRect().top;
+    list.scrollTo({ top: list.scrollTop + distance - (list.clientHeight - row.clientHeight) / 2, behavior: 'smooth' });
+  });
+}
+
 function setCardFormEditable(canEdit) {
   for (const field of $('#card-form').querySelectorAll('input,select,textarea,button')) field.disabled = !canEdit;
 }
@@ -1270,13 +1280,7 @@ $('#new-card').addEventListener('click', async () => {
     $('#card-filter-author').value = '';
     $('#card-filter-terrain').value = '';
     selectCard(state.cards.find(card => card.id === created.id) || created);
-    requestAnimationFrame(() => {
-      const list = $('#card-list');
-      const row = [...list.children].find(item => item.dataset.cardId === created.id);
-      if (!row) return;
-      const distance = row.getBoundingClientRect().top - list.getBoundingClientRect().top;
-      list.scrollTo({ top: list.scrollTop + distance - (list.clientHeight - row.clientHeight) / 2, behavior: 'smooth' });
-    });
+    scrollToCardRow(created.id);
     status('Card created. Select it to edit.');
   } catch (cause) { status(cause.message, true); }
   finally { create.disabled = false; }
@@ -1355,6 +1359,7 @@ $('#card-form').addEventListener('submit', async event => {
     }
     selectCard(state.cards.find(item => item.id === card.id) || card);
     renderCardList();
+    scrollToCardRow(card.id);
     status(cleanupWarning ? `Card saved. ${cleanupWarning}` : 'Card saved.', Boolean(cleanupWarning));
   } catch (cause) {
     if (persistedCard) {
