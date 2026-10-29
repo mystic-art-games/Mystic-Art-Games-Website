@@ -617,9 +617,24 @@ function renderPreview() {
     .catch(cause => { if (serial === state.renderSerial) $('#preview-note').textContent = cause.message; });
 }
 
-function closeCardField() {
+let cardFieldDraft = null;
+
+function closeCardField(commit = false) {
+  if (!commit && cardFieldDraft) {
+    const form = $('#card-form');
+    for (const [name, value] of Object.entries(cardFieldDraft.values)) form.elements[name].value = value;
+    for (const input of $('#card-author-options').querySelectorAll('input')) input.checked = cardFieldDraft.authors.includes(input.value);
+    if (cardFieldDraft.artworkChanged) {
+      $('#card-artwork').value = '';
+      ++state.artworkSerial;
+      releaseArtwork();
+      void showArtwork(state.card);
+    }
+    renderPreview();
+  }
   $('#card-field-modal').hidden = true;
   $('#card-field-content').replaceChildren();
+  cardFieldDraft = null;
   $('#card-canvas').focus({ preventScroll: true });
 }
 
@@ -636,6 +651,11 @@ function openCardField(field) {
   const titles = { title: 'Edit title', identity: 'Edit type and color', artwork: 'Choose artwork', effect: 'Edit effect', authors: 'Edit authors' };
   const source = sources[field];
   if (!source) return;
+  cardFieldDraft = {
+    values: Object.fromEntries(['title', 'card_type', 'terrain', 'effect'].map(name => [name, form.elements[name].value])),
+    authors: selectedAuthorIds($('#card-author-options')),
+    artworkChanged: false,
+  };
   const content = $('#card-field-content');
   content.replaceChildren(source.cloneNode(true));
   $('#card-field-title').textContent = titles[field];
@@ -649,6 +669,7 @@ function openCardField(field) {
     copy.addEventListener(copy.type === 'file' ? 'change' : 'input', () => {
       if (copy.type === 'file') {
         original.files = copy.files;
+        if (cardFieldDraft) cardFieldDraft.artworkChanged = true;
         original.dispatchEvent(new Event('change', { bubbles: true }));
       } else {
         if (copy.type === 'checkbox') original.checked = copy.checked;
@@ -1220,9 +1241,10 @@ $('#card-canvas').tabIndex = 0;
 $('#card-canvas').addEventListener('click', event => openCardField(cardFieldAt(event)));
 $('#card-canvas').addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openCardField('identity'); } });
 $('#close-card-field').addEventListener('click', closeCardField);
-$('#card-field-done').addEventListener('click', closeCardField);
+$('#card-field-save').addEventListener('click', () => closeCardField(true));
+$('#card-field-cancel').addEventListener('click', () => closeCardField(false));
 $('#card-field-modal .card-field-backdrop').addEventListener('click', closeCardField);
-document.addEventListener('keydown', event => { if (event.key === 'Escape' && !$('#card-field-modal').hidden) { event.stopPropagation(); closeCardField(); } });
+document.addEventListener('keydown', event => { if (event.key === 'Escape' && !$('#card-field-modal').hidden) { event.stopPropagation(); closeCardField(false); } });
 $('#close-deck-card-preview').addEventListener('click', closeDeckCardPreview);
 $('#card-form').addEventListener('input', () => { state.cardFormDirty = true; renderPreview(); });
 $('#card-form').elements.card_type.addEventListener('change', () => { syncTerrain(); renderPreview(); });
