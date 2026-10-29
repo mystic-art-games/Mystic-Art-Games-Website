@@ -246,12 +246,13 @@ body.dark-mode .about-section p, body.dark-mode .about-section li { color: #d1df
   }
   #cards-view > .editor-panel .card-layout { gap: .8rem; }
   #cards-view > .editor-panel #card-form { display: none; }
-  #cards-view > .editor-panel .card-layout { display: flex; justify-content: center; }
-  #cards-view > .editor-panel .card-preview-shell { padding-top: 1.6rem; }
-  #cards-view > .editor-panel #card-canvas { width: min(100%, 520px); }
+  #cards-view.workspace { grid-template-columns: minmax(0, 1.24fr) minmax(0, 1fr); align-items: stretch; justify-content: center; max-width: 850px; }
+  #cards-view > .editor-panel { width: 100%; justify-self: stretch; }
+  #cards-view > .editor-panel .card-layout { display: flex; justify-content: center; width: 100%; }
+  #cards-view > .editor-panel .card-preview-shell { align-self: stretch; width: 100%; padding-top: 1.6rem; }
   #cards-view > .editor-panel form label { margin: .25rem 0; }
   #cards-view > .editor-panel .actions { margin-top: .65rem; }
-  #cards-view > .editor-panel #card-canvas { width: min(100%, 360px); }
+  #cards-view > .editor-panel #card-canvas { width: min(100%, 350px); max-width: none; }
   #cards-view > .editor-panel textarea { min-height: 82px; }
   #decks-view > .sidebar,
   #decks-view > .editor-panel,
@@ -343,6 +344,10 @@ body.dark-mode .profile-save-status.error { color: #ef9187; }
 .card-list-item .card-list-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
 .card-list-item .card-list-owner { grid-column: 3; grid-row: 1; display: flex; justify-content: flex-end; min-width: 0; overflow: hidden; text-align: right; }
 #cards-view #card-list { gap: 0; margin-top: .55rem; }
+#cards-view > .cards-sidebar { display: flex; flex-direction: column; min-height: 0; }
+#cards-view .card-table-shell { display: flex; flex: 1 1 auto; flex-direction: column; min-height: 0; overflow: hidden; }
+#cards-view .card-table-shell > .art-scroll-wrap { flex: 1 1 auto; min-height: 0; overflow: hidden; }
+#cards-view .card-table-shell .art-scroll-wrap > #card-list { height: 100%; min-height: 0; overflow-y: auto; }
 #cards-view #card-list .card-list-item { min-height: 2.25rem; padding: .22rem .3rem; border: 0; border-bottom: 1px solid #e0e5dc; border-radius: 0; background: transparent; }
 #cards-view #card-list .card-list-item:last-child { border-bottom-color: transparent; }
 #cards-view #card-list .card-list-item:hover:not(:disabled) { background: #eef3e8; }
