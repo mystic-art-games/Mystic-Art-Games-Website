@@ -832,6 +832,30 @@ body.dark-mode .mobile-menu-panel:has(.mobile-menu-open) {
   backdrop-filter: none;
 }
 
+/* Dark mode uses the same deep green glass as the About workspace. */
+body.dark-mode .workspace > .panel,
+body.dark-mode .patrons-workspace > .panel,
+body.dark-mode #cards-view .cards-sidebar,
+body.dark-mode #cards-view > .editor-panel,
+body.dark-mode #decks-view > .sidebar,
+body.dark-mode #decks-view > .editor-panel,
+body.dark-mode #profiles-view > .sidebar,
+body.dark-mode #profiles-view > .editor-panel,
+body.dark-mode .patron-card,
+body.dark-mode .auth-panel,
+body.dark-mode .auth-modal-card,
+body.dark-mode .favorite-card-menu,
+body.dark-mode #decks-view.mobile-card-preview-open .deck-card-preview-shell,
+body.dark-mode .item-list button.selected,
+body.dark-mode #cards-view #card-list .card-list-item.selected,
+body.dark-mode #decks-view #deck-list .deck-list-item.selected,
+body.dark-mode .deck-card-row.selected {
+  border-color: #416853 !important;
+  background: linear-gradient(145deg, #153f34, #246047 62%, #34735a) !important;
+  box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .28), 0 8px 24px rgba(0, 18, 12, .28) !important;
+  backdrop-filter: blur(10px);
+}
+
 @media (max-width: 850px) {
   .masthead nav.mobile-menu-open button.active {
     border-color: rgba(73, 120, 94, .55);
