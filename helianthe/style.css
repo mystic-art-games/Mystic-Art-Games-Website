@@ -647,9 +647,78 @@ body.dark-mode #profiles-view > .editor-panel {
   box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .28), inset -1px -1px 0 rgba(210, 239, 222, .06);
 }
 
+/* Shared glass treatment for active and selected controls on every viewport. */
+.masthead nav button.active,
+.mobile-menu-toggle,
+.mobile-menu-panel:has(.mobile-menu-open),
+.item-list button.selected,
+#cards-view #card-list .card-list-item.selected,
+#decks-view #deck-list .deck-list-item.selected,
+.deck-card-row.selected {
+  border-color: rgba(73, 120, 94, .55);
+  background: linear-gradient(145deg, rgba(255, 255, 255, .72), rgba(190, 218, 200, .4));
+  background-image: none;
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .8), 0 2px 8px rgba(20, 49, 38, .1);
+  backdrop-filter: blur(10px);
+}
+body.dark-mode .masthead nav button.active,
+body.dark-mode .mobile-menu-toggle,
+body.dark-mode .mobile-menu-panel:has(.mobile-menu-open),
+body.dark-mode .item-list button.selected,
+body.dark-mode #cards-view #card-list .card-list-item.selected,
+body.dark-mode #decks-view #deck-list .deck-list-item.selected,
+body.dark-mode .deck-card-row.selected {
+  border-color: rgba(203, 234, 210, .48);
+  background: linear-gradient(145deg, rgba(185, 220, 200, .24), rgba(65, 111, 88, .18));
+  background-image: none;
+  box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .24), 0 2px 8px rgba(0, 18, 12, .18);
+}
+
 @media (max-width: 850px) {
   .panel.about-panel,
   body.dark-mode .panel.about-panel {
     background-image: none;
+  }
+  .mobile-menu-toggle,
+  .mobile-menu-toggle:hover:not(:disabled),
+  .mobile-menu-panel:has(.mobile-menu-open) {
+    border-color: rgba(231, 248, 235, .55);
+    background: linear-gradient(145deg, rgba(255, 255, 255, .22), rgba(175, 215, 189, .12));
+    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .3), 0 3px 12px rgba(0, 25, 16, .16);
+    backdrop-filter: blur(12px);
+  }
+  body.dark-mode .mobile-menu-toggle,
+  body.dark-mode .mobile-menu-toggle:hover:not(:disabled),
+  body.dark-mode .mobile-menu-panel:has(.mobile-menu-open) {
+    border-color: rgba(226, 246, 235, .42);
+    background: linear-gradient(145deg, rgba(185, 220, 200, .24), rgba(12, 45, 35, .54));
+  }
+  .masthead nav.mobile-menu-open button.active,
+  .item-list button.selected,
+  #cards-view #card-list .card-list-item.selected,
+  #decks-view #deck-list .deck-list-item.selected,
+  .deck-card-row.selected {
+    border-color: rgba(73, 120, 94, .55);
+    background: linear-gradient(145deg, rgba(255, 255, 255, .72), rgba(190, 218, 200, .4));
+    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .8), 0 2px 8px rgba(20, 49, 38, .1);
+    backdrop-filter: blur(10px);
+  }
+  body.dark-mode .item-list button.selected,
+  body.dark-mode #cards-view #card-list .card-list-item.selected,
+  body.dark-mode #decks-view #deck-list .deck-list-item.selected,
+  body.dark-mode .deck-card-row.selected {
+    border-color: rgba(203, 234, 210, .48);
+    background: linear-gradient(145deg, rgba(185, 220, 200, .24), rgba(65, 111, 88, .18));
+    box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .24), 0 2px 8px rgba(0, 18, 12, .18);
+  }
+  .mobile-menu-panel:has(.mobile-menu-open) {
+    border-color: rgba(132, 177, 139, .55);
+    background: linear-gradient(145deg, #153f34, #246047 62%, #34735a);
+    box-shadow: 0 12px 28px rgba(0, 19, 13, .28);
+    backdrop-filter: none;
+  }
+  body.dark-mode .mobile-menu-panel:has(.mobile-menu-open) {
+    border-color: rgba(226, 246, 235, .34);
+    background: linear-gradient(145deg, #102f27, #173f32 62%, #23503f);
   }
 }
