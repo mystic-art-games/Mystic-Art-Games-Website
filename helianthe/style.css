@@ -426,6 +426,19 @@ body.dark-mode .deck-card-row.selected { border-bottom-color: #416853; backgroun
   #cards-view > .sidebar #card-list { padding-right: .2rem; }
   .patrons-panel { height: 100%; }
 }
+/* Active navigation cards use one shared appearance on desktop and mobile. */
+.masthead nav button.active,
+body.dark-mode .masthead nav button.active,
+.masthead nav.mobile-menu-open button.active,
+body.dark-mode .masthead nav.mobile-menu-open button.active {
+  border-color: rgba(73, 120, 94, .55);
+  background: linear-gradient(145deg, rgba(255, 255, 255, .72), rgba(190, 218, 200, .4));
+  background-image: none;
+  color: #f2c96b;
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .8), 0 2px 8px rgba(20, 49, 38, .1);
+  backdrop-filter: blur(10px);
+}
+
 @media (max-width: 850px) {
   .about-workspace { display: block; width: 100%; height: calc(100vh - 180px); margin: 0; padding: .5rem; overflow: hidden; }
   .about-panel { width: 100%; height: 100%; max-width: none; aspect-ratio: auto; background-image: none; background-color: #fffdf4; }
