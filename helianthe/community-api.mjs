@@ -22,6 +22,22 @@ function normalizeCardTerrain(card) {
   };
 }
 
+async function writeCardWithLegacyFallback(write, input) {
+  let values = input;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const response = await write(values);
+    if (!response.error) return response;
+    const message = response.error.message || '';
+    if (/author_ids/i.test(message) && Object.hasOwn(values, 'author_ids')) {
+      const { author_ids, ...legacyValues } = values;
+      values = legacyValues;
+    } else if (/cards_terrain_check/i.test(message) && values.terrain === 'Verdant') {
+      values = { ...values, terrain: PREVIOUS_VERDANT_NAME };
+    } else return response;
+  }
+  return write(values);
+}
+
 export function cardInput(form) {
   const title = text(form.title, 200);
   const card_type = text(form.card_type, 20);
@@ -115,12 +131,10 @@ export function createCommunityApi(client) {
     async createCard(userId, values) {
       if (!userId) throw new Error('Sign in first.');
       const row = { ...cardInput(values), owner_id: userId };
-      let response = await client.from('cards').insert(row).select().single();
-      if (response.error && /author_ids/i.test(response.error.message || '')) {
-        const { author_ids, ...legacyRow } = row;
-        response = await client.from('cards').insert(legacyRow).select().single();
-      }
-      return result(response);
+      const response = await writeCardWithLegacyFallback(
+        candidate => client.from('cards').insert(candidate).select().single(), row,
+      );
+      return normalizeCardTerrain(result(response));
     },
 
     async saveCard(userId, cardId, values, isAdmin = false) {
@@ -132,14 +146,10 @@ export function createCommunityApi(client) {
         if (!isAdmin) query = query.eq('owner_id', userId);
         return query.select();
       };
-      let response = await update(patch);
-      if (response.error && /author_ids/i.test(response.error.message || '')) {
-        const { author_ids, ...legacyPatch } = patch;
-        response = await update(legacyPatch);
-      }
+      const response = await writeCardWithLegacyFallback(update, patch);
       const rows = result(response);
       if (!rows?.length) throw new Error('Only the card creator or designated administrator can edit this card.');
-      return rows[0];
+      return normalizeCardTerrain(rows[0]);
     },
 
     async deleteCard(userId, cardId, isAdmin = false) {

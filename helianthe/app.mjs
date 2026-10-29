@@ -655,6 +655,7 @@ function closeCardField(commit = false) {
   }
   $('#card-field-modal').hidden = true;
   $('#card-field-content').replaceChildren();
+  $('#card-field-status').hidden = true;
   cardFieldDraft = null;
   $('#card-canvas').focus({ preventScroll: true });
 }
@@ -678,6 +679,7 @@ function openCardField(field) {
     artworkChanged: false,
   };
   const content = $('#card-field-content');
+  $('#card-field-status').hidden = true;
   content.replaceChildren(source.cloneNode(true));
   if (field === 'artwork') {
     const hint = document.createElement('p');
@@ -1291,15 +1293,7 @@ $('#card-canvas').tabIndex = 0;
 $('#card-canvas').addEventListener('click', event => openCardField(cardFieldAt(event)));
 $('#card-canvas').addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openCardField('identity'); } });
 $('#close-card-field').addEventListener('click', closeCardField);
-$('#card-field-save').addEventListener('click', () => {
-  closeCardField(true);
-  const form = $('#card-form');
-  if (!form.elements.title.value.trim()) {
-    status('Add a card title to save it.');
-    return;
-  }
-  form.requestSubmit();
-});
+$('#card-field-save').addEventListener('click', () => { void saveCardForm(); });
 $('#card-field-cancel').addEventListener('click', () => closeCardField(false));
 $('#card-field-modal .card-field-backdrop').addEventListener('click', closeCardField);
 document.addEventListener('keydown', event => { if (event.key === 'Escape' && !$('#card-field-modal').hidden) { event.stopPropagation(); closeCardField(false); } });
@@ -1337,11 +1331,25 @@ $('#delete-card').addEventListener('click', async () => {
   }
 });
 
-$('#card-form').addEventListener('submit', async event => {
-  event.preventDefault();
-  const form = event.currentTarget;
+let savingCard = false;
+async function saveCardForm() {
+  if (savingCard) return;
+  const form = $('#card-form');
+  const modalOpen = !$('#card-field-modal').hidden;
+  const modalStatus = $('#card-field-status');
+  modalStatus.hidden = true;
+  const invalidField = [...form.elements].find(field => !field.checkValidity());
+  if (invalidField) {
+    if (modalOpen) {
+      modalStatus.textContent = invalidField.validationMessage || 'Check the card fields before saving.';
+      modalStatus.hidden = false;
+    } else status(invalidField.validationMessage || 'Check the card fields before saving.', true);
+    return;
+  }
+  savingCard = true;
   const isNewCard = !state.card;
   const save = $('#save-card'); save.disabled = true;
+  const modalSave = $('#card-field-save'); modalSave.disabled = true;
   let persistedCard = null;
   let cleanupWarning = '';
   try {
@@ -1376,6 +1384,7 @@ $('#card-form').addEventListener('submit', async event => {
       $('#card-filter-author').value = '';
       $('#card-filter-terrain').value = '';
     }
+    if (modalOpen) closeCardField(true);
     selectCard(state.cards.find(item => item.id === card.id) || card);
     renderCardList();
     scrollToCardRow(card.id);
@@ -1386,9 +1395,14 @@ $('#card-form').addEventListener('submit', async event => {
       state.card = persistedCard;
     }
     status(cause.message, true);
+    if (modalOpen) {
+      modalStatus.textContent = cause.message || 'Card could not be saved. Try again.';
+      modalStatus.hidden = false;
+    }
   }
-  finally { save.disabled = false; }
-});
+  finally { savingCard = false; save.disabled = false; modalSave.disabled = false; }
+}
+$('#card-form').addEventListener('submit', event => { event.preventDefault(); void saveCardForm(); });
 
 $('#new-deck').addEventListener('click', () => {
   if (requireAccount()) void createNewDeck().catch(cause => status(cause.message, true));
