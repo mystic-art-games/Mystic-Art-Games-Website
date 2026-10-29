@@ -313,7 +313,7 @@ body.dark-mode .about-section p, body.dark-mode .about-section li { color: #d1df
 .profile-save-status { color: #2f8a58; font-size: .9rem; font-weight: 800; }
 .profile-save-status.error { color: #a23d35; }
 body.dark-mode .profile-save-status.error { color: #ef9187; }
-.user-avatar { position: relative; display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; width: 2rem; height: 2rem; overflow: hidden; border: 1px solid #8eaa98; border-radius: 50%; background: #dceadd; color: #315f4b; font-size: .82rem; font-weight: 800; line-height: 1; vertical-align: middle; }
+.user-avatar { position: relative; display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; width: 2rem; height: 2rem; overflow: hidden; border: 1px solid #8eaa98; border-radius: 50%; background: #dceadd; color: #315f4b; font-size: .82rem; font-weight: 800; line-height: 0; vertical-align: middle; }
 .user-avatar.small { width: 1.25rem; height: 1.25rem; font-size: .62rem; }
 .user-avatar.header-avatar { width: 1.65rem; height: 1.65rem; border-color: #91b8a2; }
 .user-avatar img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
