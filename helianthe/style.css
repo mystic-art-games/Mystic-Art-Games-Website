@@ -352,7 +352,7 @@ body.dark-mode .profile-save-status.error { color: #ef9187; }
 #cards-view #card-list .card-list-item { min-height: 2.25rem; padding: .22rem .3rem; border: 0; border-bottom: 1px solid #e0e5dc; border-radius: 0; background: transparent; }
 #cards-view #card-list .card-list-item:last-child { border-bottom-color: transparent; }
 #cards-view #card-list .card-list-item:hover:not(:disabled) { background: #eef3e8; }
-#cards-view #card-list .card-list-item.selected { background: #dceadd; border-bottom-color: #c6d8c8; }
+#cards-view #card-list .card-list-item.selected { background: #c9dfcd; border-bottom-color: #b4cfb9; }
 #cards-view #card-list .card-type-icon { width: 1.65rem; height: 1.65rem; }
 #cards-view #card-list .card-list-title { font-size: .9rem; }
 #cards-view .card-list-head span:last-child { text-align: left; }
