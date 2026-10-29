@@ -503,6 +503,12 @@ function setCardFormEditable(canEdit) {
   for (const field of $('#card-form').querySelectorAll('input,select,textarea,button')) field.disabled = !canEdit;
 }
 
+function canEditCard(card) {
+  if (!state.user) return false;
+  if (!card) return true;
+  return state.isAdmin || card.owner_id === state.user.id || card.author_ids?.includes(state.user.id);
+}
+
 function showSignIn() {
   state.user = null;
   state.isAdmin = false;
@@ -740,8 +746,7 @@ function selectCard(card, { openMobile = false } = {}) {
   form.elements.effect.value = card?.effect || '';
   renderAuthorOptions($('#card-author-options'), card?.author_ids || (card?.owner_id ? [card.owner_id] : [state.user?.id].filter(Boolean)));
   $('#card-heading').textContent = card?.title || 'New card';
-  const mine = Boolean(state.user && card?.owner_id === state.user.id);
-  setCardFormEditable(Boolean(state.user && (!card || mine || state.isAdmin)));
+  setCardFormEditable(canEditCard(card));
   syncTerrain();
   renderPreview();
   void showArtwork(card);
@@ -1031,7 +1036,7 @@ function startRealtimeSync() {
       await reloadCollections();
       renderAuthorOptions($('#card-author-options'), selectedCardAuthors);
       renderAuthorOptions($('#deck-author-options'), selectedDeckAuthors);
-      const cardEditable = Boolean(state.user && (!state.card || state.card.owner_id === state.user.id || state.isAdmin));
+      const cardEditable = canEditCard(state.card);
       const deckEditable = Boolean(state.user && (!state.deck || state.deck.owner_id === state.user.id));
       for (const input of $('#card-author-options').querySelectorAll('input')) input.disabled = !cardEditable;
       for (const input of $('#deck-author-options').querySelectorAll('input')) input.disabled = !deckEditable;
@@ -1361,12 +1366,12 @@ async function saveCardForm() {
     const file = sourceFile ? await compressedArtwork(sourceFile) : null;
     const previousArtworkId = state.card?.artwork_id || null;
     let card = state.card
-      ? await api.saveCard(state.user.id, state.card.id, values, state.isAdmin)
+      ? await api.saveCard(state.user.id, state.card.id, values)
       : await api.createCard(state.user.id, values);
     persistedCard = card;
     if (file) {
       const artwork = await api.uploadArtwork(file);
-      try { card = await api.saveCard(state.user.id, card.id, { ...values, artwork_id: artwork.id }, state.isAdmin); }
+      try { card = await api.saveCard(state.user.id, card.id, { ...values, artwork_id: artwork.id }); }
       catch (cause) {
         await api.deleteArtwork(artwork.id).catch(error => console.error('New artwork cleanup failed', error));
         throw cause;

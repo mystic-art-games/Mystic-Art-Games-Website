@@ -154,18 +154,14 @@ export function createCommunityApi(client) {
       return normalizeCardTerrain(result(response));
     },
 
-    async saveCard(userId, cardId, values, isAdmin = false) {
+    async saveCard(userId, cardId, values) {
       if (!userId || !cardId) throw new Error('Select your own card.');
       const patch = { ...cardInput(values), updated_at: new Date().toISOString() };
       if (values.artwork_id !== undefined) patch.artwork_id = values.artwork_id || null;
-      const update = async valuesToSave => {
-        let query = client.from('cards').update(valuesToSave).eq('id', cardId);
-        if (!isAdmin) query = query.eq('owner_id', userId);
-        return query.select();
-      };
+      const update = valuesToSave => client.from('cards').update(valuesToSave).eq('id', cardId).select();
       const response = await writeCardWithLegacyFallback(update, patch);
       const rows = result(response);
-      if (!rows?.length) throw new Error('Only the card creator or designated administrator can edit this card.');
+      if (!rows?.length) throw new Error('Only a card author or designated administrator can edit this card.');
       return normalizeCardTerrain(rows[0]);
     },
 
