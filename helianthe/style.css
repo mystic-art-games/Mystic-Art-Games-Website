@@ -398,6 +398,7 @@ body.dark-mode .profile-save-status.error { color: #ef9187; }
 .card-field-dialog #card-field-content .two-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
 .card-field-dialog #card-field-content textarea { min-height: 8rem; }
 .card-field-dialog #card-field-content fieldset { min-width: 0; }
+.card-field-dialog #card-field-content .form-hint { margin-top: 1rem; }
 .card-field-actions { display: flex; justify-content: flex-end; gap: .6rem; }
 .card-field-actions #card-field-save { background: #265847; color: #fff; border-color: #265847; }
 body.dark-mode .card-field-dialog { border-color: #416853; background: #173f32; color: #e5eee0; }
