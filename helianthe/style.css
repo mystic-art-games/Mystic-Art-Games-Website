@@ -874,6 +874,10 @@ body.dark-mode .patrons-workspace {
   backdrop-filter: none;
 }
 @media (max-width: 850px) {
+  body.dark-mode #about-view > .about-panel {
+    backdrop-filter: none !important;
+  }
+
   .masthead nav.mobile-menu-open button.active {
     border-color: rgba(73, 120, 94, .55);
     background: linear-gradient(145deg, rgba(255, 255, 255, .72), rgba(190, 218, 200, .4));
