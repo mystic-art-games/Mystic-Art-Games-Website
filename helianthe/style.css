@@ -599,7 +599,7 @@ body.dark-mode .masthead nav.mobile-menu-open button.active {
 }
 
 @media (max-width: 430px) {
-  .card-filters { grid-template-columns: 1fr; }
+  .card-filters { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .deck-meta-row { grid-template-columns: 1fr; }
   .masthead { padding-inline: .65rem; }
   .masthead nav button, #sign-in, #sign-out { padding: .5rem .6rem; }
