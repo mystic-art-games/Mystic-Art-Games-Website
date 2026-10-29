@@ -347,7 +347,7 @@ body.dark-mode .profile-save-status.error { color: #ef9187; }
 #cards-view > .cards-sidebar { display: flex; flex-direction: column; min-height: 0; }
 #cards-view .card-table-shell { display: flex; flex: 1 1 auto; flex-direction: column; min-height: 0; overflow: hidden; }
 #cards-view .card-table-shell > .art-scroll-wrap { flex: 1 1 auto; min-height: 0; overflow: visible; }
-#cards-view .card-table-shell > .art-scroll-wrap > .art-scroll-rail { transform: translateX(0); }
+#cards-view .card-table-shell > .art-scroll-wrap > .art-scroll-rail { transform: translateX(-.2rem); }
 #cards-view .card-table-shell .art-scroll-wrap > #card-list { height: 100%; min-height: 0; overflow-y: auto; }
 #cards-view #card-list .card-list-item { min-height: 2.25rem; padding: .22rem .3rem; border: 0; border-bottom: 1px solid #e0e5dc; border-radius: 0; background: transparent; }
 #cards-view #card-list .card-list-item:last-child { border-bottom-color: transparent; }
