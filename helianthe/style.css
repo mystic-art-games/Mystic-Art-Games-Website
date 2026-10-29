@@ -185,6 +185,18 @@ body.dark-mode .about-section p, body.dark-mode .about-section li { color: #d1df
 .art-scroll-thumb:hover:not(:disabled) { background: radial-gradient(circle at 31% 25%, rgba(255, 255, 255, 1) 0 14%, rgba(246, 255, 247, .98) 26%, rgba(215, 240, 221, .8) 54%, rgba(133, 189, 151, .64) 84%, rgba(78, 135, 104, .5) 100%); filter: none; }
 .art-scroll-thumb:active { cursor: grabbing; }
 @media (min-width: 851px) {
+  .masthead nav button.active {
+    border-color: rgba(73, 120, 94, .55);
+    background: linear-gradient(145deg, rgba(255, 255, 255, .72), rgba(190, 218, 200, .4));
+    background-image: none;
+    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .8), 0 2px 8px rgba(20, 49, 38, .1);
+    backdrop-filter: blur(10px);
+  }
+  body.dark-mode .masthead nav button.active {
+    border-color: rgba(226, 246, 235, .34);
+    background: linear-gradient(145deg, #153f34, #246047 62%, #34735a);
+    box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .28), 0 2px 8px rgba(0, 18, 12, .22);
+  }
   .workspace,
   .patrons-workspace {
     background: transparent;
@@ -531,7 +543,7 @@ body.dark-mode .deck-card-row.selected { border-bottom-color: #416853; backgroun
   .mobile-menu-panel:has(.mobile-menu-open) { position: absolute; z-index: 25; top: calc(100% + .35rem); left: .65rem; right: .65rem; display: grid; grid-template-columns: 1fr auto; gap: .55rem .75rem; padding: .55rem; border: 1px solid rgba(132, 177, 139, .55); border-radius: 12px; background: #153f34; box-shadow: 0 12px 28px rgba(0, 19, 13, .28); }
   .mobile-menu-panel:has(.mobile-menu-open) .theme-control { grid-column: 2; grid-row: 1; margin: 0; }
   .mobile-menu-panel:has(.mobile-menu-open) .account-controls { grid-column: 1 / -1; grid-row: 2; justify-content: flex-start; }
-  .mobile-menu-panel:has(.mobile-menu-open) { left: auto; right: .65rem; width: min(15rem, calc(100% - 1.3rem)); display: flex; flex-direction: column; align-items: stretch; gap: .35rem; }
+  .mobile-menu-panel:has(.mobile-menu-open) { left: auto; right: .65rem; width: max-content; min-width: 12rem; max-width: calc(100% - 1.3rem); display: flex; flex-direction: column; align-items: stretch; gap: .35rem; }
   .mobile-menu-panel:has(.mobile-menu-open) .theme-control { align-self: center; display: flex; flex-direction: row; align-items: center; justify-content: center; gap: .5rem; }
   .mobile-menu-panel:has(.mobile-menu-open) .account-controls { flex-direction: column; align-items: center; justify-content: center; gap: .2rem; }
   .mobile-menu-panel:has(.mobile-menu-open) #account-name { margin-left: 0; }
@@ -646,6 +658,15 @@ body.dark-mode #profiles-view > .editor-panel {
   background: linear-gradient(145deg, rgba(185, 220, 200, .22) 0%, rgba(65, 111, 88, .18) 46%, rgba(12, 45, 35, .3) 100%);
   box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .28), inset -1px -1px 0 rgba(210, 239, 222, .06);
 }
+body.dark-mode .patron-card,
+body.dark-mode .auth-panel,
+body.dark-mode .auth-modal-card,
+body.dark-mode .favorite-card-menu {
+  border-color: rgba(226, 246, 235, .34);
+  background: linear-gradient(145deg, rgba(185, 220, 200, .22), rgba(65, 111, 88, .18) 46%, rgba(12, 45, 35, .3));
+  box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .28), inset -1px -1px 0 rgba(210, 239, 222, .06);
+  backdrop-filter: blur(10px);
+}
 
 /* Shared glass treatment for active and selected controls on every viewport. */
 .masthead nav button.active,
@@ -720,5 +741,94 @@ body.dark-mode .deck-card-row.selected {
   body.dark-mode .mobile-menu-panel:has(.mobile-menu-open) {
     border-color: rgba(226, 246, 235, .34);
     background: linear-gradient(145deg, #102f27, #173f32 62%, #23503f);
+  }
+}
+
+body.dark-mode .cards-sidebar,
+body.dark-mode #cards-view > .editor-panel,
+body.dark-mode #about-view > .about-panel,
+body.dark-mode #decks-view > .sidebar,
+body.dark-mode #decks-view > .editor-panel,
+body.dark-mode #profiles-view > .sidebar,
+body.dark-mode #profiles-view > .editor-panel,
+body.dark-mode .patrons-workspace > .panel,
+body.dark-mode .patron-card,
+body.dark-mode .auth-panel,
+body.dark-mode .auth-modal-card,
+body.dark-mode .favorite-card-menu,
+body.dark-mode .mobile-menu-panel:has(.mobile-menu-open) {
+  border-color: rgba(226, 246, 235, .34);
+  background: linear-gradient(145deg, #153f34, #246047 62%, #34735a);
+  box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .28), 0 8px 24px rgba(0, 18, 12, .28);
+  backdrop-filter: blur(10px);
+}
+body.dark-mode .masthead nav button.active,
+body.dark-mode .item-list button.selected,
+body.dark-mode #cards-view #card-list .card-list-item.selected,
+body.dark-mode #decks-view #deck-list .deck-list-item.selected,
+body.dark-mode .deck-card-row.selected {
+  border-color: rgba(226, 246, 235, .34);
+  background: linear-gradient(145deg, #153f34, #246047 62%, #34735a);
+  box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .28), 0 2px 8px rgba(0, 18, 12, .22);
+}
+body.dark-mode .masthead nav button.active,
+body.dark-mode .mobile-menu-toggle,
+body.dark-mode .mobile-menu-toggle:hover:not(:disabled),
+body.dark-mode .masthead nav.mobile-menu-open button.active {
+  border-color: rgba(73, 120, 94, .55);
+  background: linear-gradient(145deg, rgba(255, 255, 255, .72), rgba(190, 218, 200, .4));
+  background-image: none;
+  color: #f2c96b;
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .8), 0 2px 8px rgba(20, 49, 38, .1);
+}
+
+/* Menu frames keep exactly the same appearance in both color modes. */
+.masthead nav button.active,
+body.dark-mode .masthead nav button.active,
+.masthead nav.mobile-menu-open button.active,
+body.dark-mode .masthead nav.mobile-menu-open button.active {
+  border-color: rgba(73, 120, 94, .55);
+  background: linear-gradient(145deg, rgba(255, 255, 255, .72), rgba(190, 218, 200, .4));
+  background-image: none;
+  color: #f2c96b;
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .8), 0 2px 8px rgba(20, 49, 38, .1);
+  backdrop-filter: blur(10px);
+}
+.mobile-menu-toggle,
+.mobile-menu-toggle:hover:not(:disabled),
+body.dark-mode .mobile-menu-toggle,
+body.dark-mode .mobile-menu-toggle:hover:not(:disabled) {
+  border-color: rgba(231, 248, 235, .55);
+  background: linear-gradient(145deg, rgba(255, 255, 255, .22), rgba(175, 215, 189, .12));
+  color: #fff8e8;
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .3), 0 3px 12px rgba(0, 25, 16, .16);
+  backdrop-filter: blur(12px);
+}
+.mobile-menu-toggle[aria-expanded="true"],
+body.dark-mode .mobile-menu-toggle[aria-expanded="true"] {
+  border-color: #f2c96b;
+  color: #f2c96b;
+}
+.mobile-menu-panel:has(.mobile-menu-open),
+body.dark-mode .mobile-menu-panel:has(.mobile-menu-open) {
+  border-color: rgba(132, 177, 139, .55);
+  background: linear-gradient(145deg, #153f34, #246047 62%, #34735a);
+  box-shadow: 0 12px 28px rgba(0, 19, 13, .28);
+  backdrop-filter: none;
+}
+
+@media (max-width: 850px) {
+  .masthead nav.mobile-menu-open button.active {
+    border-color: rgba(73, 120, 94, .55);
+    background: linear-gradient(145deg, rgba(255, 255, 255, .72), rgba(190, 218, 200, .4));
+    color: #f2c96b;
+    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .8), 0 2px 8px rgba(20, 49, 38, .1);
+    backdrop-filter: blur(10px);
+  }
+  body.dark-mode .masthead nav.mobile-menu-open button.active {
+    border-color: rgba(73, 120, 94, .55);
+    background: linear-gradient(145deg, rgba(255, 255, 255, .72), rgba(190, 218, 200, .4));
+    color: #f2c96b;
+    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .8), 0 2px 8px rgba(20, 49, 38, .1);
   }
 }
