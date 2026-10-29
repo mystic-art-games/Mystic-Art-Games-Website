@@ -458,6 +458,10 @@ body.dark-mode .masthead nav.mobile-menu-open button.active {
   .patrons-workspace { background: transparent; border: 0; padding: 0; }
   .workspace,
   .patrons-workspace { margin: 1rem auto; }
+  #cards-view > .cards-sidebar { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+  #cards-view .card-table-shell { display: flex; flex: 1 1 auto; flex-direction: column; min-height: 0; overflow: hidden; }
+  #cards-view #card-list { min-height: 0; overflow-y: auto; scrollbar-width: none; }
+  #cards-view #card-list::-webkit-scrollbar { display: none; }
   .workspace > .panel,
   .patrons-workspace > .panel,
   #about-view > .about-panel {
