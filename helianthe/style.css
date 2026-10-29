@@ -195,6 +195,19 @@ body.dark-mode .about-section p, body.dark-mode .about-section li { color: #d1df
     padding: .8rem;
     overflow: hidden;
   }
+  #about-view > .about-panel {
+    width: calc(100% - 8rem);
+    height: calc(100vh - 112px);
+    max-width: 1200px;
+    aspect-ratio: auto;
+    border: 1px solid rgba(55, 91, 78, .46);
+    border-image: none !important;
+    border-radius: 22px;
+    background: linear-gradient(145deg, rgba(255, 255, 255, .9) 0%, rgba(224, 234, 229, .66) 46%, rgba(202, 219, 211, .42) 100%);
+    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 1), inset -1px -1px 0 rgba(97, 135, 120, .26);
+    padding: .8rem;
+  }
+  #about-view > .about-panel .about-scroll-wrap { inset: .8rem; }
   #cards-view > .editor-panel {
     border: 1px solid rgba(55, 91, 78, .46);
     border-image: none;
@@ -403,6 +416,22 @@ body.dark-mode .deck-card-row.selected { border-bottom-color: #416853; backgroun
   .terrain-icon { width: 100px; height: 70px; }
   .workspace,
   .patrons-workspace { background: transparent; border: 0; padding: .5rem; }
+  .workspace > .panel,
+  .patrons-workspace > .panel,
+  #about-view > .about-panel {
+    border: 1px solid rgba(55, 91, 78, .46);
+    border-image: none !important;
+    border-radius: 18px;
+    background: linear-gradient(145deg, rgba(255, 255, 255, .9) 0%, rgba(224, 234, 229, .66) 46%, rgba(202, 219, 211, .42) 100%);
+    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 1), inset -1px -1px 0 rgba(97, 135, 120, .26);
+  }
+  body.dark-mode .workspace > .panel,
+  body.dark-mode .patrons-workspace > .panel,
+  body.dark-mode #about-view > .about-panel {
+    border-color: rgba(226, 246, 235, .34);
+    background: linear-gradient(145deg, rgba(185, 220, 200, .22) 0%, rgba(65, 111, 88, .18) 46%, rgba(12, 45, 35, .3) 100%);
+    box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .28), inset -1px -1px 0 rgba(210, 239, 222, .06);
+  }
   .art-scroll-rail { display: none !important; }
   .art-scroll-wrap > .item-list,
   .art-scroll-wrap > .deck-cards { width: 100%; padding-right: 0; }
@@ -589,6 +618,7 @@ body.dark-mode .card-list-title.terrain-event { color: #c0cec7; }
 body.dark-mode #decks-view.mobile-card-preview-open .deck-card-preview-shell { border-color: #416853; background: #12372c; }
 body.dark-mode #cards-view .cards-sidebar,
 body.dark-mode #cards-view > .editor-panel,
+body.dark-mode #about-view > .about-panel,
 body.dark-mode #decks-view > .sidebar,
 body.dark-mode #decks-view > .editor-panel,
 body.dark-mode #profiles-view > .sidebar,
