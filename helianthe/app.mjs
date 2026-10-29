@@ -617,7 +617,67 @@ function renderPreview() {
     .catch(cause => { if (serial === state.renderSerial) $('#preview-note').textContent = cause.message; });
 }
 
+function closeCardField() {
+  $('#card-field-modal').hidden = true;
+  $('#card-field-content').replaceChildren();
+  $('#card-canvas').focus({ preventScroll: true });
+}
+
+function openCardField(field) {
+  const form = $('#card-form');
+  if (form.elements.title.disabled) return;
+  const sources = {
+    title: form.elements.title.closest('label'),
+    identity: form.elements.card_type.closest('.two-cols'),
+    artwork: $('#card-artwork').closest('label'),
+    effect: form.elements.effect.closest('label'),
+    authors: $('#card-author-options').closest('fieldset'),
+  };
+  const titles = { title: 'Edit title', identity: 'Edit type and color', artwork: 'Choose artwork', effect: 'Edit effect', authors: 'Edit authors' };
+  const source = sources[field];
+  if (!source) return;
+  const content = $('#card-field-content');
+  content.replaceChildren(source.cloneNode(true));
+  $('#card-field-title').textContent = titles[field];
+  const copies = content.querySelectorAll('input, select, textarea');
+  for (const [index, original] of [...source.querySelectorAll('input, select, textarea')].entries()) {
+    const copy = copies[index];
+    if (!copy) continue;
+    if (copy.type === 'checkbox') copy.checked = original.checked;
+    else if (copy.type !== 'file') copy.value = original.value;
+    copy.removeAttribute('id');
+    copy.addEventListener(copy.type === 'file' ? 'change' : 'input', () => {
+      if (copy.type === 'file') {
+        original.files = copy.files;
+        original.dispatchEvent(new Event('change', { bubbles: true }));
+      } else {
+        if (copy.type === 'checkbox') original.checked = copy.checked;
+        else original.value = copy.value;
+        original.dispatchEvent(new Event('input', { bubbles: true }));
+        if (original.name === 'card_type') {
+          syncTerrain();
+          content.querySelector('[name="terrain"]').value = form.elements.terrain.value;
+          renderPreview();
+        }
+      }
+    });
+  }
+  $('#card-field-modal').hidden = false;
+  content.querySelector('input:not([type="checkbox"]), select, textarea, input[type="checkbox"]')?.focus();
+}
+
+function cardFieldAt(event) {
+  const box = event.currentTarget.getBoundingClientRect();
+  const x = (event.clientX - box.left) * 750 / box.width;
+  const y = (event.clientY - box.top) * 1050 / box.height;
+  if (y < 155) return x < 145 || x > 605 ? 'identity' : 'title';
+  if (y < 765) return 'artwork';
+  if (y < 955) return 'effect';
+  return 'authors';
+}
+
 function selectCard(card, { openMobile = false } = {}) {
+  if (!$('#card-field-modal').hidden) closeCardField();
   ++state.artworkSerial;
   releaseArtwork();
   state.card = card;
@@ -1156,6 +1216,13 @@ $('#card-search').addEventListener('input', renderCardList);
 for (const filter of document.querySelectorAll('#card-filter-type, #card-filter-author, #card-filter-terrain')) filter.addEventListener('change', renderCardList);
 $('#new-card').addEventListener('click', () => { if (requireAccount()) selectCard(null, { openMobile: true }); });
 $('#close-mobile-editor').addEventListener('click', closeMobileEditor);
+$('#card-canvas').tabIndex = 0;
+$('#card-canvas').addEventListener('click', event => openCardField(cardFieldAt(event)));
+$('#card-canvas').addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openCardField('identity'); } });
+$('#close-card-field').addEventListener('click', closeCardField);
+$('#card-field-done').addEventListener('click', closeCardField);
+$('#card-field-modal .card-field-backdrop').addEventListener('click', closeCardField);
+document.addEventListener('keydown', event => { if (event.key === 'Escape' && !$('#card-field-modal').hidden) { event.stopPropagation(); closeCardField(); } });
 $('#close-deck-card-preview').addEventListener('click', closeDeckCardPreview);
 $('#card-form').addEventListener('input', () => { state.cardFormDirty = true; renderPreview(); });
 $('#card-form').elements.card_type.addEventListener('change', () => { syncTerrain(); renderPreview(); });
