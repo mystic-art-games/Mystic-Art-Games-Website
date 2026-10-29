@@ -245,6 +245,8 @@ body.dark-mode .about-section p, body.dark-mode .about-section li { color: #d1df
     font-size: .9rem;
   }
   #cards-view > .editor-panel .card-layout { gap: .8rem; }
+  #cards-view > .editor-panel #card-form { display: none; }
+  #cards-view > .editor-panel .card-layout { display: flex; justify-content: center; }
   #cards-view > .editor-panel .card-preview-shell { padding-top: 1.6rem; }
   #cards-view > .editor-panel form label { margin: .25rem 0; }
   #cards-view > .editor-panel .actions { margin-top: .65rem; }
