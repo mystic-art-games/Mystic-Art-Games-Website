@@ -455,6 +455,8 @@ body.dark-mode .masthead nav.mobile-menu-open button.active {
   .terrain-icon { width: 100px; height: 70px; }
   .workspace,
   .patrons-workspace { background: transparent; border: 0; padding: .5rem; }
+  .workspace,
+  .patrons-workspace { margin: 1rem auto; }
   .workspace > .panel,
   .patrons-workspace > .panel,
   #about-view > .about-panel {
@@ -573,7 +575,9 @@ body.dark-mode .masthead nav.mobile-menu-open button.active {
   .masthead nav.mobile-menu-open button.active { background: transparent; background-image: none; color: #f2c96b; }
   .masthead nav.mobile-menu-open button { text-align: center; }
   .account-controls { order: 2; margin-left: 0; padding-left: 0; border-left: 0; gap: .35rem; }
-  .about-workspace { width: calc(100% - 1rem); height: calc(100dvh - 118px); margin: .5rem auto; padding-block: 0; }
+  body:has(#about-view:not([hidden])) { display: flex; flex-direction: column; height: 100dvh; min-height: 0; overflow: hidden; scrollbar-gutter: auto; }
+  body:has(#about-view:not([hidden])) .masthead { flex: 0 0 auto; }
+  .about-workspace { flex: 1 1 auto; min-height: 0; width: calc(100% - 2rem); height: auto; margin: 1rem auto; padding: 0; }
   .art-scroll-wrap.about-scroll-wrap { inset: 4%; }
   .about-content { padding-top: 0; padding-bottom: 0; }
   .about-grid { grid-template-columns: 1fr; }
