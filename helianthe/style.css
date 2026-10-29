@@ -835,8 +835,6 @@ body.dark-mode .mobile-menu-panel:has(.mobile-menu-open) {
 /* Dark mode uses the same deep green glass as the About workspace. */
 body.dark-mode .workspace > .panel,
 body.dark-mode .patrons-workspace > .panel,
-body.dark-mode .workspace,
-body.dark-mode .patrons-workspace,
 body.dark-mode #cards-view .cards-sidebar,
 body.dark-mode #cards-view > .editor-panel,
 body.dark-mode #decks-view > .sidebar,
@@ -856,6 +854,12 @@ body.dark-mode .deck-card-row.selected {
   background: linear-gradient(145deg, #153f34, #246047 62%, #34735a) !important;
   box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .28), 0 8px 24px rgba(0, 18, 12, .28) !important;
   backdrop-filter: blur(10px);
+}
+body.dark-mode .workspace,
+body.dark-mode .patrons-workspace {
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
 }
 
 @media (max-width: 850px) {
