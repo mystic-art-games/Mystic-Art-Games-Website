@@ -1017,7 +1017,7 @@ function startRealtimeSync() {
     const selectedId = state.card?.id;
     try {
       await reloadCollections();
-      if (selectedId && !state.cardFormDirty) selectCard(state.cards.find(card => card.id === selectedId) || state.cards[0] || null);
+      if (selectedId && !state.cardFormDirty && $('#card-field-modal').hidden) selectCard(state.cards.find(card => card.id === selectedId) || state.cards[0] || null);
       else renderCardList();
     } catch (cause) { status(cause.message, true); }
   };
