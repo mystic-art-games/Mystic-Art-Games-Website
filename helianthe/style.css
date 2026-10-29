@@ -576,6 +576,7 @@ body.dark-mode .masthead nav.mobile-menu-open button.active {
     inset: .75rem;
     overflow: auto;
     margin: 0;
+    background: linear-gradient(145deg, rgba(255, 255, 255, .98) 0%, rgba(232, 241, 235, .97) 46%, rgba(215, 229, 221, .96) 100%);
     box-shadow: 0 18px 60px rgba(0, 19, 13, .45);
   }
   #cards-view.mobile-editor-open .card-layout { display: flex; flex-direction: column; }
