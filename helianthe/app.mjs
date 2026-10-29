@@ -1,5 +1,5 @@
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.mjs';
-import { createCommunityApi } from './community-api.mjs';
+import { createCommunityApi, resolveLegacyCardAuthors } from './community-api.mjs';
 import { renderCard, downloadCardPNG } from './card-renderer.mjs';
 import { PATRONS } from './patrons.mjs';
 
@@ -997,6 +997,7 @@ function selectProfile(profile) {
 
 async function reloadCollections() {
   [state.cards, state.decks, state.profiles] = await Promise.all([api.listCards(), api.listDecks(), api.listProfiles()]);
+  state.cards = resolveLegacyCardAuthors(state.cards, state.profiles);
   const savedPatrons = savedDeckPatrons();
   state.decks = state.decks.map(deck => deck.patron_name || !savedPatrons[deck.id] ? deck : { ...deck, patron_name: savedPatrons[deck.id] });
   refreshCardAuthorFilter();

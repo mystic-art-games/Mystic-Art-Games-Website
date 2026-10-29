@@ -22,6 +22,23 @@ function normalizeCardTerrain(card) {
   };
 }
 
+export function resolveLegacyCardAuthors(cards, profiles) {
+  const profileIdsByName = new Map(
+    profiles.map(profile => [String(profile.display_name || '').trim().toLocaleLowerCase(), profile.id]),
+  );
+  return cards.map(card => {
+    if (!card.legacy_author_ids) return card;
+    const authorIds = String(card.author || '')
+      .split(',')
+      .map(name => profileIdsByName.get(name.trim().toLocaleLowerCase()))
+      .filter(Boolean);
+    return {
+      ...card,
+      author_ids: [...new Set(authorIds.length ? authorIds : [card.owner_id].filter(Boolean))],
+    };
+  });
+}
+
 async function writeCardWithLegacyFallback(write, input) {
   let values = input;
   for (let attempt = 0; attempt < 3; attempt++) {
@@ -124,7 +141,7 @@ export function createCommunityApi(client) {
         return result(await client.from('cards').select('id,owner_id,source_path,title,polish_name,card_type,terrain,effect,author,author_ids,artwork_id,legacy_image_ref,updated_at').order('title', { ascending: true })).map(normalizeCardTerrain);
       } catch {
         const cards = result(await client.from('cards').select('id,owner_id,source_path,title,polish_name,card_type,terrain,effect,author,artwork_id,legacy_image_ref,updated_at').order('title', { ascending: true }));
-        return cards.map(card => normalizeCardTerrain({ ...card, author_ids: card.owner_id ? [card.owner_id] : [] }));
+        return cards.map(card => normalizeCardTerrain({ ...card, author_ids: [], legacy_author_ids: true }));
       }
     },
 
