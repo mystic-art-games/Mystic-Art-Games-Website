@@ -423,6 +423,10 @@ body.dark-mode .card-field-dialog { border-color: #416853; background: #173f32; 
 #preview-note { min-height: 1.5rem; margin: .2rem 0; color: #a04034; text-align: center; }
 #card-edit-hint { max-width: 24rem; margin: .35rem auto 0; color: #68756d; font-size: .95rem; line-height: 1.35; text-align: center; }
 #download-png { align-self: center; }
+.card-preview-actions { display: flex; justify-content: center; gap: .6rem; margin-top: .65rem; }
+.card-preview-actions #download-png { margin-top: 0; }
+.danger-button { background: #a23d35; border-color: #a23d35; color: #fff; }
+.danger-button:hover:not(:disabled) { background: #842f2a; border-color: #842f2a; }
 .checkbox-line { display: flex; align-items: center; gap: .5rem; }
 .author-picker { margin: .8rem 0; padding: .7rem; border: 1px solid #a4b6a5; border-radius: 8px; }
 .author-picker legend { padding: 0 .35rem; font-weight: 700; }

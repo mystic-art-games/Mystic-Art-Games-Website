@@ -142,6 +142,16 @@ export function createCommunityApi(client) {
       return rows[0];
     },
 
+    async deleteCard(userId, cardId, isAdmin = false) {
+      if (!userId || !cardId) throw new Error('Select a card first.');
+      let query = client.from('cards').delete().eq('id', cardId);
+      if (!isAdmin) query = query.eq('owner_id', userId);
+      const response = await query.select('id');
+      const rows = result(response);
+      if (!rows?.length) throw new Error('Only the card creator or designated administrator can delete this card.');
+      return rows[0];
+    },
+
     async listDecks() {
       try {
         return result(await client.from('decks').select('id,owner_id,name,patron_name,author_ids,is_public,created_at,updated_at').order('created_at', { ascending: false }));

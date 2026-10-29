@@ -633,6 +633,7 @@ function renderPreview() {
       if (serial !== state.renderSerial || result.cancelled) return;
       $('#preview-note').textContent = result.clipped ? 'Text is too long — shorten the effect before exporting.' : '';
       $('#download-png').disabled = result.clipped;
+      $('#delete-card').disabled = !state.card || !state.user || (state.card.owner_id !== state.user.id && !state.isAdmin);
     })
     .catch(cause => { if (serial === state.renderSerial) $('#preview-note').textContent = cause.message; });
 }
@@ -1316,6 +1317,24 @@ $('#card-artwork').addEventListener('change', event => {
 $('#download-png').addEventListener('click', async () => {
   try { await downloadCardPNG($('#card-canvas'), $('#card-form').elements.title.value); }
   catch (cause) { status(cause.message, true); }
+});
+$('#delete-card').addEventListener('click', async () => {
+  const card = state.card;
+  if (!card || !state.user) return;
+  if (!window.confirm(`Delete “${card.title}”? This cannot be undone.`)) return;
+  const deleteButton = $('#delete-card');
+  deleteButton.disabled = true;
+  try {
+    const artworkId = card.artwork_id;
+    await api.deleteCard(state.user.id, card.id, state.isAdmin);
+    if (artworkId) await api.deleteArtwork(artworkId).catch(error => console.error('Artwork cleanup failed', error));
+    await reloadCollections();
+    selectCard(state.cards[0] || null);
+    status('Card deleted.');
+  } catch (cause) {
+    status(cause.message, true);
+    deleteButton.disabled = false;
+  }
 });
 
 $('#card-form').addEventListener('submit', async event => {
