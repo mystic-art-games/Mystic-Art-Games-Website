@@ -658,6 +658,12 @@ function openCardField(field) {
   };
   const content = $('#card-field-content');
   content.replaceChildren(source.cloneNode(true));
+  if (field === 'artwork') {
+    const hint = document.createElement('p');
+    hint.className = 'form-hint';
+    hint.textContent = 'Artwork is automatically compressed to 100 KB before upload. Source files can be up to 20 MB.';
+    content.append(hint);
+  }
   $('#card-field-title').textContent = titles[field];
   const copies = content.querySelectorAll('input, select, textarea');
   for (const [index, original] of [...source.querySelectorAll('input, select, textarea')].entries()) {
