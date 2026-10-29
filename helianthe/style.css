@@ -550,12 +550,14 @@ body.dark-mode .deck-card-row.selected { border-bottom-color: #416853; backgroun
   .about-grid { grid-template-columns: 1fr; }
   .about-principles { display: block; }
   .about-principles > h2 { text-align: center; }
-  .about-principles .vision-layout { display: grid; }
+  .about-principles .vision-layout { display: grid; row-gap: .35rem; }
+  .about-section.about-principles > h3:first-of-type { margin-top: 1.5rem; }
   .about-section p, .about-section li { text-align: justify; }
+  .about-rules { padding-top: .35rem; }
   .vision-layout { grid-template-columns: 1fr; }
   .vision-board-image { max-height: 280px; }
   .rules-layout { grid-template-columns: 1fr; }
-  .terrain-reference { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; padding-top: 0; }
+  .terrain-reference { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; height: auto; min-height: 0; aspect-ratio: 1.24 / 1; padding-top: 0; background-size: 100% auto; background-position: center; }
   .about-intro { margin: 0 auto; }
   .about-intro p:first-child { margin-top: 0; }
 }
