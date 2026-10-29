@@ -442,7 +442,7 @@ body.dark-mode .masthead nav.mobile-menu-open button.active {
 @media (max-width: 850px) {
   .about-workspace { display: block; width: 100%; height: calc(100vh - 180px); margin: 0; padding: .5rem; overflow: hidden; }
   .about-panel { width: 100%; height: 100%; max-width: none; aspect-ratio: auto; background-image: none; background-color: #fffdf4; }
-  body.dark-mode .panel.about-panel { background-image: none; background-color: #12372c; }
+  body.dark-mode .panel.about-panel { background-image: none; background-color: transparent; }
   .art-scroll-wrap.about-scroll-wrap { inset: 10% 4% 10% 4%; }
   .about-content { width: 100%; padding-right: .75rem; padding-left: .75rem; }
   .about-lead { font-size: 1.05rem; white-space: normal; }
@@ -860,6 +860,9 @@ body.dark-mode .patrons-workspace {
   background: transparent;
   box-shadow: none;
   backdrop-filter: none;
+}
+body.dark-mode .panel.about-panel {
+  background: transparent !important;
 }
 
 @media (max-width: 850px) {
