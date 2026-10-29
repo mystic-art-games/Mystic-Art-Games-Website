@@ -508,10 +508,10 @@ body.dark-mode .deck-card-row.selected { border-bottom-color: #416853; backgroun
     align-items: center;
     gap: .65rem .8rem;
     height: auto;
-    min-height: 0;
+    min-height: 3.5rem;
     padding: .55rem .8rem .4rem;
   }
-  .brand { justify-content: center; min-width: 0; }
+  .brand { position: absolute; top: 50%; left: 0; right: 3.15rem; justify-content: center; min-width: 0; transform: translateY(-50%); }
   .header-controls { width: 100%; flex: none; flex-wrap: wrap; justify-content: center; gap: .45rem; white-space: normal; }
   .mobile-menu-panel { display: flex; align-items: center; gap: .75rem; flex: 1; min-width: 0; }
   .theme-control { margin-left: auto; }
