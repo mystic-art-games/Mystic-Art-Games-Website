@@ -188,21 +188,19 @@ body.dark-mode .about-section p, body.dark-mode .about-section li { color: #d1df
   }
   #cards-view .cards-sidebar {
     border: 1px solid rgba(55, 91, 78, .46);
+    border-image: none;
     border-radius: 22px;
     background: linear-gradient(145deg, rgba(255, 255, 255, .9) 0%, rgba(224, 234, 229, .66) 46%, rgba(202, 219, 211, .42) 100%);
-    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 1), inset -1px -1px 0 rgba(97, 135, 120, .26), 0 14px 36px rgba(31, 62, 51, .22);
-    backdrop-filter: blur(22px) saturate(1.35);
-    -webkit-backdrop-filter: blur(22px) saturate(1.35);
+    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 1), inset -1px -1px 0 rgba(97, 135, 120, .26);
     padding: .8rem;
     overflow: hidden;
   }
   #cards-view > .editor-panel {
     border: 1px solid rgba(55, 91, 78, .46);
+    border-image: none;
     border-radius: 22px;
     background: linear-gradient(145deg, rgba(255, 255, 255, .9) 0%, rgba(224, 234, 229, .66) 46%, rgba(202, 219, 211, .42) 100%);
-    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 1), inset -1px -1px 0 rgba(97, 135, 120, .26), 0 14px 36px rgba(31, 62, 51, .22);
-    backdrop-filter: blur(22px) saturate(1.35);
-    -webkit-backdrop-filter: blur(22px) saturate(1.35);
+    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 1), inset -1px -1px 0 rgba(97, 135, 120, .26);
     padding: .8rem;
     overflow: hidden;
     font-size: .9rem;
@@ -217,11 +215,10 @@ body.dark-mode .about-section p, body.dark-mode .about-section li { color: #d1df
   #profiles-view > .sidebar,
   #profiles-view > .editor-panel {
     border: 1px solid rgba(55, 91, 78, .46);
+    border-image: none !important;
     border-radius: 22px;
     background: linear-gradient(145deg, rgba(255, 255, 255, .9) 0%, rgba(224, 234, 229, .66) 46%, rgba(202, 219, 211, .42) 100%);
-    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 1), inset -1px -1px 0 rgba(97, 135, 120, .26), 0 14px 36px rgba(31, 62, 51, .22);
-    backdrop-filter: blur(22px) saturate(1.35);
-    -webkit-backdrop-filter: blur(22px) saturate(1.35);
+    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 1), inset -1px -1px 0 rgba(97, 135, 120, .26);
     padding: .8rem;
   }
   #decks-view > .sidebar { overflow: hidden; }
@@ -598,7 +595,7 @@ body.dark-mode #profiles-view > .sidebar,
 body.dark-mode #profiles-view > .editor-panel {
   border-color: rgba(226, 246, 235, .34);
   background: linear-gradient(145deg, rgba(185, 220, 200, .22) 0%, rgba(65, 111, 88, .18) 46%, rgba(12, 45, 35, .3) 100%);
-  box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .28), inset -1px -1px 0 rgba(210, 239, 222, .06), 0 12px 32px rgba(0, 0, 0, .24);
+  box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .28), inset -1px -1px 0 rgba(210, 239, 222, .06);
 }
 
 @media (max-width: 850px) {
