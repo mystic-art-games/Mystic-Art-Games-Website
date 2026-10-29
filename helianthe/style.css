@@ -508,8 +508,7 @@ body.dark-mode .masthead nav.mobile-menu-open button.active {
   }
   #decks-view.mobile-card-preview-open #deck-card-canvas { width: min(100%, 420px); }
   .workspace,
-  #cards-view.workspace,
-  #decks-view.workspace { grid-template-columns: minmax(0, 1fr); }
+  #decks-view.workspace { grid-template-columns: 1fr; }
   .card-layout { grid-template-columns: 1fr; }
   #cards-view > .editor-panel { display: none; }
   body.mobile-editor-visible { overflow: hidden; }
@@ -858,7 +857,7 @@ body.dark-mode .deck-card-row.selected {
   border-color: #416853 !important;
   background: linear-gradient(145deg, #153f34, #246047 62%, #34735a) !important;
   box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .28), 0 8px 24px rgba(0, 18, 12, .28) !important;
-  backdrop-filter: none;
+  backdrop-filter: blur(10px);
 }
 body.dark-mode .workspace,
 body.dark-mode .patrons-workspace {
@@ -866,9 +865,8 @@ body.dark-mode .patrons-workspace {
   box-shadow: none;
   backdrop-filter: none;
 }
-body.dark-mode #about-view > .about-panel {
+body.dark-mode .panel.about-panel {
   background: transparent !important;
-  backdrop-filter: none !important;
 }
 
 @media (max-width: 850px) {
