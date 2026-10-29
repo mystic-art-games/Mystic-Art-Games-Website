@@ -936,7 +936,7 @@ body.dark-mode .patrons-workspace {
 
 body:not(.dark-mode) #cards-view #card-list .card-list-item.selected {
   border-bottom-color: #5c9f69 !important;
-  background: #92c99a !important;
+  background: linear-gradient(90deg, #bce3c0, #78b681) !important;
   box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .58), 0 2px 8px rgba(34, 98, 49, .2) !important;
 }
 @media (max-width: 850px) {
