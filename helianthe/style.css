@@ -175,9 +175,9 @@ body.dark-mode .about-section p, body.dark-mode .about-section li { color: #d1df
 .art-scroll-wrap > .item-list { height: 100%; overflow-y: auto; }
 .art-scroll-wrap > .deck-cards { max-height: 480px; overflow-y: auto; }
 .art-scroll-rail { position: absolute; z-index: 2; top: .25rem; right: 0; bottom: .25rem; width: 18px; display: flex; justify-content: center; pointer-events: none; }
-.art-scroll-rail::before { content: ''; position: absolute; top: 0; bottom: 0; left: 50%; width: 1px; transform: translateX(-50%); background: rgba(200,164,59,.72); }
-.art-scroll-thumb { position: absolute; top: 0; width: 14px; height: 44px; border: 0; padding: 0; background: transparent url('./assets/art-deco-scroll-thumb-vertical.png') center / 100% 100% no-repeat; cursor: grab; pointer-events: auto; touch-action: none; }
-.art-scroll-thumb:hover:not(:disabled) { background: transparent url('./assets/art-deco-scroll-thumb-vertical.png') center / 100% 100% no-repeat; filter: brightness(.9); }
+.art-scroll-rail::before { content: ''; position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; transform: translateX(-50%); border-radius: 999px; background: rgba(242, 248, 235, .84); box-shadow: 0 0 5px rgba(242, 248, 235, .28); }
+.art-scroll-thumb { position: absolute; top: 0; width: 20px; height: 20px; min-width: 20px; min-height: 20px; aspect-ratio: 1; appearance: none; border: 1px solid rgba(255, 255, 255, .9); border-radius: 50%; padding: 0; background: radial-gradient(circle at 31% 25%, rgba(255, 255, 255, 1) 0 12%, rgba(246, 255, 247, .94) 24%, rgba(215, 240, 221, .72) 52%, rgba(133, 189, 151, .55) 82%, rgba(78, 135, 104, .42) 100%); box-shadow: 0 3px 8px rgba(20, 49, 38, .34), inset 2px 2px 3px rgba(255, 255, 255, .95), inset -3px -3px 5px rgba(65, 119, 88, .28); cursor: grab; pointer-events: auto; touch-action: none; }
+.art-scroll-thumb:hover:not(:disabled) { background: radial-gradient(circle at 31% 25%, rgba(255, 255, 255, 1) 0 14%, rgba(246, 255, 247, .98) 26%, rgba(215, 240, 221, .8) 54%, rgba(133, 189, 151, .64) 84%, rgba(78, 135, 104, .5) 100%); filter: none; }
 .art-scroll-thumb:active { cursor: grabbing; }
 @media (min-width: 851px) {
   .workspace,
@@ -566,7 +566,8 @@ body.dark-mode .panel.about-panel { background: #12372c url('./assets/about-fram
 body.dark-mode button { border-color: #587965; background: #173f32; color: #e5eee0; }
 body.dark-mode button:hover:not(:disabled) { background: #23503f; }
 body.dark-mode .art-scroll-thumb,
-body.dark-mode .art-scroll-thumb:hover:not(:disabled) { background: transparent url('./assets/art-deco-scroll-thumb-vertical.png') center / 100% 100% no-repeat; }
+body.dark-mode .art-scroll-thumb { background: radial-gradient(circle at 31% 25%, rgba(255, 255, 255, 1) 0 12%, rgba(226, 246, 231, .9) 24%, rgba(171, 216, 184, .7) 54%, rgba(82, 143, 104, .56) 84%, rgba(42, 94, 65, .46) 100%); }
+body.dark-mode .art-scroll-thumb:hover:not(:disabled) { background: radial-gradient(circle at 31% 25%, rgba(255, 255, 255, 1) 0 14%, rgba(226, 246, 231, .96) 26%, rgba(171, 216, 184, .78) 56%, rgba(82, 143, 104, .66) 86%, rgba(42, 94, 65, .54) 100%); }
 body.dark-mode .masthead nav button,
 body.dark-mode #sign-out,
 body.dark-mode #account-name { background: transparent; color: #fff8e8; }
