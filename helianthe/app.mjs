@@ -401,12 +401,22 @@ function button(label, action, className = '') {
 }
 
 function showTab(name) {
+  closeMobileMenu();
   if (name !== 'decks') closeDeckCardPreview();
   for (const tab of ['cards', 'decks', 'profiles', 'patrons', 'about']) {
     $(`#${tab}-view`).hidden = tab !== name;
     $(`[data-tab="${tab}"]`).classList.toggle('active', tab === name);
   }
   if (name === 'patrons') renderPatrons();
+}
+
+function closeMobileMenu() {
+  const menu = $('#tabs');
+  const toggle = $('#mobile-menu-toggle');
+  if (!menu || !toggle) return;
+  menu.classList.remove('mobile-menu-open');
+  toggle.setAttribute('aria-expanded', 'false');
+  toggle.setAttribute('aria-label', 'Open navigation menu');
 }
 
 function renderPatrons() {
@@ -1128,6 +1138,20 @@ $('#close-auth-dialog').addEventListener('click', hideSignIn);
 $('#browse-without-account').addEventListener('click', loadPublicWorkspace);
 
 for (const tab of $('#tabs').querySelectorAll('button[data-tab]')) tab.addEventListener('click', () => showTab(tab.dataset.tab));
+$('#mobile-menu-toggle').addEventListener('click', () => {
+  const menu = $('#tabs');
+  const toggle = $('#mobile-menu-toggle');
+  const open = !menu.classList.contains('mobile-menu-open');
+  menu.classList.toggle('mobile-menu-open', open);
+  toggle.setAttribute('aria-expanded', String(open));
+  toggle.setAttribute('aria-label', open ? 'Close navigation menu' : 'Open navigation menu');
+});
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape') closeMobileMenu();
+});
+document.addEventListener('click', event => {
+  if (!event.target.closest('.header-controls')) closeMobileMenu();
+});
 $('#card-search').addEventListener('input', renderCardList);
 for (const filter of document.querySelectorAll('#card-filter-type, #card-filter-author, #card-filter-terrain')) filter.addEventListener('change', renderCardList);
 $('#new-card').addEventListener('click', () => { if (requireAccount()) selectCard(null, { openMobile: true }); });

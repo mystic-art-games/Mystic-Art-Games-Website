@@ -13,32 +13,37 @@
   <link rel="apple-touch-icon" href="../images/helianthe-sunflower.png?v=helianthe-favicon-2">
   <link rel="manifest" href="./manifest.webmanifest">
   <title>Helianthe</title>
-  <link rel="stylesheet" href="./style.css?v=helianthe-ui-70">
+  <link rel="stylesheet" href="./style.css?v=helianthe-ui-72">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script type="module" src="./app.mjs?v=helianthe-ui-45"></script>
+  <script type="module" src="./app.mjs?v=helianthe-ui-46"></script>
 </head>
 <body>
   <header class="masthead">
     <div class="brand"><img class="brand-mark" src="../images/helianthe-sunflower.png" alt=""><div><strong>Helianthe</strong></div></div>
     <div class="header-controls">
-      <nav id="tabs" hidden aria-label="Editor views">
-        <button type="button" data-tab="about" class="active">About</button>
-        <button type="button" data-tab="cards">Cards</button>
-        <button type="button" data-tab="decks">Decks</button>
-        <button type="button" data-tab="profiles">Profiles</button>
-        <button type="button" data-tab="patrons">Patrons</button>
-      </nav>
-      <div class="theme-control">
-        <span class="theme-label">Dark mode</span>
-        <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle dark mode" aria-pressed="false">
-          <span class="theme-state" aria-hidden="true">Off</span>
-          <span class="theme-knob" aria-hidden="true"></span>
-        </button>
-      </div>
-      <div class="account-controls">
-        <button id="account-name" type="button" hidden></button>
-        <button id="sign-in" type="button" hidden>Sign in</button>
-        <button id="sign-out" type="button" hidden>Log out</button>
+      <button id="mobile-menu-toggle" class="mobile-menu-toggle" type="button" aria-label="Open navigation menu" aria-expanded="false" aria-controls="tabs">
+        <span aria-hidden="true">☰</span><span>Menu</span>
+      </button>
+      <div id="mobile-menu-panel" class="mobile-menu-panel">
+        <nav id="tabs" hidden aria-label="Editor views">
+          <button type="button" data-tab="about" class="active">About</button>
+          <button type="button" data-tab="cards">Cards</button>
+          <button type="button" data-tab="decks">Decks</button>
+          <button type="button" data-tab="profiles">Profiles</button>
+          <button type="button" data-tab="patrons">Patrons</button>
+        </nav>
+        <div class="theme-control">
+          <span class="theme-label">Dark mode</span>
+          <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle dark mode" aria-pressed="false">
+            <span class="theme-state" aria-hidden="true">Off</span>
+            <span class="theme-knob" aria-hidden="true"></span>
+          </button>
+        </div>
+        <div class="account-controls">
+          <button id="account-name" type="button" hidden></button>
+          <button id="sign-in" type="button" hidden>Sign in</button>
+          <button id="sign-out" type="button" hidden>Log out</button>
+        </div>
       </div>
     </div>
   </header>
