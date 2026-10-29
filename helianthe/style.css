@@ -130,7 +130,7 @@ body.dark-mode .about-section h3 { color: #a7c7ad; }
 body.dark-mode .about-section p, body.dark-mode .about-section li { color: #d1dfd0; }
 .workspace { display: grid; grid-template-columns: minmax(300px, 390px) minmax(0, 1fr); width: 100%; max-width: 1450px; gap: .35rem; margin: 1rem auto; padding: .25rem; }
 #cards-view.workspace { grid-template-columns: minmax(360px, 470px) minmax(0, 1fr); }
-#decks-view.workspace { grid-template-columns: minmax(390px, 520px) minmax(0, 1fr); }
+#decks-view.workspace { grid-template-columns: minmax(320px, 410px) minmax(0, 1fr); }
 .workspace,
 .patrons-workspace { width: calc(100% - 2rem); }
 .workspace > .panel,
@@ -336,7 +336,7 @@ body.dark-mode .profile-save-status.error { color: #ef9187; }
 .two-cols { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; }
 .deck-meta-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(180px, 1fr); gap: .8rem; align-items: start; }
 .deck-meta-row .author-picker { margin: .65rem 0; }
-.deck-card-layout { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(240px, .8fr); gap: 1rem; align-items: start; }
+.deck-card-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, 300px); gap: 1rem; align-items: start; }
 .deck-card-table { min-width: 0; }
 .deck-card-table h3 { margin: .75rem 0 .1rem; }
 .deck-card-preview-shell { display: flex; flex-direction: column; align-items: center; gap: .45rem; min-width: 0; padding-top: 1.2rem; }

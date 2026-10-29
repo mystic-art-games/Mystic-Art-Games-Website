@@ -754,10 +754,36 @@ async function selectDeck(deck) {
   $('#deck-heading').textContent = deck?.name || 'New deck';
   state.deckCards = deck ? await api.listDeckCards(deck.id) : [];
   renderDeckList();
-  const deckIsMine = state.deck.owner_id === state.user?.id;
+  const deckIsMine = Boolean(state.deck && state.deck.owner_id === state.user?.id);
   const firstDeckCard = state.cards.find(card => deckIsMine || state.deckCards.some(item => item.card_id === card.id && item.copies > 0));
   if (firstDeckCard) await showDeckCardPreview(firstDeckCard);
   else renderDeckCards();
+}
+
+function nextNewDeckName() {
+  const existingNames = new Set(state.decks.map(deck => deck.name));
+  let suffix = 0;
+  let name = 'New Deck';
+  while (existingNames.has(name)) {
+    suffix += 1;
+    name = `New Deck ${suffix}`;
+  }
+  return name;
+}
+
+async function createNewDeck() {
+  deckSaveQueue = deckSaveQueue.catch(() => {}).then(async () => {
+    await selectDeck(null);
+    $('#deck-form').elements.name.value = nextNewDeckName();
+    const values = deckFormValues();
+    const saved = await api.createDeck(state.user.id, values);
+    rememberDeckPatron(saved.id, values.patron_name);
+    state.decks = [saved, ...state.decks.filter(deck => deck.id !== saved.id)];
+    await selectDeck(saved);
+    if (state.profile) selectProfile(state.profiles.find(profile => profile.id === state.profile.id) || null);
+    status('Deck created.');
+  });
+  return deckSaveQueue;
 }
 
 let deckSaveQueue = Promise.resolve();
@@ -774,6 +800,10 @@ async function autosaveDeck() {
     ? await api.saveDeck(state.user.id, state.deck.id, values)
     : await api.createDeck(state.user.id, values);
   rememberDeckPatron(saved.id, values.patron_name);
+  if (!state.deck) {
+    state.decks = [saved, ...state.decks.filter(deck => deck.id !== saved.id)];
+    renderDeckList();
+  }
   await reloadCollections();
   await selectDeck(state.decks.find(item => item.id === saved.id) || saved);
   status('Deck saved.');
@@ -1162,11 +1192,13 @@ $('#card-form').addEventListener('submit', async event => {
   finally { save.disabled = false; }
 });
 
-$('#new-deck').addEventListener('click', () => { if (requireAccount()) void selectDeck(null); });
+$('#new-deck').addEventListener('click', () => {
+  if (requireAccount()) void createNewDeck().catch(cause => status(cause.message, true));
+});
 $('#profile-new-deck').addEventListener('click', () => {
   if (!requireAccount()) return;
   showTab('decks');
-  void selectDeck(null);
+  void createNewDeck().catch(cause => status(cause.message, true));
 });
 $('#duplicate-deck').addEventListener('click', async () => {
   if (!state.user || !state.deck) return;
