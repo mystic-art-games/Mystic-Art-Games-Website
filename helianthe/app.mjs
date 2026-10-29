@@ -1310,6 +1310,7 @@ $('#card-form').addEventListener('submit', async event => {
     state.cardFormDirty = false;
     await reloadCollections();
     selectCard(state.cards.find(item => item.id === card.id) || card);
+    renderCardList();
     status(cleanupWarning ? `Card saved. ${cleanupWarning}` : 'Card saved.', Boolean(cleanupWarning));
   } catch (cause) {
     if (persistedCard) {
