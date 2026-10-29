@@ -407,7 +407,7 @@ body.dark-mode .card-field-dialog { border-color: #416853; background: #173f32; 
   #cards-view > .editor-panel #card-heading,
   #cards-view > .editor-panel #preview-note,
   #cards-view > .editor-panel #save-card,
-  #cards-view > .editor-panel #card-form > .form-hint { display: none; }
+  #cards-view > .editor-panel #card-form > .hint { display: none; }
 }
 #preview-note { min-height: 1.5rem; margin: .2rem 0; color: #a04034; text-align: center; }
 #download-png { align-self: center; }
