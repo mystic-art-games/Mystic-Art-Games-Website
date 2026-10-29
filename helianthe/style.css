@@ -18,11 +18,11 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 .account-controls { display: flex; align-items: center; gap: .55rem; margin-left: 0; padding-left: .85rem; border-left: 1px solid rgba(132, 177, 139, .45); }
 .theme-control { display: grid; justify-items: center; gap: 3px; margin-left: auto; }
 .theme-label { color: #e5eee0; font-size: .58rem; font-weight: 700; letter-spacing: .08em; line-height: 1; text-transform: uppercase; }
-.theme-toggle { position: relative; display: flex; align-items: center; justify-content: space-between; width: 72px; height: 28px; padding: 0 9px; border: 1px solid rgba(213, 232, 201, .42); border-radius: 999px; background: rgba(213, 232, 201, .08); color: #e5eee0; font-size: .55rem; font-weight: 700; cursor: pointer; transition: background .2s ease, border-color .2s ease; }
-.theme-toggle:hover:not(:disabled) { background: rgba(213, 232, 201, .16); border-color: #9bc2a8; }
+.theme-toggle { position: relative; display: flex; align-items: center; justify-content: space-between; width: 72px; height: 30px; padding: 0 7px; border: 1px solid rgba(242, 248, 235, .58); border-radius: 999px; background: rgba(213, 232, 201, .1); color: #e5eee0; font-size: .55rem; font-weight: 700; cursor: pointer; box-shadow: inset 0 1px 2px rgba(255, 255, 255, .18), 0 2px 5px rgba(20, 49, 38, .14); transition: background .2s ease, border-color .2s ease; }
+.theme-toggle:hover:not(:disabled) { color: #fffdf4; }
 .theme-state { position: relative; z-index: 1; margin-left: auto; text-transform: uppercase; }
-.theme-knob { position: absolute; top: 5px; left: 4px; width: 24px; height: 16px; border-radius: 9px; background: #fffdf4; box-shadow: 0 2px 5px rgba(20, 49, 38, .22); transition: transform .22s ease, background .22s ease; }
-body.dark-mode .theme-knob { transform: translateX(31px); background: #d5e6cf; }
+.theme-knob { position: absolute; z-index: 2; top: 50%; left: 4px; width: 22px; height: 22px; border: 1px solid rgba(255, 255, 255, .82); border-radius: 50%; background: radial-gradient(circle at 34% 28%, rgba(255, 255, 255, .98), rgba(238, 250, 239, .68) 38%, rgba(173, 215, 189, .42) 100%); box-shadow: 0 2px 7px rgba(20, 49, 38, .3), inset 1px 1px 2px rgba(255, 255, 255, .92), inset -2px -2px 4px rgba(82, 137, 108, .2); transform: translateY(-50%); transition: transform .22s ease, background .22s ease; }
+body.dark-mode .theme-knob { transform: translate(42px, -50%); background: radial-gradient(circle at 34% 28%, rgba(255, 255, 255, .98), rgba(214, 239, 221, .72) 38%, rgba(126, 187, 148, .5) 100%); }
 body.dark-mode .theme-state { margin-left: 0; }
 #account-name { display: inline-flex; align-items: center; gap: .45rem; text-align: right; }
 .masthead nav { display: flex; gap: .3rem; }
@@ -477,9 +477,9 @@ body.dark-mode .deck-card-row.selected { border-bottom-color: #416853; backgroun
   .mobile-menu-panel { display: flex; align-items: center; gap: .75rem; flex: 1; min-width: 0; }
   .theme-control { margin-left: auto; }
   .theme-label { display: block; }
-  .theme-toggle { width: 58px; height: 25px; padding-inline: 7px; font-size: .5rem; }
-  .theme-knob { top: 5px; left: 3px; width: 22px; height: 14px; }
-  body.dark-mode .theme-knob { transform: translateX(25px); }
+  .theme-toggle { width: 62px; height: 28px; padding-inline: 6px; font-size: .5rem; }
+  .theme-knob { left: 3px; width: 22px; height: 22px; }
+  body.dark-mode .theme-knob { transform: translate(34px, -50%); }
   .masthead nav { order: 1; flex: 0 0 100%; justify-content: center; gap: .05rem; }
   .masthead nav button { padding: .55rem .75rem; }
   .mobile-menu-toggle { position: absolute; z-index: 26; top: .55rem; right: .65rem; display: inline-flex; align-items: center; justify-content: center; width: 2.5rem; height: 2.5rem; padding: 0; border-color: rgba(213, 232, 201, .42); background: rgba(213, 232, 201, .08); color: #fff8e8; font-size: 1.35rem; line-height: 1; }
