@@ -1243,6 +1243,11 @@ $('#deck-form').addEventListener('submit', event => event.preventDefault());
 
 $('#profile-form').addEventListener('submit', async event => {
   event.preventDefault();
+  const submitButton = event.currentTarget.querySelector('button[type="submit"]');
+  const originalLabel = submitButton.textContent;
+  submitButton.disabled = true;
+  submitButton.textContent = 'Saving…';
+  showProfileSaveStatus('Saving…');
   let uploadedAvatar = null;
   try {
     const values = Object.fromEntries(new FormData(event.currentTarget));
@@ -1250,9 +1255,9 @@ $('#profile-form').addEventListener('submit', async event => {
     const sourceAvatar = $('#profile-avatar').files?.[0];
     if (sourceAvatar) uploadedAvatar = await api.uploadArtwork(await compressedAvatar(sourceAvatar));
     values.avatar_id = uploadedAvatar?.id || previousAvatarId;
-    await api.saveProfile(state.user.id, values);
-    await reloadCollections();
-    const ownProfile = state.profiles.find(item => item.id === state.user.id);
+    const savedProfile = await api.saveProfile(state.user.id, values);
+    state.profiles = state.profiles.map(profile => profile.id === savedProfile.id ? savedProfile : profile);
+    const ownProfile = savedProfile;
     selectProfile(ownProfile);
     renderAccountButton(ownProfile);
     $('#profile-avatar').value = '';
@@ -1263,6 +1268,9 @@ $('#profile-form').addEventListener('submit', async event => {
     if (uploadedAvatar) await api.deleteArtwork(uploadedAvatar.id).catch(console.error);
     showProfileSaveStatus(cause.message || 'Could not save profile.', true);
     status(cause.message, true);
+  } finally {
+    submitButton.disabled = false;
+    submitButton.textContent = originalLabel;
   }
 });
 
