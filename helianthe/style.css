@@ -509,7 +509,7 @@ body.dark-mode .deck-card-row.selected { border-bottom-color: #416853; backgroun
     gap: .65rem .8rem;
     height: auto;
     min-height: 0;
-    padding: 1.65rem 1rem 1.1rem;
+    padding: .55rem .8rem .4rem;
   }
   .brand { justify-content: center; min-width: 0; }
   .header-controls { width: 100%; flex: none; flex-wrap: wrap; justify-content: center; gap: .45rem; white-space: normal; }
@@ -521,7 +521,7 @@ body.dark-mode .deck-card-row.selected { border-bottom-color: #416853; backgroun
   body.dark-mode .theme-knob { transform: translate(34px, -50%); }
   .masthead nav { order: 1; flex: 0 0 100%; justify-content: center; gap: .05rem; }
   .masthead nav button { padding: .55rem .75rem; }
-  .mobile-menu-toggle { position: absolute; z-index: 26; top: .55rem; right: .65rem; display: inline-flex; align-items: center; justify-content: center; width: 2.5rem; height: 2.5rem; padding: 0; border-color: rgba(213, 232, 201, .42); background: rgba(213, 232, 201, .08); color: #fff8e8; font-size: 1.35rem; line-height: 1; }
+  .mobile-menu-toggle { position: absolute; z-index: 26; top: 50%; right: .65rem; display: inline-flex; align-items: center; justify-content: center; width: 2.5rem; height: 2.5rem; padding: 0; transform: translateY(-50%); border-color: rgba(213, 232, 201, .42); background: rgba(213, 232, 201, .08); color: #fff8e8; font-size: 1.35rem; line-height: 1; }
   .mobile-menu-toggle span:last-child { display: none; }
   .mobile-menu-toggle:hover:not(:disabled) { background: rgba(213, 232, 201, .16); }
   .mobile-menu-toggle[aria-expanded="true"] { border-color: #f2c96b; color: #f2c96b; }
