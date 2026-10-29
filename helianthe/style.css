@@ -715,6 +715,13 @@ body.dark-mode .deck-card-row.selected {
   box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .24), 0 2px 8px rgba(0, 18, 12, .18);
 }
 
+body.dark-mode .masthead nav button:not(.active),
+body.dark-mode .masthead nav button:not(.active):hover:not(:disabled) {
+  border-color: transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
 @media (max-width: 850px) {
   .panel.about-panel,
   body.dark-mode .panel.about-panel {
