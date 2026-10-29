@@ -213,7 +213,9 @@ body.dark-mode .about-section p, body.dark-mode .about-section li { color: #d1df
   #cards-view > .editor-panel #card-canvas { width: min(100%, 360px); }
   #cards-view > .editor-panel textarea { min-height: 82px; }
   #decks-view > .sidebar,
-  #decks-view > .editor-panel {
+  #decks-view > .editor-panel,
+  #profiles-view > .sidebar,
+  #profiles-view > .editor-panel {
     border: 1px solid rgba(55, 91, 78, .46);
     border-radius: 22px;
     background: linear-gradient(145deg, rgba(255, 255, 255, .9) 0%, rgba(224, 234, 229, .66) 46%, rgba(202, 219, 211, .42) 100%);
@@ -591,7 +593,9 @@ body.dark-mode #decks-view.mobile-card-preview-open .deck-card-preview-shell { b
 body.dark-mode #cards-view .cards-sidebar,
 body.dark-mode #cards-view > .editor-panel,
 body.dark-mode #decks-view > .sidebar,
-body.dark-mode #decks-view > .editor-panel {
+body.dark-mode #decks-view > .editor-panel,
+body.dark-mode #profiles-view > .sidebar,
+body.dark-mode #profiles-view > .editor-panel {
   border-color: rgba(226, 246, 235, .34);
   background: linear-gradient(145deg, rgba(185, 220, 200, .22) 0%, rgba(65, 111, 88, .18) 46%, rgba(12, 45, 35, .3) 100%);
   box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .28), inset -1px -1px 0 rgba(210, 239, 222, .06), 0 12px 32px rgba(0, 0, 0, .24);
