@@ -400,7 +400,15 @@ function button(label, action, className = '') {
   return element;
 }
 
-function showTab(name) {
+const TAB_NAMES = ['cards', 'decks', 'profiles', 'patrons', 'about'];
+
+function requestedTab() {
+  const name = window.location.hash.slice(1).toLowerCase();
+  return TAB_NAMES.includes(name) ? name : 'about';
+}
+
+function showTab(name, { updateUrl = true } = {}) {
+  if (!TAB_NAMES.includes(name)) name = 'about';
   closeMobileMenu();
   if (name !== 'decks') closeDeckCardPreview();
   for (const tab of ['cards', 'decks', 'profiles', 'patrons', 'about']) {
@@ -408,6 +416,7 @@ function showTab(name) {
     $(`[data-tab="${tab}"]`).classList.toggle('active', tab === name);
   }
   if (name === 'patrons') renderPatrons();
+  if (updateUrl && window.location.hash !== `#${name}`) window.history.replaceState(null, '', `#${name}`);
 }
 
 function closeMobileMenu() {
@@ -1084,7 +1093,7 @@ async function loadWorkspace() {
     $('#tabs').hidden = false;
     $('#sign-in').hidden = true;
     $('#sign-out').hidden = false;
-    showTab('about');
+    showTab(requestedTab());
     selectCard(state.cards[0] || null);
     await selectDeck(state.decks.find(deck => deck.owner_id === user.id) || state.decks[0] || null);
     const profile = state.profiles.find(profile => profile.id === user.id) || state.profiles[0];
@@ -1102,7 +1111,7 @@ async function loadWorkspace() {
       $('#sign-out').hidden = false;
       renderAccountButton(state.profiles.find(profile => profile.id === state.user.id));
       $('#account-name').hidden = false;
-      showTab('about');
+      showTab(requestedTab());
       renderCardList();
       status('Your session is active, but some workspace data could not be loaded.', true);
     } else {
@@ -1129,7 +1138,7 @@ async function loadPublicWorkspace() {
     selectCard(state.cards[0] || null);
     await selectDeck(state.decks[0] || null);
     if (state.profiles[0]) selectProfile(state.profiles[0]);
-    showTab('about');
+    showTab(requestedTab());
     status('Browsing publicly. Sign in to create cards and decks.');
   } catch (cause) {
     console.error(cause);
@@ -1138,7 +1147,7 @@ async function loadPublicWorkspace() {
     $('#sign-in').hidden = false;
     $('#sign-out').hidden = true;
     $('#account-name').hidden = true;
-    showTab('about');
+    showTab(requestedTab());
     hideSignIn();
   }
 }
@@ -1225,6 +1234,7 @@ $('#close-auth-dialog').addEventListener('click', hideSignIn);
 $('#browse-without-account').addEventListener('click', loadPublicWorkspace);
 
 for (const tab of $('#tabs').querySelectorAll('button[data-tab]')) tab.addEventListener('click', () => showTab(tab.dataset.tab));
+window.addEventListener('hashchange', () => showTab(requestedTab(), { updateUrl: false }));
 $('#mobile-menu-toggle').addEventListener('click', () => {
   const menu = $('#tabs');
   const toggle = $('#mobile-menu-toggle');
