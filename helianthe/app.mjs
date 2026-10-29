@@ -473,6 +473,7 @@ function renderCardList() {
     return matchesSearch && matchesType && matchesAuthor && matchesTerrain;
   })) {
     const row = button('', () => selectCard(card, { openMobile: true }), `card-list-item${state.card?.id === card.id ? ' selected' : ''}`);
+    row.dataset.cardId = card.id;
     row.setAttribute('aria-label', `${card.card_type}: ${card.title}`);
     const icon = cardTypeIconElement(card);
     const title = document.createElement('span');
@@ -1251,7 +1252,35 @@ document.addEventListener('click', event => {
 });
 $('#card-search').addEventListener('input', renderCardList);
 for (const filter of document.querySelectorAll('#card-filter-type, #card-filter-author, #card-filter-terrain')) filter.addEventListener('change', renderCardList);
-$('#new-card').addEventListener('click', () => { if (requireAccount()) selectCard(null, { openMobile: true }); });
+$('#new-card').addEventListener('click', async () => {
+  if (!requireAccount()) return;
+  const create = $('#new-card');
+  create.disabled = true;
+  try {
+    const names = new Set(state.cards.map(card => card.title.trim().toLocaleLowerCase()));
+    let title = 'New Card';
+    for (let suffix = 2; names.has(title.toLocaleLowerCase()); suffix++) title = `New Card ${suffix}`;
+    const created = await api.createCard(state.user.id, {
+      title, card_type: 'Entity', terrain: 'Symbiosis', effect: '',
+      author: authorNames([state.user.id], state.user.id).join(', '), author_ids: [state.user.id],
+    });
+    await reloadCollections();
+    $('#card-search').value = '';
+    $('#card-filter-type').value = '';
+    $('#card-filter-author').value = '';
+    $('#card-filter-terrain').value = '';
+    selectCard(state.cards.find(card => card.id === created.id) || created);
+    requestAnimationFrame(() => {
+      const list = $('#card-list');
+      const row = [...list.children].find(item => item.dataset.cardId === created.id);
+      if (!row) return;
+      const distance = row.getBoundingClientRect().top - list.getBoundingClientRect().top;
+      list.scrollTo({ top: list.scrollTop + distance - (list.clientHeight - row.clientHeight) / 2, behavior: 'smooth' });
+    });
+    status('Card created. Select it to edit.');
+  } catch (cause) { status(cause.message, true); }
+  finally { create.disabled = false; }
+});
 $('#close-mobile-editor').addEventListener('click', closeMobileEditor);
 $('#card-canvas').tabIndex = 0;
 $('#card-canvas').addEventListener('click', event => openCardField(cardFieldAt(event)));
