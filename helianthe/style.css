@@ -485,7 +485,8 @@ body.dark-mode .masthead nav.mobile-menu-open button.active {
 }
 
 @media (max-width: 850px) {
-  #cards-view .card-preview-shell #card-edit-hint { display: block; margin: .65rem auto 0; font-size: .95rem; }
+  #cards-view .card-preview-shell #preview-note:empty { display: none; }
+  #cards-view .card-preview-shell #card-edit-hint { display: block; margin: .15rem auto 0; font-size: .95rem; }
   #cards-view > .editor-panel #card-form > .hint { display: none; }
   body { scrollbar-gutter: auto; }
   .about-workspace { display: block; width: 100%; height: calc(100vh - 180px); margin: 0; padding: .5rem; overflow: hidden; }
