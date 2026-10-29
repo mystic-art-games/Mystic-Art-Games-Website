@@ -845,6 +845,7 @@ body.dark-mode #decks-view > .sidebar,
 body.dark-mode #decks-view > .editor-panel,
 body.dark-mode #profiles-view > .sidebar,
 body.dark-mode #profiles-view > .editor-panel,
+body.dark-mode .panel.about-panel,
 body.dark-mode .patron-card,
 body.dark-mode .auth-panel,
 body.dark-mode .auth-modal-card,
@@ -865,10 +866,6 @@ body.dark-mode .patrons-workspace {
   box-shadow: none;
   backdrop-filter: none;
 }
-body.dark-mode .panel.about-panel {
-  background: transparent !important;
-}
-
 @media (max-width: 850px) {
   .masthead nav.mobile-menu-open button.active {
     border-color: rgba(73, 120, 94, .55);
