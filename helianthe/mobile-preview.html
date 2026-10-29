@@ -25,6 +25,18 @@
     const phone = document.querySelector('.phone');
     const screen = phone.querySelector('iframe');
     const dimensions = document.querySelector('#dimensions');
+    const tabs = new Set(['cards', 'decks', 'profiles', 'patrons', 'about']);
+    const getTabHash = hash => tabs.has(hash.slice(1).toLowerCase()) ? `#${hash.slice(1).toLowerCase()}` : '';
+    const initialHash = getTabHash(window.location.hash);
+    if (initialHash) screen.src = `./${initialHash}`;
+    screen.addEventListener('load', () => {
+      const iframeHash = getTabHash(screen.contentWindow.location.hash);
+      if (iframeHash && window.location.hash !== iframeHash) window.history.replaceState(null, '', iframeHash);
+    });
+    window.addEventListener('hashchange', () => {
+      const nextHash = getTabHash(window.location.hash);
+      if (nextHash && screen.contentWindow.location.hash !== nextHash) screen.contentWindow.location.hash = nextHash;
+    });
     const updateDimensions = () => {
       const frameWidth = Math.round(phone.getBoundingClientRect().width);
       const frameHeight = Math.round(phone.getBoundingClientRect().height);
