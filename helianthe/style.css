@@ -107,6 +107,8 @@ textarea { resize: vertical; }
 .about-section h3 { margin: 1rem 0 .35rem; color: #50705e; font-size: 1rem; }
 .about-section h3:first-of-type { margin-top: .2rem; }
 .vision-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 36%); align-items: center; gap: 1.25rem; }
+.vision-board-link { display: block; min-width: 0; border-radius: 12px; }
+.vision-board-link:focus-visible { outline: 2px solid #265847; outline-offset: 4px; }
 .vision-copy { min-width: 0; }
 .vision-board-image { display: block; width: 100%; max-height: 360px; object-fit: contain; }
 .about-rules { grid-column: 1 / -1; }
