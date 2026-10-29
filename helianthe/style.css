@@ -582,6 +582,11 @@ body.dark-mode .masthead nav.mobile-menu-open button.active {
   .account-controls { order: 2; margin-left: 0; padding-left: 0; border-left: 0; gap: .35rem; }
   body:has(#about-view:not([hidden])) { display: flex; flex-direction: column; height: 100dvh; min-height: 0; overflow: hidden; scrollbar-gutter: auto; }
   body:has(#about-view:not([hidden])) .masthead { flex: 0 0 auto; }
+  body:has(#cards-view:not([hidden])) { display: flex; flex-direction: column; height: 100dvh; min-height: 0; overflow: hidden; }
+  body:has(#cards-view:not([hidden])) .masthead { flex: 0 0 auto; }
+  #cards-view.workspace { flex: 1 1 auto; min-height: 0; height: auto; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
+  #cards-view .card-table-shell > .art-scroll-wrap { flex: 1 1 auto; min-height: 0; overflow: hidden; }
+  #cards-view .card-table-shell .art-scroll-wrap > #card-list { height: calc(100% - .55rem); }
   .about-workspace { flex: 1 1 auto; min-height: 0; width: calc(100% - 2rem); height: auto; margin: 1rem auto; padding: 0; }
   .art-scroll-wrap.about-scroll-wrap { inset: 4%; }
   .about-content { padding-top: 0; padding-bottom: 0; }
