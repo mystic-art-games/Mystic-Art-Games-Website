@@ -950,14 +950,18 @@ body:not(.dark-mode) #new-card:hover:not(:disabled) {
   background: linear-gradient(90deg, #bce3c0, #78b681);
   color: #173f32;
   box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .58), 0 2px 8px rgba(34, 98, 49, .2);
+  transition: transform .15s ease, filter .15s ease, box-shadow .15s ease;
 }
+body:not(.dark-mode) #new-card:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.06); box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .7), 0 5px 12px rgba(34, 98, 49, .28); }
 body.dark-mode #new-card,
 body.dark-mode #new-card:hover:not(:disabled) {
   border-color: #416853;
   background: linear-gradient(145deg, #153f34, #246047 62%, #34735a);
   color: #fff8e8;
   box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .28), 0 8px 24px rgba(0, 18, 12, .28);
+  transition: transform .15s ease, filter .15s ease, box-shadow .15s ease;
 }
+body.dark-mode #new-card:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.12); box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .34), 0 6px 16px rgba(0, 18, 12, .38); }
 #cards-view #card-list .card-list-item { border-bottom-color: transparent !important; }
 @media (max-width: 850px) {
   body.dark-mode #about-view > .about-panel {
