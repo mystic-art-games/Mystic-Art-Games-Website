@@ -1288,6 +1288,21 @@ body.dark-mode #auth-modal .auth-modal-card {
   background: linear-gradient(145deg, rgba(185, 220, 200, .86), rgba(65, 111, 88, .8) 62%, rgba(32, 82, 61, .76)) !important;
   box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .3), 0 18px 60px rgba(0, 18, 12, .38) !important;
 }
+#auth-modal #auth-mode-toggle {
+  border-color: transparent;
+  background: linear-gradient(145deg, rgba(255, 255, 255, .99) 0%, rgba(240, 246, 242, .84) 46%, rgba(225, 236, 229, .64) 100%);
+  color: #15241d;
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .58), 0 2px 8px rgba(34, 98, 49, .2);
+  transition: transform .15s ease, filter .15s ease, box-shadow .15s ease;
+}
+#auth-modal #auth-mode-toggle:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.06); box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .7), 0 5px 12px rgba(34, 98, 49, .28); }
+body.dark-mode #auth-modal #auth-mode-toggle {
+  border-color: #416853;
+  background: linear-gradient(145deg, rgba(220, 244, 226, .4) 0%, rgba(91, 143, 111, .32) 46%, rgba(28, 70, 52, .44) 100%);
+  color: #15241d;
+  box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .28), 0 8px 24px rgba(0, 18, 12, .28);
+}
+body.dark-mode #auth-modal #auth-mode-toggle:hover:not(:disabled) { filter: brightness(1.12); box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .34), 0 6px 16px rgba(0, 18, 12, .38); }
 #cards-view #card-list .card-list-item { border-bottom-color: transparent !important; }
 @media (max-width: 850px) {
   body.dark-mode #about-view > .about-panel {
