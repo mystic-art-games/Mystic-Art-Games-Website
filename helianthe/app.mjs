@@ -1577,6 +1577,11 @@ async function saveCardForm() {
   if (savingCard) return;
   const form = $('#card-form');
   const modalOpen = !$('#card-field-modal').hidden;
+  if (modalOpen) {
+    for (const field of $('#card-field-content').querySelectorAll('[name]')) {
+      if (['title', 'card_type', 'terrain', 'effect'].includes(field.name)) form.elements[field.name].value = field.value;
+    }
+  }
   const modalStatus = $('#card-field-status');
   modalStatus.hidden = true;
   const invalidField = [...form.elements].find(field => !field.checkValidity());
@@ -1637,7 +1642,10 @@ async function saveCardForm() {
       $('#card-filter-terrain').value = '';
     }
     if (modalOpen) closeCardField(true);
-    selectCard(state.cards.find(item => item.id === card.id) || patronCards.find(item => item.id === card.id) || card);
+    const savedCard = state.cards.find(item => item.id === card.id) || patronCards.find(item => item.id === card.id) || card;
+    selectCard(savedCard);
+    if (state.deckPreviewCard?.id === card.id) await showDeckCardPreview(savedCard);
+    if (card.patron && patronByName(state.deck?.patron_name)?.name === card.patron.name) await renderDeckPatron(card.patron);
     renderCardList();
     scrollToCardRow(card.id);
     status(cleanupWarning ? `Card saved. ${cleanupWarning}` : 'Card saved.', Boolean(cleanupWarning));
