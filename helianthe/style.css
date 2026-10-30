@@ -989,7 +989,7 @@ body.dark-mode .patrons-workspace {
 body:not(.dark-mode) #cards-view #card-list .card-list-item.selected,
 body:not(.dark-mode) #decks-view #deck-list .deck-list-item.selected {
   border-bottom-color: transparent !important;
-  background: #bce3c0 !important;
+  background: #acd6b1 !important;
   box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .58), 0 2px 8px rgba(34, 98, 49, .2) !important;
 }
 body:not(.dark-mode) #cards-view #card-list .card-list-item.selected .card-list-owner,
