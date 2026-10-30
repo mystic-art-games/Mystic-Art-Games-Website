@@ -918,6 +918,32 @@ function renderDeckCards() {
   renderDeckSummary();
 }
 
+function renderDeckCardSuggestions() {
+  const suggestions = $('#deck-card-search-suggestions');
+  const query = $('#deck-card-search').value.trim().toLocaleLowerCase();
+  const mine = state.deck?.owner_id === state.user?.id;
+  suggestions.replaceChildren();
+  if (!state.deck) { suggestions.hidden = true; return; }
+  const cards = state.cards.filter(card => {
+    const copies = state.deckCards.find(item => item.card_id === card.id)?.copies || 0;
+    return (mine || copies > 0) && (!query || `${card.title} ${card.effect}`.toLocaleLowerCase().includes(query));
+  }).sort((a, b) => a.title.localeCompare(b.title));
+  for (const card of cards) {
+    const option = document.createElement('button');
+    option.type = 'button';
+    option.setAttribute('role', 'option');
+    option.textContent = card.title;
+    option.addEventListener('click', () => {
+      $('#deck-card-search').value = card.title;
+      suggestions.hidden = true;
+      renderDeckCards();
+      void showDeckCardPreview(card);
+    });
+    suggestions.append(option);
+  }
+  suggestions.hidden = !cards.length;
+}
+
 function renderDeckSummary() {
   const summary = $('#deck-summary');
   summary.replaceChildren();
@@ -1448,6 +1474,9 @@ document.addEventListener('click', event => {
 $('#card-search').addEventListener('input', renderCardList);
 for (const filter of document.querySelectorAll('#card-filter-type, #card-filter-author, #card-filter-terrain')) filter.addEventListener('change', renderCardList);
 $('#deck-card-search').addEventListener('input', renderDeckCards);
+$('#deck-card-search').addEventListener('input', renderDeckCardSuggestions);
+$('#deck-card-search').addEventListener('focus', renderDeckCardSuggestions);
+$('#deck-card-search').addEventListener('click', renderDeckCardSuggestions);
 for (const filter of document.querySelectorAll('#deck-card-filter-type, #deck-card-filter-author, #deck-card-filter-terrain')) filter.addEventListener('change', renderDeckCards);
 $('#new-card').addEventListener('click', async () => {
   if (!requireAccount()) return;
