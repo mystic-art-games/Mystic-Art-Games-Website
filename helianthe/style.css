@@ -581,7 +581,7 @@ body.dark-mode #card-edit-hint { color: #fff; }
 }
 .checkbox-line input { width: 1.1rem; height: 1.1rem; }
 .deck-cards { display: flex; flex-direction: column; gap: 0; max-height: 480px; overflow: auto; border-top: 0; }
-.deck-card-row { grid-template-columns: 1.65rem minmax(0, 1fr) 4rem; min-height: 2.1rem; padding: .12rem .3rem; border: 0; border-bottom: 0; border-radius: 10px; background: transparent; cursor: pointer; transition: none; }
+.deck-card-row { grid-template-columns: 1.65rem minmax(0, 1fr) 4rem; min-height: 2.25rem; padding: .22rem .3rem; border: 0; border-bottom: 0; border-radius: 10px; background: transparent; cursor: pointer; transition: none; }
 .deck-card-row:last-child { border-bottom-color: transparent; }
 .deck-card-row .card-type-icon { width: 1.65rem; height: 1.65rem; }
 .deck-card-row .card-list-title { font-size: .9rem; }
@@ -595,7 +595,7 @@ body.dark-mode .deck-card-row:hover { background: #204b3b; }
 body.dark-mode .deck-card-row.selected { border-bottom-color: #416853; background: #285944; }
 body.dark-mode .deck-patron-preview-shell { border: 0; background: transparent; box-shadow: none; }
 body.dark-mode #decks-view .deck-card-row.selected { background: #285944 !important; border-bottom-color: transparent !important; box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .24), 0 2px 8px rgba(0, 18, 12, .18) !important; }
-.deck-card-row select { width: 4rem; margin: 0; grid-column: 3; }
+.deck-card-row select { width: 4rem; height: 1.75rem; margin: 0; padding-top: .1rem; padding-bottom: .1rem; grid-column: 3; }
 .deck-card-row strong { grid-column: 3; text-align: right; }
 @media (min-width: 851px) {
   .about-lead { font-size: 1.3rem; white-space: nowrap; }
