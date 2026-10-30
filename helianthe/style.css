@@ -1001,7 +1001,7 @@ body:not(.dark-mode) #new-card:hover:not(:disabled),
 body:not(.dark-mode) #new-deck,
 body:not(.dark-mode) #new-deck:hover:not(:disabled) {
   border-color: transparent;
-  background: linear-gradient(145deg, rgba(255, 255, 255, .9) 0%, rgba(224, 234, 229, .66) 46%, rgba(202, 219, 211, .42) 100%);
+  background: linear-gradient(145deg, rgba(255, 255, 255, .96) 0%, rgba(232, 241, 235, .76) 46%, rgba(215, 229, 221, .54) 100%);
   color: #15241d;
   box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .58), 0 2px 8px rgba(34, 98, 49, .2);
   transition: transform .15s ease, filter .15s ease, box-shadow .15s ease;
@@ -1012,7 +1012,7 @@ body.dark-mode #new-card:hover:not(:disabled),
 body.dark-mode #new-deck,
 body.dark-mode #new-deck:hover:not(:disabled) {
   border-color: #416853;
-  background: linear-gradient(145deg, rgba(185, 220, 200, .22) 0%, rgba(65, 111, 88, .18) 46%, rgba(12, 45, 35, .3) 100%);
+  background: linear-gradient(145deg, rgba(205, 235, 214, .32) 0%, rgba(77, 128, 99, .25) 46%, rgba(20, 58, 44, .38) 100%);
   color: #15241d;
   box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .28), 0 8px 24px rgba(0, 18, 12, .28);
   transition: transform .15s ease, filter .15s ease, box-shadow .15s ease;
