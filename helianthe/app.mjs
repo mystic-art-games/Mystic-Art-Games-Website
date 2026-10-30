@@ -826,7 +826,7 @@ function renderDeckList() {
 function renderDeckCards() {
   const list = $('#deck-cards');
   list.replaceChildren();
-  if (!state.deck) return;
+  if (!state.deck) { renderDeckSummary(); return; }
   const mine = state.deck.owner_id === state.user?.id;
   for (const card of state.cards) {
     const copies = state.deckCards.find(item => item.card_id === card.id)?.copies || 0;
@@ -863,6 +863,42 @@ function renderDeckCards() {
     list.append(row);
   }
   if (!list.childElementCount) list.textContent = 'This deck has no cards.';
+  renderDeckSummary();
+}
+
+function renderDeckSummary() {
+  const summary = $('#deck-summary');
+  summary.replaceChildren();
+  summary.hidden = !state.deck;
+  if (!state.deck) return;
+
+  const typeCounts = { Entity: 0, Event: 0 };
+  const terrainCounts = { Symbiosis: 0, Flow: 0, Verdant: 0, Radiance: 0 };
+  for (const entry of state.deckCards) {
+    const copies = Number(entry.copies) || 0;
+    const card = state.cards.find(item => item.id === entry.card_id);
+    if (!card || copies < 1 || !Object.hasOwn(typeCounts, card.card_type)) continue;
+    typeCounts[card.card_type] += copies;
+    if (Object.hasOwn(terrainCounts, card.terrain)) terrainCounts[card.terrain] += copies;
+  }
+
+  const group = (label, entries, colorized = false) => {
+    const section = document.createElement('div');
+    section.className = 'deck-summary-group';
+    const heading = document.createElement('strong');
+    heading.className = 'deck-summary-heading';
+    heading.textContent = label;
+    section.append(heading);
+    for (const [name, count] of Object.entries(entries)) {
+      const item = document.createElement('span');
+      item.className = `deck-summary-item${colorized ? ` ${terrainClass(name)}` : ''}`;
+      item.textContent = `${name} ${count}`;
+      section.append(item);
+    }
+    return section;
+  };
+
+  summary.append(group('Card types', typeCounts), group('Colors', terrainCounts, true));
 }
 
 async function renderDeckPatron(patron) {
@@ -902,8 +938,10 @@ async function showDeckCardPreview(card) {
 
 async function selectDeck(deck) {
   state.deck = deck;
+  state.deckCards = [];
   $('#decks-view').classList.toggle('deck-detail-open', Boolean(deck));
   renderDeckList();
+  renderDeckCards();
   const canDelete = Boolean(deck && state.user && (deck.owner_id === state.user.id || state.isAdmin));
   $('#duplicate-deck').disabled = !deck || !state.user;
   $('#delete-deck').disabled = !canDelete;

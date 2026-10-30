@@ -496,6 +496,14 @@ body.dark-mode .card-filters #card-filter-terrain:has(option[value="Radiance"]:c
 .deck-card-preview-shell { display: flex; flex-direction: column; align-items: center; gap: .45rem; min-width: 0; padding-top: 1.2rem; }
 .deck-patron-preview-shell { display: flex; min-width: 0; flex-direction: column; align-items: center; padding-top: 1.2rem; }
 .deck-patron-preview-shell canvas { display: block; width: min(100%, 300px); height: auto; aspect-ratio: 5 / 7; border-radius: 14px; box-shadow: 0 8px 20px #2225; background: #ece6d8; }
+.deck-summary { grid-column: 1 / -1; display: flex; width: 100%; align-items: center; justify-content: center; gap: 2rem; margin-top: .2rem; padding: .7rem 1rem; border: 1px solid rgba(73, 120, 94, .45); border-radius: 14px; background: linear-gradient(145deg, rgba(255, 255, 255, .68), rgba(210, 229, 216, .42)); box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .72), 0 4px 14px rgba(10, 35, 27, .1); backdrop-filter: blur(8px); }
+.deck-summary-group { display: flex; align-items: center; justify-content: center; gap: .75rem; min-width: 0; }
+.deck-summary-heading { color: #456151; font-size: .76rem; letter-spacing: .04em; text-transform: uppercase; }
+.deck-summary-item { color: #344d42; font-size: .86rem; font-weight: 800; white-space: nowrap; }
+.deck-summary-item.terrain-symbiosis { color: #784997; }
+.deck-summary-item.terrain-flow { color: #35758e; }
+.deck-summary-item.terrain-verdant { color: #488057; }
+.deck-summary-item.terrain-radiance { color: #a87318; }
 .deck-card-preview-close { display: none; }
 #deck-card-canvas { width: min(100%, 300px); height: auto; aspect-ratio: 5 / 7; border-radius: 14px; box-shadow: 0 8px 20px #2225; background: #ece6d8; }
 #deck-card-preview-note { min-height: 1.3rem; margin: 0; color: #68756d; text-align: center; font-size: .82rem; }
@@ -596,6 +604,9 @@ body.dark-mode .deck-card-row { border-bottom-color: #355947; background: transp
 body.dark-mode .deck-card-row:hover { background: #204b3b; }
 body.dark-mode .deck-card-row.selected { border-bottom-color: #416853; background: #285944; }
 body.dark-mode .deck-patron-preview-shell { border: 0; background: transparent; box-shadow: none; }
+body.dark-mode .deck-summary { border-color: rgba(226, 246, 235, .3); background: linear-gradient(145deg, rgba(185, 220, 200, .2), rgba(45, 88, 68, .18)); box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .2), 0 4px 14px rgba(0, 18, 12, .22); }
+body.dark-mode .deck-summary-heading { color: #bfd1be; }
+body.dark-mode .deck-summary-item:not(.terrain-symbiosis):not(.terrain-flow):not(.terrain-verdant):not(.terrain-radiance) { color: #e5eee0; }
 body.dark-mode #decks-view .deck-card-row.selected { background: #285944 !important; border-bottom-color: transparent !important; box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .24), 0 2px 8px rgba(0, 18, 12, .18) !important; }
 .deck-card-row select { width: 4rem; height: 1.75rem; margin: 0; padding-top: .1rem; padding-bottom: .1rem; grid-column: 3; }
 .deck-card-row strong { grid-column: 3; text-align: right; }
@@ -1418,4 +1429,6 @@ body.dark-mode select {
 }
 @media (max-width: 850px) {
   .deck-card-list-head { margin-right: .35rem; }
+  .deck-summary { flex-direction: column; gap: .55rem; }
+  .deck-summary-group { flex-wrap: wrap; gap: .45rem .7rem; }
 }
