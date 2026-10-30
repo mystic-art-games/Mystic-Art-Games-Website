@@ -1295,6 +1295,15 @@ body.dark-mode #patrons-view .patron-card:hover { background: #204b3b; }
 }
 
 #patrons-view.workspace { max-width: 1100px; grid-template-columns: minmax(300px, 410px) minmax(0, 1fr); justify-content: center; }
+#patrons-view > .panel {
+  border: 1px solid rgba(55, 91, 78, .46);
+  border-image: none !important;
+  border-radius: 22px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, .9) 0%, rgba(224, 234, 229, .66) 46%, rgba(202, 219, 211, .42) 100%);
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 1), inset -1px -1px 0 rgba(97, 135, 120, .26);
+  backdrop-filter: blur(10px);
+  padding: .8rem;
+}
 #patrons-view > .patrons-sidebar { display: flex; flex-direction: column; min-height: 0; }
 #patrons-view .patron-table-shell { display: flex; flex: 1 1 auto; flex-direction: column; min-height: 0; }
 #patrons-view .patron-list-head, #patrons-view .patron-list-item { grid-template-columns: minmax(0, 1fr) minmax(6rem, auto); }
