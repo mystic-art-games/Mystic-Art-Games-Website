@@ -332,6 +332,7 @@ body.dark-mode .profile-save-status.error { color: #ef9187; }
 .item-list small { display: block; color: #6b796d; font-size: .76rem; }
 .list-table-head { display: grid; align-items: center; gap: .55rem; margin: .8rem .8rem -.35rem; color: #5a6e64; font-size: .75rem; font-weight: 800; }
 .card-list-head { grid-template-columns: 2rem minmax(0, 1fr) minmax(5.5rem, auto); }
+.card-list-head { margin-bottom: .15rem; }
 .card-list-head span:last-child, .deck-list-head span:last-child { text-align: right; }
 .deck-list-head span:last-child { text-align: left; }
 .deck-card-list-head { grid-template-columns: 2rem minmax(0, 1fr) minmax(5.5rem, auto) 4rem; margin: .8rem .35rem .3rem; min-height: 1.15rem; line-height: 1.15; }
