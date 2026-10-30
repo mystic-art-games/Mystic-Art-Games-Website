@@ -824,8 +824,7 @@ function renderDeckCards() {
     row.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); showDeckCardPreview(card); } });
     row.append(cardTypeIconElement(card));
     const label = document.createElement('span'); label.className = `card-list-title ${terrainClass(card.terrain)}`; label.textContent = card.title;
-    const author = document.createElement('small'); author.className = 'card-list-owner'; author.append(authorDisplayElement(card.author_ids, card.owner_id));
-    row.append(label, author);
+    row.append(label);
     if (mine) {
       const select = document.createElement('select');
       select.setAttribute('aria-label', `Copies of ${card.title}`);

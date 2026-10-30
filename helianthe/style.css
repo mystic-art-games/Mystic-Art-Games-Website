@@ -409,7 +409,7 @@ body.dark-mode .card-filters #card-filter-terrain:has(option[value="Radiance"]:c
 .card-list-head { margin-bottom: .15rem; }
 .card-list-head span:last-child, .deck-list-head span:last-child { text-align: right; }
 .deck-list-head span:last-child { text-align: left; }
-.deck-card-list-head { grid-template-columns: 2rem minmax(0, 1fr) minmax(5.5rem, auto) 4rem; margin: .8rem .35rem .3rem; min-height: 1.15rem; line-height: 1.15; }
+.deck-card-list-head { grid-template-columns: 1.65rem minmax(0, 1fr) 4rem; margin: .8rem .35rem .3rem; min-height: 1.15rem; line-height: 1.15; }
 .deck-card-list-head span:nth-child(3), .deck-card-list-head span:last-child { text-align: right; }
 .deck-list-head { grid-template-columns: minmax(0, 1fr) 7rem; }
 .deck-list-head { margin-bottom: .15rem; }
@@ -553,20 +553,19 @@ body.dark-mode #card-edit-hint { color: #fff; }
 .patron-card p { line-height: 1.45; }
 .checkbox-line input { width: 1.1rem; height: 1.1rem; }
 .deck-cards { max-height: 480px; overflow: auto; border-top: 1px solid #d4dbcd; }
-.deck-card-row { grid-template-columns: 1.65rem minmax(0, 1fr) minmax(5.5rem, auto) 4rem; min-height: 2.25rem; padding: .22rem .3rem; border: 0; border-bottom: 1px solid #e0e5dc; border-radius: 10px; background: transparent; cursor: pointer; transition: background-color .15s ease; }
+.deck-card-row { grid-template-columns: 1.65rem minmax(0, 1fr) 4rem; min-height: 2.25rem; padding: .22rem .3rem; border: 0; border-bottom: 0; border-radius: 10px; background: transparent; cursor: pointer; transition: background-color .15s ease; }
 .deck-card-row:last-child { border-bottom-color: transparent; }
 .deck-card-row .card-type-icon { width: 1.65rem; height: 1.65rem; }
 .deck-card-row .card-list-title { font-size: .9rem; }
-.deck-card-row .card-list-owner { justify-content: flex-start; font-size: .7rem; text-align: left; }
+.deck-card-row .card-list-owner { display: none; }
 .deck-card-row:hover { background: #eef3e8; }
 .deck-card-row.selected { background: #b6dcb9; border-bottom-color: #91bd98; }
 .deck-card-row.selected:hover { background: #acd6b1; }
 body.dark-mode .deck-card-row { border-bottom-color: #355947; background: transparent; }
 body.dark-mode .deck-card-row:hover { background: #204b3b; }
 body.dark-mode .deck-card-row.selected { border-bottom-color: #416853; background: #285944; }
-.deck-card-row .card-list-owner { grid-column: 3; }
-.deck-card-row select { width: 4rem; margin: 0; grid-column: 4; }
-.deck-card-row strong { grid-column: 4; text-align: right; }
+.deck-card-row select { width: 4rem; margin: 0; grid-column: 3; }
+.deck-card-row strong { grid-column: 3; text-align: right; }
 @media (min-width: 851px) {
   .about-lead { font-size: 1.3rem; white-space: nowrap; }
   html, body { height: 100%; overflow: hidden; }
