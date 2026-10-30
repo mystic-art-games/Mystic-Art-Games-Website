@@ -699,7 +699,7 @@ function openCardField(field) {
     effect: form.elements.effect.closest('label'),
     authors: $('#card-author-options').closest('fieldset'),
   };
-  const titles = { title: 'Edit title', identity: 'Edit type and color', artwork: 'Choose artwork', effect: 'Edit effect', authors: 'Edit authors' };
+  const titles = { title: 'Edit title', identity: 'Edit type and color', artwork: 'Choose artwork', effect: 'Edit effect', authors: 'Edit Author' };
   const source = sources[field];
   if (!source) return;
   cardFieldDraft = {
@@ -739,6 +739,20 @@ function openCardField(field) {
           renderPreview();
         }
       }
+    });
+  }
+  if (field === 'authors') {
+    const authorInputs = [...content.querySelectorAll('input[type="checkbox"]')];
+    for (const input of authorInputs) input.addEventListener('change', () => {
+      if (!input.checked) return;
+      for (const other of authorInputs) {
+        if (other === input) continue;
+        other.checked = false;
+        const original = [...source.querySelectorAll('input[type="checkbox"]')].find(item => item.value === other.value);
+        if (original) original.checked = false;
+      }
+      const original = [...source.querySelectorAll('input[type="checkbox"]')].find(item => item.value === input.value);
+      if (original) original.checked = true;
     });
   }
   $('#card-field-modal').hidden = false;
