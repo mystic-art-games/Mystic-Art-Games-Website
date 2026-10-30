@@ -398,6 +398,7 @@ body.dark-mode .card-filters #card-filter-terrain:has(option[value="Radiance"]:c
 #decks-view #deck-list { gap: 0; margin-top: .55rem; }
 #decks-view .deck-table-shell .art-scroll-wrap > #deck-list { padding-bottom: .7rem; box-sizing: border-box; }
 #decks-view .deck-list-head { margin-left: .3rem; margin-right: calc(24px + 2.5rem + .3rem); }
+#decks-view .deck-list-head { margin-right: calc(12px + 1.25rem + .3rem); }
 #decks-view #deck-list .deck-list-item { min-height: 2.75rem; padding: .32rem .3rem; border: 0; border-bottom: 1px solid #e0e5dc; border-radius: 10px; background: transparent; }
 #decks-view #deck-list .deck-list-item { min-height: 2.25rem; padding: .22rem .3rem; }
 #decks-view #deck-list .deck-list-item:last-child { border-bottom-color: transparent; }
@@ -407,6 +408,9 @@ body.dark-mode .card-filters #card-filter-terrain:has(option[value="Radiance"]:c
 #decks-view #deck-list .deck-list-title { font-size: .9rem; line-height: 1.15; }
 #decks-view #deck-list .deck-patron { font-size: .68rem; line-height: 1.15; }
 #decks-view #deck-list .deck-list-owner { font-size: .7rem; }
+@media (min-width: 851px) {
+  #decks-view .deck-table-shell .art-scroll-wrap > #deck-list { width: calc(100% - 12px); padding-right: 1.25rem; }
+}
 .deck-patron, .profile-deck-patron { display: block; overflow: hidden; color: #68756d; font-size: .74rem; font-weight: 700; line-height: 1.25; text-overflow: ellipsis; white-space: nowrap; }
 .profile-deck-name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .patron-faction-flowbound { color: #35758e; }
