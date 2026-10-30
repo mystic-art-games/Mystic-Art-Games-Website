@@ -710,6 +710,20 @@ function openCardField(field) {
   const content = $('#card-field-content');
   $('#card-field-status').hidden = true;
   content.replaceChildren(source.cloneNode(true));
+  if (field === 'authors') {
+    content.replaceChildren();
+    const label = document.createElement('label');
+    label.textContent = 'Author';
+    const select = document.createElement('select');
+    for (const profile of state.profiles) select.append(new Option(profile.display_name || ownerName(profile.id), profile.id));
+    const originalInputs = [...source.querySelectorAll('input[type="checkbox"]')];
+    select.value = selectedAuthorIds($('#card-author-options'))[0] || originalInputs[0]?.value || '';
+    select.addEventListener('change', () => {
+      for (const input of originalInputs) input.checked = input.value === select.value;
+    });
+    label.append(select);
+    content.append(label);
+  }
   if (field === 'artwork') {
     const hint = document.createElement('p');
     hint.className = 'form-hint';
