@@ -882,13 +882,9 @@ function renderDeckSummary() {
     if (Object.hasOwn(terrainCounts, card.terrain)) terrainCounts[card.terrain] += copies;
   }
 
-  const group = (label, entries, colorized = false) => {
+  const group = (entries, colorized = false) => {
     const section = document.createElement('div');
     section.className = 'deck-summary-group';
-    const heading = document.createElement('strong');
-    heading.className = 'deck-summary-heading';
-    heading.textContent = label;
-    section.append(heading);
     for (const [name, count] of Object.entries(entries)) {
       const item = document.createElement('span');
       item.className = `deck-summary-item${colorized ? ` ${terrainClass(name)}` : ''}`;
@@ -898,7 +894,7 @@ function renderDeckSummary() {
     return section;
   };
 
-  summary.append(group('Card types', typeCounts), group('Colors', terrainCounts, true));
+  summary.append(group(typeCounts), group(terrainCounts, true));
 }
 
 async function renderDeckPatron(patron) {
