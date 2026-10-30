@@ -21,6 +21,7 @@ const state = { user: null, isAdmin: false, cards: [], decks: [], profiles: [], 
 const ARTWORK_UPLOAD_LIMIT = 100 * 1024;
 const AVATAR_UPLOAD_LIMIT = 80 * 1024;
 const DECK_PATRONS_KEY = 'helianthe-deck-patrons';
+const PATRON_CARD_OVERRIDES_KEY = 'helianthe-patron-card-overrides';
 const PATRON_TERRAIN = { Flowbound: 'Flow', Brightworks: 'Radiance', Dreamwardens: 'Symbiosis', Verdant: 'Verdant' };
 const patronCards = PATRONS.map(patron => ({
   id: `patron:${patron.name}`,
@@ -31,6 +32,10 @@ const patronCards = PATRONS.map(patron => ({
   author: patron.faction,
   patron,
 }));
+try {
+  const overrides = JSON.parse(localStorage.getItem(PATRON_CARD_OVERRIDES_KEY) || '{}');
+  for (const card of patronCards) Object.assign(card, overrides[card.id] || {});
+} catch {}
 
 function applyTheme(dark) {
   document.body.classList.toggle('dark-mode', dark);
@@ -504,7 +509,7 @@ function setCardFormEditable(canEdit) {
 }
 
 function canEditCard(card) {
-  if (card?.patron) return false;
+  if (card?.patron) return true;
   if (!state.user) return false;
   if (!card) return true;
   return state.isAdmin || card.owner_id === state.user.id || card.author_ids?.includes(state.user.id);
@@ -1433,11 +1438,21 @@ async function saveCardForm() {
     const sourceFile = $('#card-artwork').files?.[0];
     const file = sourceFile ? await compressedArtwork(sourceFile) : null;
     const previousArtworkId = state.card?.artwork_id || null;
-    let card = state.card
-      ? await api.saveCard(state.user.id, state.card.id, values)
-      : await api.createCard(state.user.id, values);
+    let card;
+    if (state.card?.patron) {
+      const updates = { title: values.title, terrain: values.terrain, effect: values.effect, author: state.card.author };
+      Object.assign(state.card, updates);
+      const overrides = JSON.parse(localStorage.getItem(PATRON_CARD_OVERRIDES_KEY) || '{}');
+      overrides[state.card.id] = updates;
+      localStorage.setItem(PATRON_CARD_OVERRIDES_KEY, JSON.stringify(overrides));
+      card = state.card;
+    } else {
+      card = state.card
+        ? await api.saveCard(state.user.id, state.card.id, values)
+        : await api.createCard(state.user.id, values);
+    }
     persistedCard = card;
-    if (file) {
+    if (file && !state.card?.patron) {
       const artwork = await api.uploadArtwork(file);
       try { card = await api.saveCard(state.user.id, card.id, { ...values, artwork_id: artwork.id }); }
       catch (cause) {
@@ -1451,7 +1466,7 @@ async function saveCardForm() {
       }
     }
     state.cardFormDirty = false;
-    await reloadCollections();
+    if (!state.card?.patron) await reloadCollections();
     if (isNewCard) {
       $('#card-search').value = '';
       $('#card-filter-type').value = '';
@@ -1459,7 +1474,7 @@ async function saveCardForm() {
       $('#card-filter-terrain').value = '';
     }
     if (modalOpen) closeCardField(true);
-    selectCard(state.cards.find(item => item.id === card.id) || card);
+    selectCard(state.cards.find(item => item.id === card.id) || patronCards.find(item => item.id === card.id) || card);
     renderCardList();
     scrollToCardRow(card.id);
     status(cleanupWarning ? `Card saved. ${cleanupWarning}` : 'Card saved.', Boolean(cleanupWarning));
