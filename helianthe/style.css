@@ -413,14 +413,14 @@ body.dark-mode .profile-save-status.error { color: #ef9187; }
 .card-filters select option:hover,
 .card-filters select option:focus,
 .card-filters select option:checked { background: #e0ebda; }
-.card-filters #card-filter-terrain option[value="Symbiosis"],
-.card-filters #card-filter-terrain:has(option[value="Symbiosis"]:checked) { color: #784997; }
-.card-filters #card-filter-terrain option[value="Flow"],
-.card-filters #card-filter-terrain:has(option[value="Flow"]:checked) { color: #35758e; }
-.card-filters #card-filter-terrain option[value="Verdant"],
-.card-filters #card-filter-terrain:has(option[value="Verdant"]:checked) { color: #488057; }
-.card-filters #card-filter-terrain option[value="Radiance"],
-.card-filters #card-filter-terrain:has(option[value="Radiance"]:checked) { color: #b88425; }
+.card-filters :is(#card-filter-terrain, #deck-card-filter-terrain) option[value="Symbiosis"],
+.card-filters :is(#card-filter-terrain, #deck-card-filter-terrain):has(option[value="Symbiosis"]:checked) { color: #784997; }
+.card-filters :is(#card-filter-terrain, #deck-card-filter-terrain) option[value="Flow"],
+.card-filters :is(#card-filter-terrain, #deck-card-filter-terrain):has(option[value="Flow"]:checked) { color: #35758e; }
+.card-filters :is(#card-filter-terrain, #deck-card-filter-terrain) option[value="Verdant"],
+.card-filters :is(#card-filter-terrain, #deck-card-filter-terrain):has(option[value="Verdant"]:checked) { color: #488057; }
+.card-filters :is(#card-filter-terrain, #deck-card-filter-terrain) option[value="Radiance"],
+.card-filters :is(#card-filter-terrain, #deck-card-filter-terrain):has(option[value="Radiance"]:checked) { color: #b88425; }
 body.dark-mode .card-filters select::picker(select) { border-color: #416853; background: #173f32; color: #e5eee0; }
 body.dark-mode .card-filters select option:hover,
 body.dark-mode .card-filters select option:focus,
@@ -428,10 +428,10 @@ body.dark-mode .card-filters select option:checked { background: #285944; }
 body.dark-mode #decks-view.deck-detail-open .deck-detail-toolbar input,
 body.dark-mode #decks-view.deck-detail-open .deck-detail-toolbar select { border-color: #587965; background: #0d2b23; color: #e5eee0; }
 body.dark-mode #decks-view.deck-detail-open .deck-detail-toolbar select::picker(select) { border-color: #416853; background: #173f32; color: #e5eee0; }
-body.dark-mode .card-filters #card-filter-terrain:has(option[value="Symbiosis"]:checked) { color: #c18ad5; }
-body.dark-mode .card-filters #card-filter-terrain:has(option[value="Flow"]:checked) { color: #83bfd1; }
-body.dark-mode .card-filters #card-filter-terrain:has(option[value="Verdant"]:checked) { color: #8fc99a; }
-body.dark-mode .card-filters #card-filter-terrain:has(option[value="Radiance"]:checked) { color: #e2bd70; }
+body.dark-mode .card-filters :is(#card-filter-terrain, #deck-card-filter-terrain):has(option[value="Symbiosis"]:checked) { color: #c18ad5; }
+body.dark-mode .card-filters :is(#card-filter-terrain, #deck-card-filter-terrain):has(option[value="Flow"]:checked) { color: #83bfd1; }
+body.dark-mode .card-filters :is(#card-filter-terrain, #deck-card-filter-terrain):has(option[value="Verdant"]:checked) { color: #8fc99a; }
+body.dark-mode .card-filters :is(#card-filter-terrain, #deck-card-filter-terrain):has(option[value="Radiance"]:checked) { color: #e2bd70; }
 .item-list button { text-align: left; background: #f7f7ee; border-color: #d9dfd2; }
 .item-list button.selected { background: #dceadd; border-color: #6f9c80; }
 .item-list small { display: block; color: #6b796d; font-size: .76rem; }

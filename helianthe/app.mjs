@@ -461,16 +461,17 @@ function closeMobileMenu() {
 }
 
 function refreshCardAuthorFilter() {
-  const select = $('#card-filter-author');
-  const current = select.value;
   const authors = [...new Set([
     ...patronCards.flatMap(card => authorNames(card.author_ids).length ? authorNames(card.author_ids) : [card.author]),
     ...state.profiles.map(profile => profile.display_name || ownerName(profile.id)),
     ...state.cards.flatMap(card => authorNames(card.author_ids, card.owner_id)),
   ].filter(Boolean))].sort((a, b) => a.localeCompare(b));
-  select.replaceChildren(new Option('All authors', ''));
-  for (const author of authors) select.append(new Option(author, author));
-  select.value = authors.includes(current) ? current : '';
+  for (const select of [$('#card-filter-author'), $('#deck-card-filter-author')]) {
+    const current = select.value;
+    select.replaceChildren(new Option('All authors', ''));
+    for (const author of authors) select.append(new Option(author, author));
+    select.value = authors.includes(current) ? current : '';
+  }
 }
 
 function renderCardList() {
@@ -869,10 +870,18 @@ function renderDeckCards() {
   const list = $('#deck-cards');
   list.replaceChildren();
   if (!state.deck) { renderDeckSummary(); return; }
+  const query = $('#deck-card-search').value.trim().toLocaleLowerCase();
+  const type = $('#deck-card-filter-type').value;
+  const author = $('#deck-card-filter-author').value;
+  const terrain = $('#deck-card-filter-terrain').value;
   const mine = state.deck.owner_id === state.user?.id;
   for (const card of state.cards) {
     const copies = state.deckCards.find(item => item.card_id === card.id)?.copies || 0;
     if (!mine && !copies) continue;
+    if (query && !`${card.title} ${card.effect}`.toLocaleLowerCase().includes(query)) continue;
+    if (type && card.card_type !== type) continue;
+    if (author && !authorNames(card.author_ids, card.owner_id).includes(author)) continue;
+    if (terrain && (terrain === 'none' ? Boolean(card.terrain) : card.terrain !== terrain)) continue;
     const row = document.createElement('div'); row.className = `card-list-item deck-card-row${state.deckPreviewCard?.id === card.id ? ' selected' : ''}`;
     row.setAttribute('role', 'button');
     row.tabIndex = 0;
@@ -904,7 +913,7 @@ function renderDeckCards() {
     }
     list.append(row);
   }
-  if (!list.childElementCount) list.textContent = 'This deck has no cards.';
+  if (!list.childElementCount) list.textContent = state.deckCards.some(item => item.copies > 0) || mine && state.cards.length ? 'No cards found.' : 'This deck has no cards.';
   renderDeckSummary();
 }
 
@@ -1424,6 +1433,8 @@ document.addEventListener('click', event => {
 });
 $('#card-search').addEventListener('input', renderCardList);
 for (const filter of document.querySelectorAll('#card-filter-type, #card-filter-author, #card-filter-terrain')) filter.addEventListener('change', renderCardList);
+$('#deck-card-search').addEventListener('input', renderDeckCards);
+for (const filter of document.querySelectorAll('#deck-card-filter-type, #deck-card-filter-author, #deck-card-filter-terrain')) filter.addEventListener('change', renderDeckCards);
 $('#new-card').addEventListener('click', async () => {
   if (!requireAccount()) return;
   const create = $('#new-card');
