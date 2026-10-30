@@ -161,15 +161,18 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
   ctx.fillStyle = card.effect?.trim() ? '#112f40' : '#817586';
   ctx.font = `500 ${fitted.size}px ${rulesFont}`;
   let y = 818;
+  let credoItalic = false;
   for (const line of fitted.lines) {
     let x = 59;
     const baseColor = ctx.fillStyle;
-    for (const part of line.split(/(Dusk:|\b\d+\b|Symbiosis|Flow|Verdant|Radiance)/g)) {
+    for (const part of line.split(/(Credo:|Coredo:|Dusk:|\b\d+\b|Symbiosis|Flow|Verdant|Radiance)/g)) {
       if (!part) continue;
       ctx.fillStyle = terrainColors[part] || baseColor;
-      ctx.font = `${/^(Dusk:|\d+)$/.test(part) ? 700 : 500} ${fitted.size}px ${rulesFont}`;
+      const isLabel = /^(Dusk:|\d+)$/.test(part);
+      ctx.font = `${credoItalic ? 'italic ' : ''}${isLabel ? 700 : 500} ${fitted.size}px ${rulesFont}`;
       ctx.fillText(part, x, y);
       x += ctx.measureText(part).width;
+      if (/^(Credo:|Coredo:)$/.test(part)) credoItalic = true;
     }
     ctx.fillStyle = baseColor;
     y += fitted.size * 1.25;
