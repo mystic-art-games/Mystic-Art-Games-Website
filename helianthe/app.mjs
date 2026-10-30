@@ -864,6 +864,7 @@ async function showDeckCardPreview(card) {
 
 async function selectDeck(deck) {
   state.deck = deck;
+  renderDeckList();
   await showDeckCardPreview(null);
   const form = $('#deck-form');
   form.reset();
@@ -879,7 +880,6 @@ async function selectDeck(deck) {
   $('#delete-deck').disabled = !deck || !state.user || (!mine && !state.isAdmin);
   $('#deck-heading').textContent = deck?.name || 'New deck';
   state.deckCards = deck ? await api.listDeckCards(deck.id) : [];
-  renderDeckList();
   const deckIsMine = Boolean(state.deck && state.deck.owner_id === state.user?.id);
   const firstDeckCard = state.cards.find(card => deckIsMine || state.deckCards.some(item => item.card_id === card.id && item.copies > 0));
   if (firstDeckCard) await showDeckCardPreview(firstDeckCard);
