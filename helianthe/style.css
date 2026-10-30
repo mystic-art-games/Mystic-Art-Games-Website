@@ -154,6 +154,10 @@ body.dark-mode .about-section p, body.dark-mode .about-section li { color: #d1df
 #decks-view:not(.deck-detail-open) #deck-list .deck-list-title-wrap { padding-left: 0; }
 #decks-view:not(.deck-detail-open) #deck-list .deck-list-title,
 #decks-view:not(.deck-detail-open) #deck-list .deck-list-owner { justify-content: center; text-align: center; }
+#decks-view:not(.deck-detail-open) #deck-list .deck-list-item { border: 1px solid rgba(73, 120, 94, .45); background: linear-gradient(145deg, rgba(255, 255, 255, .72), rgba(225, 238, 229, .52)); box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .72), 0 4px 14px rgba(10, 35, 27, .12); backdrop-filter: blur(8px); }
+#decks-view:not(.deck-detail-open) #deck-list .deck-list-item:hover:not(:disabled) { background: linear-gradient(145deg, rgba(255, 255, 255, .86), rgba(204, 224, 210, .7)); }
+body.dark-mode #decks-view:not(.deck-detail-open) #deck-list .deck-list-item { border-color: rgba(226, 246, 235, .38); background: linear-gradient(145deg, rgba(185, 220, 200, .24), rgba(65, 111, 88, .2)); box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .26), 0 5px 16px rgba(0, 18, 12, .28); }
+body.dark-mode #decks-view:not(.deck-detail-open) #deck-list .deck-list-item:hover:not(:disabled) { background: linear-gradient(145deg, rgba(185, 220, 200, .34), rgba(65, 111, 88, .28)); }
 #decks-view:not(.deck-detail-open) .deck-table-shell { overflow: visible; }
 .back-to-decks { display: none; align-self: flex-start; width: max-content; margin-bottom: .7rem; font-weight: 700; }
 #decks-view.deck-detail-open { grid-template-columns: minmax(0, 1fr); }
