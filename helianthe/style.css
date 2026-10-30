@@ -1190,9 +1190,9 @@ body.dark-mode #new-card {
 body.dark-mode #card-field-modal #card-field-save:hover:not(:disabled),
 body.dark-mode #new-card:hover:not(:disabled) { filter: brightness(1.12); box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .34), 0 6px 16px rgba(0, 18, 12, .38); }
 body:not(.dark-mode) #new-card,
-body:not(.dark-mode) #new-deck { background: linear-gradient(145deg, rgba(117, 166, 130, .88), rgba(52, 117, 90, .9) 52%, rgba(38, 88, 71, .88)); color: #fff; }
+body:not(.dark-mode) #new-deck { background: linear-gradient(145deg, rgba(64, 112, 79, .92), rgba(52, 117, 90, .9) 52%, rgba(38, 88, 71, .88)); color: #fff; }
 body.dark-mode #new-card,
-body.dark-mode #new-deck { background: linear-gradient(145deg, rgba(91, 143, 111, .72), rgba(42, 94, 65, .84) 52%, rgba(28, 70, 52, .88)); color: #fff; }
+body.dark-mode #new-deck { background: linear-gradient(145deg, rgba(47, 92, 64, .86), rgba(42, 94, 65, .84) 52%, rgba(28, 70, 52, .88)); color: #fff; }
 body:not(.dark-mode) #new-card:hover:not(:disabled),
 body:not(.dark-mode) #new-deck:hover:not(:disabled) { background: linear-gradient(145deg, rgba(64, 112, 79, .92), rgba(52, 117, 90, .9) 52%, rgba(38, 88, 71, .88)); color: #fff; }
 body.dark-mode #new-card:hover:not(:disabled),
