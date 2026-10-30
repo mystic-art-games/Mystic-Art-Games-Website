@@ -643,7 +643,7 @@ async function showArtwork(card) {
     if (serial !== state.artworkSerial) return;
     state.artworkUrl = URL.createObjectURL(blob);
     renderPreview();
-  } catch (cause) { if (serial === state.artworkSerial) status(cause.message, true); }
+  } catch { /* Keep the card preview usable when artwork is unavailable. */ }
 }
 
 function renderPreview() {
@@ -897,9 +897,7 @@ async function showDeckCardPreview(card) {
     if (serial !== state.deckPreviewSerial) return;
     state.deckPreviewArtworkUrl = URL.createObjectURL(blob);
     await renderCard($('#deck-card-canvas'), previewCard, state.deckPreviewArtworkUrl, () => serial === state.deckPreviewSerial);
-  } catch (cause) {
-    if (serial === state.deckPreviewSerial) $('#deck-card-preview-note').textContent = cause.message;
-  }
+  } catch { /* Keep the deck preview usable when artwork is unavailable. */ }
 }
 
 async function selectDeck(deck) {
