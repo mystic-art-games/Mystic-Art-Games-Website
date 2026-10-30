@@ -283,7 +283,7 @@ export function createCommunityApi(client) {
       const url = `${SUPABASE_URL}/functions/v1/card-art?id=${encodeURIComponent(artworkId)}`;
       const token = session?.access_token || SUPABASE_PUBLISHABLE_KEY;
       const response = await fetch(url, { headers: { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: `Bearer ${token}` } });
-      if (!response.ok) throw new Error('Could not load artwork.');
+      if (!response.ok) throw new Error('Artwork request failed.');
       return response.blob();
     },
 
