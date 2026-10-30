@@ -78,6 +78,13 @@ body:not(.dark-mode) #card-field-modal input[type=file]::file-selector-button { 
 body:not(.dark-mode) #card-field-modal input[type=file]::file-selector-button:hover { transform: translateY(-1px); filter: brightness(1.06); box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .7), 0 5px 12px rgba(34, 98, 49, .28); }
 body.dark-mode #card-field-modal input[type=file]::file-selector-button { border-color: #416853; background: linear-gradient(145deg, rgba(220, 244, 226, .4) 0%, rgba(91, 143, 111, .32) 46%, rgba(28, 70, 52, .44) 100%); color: #15241d; box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .28), 0 8px 24px rgba(0, 18, 12, .28); text-transform: capitalize; }
 body.dark-mode #card-field-modal input[type=file]::file-selector-button:hover { transform: translateY(-1px); filter: brightness(1.12); box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .34), 0 6px 16px rgba(0, 18, 12, .38); }
+#card-field-modal .artwork-file-input { position: absolute; width: 1px; height: 1px; margin: 0; opacity: 0; pointer-events: none; }
+#card-field-modal .artwork-file-button { margin-right: .6rem; }
+#card-field-modal .artwork-file-name { font-size: .85rem; overflow-wrap: anywhere; }
+body:not(.dark-mode) #card-field-modal .artwork-file-button { border-color: transparent; background: linear-gradient(145deg, rgba(255, 255, 255, .99) 0%, rgba(240, 246, 242, .84) 46%, rgba(225, 236, 229, .64) 100%); color: #15241d; box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .58), 0 2px 8px rgba(34, 98, 49, .2); transition: transform .15s ease, filter .15s ease, box-shadow .15s ease; }
+body:not(.dark-mode) #card-field-modal .artwork-file-button:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.06); box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .7), 0 5px 12px rgba(34, 98, 49, .28); }
+body.dark-mode #card-field-modal .artwork-file-button { border-color: #416853; background: linear-gradient(145deg, rgba(220, 244, 226, .4) 0%, rgba(91, 143, 111, .32) 46%, rgba(28, 70, 52, .44) 100%); color: #15241d; box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .28), 0 8px 24px rgba(0, 18, 12, .28); transition: transform .15s ease, filter .15s ease, box-shadow .15s ease; }
+body.dark-mode #card-field-modal .artwork-file-button:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.12); box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .34), 0 6px 16px rgba(0, 18, 12, .38); }
 textarea { resize: vertical; }
 .actions { display: flex; gap: .6rem; margin-top: 1.25rem; }
 .actions button:first-child, #save-card, #profile-form button { background: #265847; color: white; border-color: #265847; }

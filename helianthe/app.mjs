@@ -755,6 +755,20 @@ function openCardField(field) {
       }
     });
   }
+  if (field === 'artwork') {
+    const fileInput = content.querySelector('input[type="file"]');
+    fileInput.classList.add('artwork-file-input');
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'artwork-file-button';
+    button.textContent = 'Choose File';
+    button.addEventListener('click', () => fileInput.click());
+    const filename = document.createElement('span');
+    filename.className = 'artwork-file-name';
+    filename.textContent = 'No file chosen';
+    fileInput.addEventListener('change', () => { filename.textContent = fileInput.files?.[0]?.name || 'No file chosen'; });
+    fileInput.closest('label').after(button, filename);
+  }
   if (field === 'authors') {
     const authorInputs = [...content.querySelectorAll('input[type="checkbox"]')];
     for (const input of authorInputs) input.addEventListener('change', () => {
@@ -770,7 +784,7 @@ function openCardField(field) {
     });
   }
   $('#card-field-modal').hidden = false;
-  content.querySelector('input:not([type="checkbox"]), select, textarea, input[type="checkbox"]')?.focus();
+  (field === 'artwork' ? content.querySelector('.artwork-file-button') : content.querySelector('input:not([type="checkbox"]), select, textarea, input[type="checkbox"]'))?.focus();
 }
 
 function cardFieldAt(event) {
