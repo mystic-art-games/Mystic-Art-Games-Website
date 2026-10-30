@@ -436,18 +436,47 @@ function closeMobileMenu() {
 function renderPatrons() {
   const list = $('#patron-list');
   list.replaceChildren();
+  const selected = PATRONS.find(patron => patron.name === list.dataset.selectedPatron) || PATRONS[0];
   for (const patron of PATRONS) {
-    const article = document.createElement('article');
-    article.className = 'patron-card';
-    article.innerHTML = `<h3></h3><p class="patron-faction"></p><blockquote></blockquote><h4>Scoring</h4><p class="patron-scoring"></p><h4 class="patron-ability-heading">Ability</h4><p class="patron-ability"></p>`;
-    article.querySelector('h3').textContent = patron.name;
-    article.querySelector('.patron-faction').textContent = patron.faction;
-    article.querySelector('blockquote').textContent = `“${patron.credo}”`;
-    article.querySelector('.patron-scoring').textContent = patron.scoring;
-    article.querySelector('.patron-ability').textContent = patron.ability || '—';
-    article.querySelector('.patron-ability-heading').hidden = !patron.ability;
-    article.querySelector('.patron-ability').hidden = !patron.ability;
-    list.append(article);
+    const row = button('', () => {
+      list.dataset.selectedPatron = patron.name;
+      list.querySelector('.selected')?.classList.remove('selected');
+      row.classList.add('selected');
+      showPatronDetail(patron);
+    }, `card-list-item patron-list-item${patron === selected ? ' selected' : ''}`);
+    const name = document.createElement('span');
+    name.className = 'card-list-title';
+    name.textContent = patron.name;
+    const faction = document.createElement('small');
+    faction.className = 'card-list-owner';
+    faction.textContent = patron.faction;
+    row.append(name, faction);
+    list.append(row);
+  }
+  showPatronDetail(selected);
+}
+
+function showPatronDetail(patron) {
+  const detail = $('#patron-detail');
+  detail.replaceChildren();
+  const title = document.createElement('h2');
+  title.textContent = patron.name;
+  const faction = document.createElement('p');
+  faction.className = 'patron-faction';
+  faction.textContent = patron.faction;
+  const credo = document.createElement('blockquote');
+  credo.textContent = `“${patron.credo}”`;
+  const scoringTitle = document.createElement('h3');
+  scoringTitle.textContent = 'Scoring';
+  const scoring = document.createElement('p');
+  scoring.textContent = patron.scoring;
+  detail.append(title, faction, credo, scoringTitle, scoring);
+  if (patron.ability) {
+    const abilityTitle = document.createElement('h3');
+    abilityTitle.textContent = 'Ability';
+    const ability = document.createElement('p');
+    ability.textContent = patron.ability;
+    detail.append(abilityTitle, ability);
   }
 }
 

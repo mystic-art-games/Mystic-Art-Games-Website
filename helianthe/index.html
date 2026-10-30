@@ -212,10 +212,16 @@
     </section>
   </main>
 
-  <main id="patrons-view" class="patrons-workspace" hidden>
-    <section class="panel patrons-panel">
+  <main id="patrons-view" class="workspace patrons-workspace" hidden>
+    <aside class="panel sidebar patrons-sidebar">
       <div class="panel-head"><h1>Patrons</h1></div>
-      <div id="patron-list" class="patron-list"></div>
+      <div class="patron-table-shell">
+        <div class="list-table-head patron-list-head" aria-hidden="true"><span>Patron name</span><span>Faction</span></div>
+        <div id="patron-list" class="item-list patron-list" role="list"></div>
+      </div>
+    </aside>
+    <section class="panel patron-detail-panel" aria-label="Selected patron">
+      <div id="patron-detail" class="patron-detail"></div>
     </section>
   </main>
 
