@@ -884,7 +884,7 @@ function renderDeckSummary() {
 
   const group = (entries, colorized = false) => {
     const section = document.createElement('div');
-    section.className = 'deck-summary-group';
+    section.className = `deck-summary-group ${colorized ? 'deck-summary-colors' : 'deck-summary-types'}`;
     for (const [name, count] of Object.entries(entries)) {
       const item = document.createElement('span');
       item.className = `deck-summary-item${colorized ? ` ${terrainClass(name)}` : ''}`;
