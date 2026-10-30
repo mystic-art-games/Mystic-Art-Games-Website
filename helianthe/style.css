@@ -974,7 +974,8 @@ body.dark-mode .patrons-workspace {
   backdrop-filter: none;
 }
 
-body:not(.dark-mode) #cards-view #card-list .card-list-item.selected {
+body:not(.dark-mode) #cards-view #card-list .card-list-item.selected,
+body:not(.dark-mode) #decks-view #deck-list .deck-list-item.selected {
   border-bottom-color: transparent !important;
   background: linear-gradient(90deg, #bce3c0, #78b681) !important;
   box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .58), 0 2px 8px rgba(34, 98, 49, .2) !important;
