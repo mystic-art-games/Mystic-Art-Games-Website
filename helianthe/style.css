@@ -151,8 +151,12 @@ body.dark-mode .about-section p, body.dark-mode .about-section li { color: #d1df
 #decks-view:not(.deck-detail-open) #deck-list .deck-list-title,
 #decks-view:not(.deck-detail-open) #deck-list .deck-list-owner { justify-content: center; text-align: center; }
 #decks-view:not(.deck-detail-open) .deck-table-shell { overflow: visible; }
-.back-to-decks { display: none; }
+.back-to-decks { display: none; align-self: flex-start; margin-bottom: .7rem; }
+#decks-view.deck-detail-open { grid-template-columns: minmax(0, 1fr); }
+#decks-view.deck-detail-open > .decks-sidebar { display: none; }
+#decks-view.deck-detail-open > .editor-panel { width: min(100%, 1100px); justify-self: center; }
 #decks-view.deck-detail-open .back-to-decks { display: inline-flex; }
+#decks-view.deck-detail-open #deck-form { display: none; }
 .workspace,
 .patrons-workspace { width: calc(100% - 2rem); }
 .workspace > .panel,
