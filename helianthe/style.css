@@ -316,7 +316,7 @@ body.dark-mode #decks-view:not(.deck-detail-open) #deck-list .deck-list-item:hov
   #decks-view > .editor-panel .deck-meta-row .author-picker { margin: .4rem 0; padding: .55rem; }
   #decks-view > .editor-panel .actions { margin-top: .45rem; }
   #decks-view > .editor-panel .deck-card-layout { flex: 0 0 auto; min-height: max-content; gap: .8rem; }
-  #decks-view > .editor-panel { overflow-y: auto; }
+  #decks-view > .editor-panel { overflow: hidden; }
   #cards-view .card-table-shell {
     display: flex;
     flex: 1 1 auto;
@@ -339,7 +339,7 @@ body.dark-mode #decks-view:not(.deck-detail-open) #deck-list .deck-list-item:hov
   }
   #decks-view .deck-table-shell > .art-scroll-wrap,
   #decks-view .deck-card-table-shell > .art-scroll-wrap { flex: 1 1 auto; min-height: 0; }
-  #decks-view .deck-card-table-shell > .art-scroll-wrap { height: 100%; overflow: hidden; }
+  #decks-view .deck-card-table-shell > .art-scroll-wrap { height: auto; flex: 1 1 0; overflow: hidden; }
   #decks-view .deck-card-table-shell > .art-scroll-wrap > .art-scroll-rail { transform: translateX(-.2rem); }
   #decks-view .deck-table-shell > .list-table-head,
   #decks-view .deck-card-table-shell > .list-table-head { flex: 0 0 auto; margin-top: .7rem; }
