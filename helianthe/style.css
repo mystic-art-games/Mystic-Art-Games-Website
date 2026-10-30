@@ -490,13 +490,13 @@ body.dark-mode .card-filters #card-filter-terrain:has(option[value="Radiance"]:c
 #decks-view #deck-form .deck-name-field .actions { margin-top: .45rem; }
 #decks-view #deck-form .deck-name-field .actions { width: max-content; max-width: 100%; }
 #decks-view #deck-form .deck-name-field .actions button { white-space: nowrap; }
-.deck-card-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, 300px) minmax(240px, 300px); gap: 1rem; align-items: start; }
+.deck-card-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, 300px) minmax(240px, 300px); grid-template-rows: minmax(0, 1fr) auto; gap: 1rem; align-items: start; }
 .deck-card-table { min-width: 0; }
 .deck-card-table h3 { margin: .75rem 0 .1rem; }
 .deck-card-preview-shell { display: flex; flex-direction: column; align-items: center; gap: .45rem; min-width: 0; padding-top: 1.2rem; }
 .deck-patron-preview-shell { display: flex; min-width: 0; flex-direction: column; align-items: center; padding-top: 1.2rem; }
 .deck-patron-preview-shell canvas { display: block; width: min(100%, 300px); height: auto; aspect-ratio: 5 / 7; border-radius: 14px; box-shadow: 0 8px 20px #2225; background: #ece6d8; }
-.deck-summary { grid-column: 1 / -1; display: flex; width: 100%; align-items: center; justify-content: center; gap: 2rem; margin-top: .2rem; padding: .7rem 1rem; border: 1px solid rgba(73, 120, 94, .45); border-radius: 14px; background: linear-gradient(145deg, rgba(255, 255, 255, .68), rgba(210, 229, 216, .42)); box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .72), 0 4px 14px rgba(10, 35, 27, .1); backdrop-filter: blur(8px); }
+.deck-summary { grid-column: 1 / -1; grid-row: 2; display: flex; width: 100%; min-height: 3.5rem; align-items: center; justify-content: center; gap: 2rem; margin-top: 0; padding: .7rem 1rem; border: 1px solid rgba(73, 120, 94, .45); border-radius: 14px; background: linear-gradient(145deg, rgba(255, 255, 255, .68), rgba(210, 229, 216, .42)); box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .72), 0 4px 14px rgba(10, 35, 27, .1); backdrop-filter: blur(8px); }
 .deck-summary-group { display: flex; align-items: center; justify-content: center; gap: .75rem; min-width: 0; }
 .deck-summary-heading { color: #456151; font-size: .76rem; letter-spacing: .04em; text-transform: uppercase; }
 .deck-summary-item { color: #344d42; font-size: .86rem; font-weight: 800; white-space: nowrap; }
