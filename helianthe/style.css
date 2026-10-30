@@ -78,8 +78,8 @@ textarea { resize: vertical; }
 .danger-modal-actions { justify-content: flex-end; }
 .danger-modal-actions button:first-child { background: #a23d35; border-color: #a23d35; }
 .danger-modal-actions button:first-child:hover:not(:disabled) { background: #842f2a; border-color: #842f2a; }
-#new-card { background: linear-gradient(115deg, #1b4d3e, #2b6b50 62%, #3b7d60); color: #fff8e8; border-color: #2b6b50; }
-#new-card:hover:not(:disabled) { background: linear-gradient(115deg, #174638, #255e49 62%, #347454); }
+#new-card { background: linear-gradient(115deg, #245b49, #347b5d 62%, #4b906d); color: #fff8e8; border-color: #347b5d; }
+#new-card:hover:not(:disabled) { background: linear-gradient(115deg, #1e513f, #2c6d52 62%, #428362); }
 .form-hint { margin: -0.35rem 0 0.75rem; color: #68756d; font-size: 0.85rem; }
 .hint { color: #5a6e64; font-size: .88rem; line-height: 1.35; }
 .workspace,
