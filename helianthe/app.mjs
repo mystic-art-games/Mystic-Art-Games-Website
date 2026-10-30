@@ -888,7 +888,8 @@ function renderDeckSummary() {
     for (const [name, count] of Object.entries(entries)) {
       const item = document.createElement('span');
       item.className = `deck-summary-item${colorized ? ` ${terrainClass(name)}` : ''}`;
-      item.textContent = `${name} ${count}`;
+      const displayName = name === 'Entity' ? 'Entities' : name === 'Event' ? 'Events' : name;
+      item.textContent = `${displayName} ${count}`;
       section.append(item);
     }
     return section;
