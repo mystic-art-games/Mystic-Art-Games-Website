@@ -20,7 +20,8 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 .theme-label { color: #e5eee0; font-size: .58rem; font-weight: 700; letter-spacing: .08em; line-height: 1; text-transform: uppercase; }
 .theme-toggle { position: relative; display: flex; align-items: center; justify-content: space-between; width: 72px; height: 30px; padding: 0 7px; border: 1px solid rgba(242, 248, 235, .58); border-radius: 999px; background: rgba(213, 232, 201, .1); color: #e5eee0; font-size: .55rem; font-weight: 700; cursor: pointer; box-shadow: inset 0 1px 2px rgba(255, 255, 255, .18), 0 2px 5px rgba(20, 49, 38, .14); transition: background .2s ease, border-color .2s ease; }
 .background-control { display: flex; align-items: center; gap: 8px; color: #e5eee0; font-size: .72rem; }
-.background-control input { width: 92px; accent-color: #c8dfb8; }
+.background-control input { width: 150px; accent-color: #c8dfb8; cursor: ew-resize; }
+.background-control output { min-width: 34px; color: #e5eee0; font-variant-numeric: tabular-nums; }
 .background-control button { padding: 5px 9px; border: 1px solid rgba(242, 248, 235, .58); border-radius: 6px; background: rgba(213, 232, 201, .1); color: #e5eee0; font-weight: 700; cursor: pointer; }
 .background-control button:hover { background: rgba(213, 232, 201, .25); }
 .theme-toggle:hover:not(:disabled) {

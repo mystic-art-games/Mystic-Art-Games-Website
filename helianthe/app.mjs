@@ -26,10 +26,13 @@ const BACKGROUND_POSITION_KEY = 'helianthe-background-position-y';
 const savedBackgroundPosition = Number(localStorage.getItem(BACKGROUND_POSITION_KEY));
 const backgroundPosition = Number.isFinite(savedBackgroundPosition) ? Math.max(0, Math.min(100, savedBackgroundPosition)) : 60;
 const backgroundPositionInput = $('#background-position');
+const backgroundPositionValue = $('#background-position-value');
 backgroundPositionInput.value = String(backgroundPosition);
+backgroundPositionValue.value = `${backgroundPosition}%`;
 document.body.style.backgroundPosition = `center ${backgroundPosition}%`;
 backgroundPositionInput.addEventListener('input', () => {
   document.body.style.backgroundPosition = `center ${backgroundPositionInput.value}%`;
+  backgroundPositionValue.value = `${backgroundPositionInput.value}%`;
 });
 $('#background-position-ok').addEventListener('click', () => {
   localStorage.setItem(BACKGROUND_POSITION_KEY, String(backgroundPositionInput.value));
