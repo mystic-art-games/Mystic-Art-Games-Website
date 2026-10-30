@@ -944,8 +944,9 @@ async function renderDeckPatron(patron) {
   const shell = $('.deck-patron-preview-shell');
   const canvas = $('#deck-patron-canvas');
   const serial = ++state.deckPatronSerial;
-  shell.className = `deck-patron-preview-shell patron-faction-${(patron?.faction || 'none').toLowerCase().replaceAll(/[^a-z]+/g, '-')}`;
-  canvas.hidden = !patron;
+  shell.className = `deck-patron-preview-shell patron-faction-${(patron?.faction || 'none').toLowerCase().replaceAll(/[^a-z]+/g, '-')}${patron ? '' : ' is-empty'}`;
+  canvas.tabIndex = patron ? 0 : -1;
+  canvas.setAttribute('aria-disabled', String(!patron));
   $('#patron-download-png').disabled = true;
   $('#patron-delete-card').disabled = true;
   if (!patron) return;
@@ -962,6 +963,11 @@ async function renderDeckPatron(patron) {
 async function showDeckCardPreview(card) {
   const serial = ++state.deckPreviewSerial;
   state.deckPreviewCard = card;
+  const shell = $('.deck-card-preview-shell');
+  const canvas = $('#deck-card-canvas');
+  shell.classList.toggle('is-empty', !card);
+  canvas.tabIndex = card ? 0 : -1;
+  canvas.setAttribute('aria-disabled', String(!card));
   $('#deck-download-png').disabled = true;
   $('#deck-delete-card').disabled = !card || !state.user || (!card.patron && card.owner_id !== state.user.id && !state.isAdmin);
   if (state.deckPreviewArtworkUrl) URL.revokeObjectURL(state.deckPreviewArtworkUrl);
@@ -969,13 +975,11 @@ async function showDeckCardPreview(card) {
   renderDeckCards();
   if (!card) {
     closeDeckCardPreview();
-    $('#deck-card-preview-note').textContent = 'Select a card to preview it.';
     return;
   }
   openDeckCardPreview();
   const previewCard = { ...card, author: authorNames(card.author_ids, card.owner_id).join(', ') };
-  $('#deck-card-preview-note').textContent = '';
-  const result = await renderCard($('#deck-card-canvas'), previewCard, '', () => serial === state.deckPreviewSerial).catch(() => null);
+  const result = await renderCard(canvas, previewCard, '', () => serial === state.deckPreviewSerial).catch(() => null);
   if (serial === state.deckPreviewSerial) $('#deck-download-png').disabled = !result || result.clipped || result.cancelled;
   if (!card.artwork_id) return;
   try {
