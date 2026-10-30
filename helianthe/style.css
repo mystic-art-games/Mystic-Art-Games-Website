@@ -414,7 +414,7 @@ body.dark-mode .card-filters #card-filter-terrain:has(option[value="Radiance"]:c
 .card-list-head { margin-bottom: .15rem; }
 .card-list-head span:last-child, .deck-list-head span:last-child { text-align: right; }
 .deck-list-head span:last-child { text-align: left; }
-.deck-card-list-head { grid-template-columns: 1.65rem minmax(0, 1fr) 4rem; margin: .8rem .35rem .3rem; min-height: 1.15rem; line-height: 1.15; }
+.deck-card-list-head { grid-template-columns: 1.65rem minmax(0, 1fr) 4rem; margin: .8rem calc(24px + 2.5rem + .35rem) .3rem .35rem; min-height: 1.15rem; line-height: 1.15; }
 .deck-card-list-head span:nth-child(3), .deck-card-list-head span:last-child { width: 4rem; justify-self: stretch; text-align: center; }
 .deck-list-head { grid-template-columns: minmax(0, 1fr) 7rem; }
 .deck-list-head { margin-bottom: .15rem; }
@@ -1413,4 +1413,7 @@ select {
 }
 body.dark-mode select {
   background-image: linear-gradient(45deg, transparent 50%, #d5e6cf 50%), linear-gradient(135deg, #d5e6cf 50%, transparent 50%) !important;
+}
+@media (max-width: 850px) {
+  .deck-card-list-head { margin-right: .35rem; }
 }
