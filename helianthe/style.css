@@ -338,7 +338,7 @@ body.dark-mode .profile-save-status.error { color: #ef9187; }
   background: #fffefa;
   box-shadow: 0 8px 20px rgba(22, 55, 55, .18);
 }
-.card-filters select option { margin: 2px 0; padding: .5rem .65rem; border-radius: 8px; }
+.card-filters select option { margin: 1px 0; padding: .35rem .55rem; border-radius: 8px; }
 .card-filters select option:hover,
 .card-filters select option:focus,
 .card-filters select option:checked { background: #e0ebda; }
