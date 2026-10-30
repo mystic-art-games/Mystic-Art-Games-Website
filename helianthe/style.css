@@ -508,7 +508,7 @@ body.dark-mode .card-filters #card-filter-terrain:has(option[value="Radiance"]:c
 .deck-summary-group { display: contents; }
 .deck-summary-types .deck-summary-item { grid-row: 1; }
 .deck-summary-colors .deck-summary-item { grid-row: 2; }
-.deck-summary-item { justify-self: start; }
+.deck-summary-item { justify-self: center; }
 .deck-summary-item { color: #344d42; font-size: .86rem; font-weight: 800; white-space: nowrap; }
 .deck-summary-item.terrain-symbiosis { color: #784997; }
 .deck-summary-item.terrain-flow { color: #35758e; }
