@@ -480,7 +480,7 @@ function renderCardList() {
     row.dataset.cardId = card.id;
     row.setAttribute('aria-label', `${card.card_type}: ${card.title}`);
     const icon = card.patron ? document.createElement('span') : cardTypeIconElement(card);
-    if (card.patron) { icon.className = `card-type-icon patron-type-icon ${patronFactionClass(card.patron.faction)}`; icon.setAttribute('aria-hidden', 'true'); }
+    if (card.patron) { icon.className = `card-type-icon patron-type-icon ${terrainClass(card.terrain)}`; icon.setAttribute('aria-hidden', 'true'); }
     const title = document.createElement('span');
     title.className = `card-list-title ${terrainClass(card.terrain)}`;
     title.textContent = card.title;
