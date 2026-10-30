@@ -30,6 +30,7 @@ const patronCards = PATRONS.map(patron => ({
   terrain: PATRON_TERRAIN[patron.faction],
   effect: [`Credo: “${patron.credo}”`, `Scoring: ${patron.scoring}`, patron.ability ? `Ability: ${patron.ability}` : ''].filter(Boolean).join('\n\n'),
   author: 'Helianthe',
+  author_ids: [],
   patron,
 }));
 try {
@@ -452,7 +453,7 @@ function refreshCardAuthorFilter() {
   const select = $('#card-filter-author');
   const current = select.value;
   const authors = [...new Set([
-    ...patronCards.map(card => card.author),
+    ...patronCards.flatMap(card => authorNames(card.author_ids).length ? authorNames(card.author_ids) : [card.author]),
     ...state.profiles.map(profile => profile.display_name || ownerName(profile.id)),
     ...state.cards.flatMap(card => authorNames(card.author_ids, card.owner_id)),
   ].filter(Boolean))].sort((a, b) => a.localeCompare(b));
@@ -471,7 +472,7 @@ function renderCardList() {
   for (const card of [...state.cards, ...patronCards].sort((a, b) => a.title.localeCompare(b.title)).filter(item => {
     const matchesSearch = `${item.title} ${item.effect}`.toLocaleLowerCase().includes(query);
     const matchesType = !type || item.card_type === type;
-    const matchesAuthor = !author || (item.patron ? item.author === author : authorNames(item.author_ids, item.owner_id).includes(author));
+    const matchesAuthor = !author || (item.patron ? (authorNames(item.author_ids).includes(author) || (!item.author_ids?.length && item.author === author)) : authorNames(item.author_ids, item.owner_id).includes(author));
     const matchesTerrain = !terrain || (terrain === 'none' ? !item.terrain : item.terrain === terrain);
     return matchesSearch && matchesType && matchesAuthor && matchesTerrain;
   })) {
@@ -486,7 +487,8 @@ function renderCardList() {
     row.append(icon, title);
     const meta = document.createElement('small');
     meta.className = 'card-list-owner';
-    if (card.patron) meta.textContent = card.author;
+    if (card.patron && card.author_ids?.length) meta.append(authorDisplayElement(card.author_ids));
+    else if (card.patron) meta.textContent = card.author;
     else meta.append(authorDisplayElement(card.author_ids, card.owner_id));
     row.append(meta);
     list.append(row);
@@ -641,7 +643,7 @@ function renderPreview() {
     card_type: form.elements.card_type.value,
     terrain: form.elements.terrain.value,
     effect: form.elements.effect.value,
-    author: state.card?.patron ? state.card.author : authorNames(selectedAuthorIds($('#card-author-options')), state.user?.id).join(', '),
+    author: state.card?.patron ? authorNames(selectedAuthorIds($('#card-author-options'))).join(', ') || state.card.author : authorNames(selectedAuthorIds($('#card-author-options')), state.user?.id).join(', '),
   };
   $('#download-png').disabled = true;
   void renderCard($('#card-canvas'), card, state.artworkUrl || '', () => serial === state.renderSerial)
@@ -1440,7 +1442,8 @@ async function saveCardForm() {
     const previousArtworkId = state.card?.artwork_id || null;
     let card;
     if (state.card?.patron) {
-      const updates = { title: values.title, terrain: values.terrain, effect: values.effect, author: 'Helianthe' };
+      const authorIds = selectedAuthorIds($('#card-author-options'));
+      const updates = { title: values.title, terrain: values.terrain, effect: values.effect, author_ids: authorIds, author: authorNames(authorIds).join(', ') || 'Helianthe' };
       Object.assign(state.card, updates);
       const overrides = JSON.parse(localStorage.getItem(PATRON_CARD_OVERRIDES_KEY) || '{}');
       overrides[state.card.id] = updates;
