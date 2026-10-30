@@ -402,6 +402,9 @@ body.dark-mode .profile-save-status.error { color: #ef9187; }
 @media (max-width: 700px) { .deck-card-filters-row { grid-template-columns: 1fr; } }
 .card-filters label { margin: 0; color: #5a6e64; font-size: .78rem; font-weight: 700; }
 .card-filters select { display: flex; align-items: center; justify-content: space-between; gap: .4rem; margin-top: .2rem; padding: .45rem .4rem; font-size: .82rem; }
+.cards-sidebar #card-search,
+.deck-card-filters-row #deck-card-search,
+.card-filters select { height: 2.35rem; box-sizing: border-box; }
 .card-filters select,
 .card-filters select::picker(select) { appearance: base-select; }
 .card-filters select::picker-icon { flex: 0 0 auto; margin-left: auto; }
