@@ -24,6 +24,7 @@ button:disabled { opacity: .55; cursor: not-allowed; }
   background: rgba(213, 232, 201, .1);
   color: #e5eee0;
 }
+
 .theme-state { position: relative; z-index: 1; margin-left: auto; text-transform: uppercase; }
 .theme-knob { position: absolute; z-index: 2; top: 50%; left: 4px; width: 22px; height: 22px; border: 1px solid rgba(255, 255, 255, .82); border-radius: 50%; background: radial-gradient(circle at 34% 28%, rgba(255, 255, 255, .98), rgba(238, 250, 239, .68) 38%, rgba(173, 215, 189, .42) 100%); box-shadow: 0 2px 7px rgba(20, 49, 38, .3), inset 1px 1px 2px rgba(255, 255, 255, .92), inset -2px -2px 4px rgba(82, 137, 108, .2); transform: translateY(-50%); transition: transform .22s ease, background .22s ease; }
 body.dark-mode .theme-knob { transform: translate(42px, -50%); background: radial-gradient(circle at 34% 28%, rgba(255, 255, 255, .98), rgba(214, 239, 221, .72) 38%, rgba(126, 187, 148, .5) 100%); }
@@ -1267,4 +1268,28 @@ body.dark-mode #download-png:hover:not(:disabled) { background: linear-gradient(
     color: #f2c96b;
     box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .8), 0 2px 8px rgba(20, 49, 38, .1);
   }
+}
+
+/* Patron rows use the same compact table treatment as the Cards list. */
+#patrons-view .patron-list { gap: 0; margin-top: .55rem; }
+#patrons-view .patron-card {
+  display: grid;
+  grid-template-columns: minmax(8rem, .65fr) minmax(10rem, 1fr) minmax(0, 1.35fr);
+  grid-template-rows: auto auto;
+  min-height: 2.25rem;
+  padding: .22rem .3rem;
+  border: 0;
+  border-bottom: 1px solid #e0e5dc;
+  border-radius: 10px;
+  background: transparent;
+  box-shadow: none;
+}
+#patrons-view .patron-card:last-child { border-bottom-color: transparent; }
+#patrons-view .patron-card:hover { background: #eef3e8; }
+#patrons-view .patron-card h3 { font-size: .9rem; }
+#patrons-view .patron-card blockquote { font-size: .78rem; }
+body.dark-mode #patrons-view .patron-card { border-color: transparent; background: transparent; box-shadow: none; }
+body.dark-mode #patrons-view .patron-card:hover { background: #204b3b; }
+@media (max-width: 850px) {
+  #patrons-view .patron-card { grid-template-columns: minmax(7rem, .75fr) minmax(0, 1.25fr); }
 }
