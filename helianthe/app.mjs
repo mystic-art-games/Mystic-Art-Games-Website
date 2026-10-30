@@ -1344,6 +1344,9 @@ $('#confirm-delete-card').addEventListener('click', async () => {
     const artworkId = card.artwork_id;
     await api.deleteCard(state.user.id, card.id, state.isAdmin);
     if (artworkId) await api.deleteArtwork(artworkId).catch(error => console.error('Artwork cleanup failed', error));
+    state.cards = state.cards.filter(item => item.id !== card.id);
+    state.card = null;
+    renderCardList();
     await reloadCollections();
     selectCard(state.cards[0] || null);
     status('Card deleted.');
