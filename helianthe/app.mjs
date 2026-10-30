@@ -1393,6 +1393,36 @@ $('#close-mobile-editor').addEventListener('click', closeMobileEditor);
 $('#card-canvas').tabIndex = 0;
 $('#card-canvas').addEventListener('click', event => openCardField(cardFieldAt(event)));
 $('#card-canvas').addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openCardField('identity'); } });
+function editDeckPreviewAt(event, card) {
+  if (!card || !canEditCard(card)) return;
+  selectCard(card);
+  openCardField(cardFieldAt(event));
+}
+$('#deck-card-canvas').tabIndex = 0;
+$('#deck-card-canvas').addEventListener('click', event => editDeckPreviewAt(event, state.deckPreviewCard));
+$('#deck-card-canvas').addEventListener('keydown', event => {
+  if (event.key !== 'Enter' && event.key !== ' ') return;
+  event.preventDefault();
+  const card = state.deckPreviewCard;
+  if (!card || !canEditCard(card)) return;
+  selectCard(card);
+  openCardField('identity');
+});
+$('#deck-patron-canvas').tabIndex = 0;
+$('#deck-patron-canvas').addEventListener('click', event => {
+  const patron = patronByName(state.deck?.patron_name);
+  const card = patronCards.find(item => item.patron?.name === patron?.name);
+  editDeckPreviewAt(event, card);
+});
+$('#deck-patron-canvas').addEventListener('keydown', event => {
+  if (event.key !== 'Enter' && event.key !== ' ') return;
+  event.preventDefault();
+  const patron = patronByName(state.deck?.patron_name);
+  const card = patronCards.find(item => item.patron?.name === patron?.name);
+  if (!card || !canEditCard(card)) return;
+  selectCard(card);
+  openCardField('identity');
+});
 $('#close-card-field').addEventListener('click', closeCardField);
 $('#card-field-save').addEventListener('click', () => { void saveCardForm(); });
 $('#card-field-cancel').addEventListener('click', () => closeCardField(false));
