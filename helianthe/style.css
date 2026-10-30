@@ -1022,7 +1022,7 @@ body.dark-mode #download-png {
 body.dark-mode #new-card:hover:not(:disabled), body.dark-mode #new-deck:hover:not(:disabled), body.dark-mode #download-png:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.12); box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .34), 0 6px 16px rgba(0, 18, 12, .38); }
 #delete-card {
   border-color: rgba(166, 75, 67, .55);
-  background: linear-gradient(145deg, rgba(137, 38, 32, .86), rgba(194, 80, 69, .8) 46%, rgba(224, 133, 121, .68) 100%);
+  background: linear-gradient(145deg, rgba(137, 38, 32, .86), rgba(176, 61, 52, .82) 46%, rgba(183, 65, 55, .76) 100%);
   color: #fff;
   box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .72), 0 2px 8px rgba(125, 48, 40, .18);
   transition: transform .15s ease, filter .15s ease, box-shadow .15s ease;
@@ -1030,7 +1030,7 @@ body.dark-mode #new-card:hover:not(:disabled), body.dark-mode #new-deck:hover:no
 #delete-card:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.06); box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .82), 0 5px 12px rgba(125, 48, 40, .28); }
 body.dark-mode #delete-card {
   border-color: rgba(224, 143, 132, .5);
-  background: linear-gradient(145deg, rgba(84, 20, 21, .72), rgba(157, 42, 35, .62) 46%, rgba(194, 73, 61, .56) 100%);
+  background: linear-gradient(145deg, rgba(84, 20, 21, .72), rgba(137, 35, 31, .66) 46%, rgba(153, 43, 36, .64) 100%);
   color: #fff;
   color: #ffe8e3;
   box-shadow: inset 1px 1px 0 rgba(255, 232, 227, .28), 0 6px 16px rgba(40, 10, 8, .3);
