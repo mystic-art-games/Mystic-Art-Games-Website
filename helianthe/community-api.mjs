@@ -232,8 +232,7 @@ export function createCommunityApi(client) {
       if (!userId || !deckId) throw new Error('Select your own deck.');
       let query = client.from('decks').delete().eq('id', deckId);
       if (!isAdmin) query = query.eq('owner_id', userId);
-      const rows = result(await query.select('id'));
-      if (!rows?.length) throw new Error('Only the deck owner or designated administrator can delete this deck.');
+      result(await query);
     },
 
     async listDeckCards(deckId) {
