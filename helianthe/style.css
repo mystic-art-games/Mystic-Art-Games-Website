@@ -250,7 +250,10 @@ body.dark-mode .about-section p, body.dark-mode .about-section li { color: #d1df
   }
   #cards-view > .editor-panel .card-layout { gap: .8rem; }
   #cards-view > .editor-panel #card-form { display: none; }
-  #cards-view.workspace { grid-template-columns: minmax(280px, 380px) minmax(320px, 1fr); align-items: start; justify-content: center; max-width: 1450px; }
+  #cards-view.workspace { grid-template-columns: minmax(280px, 380px) minmax(320px, 1fr); align-items: stretch; justify-content: center; max-width: 1450px; }
+  #cards-view > .sidebar { display: flex; flex-direction: column; min-height: 0; }
+  #cards-view > .sidebar .card-table-shell { display: flex; flex: 1 1 auto; flex-direction: column; min-height: 0; overflow: hidden; }
+  #cards-view > .sidebar #card-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
   #cards-view > .editor-panel { width: 320px; justify-self: start; }
   #cards-view > .editor-panel .card-layout { display: flex; justify-content: center; width: 100%; }
   #cards-view > .editor-panel .card-preview-shell { align-self: stretch; width: 100%; padding-top: 1.6rem; }
