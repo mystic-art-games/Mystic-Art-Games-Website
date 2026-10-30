@@ -914,12 +914,13 @@ function renderDeckSummary() {
   summary.hidden = !state.deck;
   if (!state.deck) return;
 
-  const typeCounts = { Entity: 0, Event: 0 };
+  const typeCounts = { 'All Cards': 0, Entity: 0, Event: 0 };
   const terrainCounts = { Symbiosis: 0, Flow: 0, Verdant: 0, Radiance: 0 };
   for (const entry of state.deckCards) {
     const copies = Number(entry.copies) || 0;
     const card = state.cards.find(item => item.id === entry.card_id);
     if (!card || copies < 1 || !Object.hasOwn(typeCounts, card.card_type)) continue;
+    typeCounts['All Cards'] += copies;
     typeCounts[card.card_type] += copies;
     if (Object.hasOwn(terrainCounts, card.terrain)) terrainCounts[card.terrain] += copies;
   }
