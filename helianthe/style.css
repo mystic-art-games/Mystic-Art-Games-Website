@@ -493,8 +493,20 @@ body.dark-mode .card-filters #card-filter-terrain:has(option[value="Radiance"]:c
 .card-field-dialog #card-field-content textarea { min-height: 8rem; }
 .card-field-dialog #card-field-content fieldset { min-width: 0; }
 .card-field-dialog #card-field-content .form-hint { margin-top: 1rem; }
+.card-field-dialog #card-field-content select,
+.card-field-dialog #card-field-content select::picker(select) { appearance: base-select; }
+.card-field-dialog #card-field-content select { display: flex; align-items: center; justify-content: space-between; gap: .4rem; padding: .45rem .4rem; font-size: .82rem; }
+.card-field-dialog #card-field-content select::picker(select) { margin-top: .3rem; padding: .25rem; border: 1px solid #a4b6a5; border-radius: 10px; background: #fffefa; box-shadow: 0 8px 20px rgba(22, 55, 55, .18); }
+.card-field-dialog #card-field-content select option { margin: 1px 0; padding: .35rem .55rem; border-radius: 8px; }
+.card-field-dialog #card-field-content select option:hover,
+.card-field-dialog #card-field-content select option:focus,
+.card-field-dialog #card-field-content select option:checked { background: #e0ebda; }
 .card-field-status { margin: 0 0 .75rem; color: #9d3027; font-weight: 600; }
 body.dark-mode .card-field-status { color: #ffb5a9; }
+body.dark-mode .card-field-dialog #card-field-content select::picker(select) { border-color: #416853; background: #173f32; color: #e5eee0; }
+body.dark-mode .card-field-dialog #card-field-content select option:hover,
+body.dark-mode .card-field-dialog #card-field-content select option:focus,
+body.dark-mode .card-field-dialog #card-field-content select option:checked { background: #285944; }
 .card-field-actions { display: flex; justify-content: flex-end; gap: .6rem; }
 .card-field-actions #card-field-save { background: #265847; color: #fff; border-color: #265847; }
 body.dark-mode .card-field-dialog { border-color: #416853; background: #173f32; color: #e5eee0; }
