@@ -967,6 +967,7 @@ async function showDeckCardPreview(card) {
   const shell = $('.deck-card-preview-shell');
   const canvas = $('#deck-card-canvas');
   shell.classList.toggle('is-empty', !card);
+  $('#deck-preview-edit-hint').hidden = !card;
   canvas.tabIndex = card ? 0 : -1;
   canvas.setAttribute('aria-disabled', String(!card));
   $('#deck-download-png').disabled = true;
