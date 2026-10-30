@@ -367,7 +367,11 @@ body.dark-mode #decks-view:not(.deck-detail-open) #deck-list .deck-list-item:hov
   #decks-view .deck-card-preview-shell,
   #decks-view .deck-patron-preview-shell { height: 100%; min-height: 0; overflow: hidden; }
   #decks-view #deck-card-canvas,
-  #decks-view #deck-patron-canvas { width: auto; height: calc(100% - 6.8rem); max-width: 100%; object-fit: contain; }
+  #decks-view #deck-patron-canvas { width: auto; height: calc(100% - 6rem); max-width: 100%; object-fit: contain; }
+  #decks-view .deck-card-table { grid-column: 1; grid-row: 1; }
+  #decks-view .deck-card-preview-shell { grid-column: 2; grid-row: 1; }
+  #decks-view .deck-patron-preview-shell { grid-column: 3; grid-row: 1; }
+  #decks-view .deck-preview-edit-hint { grid-column: 2 / 4; grid-row: 1; z-index: 1; align-self: end; justify-self: center; margin: 0 0 3.35rem; pointer-events: none; }
   #decks-view .deck-card-table-shell .art-scroll-wrap > .deck-cards { height: 100%; max-height: none; overflow-y: auto; }
 }
 .profile-group-title { margin-top: .9rem; color: #50705e; font-size: .78rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
@@ -580,7 +584,7 @@ body.dark-mode #card-edit-hint { color: #fff; }
 #download-png { align-self: center; }
 .card-preview-actions { display: flex; justify-content: center; gap: .6rem; margin-top: .65rem; }
 .card-preview-actions > button { height: 2.35rem; min-height: 0; display: inline-flex; align-items: center; justify-content: center; }
-.deck-preview-actions { width: 100%; margin-top: auto; padding-top: .65rem; }
+.deck-preview-actions { width: 100%; margin-top: auto; padding-top: .65rem; justify-content: center; }
 .deck-preview-actions > button { padding-inline: .5rem; white-space: nowrap; }
 .card-preview-actions #download-png { margin-top: 0; }
 #cards-view > .editor-panel .card-preview-actions #download-png { margin-top: 0; }
@@ -705,6 +709,7 @@ body.dark-mode .masthead nav.mobile-menu-open button.active {
   .art-scroll-wrap > .item-list,
   .art-scroll-wrap > .deck-cards { width: 100%; padding-right: 0; }
   .deck-card-layout { grid-template-columns: 1fr; }
+  #decks-view .deck-preview-edit-hint { grid-column: 1; grid-row: auto; margin: .35rem auto 0; }
   #decks-view .deck-card-table-shell > .art-scroll-wrap { position: relative; max-height: 18rem; overflow: hidden; }
   #decks-view .deck-card-table-shell .art-scroll-wrap > .deck-cards { height: 100%; max-height: 18rem; overflow-y: auto; }
   .deck-card-preview-shell { display: none; }
