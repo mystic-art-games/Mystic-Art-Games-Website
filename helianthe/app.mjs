@@ -865,6 +865,9 @@ async function showDeckCardPreview(card) {
 async function selectDeck(deck) {
   state.deck = deck;
   renderDeckList();
+  const canDelete = Boolean(deck && state.user && (deck.owner_id === state.user.id || state.isAdmin));
+  $('#duplicate-deck').disabled = !deck || !state.user;
+  $('#delete-deck').disabled = !canDelete;
   await showDeckCardPreview(null);
   const form = $('#deck-form');
   form.reset();
