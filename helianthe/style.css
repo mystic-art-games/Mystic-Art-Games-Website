@@ -432,11 +432,11 @@ body.dark-mode .card-filters #card-filter-terrain:has(option[value="Radiance"]:c
 #cards-view #card-list .card-list-item:hover:not(:disabled) { background: #eef3e8; }
 #cards-view #card-list .card-list-item.selected { background: #b6dcb9; border-bottom-color: #91bd98; }
 #cards-view #card-list .card-type-icon { width: 1.65rem; height: 1.65rem; }
-#cards-view #card-list .patron-faction-icon { display: block; border-radius: 50%; background-image: url('./assets/factions-grid-transparent.png?v=factions-grid-2'); background-size: 112px 112px; background-repeat: no-repeat; }
-#cards-view #card-list .patron-faction-icon.patron-faction-flowbound { background-position: -17px -16px; }
-#cards-view #card-list .patron-faction-icon.patron-faction-brightworks { background-position: -65px -16px; }
-#cards-view #card-list .patron-faction-icon.patron-faction-dreamwardens { background-position: -17px -60px; }
-#cards-view #card-list .patron-faction-icon.patron-faction-verdant { background-position: -65px -60px; }
+#cards-view #card-list .patron-type-icon { display: block; border-radius: 0; background-color: currentColor; -webkit-mask: url('./assets/Patron.png') center / contain no-repeat; mask: url('./assets/Patron.png') center / contain no-repeat; }
+#cards-view #card-list .patron-type-icon.patron-faction-flowbound { color: #35758e; }
+#cards-view #card-list .patron-type-icon.patron-faction-brightworks { color: #a87318; }
+#cards-view #card-list .patron-type-icon.patron-faction-dreamwardens { color: #784997; }
+#cards-view #card-list .patron-type-icon.patron-faction-verdant { color: #488057; }
 #cards-view #card-list .card-list-title { font-size: .9rem; }
 #cards-view .card-list-head span:last-child { text-align: left; }
 #cards-view #card-list .card-list-owner { justify-content: flex-start; font-size: .7rem; text-align: left; }
