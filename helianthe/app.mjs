@@ -449,7 +449,7 @@ function renderPatrons() {
     name.className = 'card-list-title';
     name.textContent = patron.name;
     const faction = document.createElement('small');
-    faction.className = 'card-list-owner';
+    faction.className = `card-list-owner ${patronFactionClass(patron.faction)}`;
     faction.textContent = patron.faction;
     row.append(name, faction);
     list.append(row);

@@ -1310,6 +1310,11 @@ body.dark-mode #patrons-view .patron-card:hover { background: #204b3b; }
 #patrons-view .patron-list-head { margin: .8rem .3rem .15rem; }
 #patrons-view #patron-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; margin-top: .55rem; padding-bottom: .7rem; }
 #patrons-view #patron-list .patron-list-item { min-height: 2.25rem; padding: .22rem .3rem; border: 0; border-bottom: 1px solid transparent; border-radius: 10px; background: transparent; font-size: .9rem; }
+#patrons-view #patron-list .patron-list-item .card-list-title { padding-left: .4rem; }
+#patrons-view #patron-list .patron-faction-flowbound { color: #35758e; }
+#patrons-view #patron-list .patron-faction-brightworks { color: #a87318; }
+#patrons-view #patron-list .patron-faction-dreamwardens { color: #784997; }
+#patrons-view #patron-list .patron-faction-verdant { color: #488057; }
 #patrons-view #patron-list .patron-list-item:hover { background: #eef3e8; }
 #patrons-view #patron-list .patron-list-item.selected { background: #b6dcb9; border-bottom-color: #91bd98; }
 #patrons-view #patron-list .card-list-owner { grid-column: 2; justify-content: flex-start; text-align: left; font-size: .7rem; }
