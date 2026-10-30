@@ -67,8 +67,8 @@ input:not([type=checkbox]):not([type=file]), select, textarea { display: block; 
 .favorite-card-hover-preview { position: fixed; z-index: 60; width: 250px; height: 350px; pointer-events: none; filter: drop-shadow(0 10px 20px #16373755); }
 .favorite-card-hover-preview canvas { display: block; width: 100%; height: 100%; border-radius: 12px; background: #ece6d8; }
 input[type=file] { display: block; width: 100%; margin-top: .3rem; font-weight: 400; }
-input[type=file]::file-selector-button { margin-right: .6rem; border: 1px solid #749a88; border-radius: 10px; background: #f4f5e9; color: #163737; padding: .55rem .8rem; font: inherit; cursor: pointer; }
-input[type=file]::file-selector-button:hover { background: #e0ebda; }
+input[type=file]::file-selector-button { margin-right: .6rem; border: 1px solid transparent; border-radius: 10px; background: transparent; color: #163737; padding: .55rem .8rem; font: inherit; cursor: pointer; }
+input[type=file]::file-selector-button:hover { background: #e0ebda; color: #163737; }
 textarea { resize: vertical; }
 .actions { display: flex; gap: .6rem; margin-top: 1.25rem; }
 .actions button:first-child, #save-card, #profile-form button { background: #265847; color: white; border-color: #265847; }
