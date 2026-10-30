@@ -812,6 +812,7 @@ function selectCard(card, { openMobile = false } = {}) {
   form.elements.effect.value = card?.effect || '';
   renderAuthorOptions($('#card-author-options'), card?.author_ids || (card?.owner_id ? [card.owner_id] : [state.user?.id].filter(Boolean)));
   $('#card-heading').textContent = card?.title || 'New card';
+  $('#card-edit-hint').hidden = !state.user;
   setCardFormEditable(canEditCard(card));
   syncTerrain();
   renderPreview();
@@ -955,7 +956,7 @@ async function renderDeckPatron(patron) {
   const canvas = $('#deck-patron-canvas');
   const serial = ++state.deckPatronSerial;
   shell.className = `deck-patron-preview-shell patron-faction-${(patron?.faction || 'none').toLowerCase().replaceAll(/[^a-z]+/g, '-')}${patron ? '' : ' is-empty'}`;
-  $('#deck-patron-edit-hint').hidden = !patron;
+  $('#deck-patron-edit-hint').hidden = !patron || !state.user;
   canvas.tabIndex = patron ? 0 : -1;
   canvas.setAttribute('aria-disabled', String(!patron));
   $('#patron-download-png').disabled = true;
@@ -977,7 +978,7 @@ async function showDeckCardPreview(card) {
   const shell = $('.deck-card-preview-shell');
   const canvas = $('#deck-card-canvas');
   shell.classList.toggle('is-empty', !card);
-  $('#deck-preview-edit-hint').hidden = !card;
+  $('#deck-preview-edit-hint').hidden = !card || !state.user;
   canvas.tabIndex = card ? 0 : -1;
   canvas.setAttribute('aria-disabled', String(!card));
   $('#deck-download-png').disabled = true;
@@ -1256,6 +1257,16 @@ async function applyPendingAvatar(user, profile) {
   }
 }
 
+function updateAuthenticatedControls() {
+  const signedIn = Boolean(state.user);
+  for (const id of ['new-card', 'new-deck', 'duplicate-deck', 'delete-deck', 'delete-card', 'deck-delete-card', 'patron-delete-card']) {
+    $(`#${id}`).hidden = !signedIn;
+  }
+  $('#card-edit-hint').hidden = !signedIn;
+  $('#deck-preview-edit-hint').hidden = !signedIn || !state.deckPreviewCard;
+  $('#deck-patron-edit-hint').hidden = !signedIn || !patronByName(state.deck?.patron_name);
+}
+
 async function loadWorkspace() {
   const version = ++state.authVersion;
   status('Loading your Helianthe workspace…');
@@ -1264,6 +1275,7 @@ async function loadWorkspace() {
     if (!user || version !== state.authVersion) return;
     state.user = user;
     state.isAdmin = user.id === ADMIN_USER_ID || user.email?.trim().toLowerCase() === ADMIN_EMAIL;
+    updateAuthenticatedControls();
     let ensuredProfile = await api.ensureProfile(user);
     ensuredProfile = await applyPendingAvatar(user, ensuredProfile);
     await api.publishOwnedDecks(user.id).catch(error => console.error('Could not publish existing decks:', error));
@@ -1286,6 +1298,7 @@ async function loadWorkspace() {
   } catch (cause) {
     console.error(cause);
     if (state.user) {
+      updateAuthenticatedControls();
       hideSignIn();
       $('#auth-view').hidden = true;
       $('#tabs').hidden = false;
@@ -1306,6 +1319,7 @@ async function loadPublicWorkspace() {
   ++state.authVersion;
   stopRealtimeSync();
   state.user = null; state.isAdmin = false; state.cards = []; state.decks = []; state.profiles = [];
+  updateAuthenticatedControls();
   state.card = null; state.deck = null; state.profile = null; ++state.artworkSerial; ++state.renderSerial;
   releaseArtwork();
   status('Loading public Helianthe cards…');

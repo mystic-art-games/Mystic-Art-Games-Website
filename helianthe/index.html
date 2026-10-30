@@ -114,7 +114,7 @@
 
   <main id="cards-view" class="workspace" hidden>
     <aside class="panel sidebar cards-sidebar">
-      <div class="panel-head"><h1>Cards</h1><button id="new-card" type="button">Add New Card</button></div>
+      <div class="panel-head"><h1>Cards</h1><button id="new-card" type="button" hidden>Add New Card</button></div>
       <input id="card-search" type="search" placeholder="Search by card name or effect…" aria-label="Search by card name or effect">
       <div class="card-filters" aria-label="Filter cards">
         <label>Type<select id="card-filter-type"><option value="">All types</option><option value="Entity">Entity</option><option value="Event">Event</option><option value="Patron">Patron</option></select></label>
@@ -141,10 +141,10 @@
         <section class="card-preview-shell" aria-label="Card preview and export">
           <canvas id="card-canvas" width="1500" height="2100" aria-label="Card preview"></canvas>
           <p id="preview-note" role="status"></p>
-          <p id="card-edit-hint">Click a card area to edit that element.</p>
+          <p id="card-edit-hint" hidden>Click a card area to edit that element.</p>
           <div class="card-preview-actions">
             <button id="download-png" type="button" disabled>Download PNG</button>
-            <button id="delete-card" type="button" class="danger-button" disabled>Delete Card</button>
+            <button id="delete-card" type="button" class="danger-button" disabled hidden>Delete Card</button>
           </div>
         </section>
       </div>
@@ -153,7 +153,7 @@
 
   <main id="decks-view" class="workspace" hidden>
     <aside class="panel sidebar decks-sidebar">
-      <div class="panel-head"><h1>Decks</h1><button id="new-deck" type="button">Add New Deck</button></div>
+      <div class="panel-head"><h1>Decks</h1><button id="new-deck" type="button" hidden>Add New Deck</button></div>
       <div class="deck-table-shell">
         <div id="deck-list" class="item-list" role="list"></div>
       </div>
@@ -165,7 +165,7 @@
           <label>Deck name<input name="name" required maxlength="100"></label>
           <label>Patron<select name="patron_name"></select></label>
           <label>Author<select id="deck-author-select"></select></label>
-          <div class="actions"><button id="duplicate-deck" type="button">Duplicate Deck</button><button id="delete-deck" class="danger-button" type="button">Delete Deck</button></div>
+          <div class="actions"><button id="duplicate-deck" type="button" hidden>Duplicate Deck</button><button id="delete-deck" class="danger-button" type="button" hidden>Delete Deck</button></div>
         </div>
       </form>
       <div class="deck-card-filters-row">
@@ -192,13 +192,13 @@
           <canvas id="deck-card-canvas" width="1500" height="2100" aria-label="Selected card preview"></canvas>
           <div id="deck-card-preview-note" class="deck-empty-preview">Select a card to preview it.</div>
           <p id="deck-preview-edit-hint" class="deck-preview-edit-hint" hidden>Click a card area to edit that element.</p>
-          <div class="card-preview-actions deck-preview-actions"><button id="deck-download-png" type="button" disabled>Download PNG</button><button id="deck-delete-card" type="button" class="danger-button" disabled>Delete Card</button></div>
+          <div class="card-preview-actions deck-preview-actions"><button id="deck-download-png" type="button" disabled>Download PNG</button><button id="deck-delete-card" type="button" class="danger-button" disabled hidden>Delete Card</button></div>
         </section>
         <section class="deck-patron-preview-shell" aria-label="Deck patron preview">
           <canvas id="deck-patron-canvas" width="1500" height="2100" aria-label="Deck patron card preview"></canvas>
           <div id="deck-patron-preview-note" class="deck-empty-preview">Select a Patron to preview it.</div>
           <p id="deck-patron-edit-hint" class="deck-preview-edit-hint" hidden>Click a card area to edit that element.</p>
-          <div class="card-preview-actions deck-preview-actions"><button id="patron-download-png" type="button" disabled>Download PNG</button><button id="patron-delete-card" type="button" class="danger-button" disabled>Delete Card</button></div>
+          <div class="card-preview-actions deck-preview-actions"><button id="patron-download-png" type="button" disabled>Download PNG</button><button id="patron-delete-card" type="button" class="danger-button" disabled hidden>Delete Card</button></div>
         </section>
       </div>
     </section>
