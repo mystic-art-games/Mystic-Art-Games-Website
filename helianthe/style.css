@@ -315,7 +315,8 @@ body.dark-mode #decks-view:not(.deck-detail-open) #deck-list .deck-list-item:hov
   #decks-view > .editor-panel .deck-meta-row { gap: .65rem; }
   #decks-view > .editor-panel .deck-meta-row .author-picker { margin: .4rem 0; padding: .55rem; }
   #decks-view > .editor-panel .actions { margin-top: .45rem; }
-  #decks-view > .editor-panel .deck-card-layout { flex: 1 1 auto; min-height: 0; gap: .8rem; }
+  #decks-view > .editor-panel .deck-card-layout { flex: 0 0 auto; min-height: max-content; gap: .8rem; }
+  #decks-view > .editor-panel { overflow-y: auto; }
   #cards-view .card-table-shell {
     display: flex;
     flex: 1 1 auto;
