@@ -505,6 +505,10 @@ function canEditCard(card) {
   return state.isAdmin || card.owner_id === state.user.id || card.author_ids?.includes(state.user.id);
 }
 
+function canEditDeck(deck) {
+  return Boolean(state.user && deck && deck.owner_id === state.user.id);
+}
+
 function showSignIn() {
   state.user = null;
   state.isAdmin = false;
@@ -872,6 +876,7 @@ async function selectDeck(deck) {
   const mine = Boolean(state.user && (!deck || deck.owner_id === state.user.id));
   for (const field of form.querySelectorAll('input,button')) field.disabled = !mine;
   $('#duplicate-deck').disabled = !deck || !state.user;
+  $('#delete-deck').disabled = !deck || !state.user || (!mine && !state.isAdmin);
   $('#deck-heading').textContent = deck?.name || 'New deck';
   state.deckCards = deck ? await api.listDeckCards(deck.id) : [];
   renderDeckList();
@@ -1454,6 +1459,44 @@ $('#duplicate-deck').addEventListener('click', async () => {
   } catch (cause) { status(cause.message, true); }
   finally { duplicate.disabled = !state.deck || !state.user; }
 });
+$('#delete-deck').addEventListener('click', () => {
+  const deck = state.deck;
+  if (!deck || !state.user || (!canEditDeck(deck) && !state.isAdmin)) return;
+  $('#delete-deck-description').textContent = `Delete “${deck.name}”? This cannot be undone.`;
+  $('#delete-deck-modal').hidden = false;
+  document.body.classList.add('auth-modal-open');
+  $('#cancel-delete-deck').focus();
+});
+const closeDeleteDeckModal = () => {
+  $('#delete-deck-modal').hidden = true;
+  document.body.classList.remove('auth-modal-open');
+};
+$('#delete-deck-backdrop').addEventListener('click', closeDeleteDeckModal);
+$('#close-delete-deck').addEventListener('click', closeDeleteDeckModal);
+$('#cancel-delete-deck').addEventListener('click', closeDeleteDeckModal);
+$('#confirm-delete-deck').addEventListener('click', async () => {
+  const deck = state.deck;
+  if (!deck || !state.user) return closeDeleteDeckModal();
+  const button = $('#delete-deck');
+  const confirmButton = $('#confirm-delete-deck');
+  button.disabled = true;
+  confirmButton.disabled = true;
+  try {
+    await api.deleteDeck(state.user.id, deck.id, state.isAdmin);
+    state.deck = null;
+    state.deckCards = [];
+    state.decks = state.decks.filter(item => item.id !== deck.id);
+    closeDeleteDeckModal();
+    await selectDeck(state.decks[0] || null);
+    if (state.profile) selectProfile(state.profiles.find(profile => profile.id === state.profile.id) || null);
+    status('Deck deleted.');
+  } catch (cause) {
+    closeDeleteDeckModal();
+    status(cause.message, true);
+    button.disabled = false;
+    confirmButton.disabled = false;
+  }
+});
 for (const field of [$('#deck-form').elements.name, $('#deck-form').elements.patron_name]) {
   field.addEventListener('change', () => { void queueDeckSave().catch(cause => status(cause.message, true)); });
 }
@@ -1541,6 +1584,7 @@ $('#confirm-delete-account').addEventListener('click', async () => {
 document.addEventListener('keydown', event => {
   if (event.key === 'Escape' && !$('#delete-account-modal').hidden) closeDeleteAccountModal();
   if (event.key === 'Escape' && !$('#delete-card-modal').hidden) closeDeleteCardModal();
+  if (event.key === 'Escape' && !$('#delete-deck-modal').hidden) closeDeleteDeckModal();
 });
 
 function initArtDecoScrollbars() {

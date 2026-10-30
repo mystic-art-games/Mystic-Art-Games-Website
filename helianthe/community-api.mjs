@@ -228,10 +228,12 @@ export function createCommunityApi(client) {
       return copy;
     },
 
-    async deleteDeck(userId, deckId) {
+    async deleteDeck(userId, deckId, isAdmin = false) {
       if (!userId || !deckId) throw new Error('Select your own deck.');
-      const rows = result(await client.from('decks').delete().eq('id', deckId).eq('owner_id', userId).select('id'));
-      if (!rows?.length) throw new Error('Only the deck owner can delete this deck.');
+      let query = client.from('decks').delete().eq('id', deckId);
+      if (!isAdmin) query = query.eq('owner_id', userId);
+      const rows = result(await query.select('id'));
+      if (!rows?.length) throw new Error('Only the deck owner or designated administrator can delete this deck.');
     },
 
     async listDeckCards(deckId) {
