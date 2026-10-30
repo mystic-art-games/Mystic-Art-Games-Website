@@ -944,6 +944,20 @@ body:not(.dark-mode) #cards-view #card-list .card-list-item.selected {
   background: linear-gradient(90deg, #bce3c0, #78b681) !important;
   box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .58), 0 2px 8px rgba(34, 98, 49, .2) !important;
 }
+body:not(.dark-mode) #new-card,
+body:not(.dark-mode) #new-card:hover:not(:disabled) {
+  border-color: transparent;
+  background: linear-gradient(90deg, #bce3c0, #78b681);
+  color: #173f32;
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .58), 0 2px 8px rgba(34, 98, 49, .2);
+}
+body.dark-mode #new-card,
+body.dark-mode #new-card:hover:not(:disabled) {
+  border-color: #416853;
+  background: linear-gradient(145deg, #153f34, #246047 62%, #34735a);
+  color: #fff8e8;
+  box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .28), 0 8px 24px rgba(0, 18, 12, .28);
+}
 #cards-view #card-list .card-list-item { border-bottom-color: transparent !important; }
 @media (max-width: 850px) {
   body.dark-mode #about-view > .about-panel {
