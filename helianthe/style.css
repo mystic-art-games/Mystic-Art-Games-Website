@@ -158,10 +158,11 @@ body.dark-mode .about-section p, body.dark-mode .about-section li { color: #d1df
 #decks-view.deck-detail-open > .editor-panel { position: relative; }
 #decks-view.deck-detail-open .back-to-decks { display: inline-flex; }
 #decks-view.deck-detail-open #deck-form { display: block; }
-#decks-view.deck-detail-open #deck-form { position: relative; }
-#decks-view.deck-detail-open #deck-form .deck-meta-row { position: absolute; z-index: 1; top: -3rem; left: 7rem; right: 16rem; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: .6rem; }
-#decks-view.deck-detail-open #deck-form .author-picker { display: none; }
-#decks-view.deck-detail-open .deck-name-field .actions { position: absolute; top: -3rem; right: 0; margin-top: 0; }
+#decks-view.deck-detail-open .deck-detail-toolbar { display: grid; grid-template-columns: auto minmax(160px, 1fr) minmax(160px, 1fr) auto; align-items: end; gap: .7rem; }
+#decks-view.deck-detail-open .deck-detail-toolbar label { margin: 0; }
+#decks-view.deck-detail-open .deck-detail-toolbar .back-to-decks { align-self: end; margin-bottom: 0; }
+#decks-view.deck-detail-open .deck-detail-toolbar .actions { margin: 0; align-self: end; white-space: nowrap; }
+#decks-view.deck-detail-open .deck-author-picker { display: none; }
 .workspace,
 .patrons-workspace { width: calc(100% - 2rem); }
 .workspace > .panel,
