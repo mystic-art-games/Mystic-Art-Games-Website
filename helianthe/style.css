@@ -1168,7 +1168,7 @@ body.dark-mode #delete-deck-modal .auth-modal-card {
 #card-field-modal #card-field-save,
 body:not(.dark-mode) #new-card {
   border-color: rgba(73, 120, 94, .55);
-  background: linear-gradient(145deg, rgba(117, 166, 130, .88), rgba(52, 117, 90, .9) 52%, rgba(38, 88, 71, .88));
+  background: linear-gradient(145deg, rgba(64, 112, 79, .92), rgba(52, 117, 90, .9) 52%, rgba(38, 88, 71, .88));
   color: #fff;
   box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .5), 0 2px 8px rgba(34, 98, 49, .2);
   transition: transform .15s ease, filter .15s ease, box-shadow .15s ease;
@@ -1183,7 +1183,7 @@ body.dark-mode #card-field-modal .card-field-dialog {
 body.dark-mode #card-field-modal #card-field-save,
 body.dark-mode #new-card {
   border-color: rgba(226, 246, 235, .34);
-  background: linear-gradient(145deg, rgba(91, 143, 111, .72), rgba(42, 94, 65, .84) 52%, rgba(28, 70, 52, .88));
+  background: linear-gradient(145deg, rgba(47, 92, 64, .86), rgba(42, 94, 65, .84) 52%, rgba(28, 70, 52, .88));
   color: #eef8ed;
   box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .28), 0 6px 16px rgba(0, 18, 12, .3);
 }
@@ -1194,9 +1194,9 @@ body:not(.dark-mode) #new-deck { background: linear-gradient(145deg, rgba(117, 1
 body.dark-mode #new-card,
 body.dark-mode #new-deck { background: linear-gradient(145deg, rgba(91, 143, 111, .72), rgba(42, 94, 65, .84) 52%, rgba(28, 70, 52, .88)); color: #fff; }
 body:not(.dark-mode) #new-card:hover:not(:disabled),
-body:not(.dark-mode) #new-deck:hover:not(:disabled) { background: linear-gradient(145deg, rgba(117, 166, 130, .88), rgba(52, 117, 90, .9) 52%, rgba(38, 88, 71, .88)); color: #fff; }
+body:not(.dark-mode) #new-deck:hover:not(:disabled) { background: linear-gradient(145deg, rgba(64, 112, 79, .92), rgba(52, 117, 90, .9) 52%, rgba(38, 88, 71, .88)); color: #fff; }
 body.dark-mode #new-card:hover:not(:disabled),
-body.dark-mode #new-deck:hover:not(:disabled) { background: linear-gradient(145deg, rgba(91, 143, 111, .72), rgba(42, 94, 65, .84) 52%, rgba(28, 70, 52, .88)); color: #fff; }
+body.dark-mode #new-deck:hover:not(:disabled) { background: linear-gradient(145deg, rgba(47, 92, 64, .86), rgba(42, 94, 65, .84) 52%, rgba(28, 70, 52, .88)); color: #fff; }
 #cards-view #card-list .card-list-item { border-bottom-color: transparent !important; }
 @media (max-width: 850px) {
   body.dark-mode #about-view > .about-panel {
