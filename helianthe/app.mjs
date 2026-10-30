@@ -24,9 +24,18 @@ const DECK_PATRONS_KEY = 'helianthe-deck-patrons';
 const BACKGROUND_POSITION_KEY = 'helianthe-background-position-y';
 
 const savedBackgroundPosition = Number(localStorage.getItem(BACKGROUND_POSITION_KEY));
-if (Number.isFinite(savedBackgroundPosition)) {
-  document.body.style.backgroundPosition = `center ${Math.max(0, Math.min(100, savedBackgroundPosition))}%`;
-}
+const backgroundPosition = Number.isFinite(savedBackgroundPosition) ? Math.max(0, Math.min(100, savedBackgroundPosition)) : 60;
+const backgroundPositionInput = $('#background-position');
+backgroundPositionInput.value = String(backgroundPosition);
+document.body.style.backgroundPosition = `center ${backgroundPosition}%`;
+backgroundPositionInput.addEventListener('input', () => {
+  document.body.style.backgroundPosition = `center ${backgroundPositionInput.value}%`;
+});
+$('#background-position-ok').addEventListener('click', () => {
+  localStorage.setItem(BACKGROUND_POSITION_KEY, String(backgroundPositionInput.value));
+  $('#background-position-ok').textContent = 'OK ✓';
+  window.setTimeout(() => { $('#background-position-ok').textContent = 'OK'; }, 1200);
+});
 
 function applyTheme(dark) {
   document.body.classList.toggle('dark-mode', dark);
