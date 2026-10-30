@@ -1133,6 +1133,23 @@ body.dark-mode #delete-deck-modal .auth-modal-card {
   background: linear-gradient(145deg, rgba(185, 220, 200, .86), rgba(65, 111, 88, .8) 62%, rgba(32, 82, 61, .76)) !important;
   box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .3), 0 18px 60px rgba(0, 18, 12, .38) !important;
 }
+#card-field-modal .card-field-backdrop {
+  background: rgba(10, 35, 27, .44);
+  backdrop-filter: blur(7px) saturate(.9);
+  -webkit-backdrop-filter: blur(7px) saturate(.9);
+}
+#card-field-modal .card-field-dialog {
+  border-color: rgba(73, 120, 94, .55) !important;
+  background: linear-gradient(145deg, rgba(255, 255, 255, .9), rgba(225, 238, 229, .84) 62%, rgba(204, 224, 210, .8)) !important;
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .82), 0 18px 60px rgba(10, 35, 27, .32) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+body.dark-mode #card-field-modal .card-field-dialog {
+  border-color: rgba(226, 246, 235, .48) !important;
+  background: linear-gradient(145deg, rgba(185, 220, 200, .86), rgba(65, 111, 88, .8) 62%, rgba(32, 82, 61, .76)) !important;
+  box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .3), 0 18px 60px rgba(0, 18, 12, .38) !important;
+}
 #cards-view #card-list .card-list-item { border-bottom-color: transparent !important; }
 @media (max-width: 850px) {
   body.dark-mode #about-view > .about-panel {
