@@ -1035,6 +1035,8 @@ body.dark-mode #cards-view #card-list .card-list-item.selected .card-list-owner,
 body.dark-mode #decks-view #deck-list .deck-list-item.selected .deck-list-owner { color: #15241d; }
 body:not(.dark-mode) #new-card,
 body:not(.dark-mode) #new-card:hover:not(:disabled),
+body:not(.dark-mode) #card-field-cancel,
+body:not(.dark-mode) #card-field-cancel:hover:not(:disabled),
 body:not(.dark-mode) .back-to-decks,
 body:not(.dark-mode) .back-to-decks:hover:not(:disabled),
 body:not(.dark-mode) #new-deck,
@@ -1052,9 +1054,11 @@ body:not(.dark-mode) #download-png {
   box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .58), 0 2px 8px rgba(34, 98, 49, .2);
   transition: transform .15s ease, filter .15s ease, box-shadow .15s ease;
 }
-body:not(.dark-mode) #new-card:hover:not(:disabled), body:not(.dark-mode) .back-to-decks:hover:not(:disabled), body:not(.dark-mode) #new-deck:hover:not(:disabled), body:not(.dark-mode) #duplicate-deck:hover:not(:disabled), body:not(.dark-mode) #cancel-delete-card:hover:not(:disabled), body:not(.dark-mode) #cancel-delete-deck:hover:not(:disabled), body:not(.dark-mode) #download-png:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.06); box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .7), 0 5px 12px rgba(34, 98, 49, .28); }
+body:not(.dark-mode) #new-card:hover:not(:disabled), body:not(.dark-mode) #card-field-cancel:hover:not(:disabled), body:not(.dark-mode) .back-to-decks:hover:not(:disabled), body:not(.dark-mode) #new-deck:hover:not(:disabled), body:not(.dark-mode) #duplicate-deck:hover:not(:disabled), body:not(.dark-mode) #cancel-delete-card:hover:not(:disabled), body:not(.dark-mode) #cancel-delete-deck:hover:not(:disabled), body:not(.dark-mode) #download-png:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.06); box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .7), 0 5px 12px rgba(34, 98, 49, .28); }
 body.dark-mode #new-card,
 body.dark-mode #new-card:hover:not(:disabled),
+body.dark-mode #card-field-cancel,
+body.dark-mode #card-field-cancel:hover:not(:disabled),
 body.dark-mode .back-to-decks,
 body.dark-mode .back-to-decks:hover:not(:disabled),
 body.dark-mode #new-deck,
@@ -1072,7 +1076,7 @@ body.dark-mode #download-png {
   box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .28), 0 8px 24px rgba(0, 18, 12, .28);
   transition: transform .15s ease, filter .15s ease, box-shadow .15s ease;
 }
-body.dark-mode #new-card:hover:not(:disabled), body.dark-mode .back-to-decks:hover:not(:disabled), body.dark-mode #new-deck:hover:not(:disabled), body.dark-mode #duplicate-deck:hover:not(:disabled), body.dark-mode #cancel-delete-card:hover:not(:disabled), body.dark-mode #cancel-delete-deck:hover:not(:disabled), body.dark-mode #download-png:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.12); box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .34), 0 6px 16px rgba(0, 18, 12, .38); }
+body.dark-mode #new-card:hover:not(:disabled), body.dark-mode #card-field-cancel:hover:not(:disabled), body.dark-mode .back-to-decks:hover:not(:disabled), body.dark-mode #new-deck:hover:not(:disabled), body.dark-mode #duplicate-deck:hover:not(:disabled), body.dark-mode #cancel-delete-card:hover:not(:disabled), body.dark-mode #cancel-delete-deck:hover:not(:disabled), body.dark-mode #download-png:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.12); box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .34), 0 6px 16px rgba(0, 18, 12, .38); }
 #delete-card, #delete-deck {
   border-color: rgba(166, 75, 67, .55);
   background: linear-gradient(145deg, rgba(137, 38, 32, .86), rgba(176, 61, 52, .82) 46%, rgba(183, 65, 55, .76) 100%);
