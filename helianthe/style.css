@@ -994,7 +994,7 @@ body:not(.dark-mode) #new-deck,
 body:not(.dark-mode) #new-deck:hover:not(:disabled) {
   border-color: transparent;
   background: #84c08d;
-  color: #24553b;
+  color: #15241d;
   box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .58), 0 2px 8px rgba(34, 98, 49, .2);
   transition: transform .15s ease, filter .15s ease, box-shadow .15s ease;
 }
@@ -1005,7 +1005,7 @@ body.dark-mode #new-deck,
 body.dark-mode #new-deck:hover:not(:disabled) {
   border-color: #416853;
   background: #2c6b50;
-  color: #e5eee0;
+  color: #15241d;
   box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .28), 0 8px 24px rgba(0, 18, 12, .28);
   transition: transform .15s ease, filter .15s ease, box-shadow .15s ease;
 }
