@@ -252,7 +252,7 @@ body.dark-mode .about-section p, body.dark-mode .about-section li { color: #d1df
   #cards-view > .editor-panel .card-preview-shell { align-self: stretch; width: 100%; padding-top: 1.6rem; }
   #cards-view > .editor-panel form label { margin: .25rem 0; }
   #cards-view > .editor-panel .actions { margin-top: .65rem; }
-  #cards-view > .editor-panel #card-canvas { width: min(100%, 410px); max-width: none; }
+  #cards-view > .editor-panel #card-canvas { width: min(100%, 340px); max-width: none; }
   #cards-view > .editor-panel textarea { min-height: 82px; }
   #decks-view > .sidebar,
   #decks-view > .editor-panel,
@@ -395,7 +395,7 @@ body.dark-mode .profile-save-status.error { color: #ef9187; }
 #deck-card-preview-note { min-height: 1.3rem; margin: 0; color: #68756d; text-align: center; font-size: .82rem; }
 .card-preview-shell { align-self: start; display: flex; flex-direction: column; align-items: center; gap: .4rem; min-width: 0; }
 .mobile-editor-close { display: none; }
-#card-canvas { width: min(100%, 420px); height: auto; aspect-ratio: 5 / 7; border-radius: 18px; box-shadow: 0 10px 24px #2225; background: #ece6d8; }
+#card-canvas { width: min(100%, 340px); height: auto; aspect-ratio: 5 / 7; border-radius: 18px; box-shadow: 0 10px 24px #2225; background: #ece6d8; }
 #card-canvas { cursor: pointer; }
 #card-form > .card-direct-edit-field { display: none; }
 .card-field-modal { position: fixed; z-index: 70; inset: 0; display: grid; place-items: center; padding: 1rem; }
