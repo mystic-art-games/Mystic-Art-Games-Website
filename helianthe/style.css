@@ -166,6 +166,8 @@ body.dark-mode .about-section p, body.dark-mode .about-section li { color: #d1df
 }
 .panel-head { display: flex; justify-content: space-between; align-items: center; gap: .7rem; }
 .panel-head h1, .panel-head h2 { margin: .2rem 0 .8rem; font-size: 1.7rem; }
+#cards-view > .sidebar > .panel-head h1,
+#decks-view > .sidebar > .panel-head h1 { margin: 0; line-height: 1.2; }
 #profile-heading { display: flex; align-items: center; gap: .6rem; }
 .tag { display: inline-flex; align-items: center; gap: .35rem; font-size: .82rem; color: #50705e; }
 .item-list { display: flex; flex-direction: column; gap: .35rem; margin-top: .8rem; }
