@@ -1373,8 +1373,9 @@ $('#confirm-delete-card').addEventListener('click', async () => {
   } catch (cause) {
     closeDeleteCardModal();
     status(cause.message, true);
-    deleteButton.disabled = false;
+  } finally {
     confirmButton.disabled = false;
+    deleteButton.disabled = !state.card || !state.user || (state.card.owner_id !== state.user.id && !state.isAdmin);
   }
   if (artworkId && deleted) {
     await api.deleteArtwork(artworkId).catch(error => console.error('Artwork cleanup failed', error));
@@ -1507,8 +1508,9 @@ $('#confirm-delete-deck').addEventListener('click', async () => {
   } catch (cause) {
     closeDeleteDeckModal();
     status(cause.message, true);
-    button.disabled = false;
+  } finally {
     confirmButton.disabled = false;
+    button.disabled = !state.deck || !state.user || (!canEditDeck(state.deck) && !state.isAdmin);
   }
 });
 for (const field of [$('#deck-form').elements.name, $('#deck-form').elements.patron_name]) {
