@@ -352,8 +352,8 @@ body.dark-mode #decks-view:not(.deck-detail-open) #deck-list .deck-list-item:hov
   #decks-view .deck-card-layout { grid-template-rows: minmax(0, 1fr); }
   #decks-view .deck-card-preview-shell,
   #decks-view .deck-patron-preview-shell { height: 100%; min-height: 0; overflow: hidden; }
-  #decks-view #deck-card-canvas { width: auto; height: calc(100% - 2.6rem); max-width: 100%; object-fit: contain; }
-  #decks-view #deck-patron-canvas { width: auto; height: calc(100% - 1.2rem); max-width: 100%; object-fit: contain; }
+  #decks-view #deck-card-canvas,
+  #decks-view #deck-patron-canvas { width: auto; height: calc(100% - 2.6rem); max-width: 100%; object-fit: contain; }
   #decks-view .deck-card-table-shell .art-scroll-wrap > .deck-cards { height: 100%; max-height: none; overflow-y: auto; }
 }
 .profile-group-title { margin-top: .9rem; color: #50705e; font-size: .78rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
@@ -496,7 +496,7 @@ body.dark-mode .card-filters #card-filter-terrain:has(option[value="Radiance"]:c
 #decks-view #deck-form .deck-name-field .actions { margin-top: .45rem; }
 #decks-view #deck-form .deck-name-field .actions { width: max-content; max-width: 100%; }
 #decks-view #deck-form .deck-name-field .actions button { white-space: nowrap; }
-.deck-card-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, 300px) minmax(240px, 300px); gap: 1rem; align-items: start; }
+.deck-card-layout { display: grid; grid-template-columns: minmax(0, 1fr) repeat(2, minmax(0, 260px)); gap: 1rem; align-items: start; }
 .deck-card-table { min-width: 0; }
 .deck-card-table h3 { margin: .75rem 0 .1rem; }
 .deck-card-preview-shell { display: flex; flex-direction: column; align-items: center; gap: .45rem; min-width: 0; padding-top: 1.2rem; }
