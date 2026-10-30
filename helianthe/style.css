@@ -408,6 +408,8 @@ body.dark-mode .card-filters #card-filter-terrain:has(option[value="Radiance"]:c
 #decks-view #deck-list .deck-list-title { font-size: .9rem; line-height: 1.15; }
 #decks-view #deck-list .deck-patron { font-size: .68rem; line-height: 1.15; }
 #decks-view #deck-list .deck-list-owner { font-size: .7rem; }
+#cards-view #card-list .card-list-owner,
+#decks-view #deck-list .deck-list-owner { color: #4b5d52; }
 @media (min-width: 851px) {
   #decks-view .deck-table-shell .art-scroll-wrap > #deck-list { width: calc(100% - 4px); padding-right: .5rem; }
 }
@@ -747,6 +749,8 @@ body.dark-mode #cards-view #card-list .card-list-item.selected { border-bottom-c
 body.dark-mode #decks-view #deck-list .deck-list-item { border-bottom-color: #355947; background: transparent; }
 body.dark-mode #decks-view #deck-list .deck-list-item:hover:not(:disabled) { background: #204b3b; }
 body.dark-mode #decks-view #deck-list .deck-list-item.selected { border-bottom-color: #416853; background: #285944; }
+body.dark-mode #cards-view #card-list .card-list-owner,
+body.dark-mode #decks-view #deck-list .deck-list-owner { color: #9aafa0; }
 body.dark-mode .item-list small,
 body.dark-mode .hint,
 body.dark-mode .tag,
