@@ -326,9 +326,10 @@ body.dark-mode .profile-save-status.error { color: #ef9187; }
 #profile-new-deck:hover:not(:disabled) { background: #1d4939; }
 .card-filters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .45rem; margin-top: .65rem; }
 .card-filters label { margin: 0; color: #5a6e64; font-size: .78rem; font-weight: 700; }
-.card-filters select { margin-top: .2rem; padding: .45rem .4rem; font-size: .82rem; }
+.card-filters select { display: flex; align-items: center; justify-content: space-between; gap: .4rem; margin-top: .2rem; padding: .45rem .4rem; font-size: .82rem; }
 .card-filters select,
 .card-filters select::picker(select) { appearance: base-select; }
+.card-filters select::picker-icon { flex: 0 0 auto; margin-left: auto; }
 .card-filters select::picker(select) {
   margin-top: .3rem;
   padding: .25rem;
