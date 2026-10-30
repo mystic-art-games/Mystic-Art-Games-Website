@@ -517,8 +517,8 @@ body.dark-mode .card-filters #card-filter-terrain:has(option[value="Radiance"]:c
 .deck-card-layout { display: grid; grid-template-columns: minmax(0, 1fr) repeat(2, minmax(0, 260px)); gap: 1rem; align-items: start; }
 .deck-card-table { display: flex; min-width: 0; min-height: 0; flex-direction: column; }
 .deck-card-table h3 { margin: .75rem 0 .1rem; }
-.deck-card-preview-shell { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .45rem; min-width: 0; padding-top: 1.2rem; }
-.deck-patron-preview-shell { display: flex; min-width: 0; flex-direction: column; align-items: center; justify-content: center; padding-top: 1.2rem; }
+.deck-card-preview-shell { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .45rem; min-width: 0; padding-top: 0; }
+.deck-patron-preview-shell { display: flex; min-width: 0; flex-direction: column; align-items: center; justify-content: center; padding-top: 0; }
 .deck-patron-preview-shell canvas { display: block; }
 #decks-view #deck-card-canvas, #decks-view #deck-patron-canvas { cursor: pointer; }
 #decks-view .is-empty canvas { display: none; }
@@ -539,7 +539,7 @@ body.dark-mode #decks-view .deck-empty-preview { border-color: rgba(226, 246, 23
 .deck-summary-item.terrain-radiance { color: #a87318; }
 .deck-card-preview-close { display: none; }
 #deck-card-canvas { width: min(100%, 300px); height: auto; aspect-ratio: 5 / 7; }
-.deck-preview-edit-hint { max-width: 24rem; min-height: 1.3rem; margin: .35rem auto 0; color: #68756d; font-size: .95rem; line-height: 1.35; text-align: center; pointer-events: none; }
+.deck-preview-edit-hint { max-width: 24rem; min-height: 1.3rem; margin: .8rem auto 0; color: #68756d; font-size: .95rem; line-height: 1.35; text-align: center; pointer-events: none; }
 body.dark-mode .deck-preview-edit-hint { color: #fff; }
 .card-preview-shell { align-self: start; display: flex; flex-direction: column; align-items: center; gap: .4rem; min-width: 0; }
 .mobile-editor-close { display: none; }
@@ -589,7 +589,7 @@ body.dark-mode #card-edit-hint { color: #fff; }
 #download-png { align-self: center; }
 .card-preview-actions { display: flex; justify-content: center; gap: .6rem; margin-top: .65rem; }
 .card-preview-actions > button { height: 2.35rem; min-height: 0; display: inline-flex; align-items: center; justify-content: center; }
-.deck-preview-actions { width: 100%; padding-top: .65rem; justify-content: center; }
+.deck-preview-actions { width: 100%; margin-top: auto; padding-top: .65rem; justify-content: center; }
 .deck-preview-actions > button { padding-inline: .5rem; white-space: nowrap; }
 .card-preview-actions #download-png { margin-top: 0; }
 #cards-view > .editor-panel .card-preview-actions #download-png { margin-top: 0; }
