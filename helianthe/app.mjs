@@ -852,6 +852,8 @@ function renderDeckCards() {
 }
 
 function renderDeckPatron(patron) {
+  const shell = $('.deck-patron-preview-shell');
+  shell.className = `deck-patron-preview-shell patron-faction-${(patron?.faction || 'none').toLowerCase().replaceAll(/[^a-z]+/g, '-')}`;
   $('#deck-patron-name').textContent = patron?.name || 'No Patron';
   $('#deck-patron-faction').textContent = patron?.faction || '';
 }
