@@ -361,9 +361,11 @@ function selectedAuthorIds(container) {
 }
 
 function cardTypeIconElement(card) {
-  const icon = card.card_type === 'Event' ? document.createElement('span') : document.createElement('img');
-  icon.className = `card-type-icon${card.card_type === 'Event' ? ' event-type-icon' : ''}`;
+  const radianceEntity = card.card_type === 'Entity' && card.terrain === 'Radiance';
+  const icon = card.card_type === 'Event' || radianceEntity ? document.createElement('span') : document.createElement('img');
+  icon.className = `card-type-icon${card.card_type === 'Event' ? ' event-type-icon' : ''}${radianceEntity ? ' radiance-entity-type-icon' : ''}`;
   if (card.card_type === 'Event') icon.style.setProperty('--event-icon-color', eventIconColor(card.terrain));
+  else if (radianceEntity) icon.style.setProperty('--event-icon-color', eventIconColor(card.terrain));
   else { icon.src = cardTypeIcon(card); icon.alt = ''; }
   icon.title = card.card_type;
   return icon;
