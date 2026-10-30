@@ -412,6 +412,8 @@ function requestedTab() {
 
 function showTab(name, { updateUrl = true } = {}) {
   if (!TAB_NAMES.includes(name)) name = 'about';
+  const enteringDecks = name === 'decks' && $('#decks-view').hidden;
+  if (enteringDecks && state.deck) void selectDeck(null);
   closeMobileMenu();
   if (name !== 'decks') closeDeckCardPreview();
   for (const tab of ['cards', 'decks', 'profiles', 'patrons', 'about']) {
