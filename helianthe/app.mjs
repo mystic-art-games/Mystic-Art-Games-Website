@@ -1007,7 +1007,7 @@ async function selectDeck(deck) {
   void renderDeckPatron(patronByName(deck?.patron_name));
   renderDeckAuthorSelect(deck?.author_ids?.[0] || deck?.owner_id || state.user?.id);
   const mine = Boolean(state.user && (!deck || deck.owner_id === state.user.id));
-  for (const field of form.querySelectorAll('input,button,select')) field.disabled = !mine;
+  for (const field of form.querySelectorAll('input,select, #duplicate-deck, #delete-deck')) field.disabled = !mine;
   $('#duplicate-deck').disabled = !deck || !state.user;
   $('#delete-deck').disabled = !deck || !state.user || (!mine && !state.isAdmin);
   const deckCards = deck ? await api.listDeckCards(deck.id) : [];
