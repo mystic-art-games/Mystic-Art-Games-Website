@@ -1161,26 +1161,30 @@ body.dark-mode #delete-deck-modal .auth-modal-card {
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 }
-#card-field-modal #card-field-save {
+#card-field-modal #card-field-save,
+body:not(.dark-mode) #new-card {
   border-color: rgba(73, 120, 94, .55);
   background: linear-gradient(145deg, rgba(117, 166, 130, .88), rgba(52, 117, 90, .9) 52%, rgba(38, 88, 71, .88));
   color: #fff;
   box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .5), 0 2px 8px rgba(34, 98, 49, .2);
   transition: transform .15s ease, filter .15s ease, box-shadow .15s ease;
 }
-#card-field-modal #card-field-save:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.06); box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .65), 0 5px 12px rgba(34, 98, 49, .28); }
+#card-field-modal #card-field-save:hover:not(:disabled),
+body:not(.dark-mode) #new-card:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.06); box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .65), 0 5px 12px rgba(34, 98, 49, .28); }
 body.dark-mode #card-field-modal .card-field-dialog {
   border-color: rgba(226, 246, 235, .48) !important;
   background: linear-gradient(145deg, rgba(185, 220, 200, .86), rgba(65, 111, 88, .8) 62%, rgba(32, 82, 61, .76)) !important;
   box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .3), 0 18px 60px rgba(0, 18, 12, .38) !important;
 }
-body.dark-mode #card-field-modal #card-field-save {
+body.dark-mode #card-field-modal #card-field-save,
+body.dark-mode #new-card {
   border-color: rgba(226, 246, 235, .34);
   background: linear-gradient(145deg, rgba(91, 143, 111, .72), rgba(42, 94, 65, .84) 52%, rgba(28, 70, 52, .88));
   color: #eef8ed;
   box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .28), 0 6px 16px rgba(0, 18, 12, .3);
 }
-body.dark-mode #card-field-modal #card-field-save:hover:not(:disabled) { filter: brightness(1.12); box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .34), 0 6px 16px rgba(0, 18, 12, .38); }
+body.dark-mode #card-field-modal #card-field-save:hover:not(:disabled),
+body.dark-mode #new-card:hover:not(:disabled) { filter: brightness(1.12); box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .34), 0 6px 16px rgba(0, 18, 12, .38); }
 #cards-view #card-list .card-list-item { border-bottom-color: transparent !important; }
 @media (max-width: 850px) {
   body.dark-mode #about-view > .about-panel {
