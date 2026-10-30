@@ -156,7 +156,7 @@ body.dark-mode .about-section p, body.dark-mode .about-section li { color: #d1df
 #decks-view.deck-detail-open > .decks-sidebar { display: none; }
 #decks-view.deck-detail-open > .editor-panel { width: min(100%, 1100px); justify-self: center; }
 #decks-view.deck-detail-open .back-to-decks { display: inline-flex; }
-#decks-view.deck-detail-open #deck-form { display: none; }
+#decks-view.deck-detail-open #deck-form { display: block; }
 .workspace,
 .patrons-workspace { width: calc(100% - 2rem); }
 .workspace > .panel,
