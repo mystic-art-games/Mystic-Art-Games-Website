@@ -22,8 +22,9 @@ const ARTWORK_UPLOAD_LIMIT = 100 * 1024;
 const AVATAR_UPLOAD_LIMIT = 80 * 1024;
 const DECK_PATRONS_KEY = 'helianthe-deck-patrons';
 const PATRON_CARD_OVERRIDES_KEY = 'helianthe-patron-card-overrides';
+const DELETED_PATRON_CARDS_KEY = 'helianthe-deleted-patron-cards';
 const PATRON_TERRAIN = { Flowbound: 'Flow', Brightworks: 'Radiance', Dreamwardens: 'Symbiosis', Verdant: 'Verdant' };
-const patronCards = PATRONS.map(patron => ({
+let patronCards = PATRONS.map(patron => ({
   id: `patron:${patron.name}`,
   title: patron.name,
   card_type: 'Patron',
@@ -36,6 +37,10 @@ const patronCards = PATRONS.map(patron => ({
 try {
   const overrides = JSON.parse(localStorage.getItem(PATRON_CARD_OVERRIDES_KEY) || '{}');
   for (const card of patronCards) Object.assign(card, overrides[card.id] || {});
+} catch {}
+try {
+  const deletedPatrons = new Set(JSON.parse(localStorage.getItem(DELETED_PATRON_CARDS_KEY) || '[]'));
+  patronCards = patronCards.filter(card => !deletedPatrons.has(card.id));
 } catch {}
 
 function applyTheme(dark) {
@@ -651,7 +656,7 @@ function renderPreview() {
       if (serial !== state.renderSerial || result.cancelled) return;
       $('#preview-note').textContent = result.clipped ? 'Text is too long — shorten the effect before exporting.' : '';
       $('#download-png').disabled = result.clipped;
-      $('#delete-card').disabled = !state.card || !!state.card.patron || !state.user || (state.card.owner_id !== state.user.id && !state.isAdmin);
+      $('#delete-card').disabled = !state.card || !state.user || (!state.card.patron && state.card.owner_id !== state.user.id && !state.isAdmin);
     })
     .catch(cause => { if (serial === state.renderSerial) $('#preview-note').textContent = cause.message; });
 }
@@ -1391,21 +1396,26 @@ $('#confirm-delete-card').addEventListener('click', async () => {
   deleteButton.disabled = true;
   confirmButton.disabled = true;
   try {
-    await api.deleteCard(state.user.id, card.id, state.isAdmin);
+    if (card.patron) {
+      const deletedPatrons = new Set(JSON.parse(localStorage.getItem(DELETED_PATRON_CARDS_KEY) || '[]'));
+      deletedPatrons.add(card.id);
+      localStorage.setItem(DELETED_PATRON_CARDS_KEY, JSON.stringify([...deletedPatrons]));
+      patronCards = patronCards.filter(item => item.id !== card.id);
+    } else await api.deleteCard(state.user.id, card.id, state.isAdmin);
     deleted = true;
-    state.cards = state.cards.filter(item => item.id !== card.id);
+    if (!card.patron) state.cards = state.cards.filter(item => item.id !== card.id);
     state.card = null;
     closeDeleteCardModal();
     renderCardList();
     selectCard(state.cards[0] || patronCards[0]);
-    await reloadCollections();
+    if (!card.patron) await reloadCollections();
     status('Card deleted.');
   } catch (cause) {
     closeDeleteCardModal();
     status(cause.message, true);
   } finally {
     confirmButton.disabled = false;
-    deleteButton.disabled = !state.card || !state.user || (state.card.owner_id !== state.user.id && !state.isAdmin);
+    deleteButton.disabled = !state.card || !state.user || (!state.card.patron && state.card.owner_id !== state.user.id && !state.isAdmin);
   }
   if (artworkId && deleted) {
     await api.deleteArtwork(artworkId).catch(error => console.error('Artwork cleanup failed', error));
