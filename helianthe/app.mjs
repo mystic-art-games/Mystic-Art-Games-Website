@@ -29,7 +29,7 @@ const patronCards = PATRONS.map(patron => ({
   card_type: 'Patron',
   terrain: PATRON_TERRAIN[patron.faction],
   effect: [`Credo: “${patron.credo}”`, `Scoring: ${patron.scoring}`, patron.ability ? `Ability: ${patron.ability}` : ''].filter(Boolean).join('\n\n'),
-  author: patron.faction,
+  author: 'Helianthe',
   patron,
 }));
 try {
@@ -452,7 +452,7 @@ function refreshCardAuthorFilter() {
   const select = $('#card-filter-author');
   const current = select.value;
   const authors = [...new Set([
-    ...PATRONS.map(patron => patron.faction),
+    ...patronCards.map(card => card.author),
     ...state.profiles.map(profile => profile.display_name || ownerName(profile.id)),
     ...state.cards.flatMap(card => authorNames(card.author_ids, card.owner_id)),
   ].filter(Boolean))].sort((a, b) => a.localeCompare(b));
@@ -1440,7 +1440,7 @@ async function saveCardForm() {
     const previousArtworkId = state.card?.artwork_id || null;
     let card;
     if (state.card?.patron) {
-      const updates = { title: values.title, terrain: values.terrain, effect: values.effect, author: state.card.author };
+      const updates = { title: values.title, terrain: values.terrain, effect: values.effect, author: 'Helianthe' };
       Object.assign(state.card, updates);
       const overrides = JSON.parse(localStorage.getItem(PATRON_CARD_OVERRIDES_KEY) || '{}');
       overrides[state.card.id] = updates;
