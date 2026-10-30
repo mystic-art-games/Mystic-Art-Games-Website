@@ -434,6 +434,7 @@ body.dark-mode .card-filters #card-filter-terrain:has(option[value="Radiance"]:c
 .two-cols { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; }
 .deck-meta-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(180px, 1fr); gap: .8rem; align-items: start; }
 .deck-meta-row .author-picker { margin: .65rem 0; }
+#decks-view #deck-form .actions { margin-top: .45rem; }
 .deck-card-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, 300px); gap: 1rem; align-items: start; }
 .deck-card-table { min-width: 0; }
 .deck-card-table h3 { margin: .75rem 0 .1rem; }
