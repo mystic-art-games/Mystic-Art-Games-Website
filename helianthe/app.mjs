@@ -879,7 +879,7 @@ async function showDeckCardPreview(card) {
 
 async function selectDeck(deck) {
   state.deck = deck;
-  $('#decks-view').classList.toggle('deck-detail-open', Boolean(deck));
+  if (!deck) $('#decks-view').classList.remove('deck-detail-open');
   renderDeckList();
   const canDelete = Boolean(deck && state.user && (deck.owner_id === state.user.id || state.isAdmin));
   $('#duplicate-deck').disabled = !deck || !state.user;
@@ -897,11 +897,15 @@ async function selectDeck(deck) {
   for (const field of form.querySelectorAll('input,button,select')) field.disabled = !mine;
   $('#duplicate-deck').disabled = !deck || !state.user;
   $('#delete-deck').disabled = !deck || !state.user || (!mine && !state.isAdmin);
-  state.deckCards = deck ? await api.listDeckCards(deck.id) : [];
+  const deckCards = deck ? await api.listDeckCards(deck.id) : [];
+  if (deck && state.deck?.id !== deck.id) return;
+  state.deckCards = deckCards;
   const deckIsMine = Boolean(state.deck && state.deck.owner_id === state.user?.id);
   const firstDeckCard = state.cards.find(card => deckIsMine || state.deckCards.some(item => item.card_id === card.id && item.copies > 0));
+  state.deckPreviewCard = firstDeckCard || null;
+  renderDeckCards();
+  if (deck) $('#decks-view').classList.add('deck-detail-open');
   if (firstDeckCard) await showDeckCardPreview(firstDeckCard);
-  else renderDeckCards();
 }
 
 function nextNewDeckName() {
