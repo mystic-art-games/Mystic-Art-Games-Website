@@ -497,7 +497,7 @@ body.dark-mode .card-filters #card-filter-terrain:has(option[value="Radiance"]:c
 #decks-view #deck-form .deck-name-field .actions { width: max-content; max-width: 100%; }
 #decks-view #deck-form .deck-name-field .actions button { white-space: nowrap; }
 .deck-card-layout { display: grid; grid-template-columns: minmax(0, 1fr) repeat(2, minmax(0, 260px)); gap: 1rem; align-items: start; }
-.deck-card-table { min-width: 0; }
+.deck-card-table { display: flex; min-width: 0; min-height: 0; flex-direction: column; }
 .deck-card-table h3 { margin: .75rem 0 .1rem; }
 .deck-card-preview-shell { display: flex; flex-direction: column; align-items: center; gap: .45rem; min-width: 0; padding-top: 1.2rem; }
 .deck-patron-preview-shell { display: flex; min-width: 0; flex-direction: column; align-items: center; padding-top: 1.2rem; }
