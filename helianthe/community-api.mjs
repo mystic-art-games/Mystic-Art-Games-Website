@@ -210,10 +210,10 @@ export function createCommunityApi(client) {
       return rows[0];
     },
 
-    async duplicateDeck(userId, deck, cards) {
+    async duplicateDeck(userId, deck, cards, name = `${deck.name} 2`) {
       if (!userId || !deck?.id) throw new Error('Select a deck to duplicate.');
       const copy = await this.createDeck(userId, {
-        name: `${deck.name} Copy`.slice(0, 100),
+        name: String(name).slice(0, 100),
         patron_name: deck.patron_name,
         author_ids: [userId],
       });

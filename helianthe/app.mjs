@@ -897,6 +897,17 @@ function nextNewDeckName() {
   return name;
 }
 
+function nextDuplicateDeckName(deck) {
+  const sourceName = String(deck?.name || 'Deck').trim() || 'Deck';
+  const numbered = sourceName.match(/^(.*) (\d+)$/);
+  const baseName = (numbered ? numbered[1] : sourceName).trim() || 'Deck';
+  let suffix = numbered ? Number(numbered[2]) + 1 : 2;
+  const existingNames = new Set(state.decks.map(item => item.name));
+  let name = `${baseName} ${suffix}`;
+  while (existingNames.has(name)) name = `${baseName} ${++suffix}`;
+  return name.slice(0, 100);
+}
+
 async function createNewDeck() {
   deckSaveQueue = deckSaveQueue.catch(() => {}).then(async () => {
     await selectDeck(null);
@@ -1452,7 +1463,7 @@ $('#duplicate-deck').addEventListener('click', async () => {
   if (!state.user || !state.deck) return;
   const duplicate = $('#duplicate-deck'); duplicate.disabled = true;
   try {
-    const deck = await api.duplicateDeck(state.user.id, state.deck, state.deckCards);
+    const deck = await api.duplicateDeck(state.user.id, state.deck, state.deckCards, nextDuplicateDeckName(state.deck));
     await reloadCollections();
     await selectDeck(state.decks.find(item => item.id === deck.id) || deck);
     status('Deck duplicated.');
