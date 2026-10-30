@@ -21,7 +21,16 @@ const state = { user: null, isAdmin: false, cards: [], decks: [], profiles: [], 
 const ARTWORK_UPLOAD_LIMIT = 100 * 1024;
 const AVATAR_UPLOAD_LIMIT = 80 * 1024;
 const DECK_PATRONS_KEY = 'helianthe-deck-patrons';
-let patronRenderSerial = 0;
+const PATRON_TERRAIN = { Flowbound: 'Flow', Brightworks: 'Radiance', Dreamwardens: 'Symbiosis', Verdant: 'Verdant' };
+const patronCards = PATRONS.map(patron => ({
+  id: `patron:${patron.name}`,
+  title: patron.name,
+  card_type: 'Patron',
+  terrain: PATRON_TERRAIN[patron.faction],
+  effect: [`Credo: “${patron.credo}”`, `Scoring: ${patron.scoring}`, patron.ability ? `Ability: ${patron.ability}` : ''].filter(Boolean).join('\n\n'),
+  author: patron.faction,
+  patron,
+}));
 
 function applyTheme(dark) {
   document.body.classList.toggle('dark-mode', dark);
@@ -404,10 +413,11 @@ function button(label, action, className = '') {
   return element;
 }
 
-const TAB_NAMES = ['cards', 'decks', 'profiles', 'patrons', 'about'];
+const TAB_NAMES = ['cards', 'decks', 'profiles', 'about'];
 
 function requestedTab() {
   const name = window.location.hash.slice(1).toLowerCase();
+  if (name === 'patrons') return 'cards';
   return TAB_NAMES.includes(name) ? name : 'about';
 }
 
@@ -417,11 +427,10 @@ function showTab(name, { updateUrl = true } = {}) {
   if (enteringDecks && state.deck) void selectDeck(null);
   closeMobileMenu();
   if (name !== 'decks') closeDeckCardPreview();
-  for (const tab of ['cards', 'decks', 'profiles', 'patrons', 'about']) {
+  for (const tab of TAB_NAMES) {
     $(`#${tab}-view`).hidden = tab !== name;
     $(`[data-tab="${tab}"]`).classList.toggle('active', tab === name);
   }
-  if (name === 'patrons') renderPatrons();
   if (updateUrl && window.location.hash !== `#${name}`) window.history.replaceState(null, '', `#${name}`);
 }
 
@@ -434,48 +443,11 @@ function closeMobileMenu() {
   toggle.setAttribute('aria-label', 'Open navigation menu');
 }
 
-function renderPatrons() {
-  const list = $('#patron-list');
-  list.replaceChildren();
-  const selected = PATRONS.find(patron => patron.name === list.dataset.selectedPatron) || PATRONS[0];
-  for (const patron of PATRONS) {
-    const row = button('', () => {
-      list.dataset.selectedPatron = patron.name;
-      list.querySelector('.selected')?.classList.remove('selected');
-      row.classList.add('selected');
-      showPatronDetail(patron);
-    }, `card-list-item patron-list-item${patron === selected ? ' selected' : ''}`);
-    const name = document.createElement('span');
-    name.className = 'card-list-title';
-    name.textContent = patron.name;
-    const faction = document.createElement('small');
-    faction.className = `card-list-owner ${patronFactionClass(patron.faction)}`;
-    faction.textContent = patron.faction;
-    row.append(name, faction);
-    list.append(row);
-  }
-  showPatronDetail(selected);
-}
-
-function showPatronDetail(patron) {
-  const detail = $('#patron-detail');
-  detail.replaceChildren();
-  const canvas = document.createElement('canvas');
-  canvas.id = 'patron-card-canvas';
-  canvas.width = 1500;
-  canvas.height = 2100;
-  canvas.setAttribute('aria-label', `${patron.name}, patron card preview`);
-  detail.append(canvas);
-  const terrainByFaction = { Flowbound: 'Flow', Brightworks: 'Radiance', Dreamwardens: 'Symbiosis', Verdant: 'Verdant' };
-  const effect = [`Credo: “${patron.credo}”`, `Scoring: ${patron.scoring}`, patron.ability ? `Ability: ${patron.ability}` : ''].filter(Boolean).join('\n\n');
-  const serial = ++patronRenderSerial;
-  void renderCard(canvas, { title: patron.name, card_type: 'Entity', terrain: terrainByFaction[patron.faction] || 'Verdant', effect, author: patron.faction }, '', () => serial === patronRenderSerial, { hideIcons: true });
-}
-
 function refreshCardAuthorFilter() {
   const select = $('#card-filter-author');
   const current = select.value;
   const authors = [...new Set([
+    ...PATRONS.map(patron => patron.faction),
     ...state.profiles.map(profile => profile.display_name || ownerName(profile.id)),
     ...state.cards.flatMap(card => authorNames(card.author_ids, card.owner_id)),
   ].filter(Boolean))].sort((a, b) => a.localeCompare(b));
@@ -491,24 +463,26 @@ function renderCardList() {
   const terrain = $('#card-filter-terrain').value;
   const list = $('#card-list');
   list.replaceChildren();
-  for (const card of state.cards.filter(item => {
+  for (const card of [...state.cards, ...patronCards].sort((a, b) => a.title.localeCompare(b.title)).filter(item => {
     const matchesSearch = `${item.title} ${item.effect}`.toLocaleLowerCase().includes(query);
     const matchesType = !type || item.card_type === type;
-    const matchesAuthor = !author || authorNames(item.author_ids, item.owner_id).includes(author);
+    const matchesAuthor = !author || (item.patron ? item.author === author : authorNames(item.author_ids, item.owner_id).includes(author));
     const matchesTerrain = !terrain || (terrain === 'none' ? !item.terrain : item.terrain === terrain);
     return matchesSearch && matchesType && matchesAuthor && matchesTerrain;
   })) {
     const row = button('', () => selectCard(card, { openMobile: true }), `card-list-item${state.card?.id === card.id ? ' selected' : ''}`);
     row.dataset.cardId = card.id;
     row.setAttribute('aria-label', `${card.card_type}: ${card.title}`);
-    const icon = cardTypeIconElement(card);
+    const icon = card.patron ? document.createElement('span') : cardTypeIconElement(card);
+    if (card.patron) { icon.className = `card-type-icon patron-faction-icon ${patronFactionClass(card.patron.faction)}`; icon.setAttribute('aria-hidden', 'true'); }
     const title = document.createElement('span');
     title.className = `card-list-title ${terrainClass(card.terrain)}`;
     title.textContent = card.title;
     row.append(icon, title);
     const meta = document.createElement('small');
     meta.className = 'card-list-owner';
-    meta.append(authorDisplayElement(card.author_ids, card.owner_id));
+    if (card.patron) meta.textContent = card.author;
+    else meta.append(authorDisplayElement(card.author_ids, card.owner_id));
     row.append(meta);
     list.append(row);
   }
@@ -530,6 +504,7 @@ function setCardFormEditable(canEdit) {
 }
 
 function canEditCard(card) {
+  if (card?.patron) return false;
   if (!state.user) return false;
   if (!card) return true;
   return state.isAdmin || card.owner_id === state.user.id || card.author_ids?.includes(state.user.id);
@@ -661,15 +636,15 @@ function renderPreview() {
     card_type: form.elements.card_type.value,
     terrain: form.elements.terrain.value,
     effect: form.elements.effect.value,
-    author: authorNames(selectedAuthorIds($('#card-author-options')), state.user?.id).join(', '),
+    author: state.card?.patron ? state.card.author : authorNames(selectedAuthorIds($('#card-author-options')), state.user?.id).join(', '),
   };
   $('#download-png').disabled = true;
-  void renderCard($('#card-canvas'), card, state.artworkUrl || '', () => serial === state.renderSerial)
+  void renderCard($('#card-canvas'), card, state.artworkUrl || '', () => serial === state.renderSerial, { hideIcons: card.card_type === 'Patron' })
     .then(result => {
       if (serial !== state.renderSerial || result.cancelled) return;
       $('#preview-note').textContent = result.clipped ? 'Text is too long — shorten the effect before exporting.' : '';
       $('#download-png').disabled = result.clipped;
-      $('#delete-card').disabled = !state.card || !state.user || (state.card.owner_id !== state.user.id && !state.isAdmin);
+      $('#delete-card').disabled = !state.card || !!state.card.patron || !state.user || (state.card.owner_id !== state.user.id && !state.isAdmin);
     })
     .catch(cause => { if (serial === state.renderSerial) $('#preview-note').textContent = cause.message; });
 }
@@ -1088,7 +1063,7 @@ function startRealtimeSync() {
     const selectedId = state.card?.id;
     try {
       await reloadCollections();
-      if (selectedId && !state.cardFormDirty && $('#card-field-modal').hidden) selectCard(state.cards.find(card => card.id === selectedId) || state.cards[0] || null);
+      if (selectedId && !state.cardFormDirty && $('#card-field-modal').hidden) selectCard([...state.cards, ...patronCards].find(card => card.id === selectedId) || state.cards[0] || patronCards[0]);
       else renderCardList();
     } catch (cause) { status(cause.message, true); }
   };
@@ -1177,7 +1152,7 @@ async function loadWorkspace() {
     $('#sign-in').hidden = true;
     $('#sign-out').hidden = false;
     showTab(requestedTab());
-    selectCard(state.cards[0] || null);
+    selectCard(state.cards[0] || patronCards[0]);
     await selectDeck(null);
     const profile = state.profiles.find(profile => profile.id === user.id) || state.profiles[0];
     selectProfile(profile);
@@ -1218,7 +1193,7 @@ async function loadPublicWorkspace() {
     $('#sign-in').hidden = false;
     $('#sign-out').hidden = true;
     $('#account-name').hidden = true;
-    selectCard(state.cards[0] || null);
+    selectCard(state.cards[0] || patronCards[0]);
     await selectDeck(null);
     if (state.profiles[0]) selectProfile(state.profiles[0]);
     showTab(requestedTab());
@@ -1415,7 +1390,7 @@ $('#confirm-delete-card').addEventListener('click', async () => {
     state.card = null;
     closeDeleteCardModal();
     renderCardList();
-    selectCard(state.cards[0] || null);
+    selectCard(state.cards[0] || patronCards[0]);
     await reloadCollections();
     status('Card deleted.');
   } catch (cause) {

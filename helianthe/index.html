@@ -13,9 +13,9 @@
   <link rel="apple-touch-icon" href="../images/helianthe-sunflower.png?v=helianthe-favicon-2">
   <link rel="manifest" href="./manifest.webmanifest">
   <title>Helianthe</title>
-  <link rel="stylesheet" href="./style.css?v=helianthe-ui-102">
+  <link rel="stylesheet" href="./style.css?v=helianthe-ui-103">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script type="module" src="./app.mjs?v=helianthe-ui-47"></script>
+  <script type="module" src="./app.mjs?v=helianthe-ui-48"></script>
 </head>
 <body>
   <header class="masthead">
@@ -30,7 +30,6 @@
           <button type="button" data-tab="cards">Cards</button>
           <button type="button" data-tab="decks">Decks</button>
           <button type="button" data-tab="profiles">Profiles</button>
-          <button type="button" data-tab="patrons">Patrons</button>
         </nav>
         <div class="theme-control">
           <span class="theme-label">Dark mode</span>
@@ -118,7 +117,7 @@
       <div class="panel-head"><h1>Cards</h1><button id="new-card" type="button">Add New Card</button></div>
       <input id="card-search" type="search" placeholder="Search by card name or effect…" aria-label="Search by card name or effect">
       <div class="card-filters" aria-label="Filter cards">
-        <label>Type<select id="card-filter-type"><option value="">All types</option><option value="Entity">Entity</option><option value="Event">Event</option></select></label>
+        <label>Type<select id="card-filter-type"><option value="">All types</option><option value="Entity">Entity</option><option value="Event">Event</option><option value="Patron">Patron</option></select></label>
         <label>Author<select id="card-filter-author"><option value="">All authors</option></select></label>
         <label>Color<select id="card-filter-terrain"><option value="">All colors</option><option value="Symbiosis">Symbiosis</option><option value="Flow">Flow</option><option value="Verdant">Verdant</option><option value="Radiance">Radiance</option><option value="none">No color</option></select></label>
       </div>
@@ -132,7 +131,7 @@
       <div class="card-layout">
         <form id="card-form">
           <label class="card-direct-edit-field">Title<input name="title" required maxlength="200"></label>
-          <div class="two-cols card-direct-edit-field"><label>Type<select name="card_type"><option>Entity</option><option>Event</option></select></label><label>Terrain<select name="terrain"><option value="">None</option><option>Symbiosis</option><option>Flow</option><option>Verdant</option><option>Radiance</option></select></label></div>
+          <div class="two-cols card-direct-edit-field"><label>Type<select name="card_type"><option>Entity</option><option>Event</option><option disabled>Patron</option></select></label><label>Terrain<select name="terrain"><option value="">None</option><option>Symbiosis</option><option>Flow</option><option>Verdant</option><option>Radiance</option></select></label></div>
           <label class="card-direct-edit-field">Effect<textarea name="effect" rows="5" maxlength="6000"></textarea></label>
         <fieldset class="author-picker card-direct-edit-field"><legend>Authors</legend><div id="card-author-options"></div></fieldset>
           <label class="card-direct-edit-field"><input id="card-artwork" type="file" accept="image/png,image/jpeg,image/webp"></label>
@@ -209,21 +208,6 @@
       <p id="profile-favorite-card" class="profile-favorite-card"></p>
       <div class="profile-decks-head"><h3>Decks</h3><button id="profile-new-deck" type="button" hidden>Add new deck</button></div>
       <div id="profile-decks" class="item-list"></div>
-    </section>
-  </main>
-
-  <main id="patrons-view" class="workspace patrons-workspace" hidden>
-    <aside class="panel sidebar patrons-sidebar">
-      <div class="panel-head"><h1>Patrons</h1></div>
-      <div class="patron-table-shell">
-        <div class="list-table-head patron-list-head" aria-hidden="true"><span>Patron name</span><span>Faction</span></div>
-        <div id="patron-list" class="item-list patron-list" role="list"></div>
-      </div>
-    </aside>
-    <section class="panel patron-detail-panel" aria-label="Selected patron">
-      <div id="patron-detail" class="patron-detail">
-        <canvas id="patron-card-canvas" width="1500" height="2100" aria-label="Selected patron card preview"></canvas>
-      </div>
     </section>
   </main>
 
