@@ -78,8 +78,8 @@ textarea { resize: vertical; }
 .danger-modal-actions { justify-content: flex-end; }
 .danger-modal-actions button:first-child { background: #a23d35; border-color: #a23d35; }
 .danger-modal-actions button:first-child:hover:not(:disabled) { background: #842f2a; border-color: #842f2a; }
-#new-card { background: #34755a; color: #fff8e8; border-color: #34755a; font-weight: 700; }
-#new-card:hover:not(:disabled) { background: #3d805f; }
+#new-card, #new-deck { background: #34755a; color: #fff8e8; border-color: #34755a; font-weight: 700; }
+#new-card:hover:not(:disabled), #new-deck:hover:not(:disabled) { background: #3d805f; }
 .form-hint { margin: -0.35rem 0 0.75rem; color: #68756d; font-size: 0.85rem; }
 .hint { color: #5a6e64; font-size: .88rem; line-height: 1.35; }
 .workspace,
@@ -985,23 +985,27 @@ body:not(.dark-mode) #decks-view #deck-list .deck-list-item.selected {
   box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .58), 0 2px 8px rgba(34, 98, 49, .2) !important;
 }
 body:not(.dark-mode) #new-card,
-body:not(.dark-mode) #new-card:hover:not(:disabled) {
+body:not(.dark-mode) #new-card:hover:not(:disabled),
+body:not(.dark-mode) #new-deck,
+body:not(.dark-mode) #new-deck:hover:not(:disabled) {
   border-color: transparent;
   background: #84c08d;
   color: #24553b;
   box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .58), 0 2px 8px rgba(34, 98, 49, .2);
   transition: transform .15s ease, filter .15s ease, box-shadow .15s ease;
 }
-body:not(.dark-mode) #new-card:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.06); box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .7), 0 5px 12px rgba(34, 98, 49, .28); }
+body:not(.dark-mode) #new-card:hover:not(:disabled), body:not(.dark-mode) #new-deck:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.06); box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .7), 0 5px 12px rgba(34, 98, 49, .28); }
 body.dark-mode #new-card,
-body.dark-mode #new-card:hover:not(:disabled) {
+body.dark-mode #new-card:hover:not(:disabled),
+body.dark-mode #new-deck,
+body.dark-mode #new-deck:hover:not(:disabled) {
   border-color: #416853;
   background: #2c6b50;
   color: #e5eee0;
   box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .28), 0 8px 24px rgba(0, 18, 12, .28);
   transition: transform .15s ease, filter .15s ease, box-shadow .15s ease;
 }
-body.dark-mode #new-card:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.12); box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .34), 0 6px 16px rgba(0, 18, 12, .38); }
+body.dark-mode #new-card:hover:not(:disabled), body.dark-mode #new-deck:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.12); box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .34), 0 6px 16px rgba(0, 18, 12, .38); }
 #cards-view #card-list .card-list-item { border-bottom-color: transparent !important; }
 @media (max-width: 850px) {
   body.dark-mode #about-view > .about-panel {
