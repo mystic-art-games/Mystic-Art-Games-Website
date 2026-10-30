@@ -881,7 +881,6 @@ async function selectDeck(deck) {
   for (const field of form.querySelectorAll('input,button')) field.disabled = !mine;
   $('#duplicate-deck').disabled = !deck || !state.user;
   $('#delete-deck').disabled = !deck || !state.user || (!mine && !state.isAdmin);
-  $('#deck-heading').textContent = deck?.name || 'New deck';
   state.deckCards = deck ? await api.listDeckCards(deck.id) : [];
   const deckIsMine = Boolean(state.deck && state.deck.owner_id === state.user?.id);
   const firstDeckCard = state.cards.find(card => deckIsMine || state.deckCards.some(item => item.card_id === card.id && item.copies > 0));
