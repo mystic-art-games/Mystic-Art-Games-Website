@@ -1337,24 +1337,25 @@ $('#confirm-delete-card').addEventListener('click', async () => {
   if (!card || !state.user) return closeDeleteCardModal();
   const deleteButton = $('#delete-card');
   const confirmButton = $('#confirm-delete-card');
-  closeDeleteCardModal();
   deleteButton.disabled = true;
   confirmButton.disabled = true;
   try {
     const artworkId = card.artwork_id;
     await api.deleteCard(state.user.id, card.id, state.isAdmin);
-    if (artworkId) await api.deleteArtwork(artworkId).catch(error => console.error('Artwork cleanup failed', error));
     state.cards = state.cards.filter(item => item.id !== card.id);
     state.card = null;
+    closeDeleteCardModal();
     renderCardList();
-    await reloadCollections();
     selectCard(state.cards[0] || null);
+    await reloadCollections();
     status('Card deleted.');
   } catch (cause) {
+    closeDeleteCardModal();
     status(cause.message, true);
     deleteButton.disabled = false;
     confirmButton.disabled = false;
   }
+  if (artworkId) await api.deleteArtwork(artworkId).catch(error => console.error('Artwork cleanup failed', error));
 });
 
 let savingCard = false;
