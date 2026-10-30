@@ -1517,7 +1517,7 @@ $('#confirm-delete-deck').addEventListener('click', async () => {
     state.deckCards = [];
     state.decks = state.decks.filter(item => item.id !== deck.id);
     closeDeleteDeckModal();
-    await selectDeck(state.decks[0] || null);
+    await selectDeck(null);
     if (state.profile) selectProfile(state.profiles.find(profile => profile.id === state.profile.id) || null);
     status('Deck deleted.');
   } catch (cause) {
