@@ -49,7 +49,7 @@ function tintedEventSymbol(image, terrain) {
   return variants.get(color);
 }
 
-export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () => true) {
+export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () => true, options = {}) {
   const type = card.card_type || card.type || 'Entity';
   const terrain = Object.hasOwn(terrainColors, card.terrain) ? card.terrain : null;
   const frameName = `Frame_${terrain || 'Event'}.svg`;
@@ -121,7 +121,9 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
     else if (symbol) ctx.drawImage(symbol, -27, -27, 54, 54);
     ctx.restore();
   }
-  drawTypeIcon(leftIconX); drawTypeIcon(rightIconX);
+  if (!options.hideIcons) {
+    drawTypeIcon(leftIconX); drawTypeIcon(rightIconX);
+  }
   ctx.font = `700 ${titleSize}px ${cardFont}`;
   ctx.fillStyle = type === 'Event' ? '#3b3b3b' : '#123747'; ctx.textAlign = 'center';
   const titleMetrics = ctx.measureText(title);

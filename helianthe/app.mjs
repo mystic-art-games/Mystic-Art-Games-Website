@@ -21,6 +21,7 @@ const state = { user: null, isAdmin: false, cards: [], decks: [], profiles: [], 
 const ARTWORK_UPLOAD_LIMIT = 100 * 1024;
 const AVATAR_UPLOAD_LIMIT = 80 * 1024;
 const DECK_PATRONS_KEY = 'helianthe-deck-patrons';
+let patronRenderSerial = 0;
 
 function applyTheme(dark) {
   document.body.classList.toggle('dark-mode', dark);
@@ -459,25 +460,16 @@ function renderPatrons() {
 function showPatronDetail(patron) {
   const detail = $('#patron-detail');
   detail.replaceChildren();
-  const title = document.createElement('h2');
-  title.textContent = patron.name;
-  const faction = document.createElement('p');
-  faction.className = 'patron-faction';
-  faction.textContent = patron.faction;
-  const credo = document.createElement('blockquote');
-  credo.textContent = `“${patron.credo}”`;
-  const scoringTitle = document.createElement('h3');
-  scoringTitle.textContent = 'Scoring';
-  const scoring = document.createElement('p');
-  scoring.textContent = patron.scoring;
-  detail.append(title, faction, credo, scoringTitle, scoring);
-  if (patron.ability) {
-    const abilityTitle = document.createElement('h3');
-    abilityTitle.textContent = 'Ability';
-    const ability = document.createElement('p');
-    ability.textContent = patron.ability;
-    detail.append(abilityTitle, ability);
-  }
+  const canvas = document.createElement('canvas');
+  canvas.id = 'patron-card-canvas';
+  canvas.width = 1500;
+  canvas.height = 2100;
+  canvas.setAttribute('aria-label', `${patron.name}, patron card preview`);
+  detail.append(canvas);
+  const terrainByFaction = { Flowbound: 'Flow', Brightworks: 'Radiance', Dreamwardens: 'Symbiosis', Verdant: 'Verdant' };
+  const effect = [`Credo: “${patron.credo}”`, `Scoring: ${patron.scoring}`, patron.ability ? `Ability: ${patron.ability}` : ''].filter(Boolean).join('\n\n');
+  const serial = ++patronRenderSerial;
+  void renderCard(canvas, { title: patron.name, card_type: 'Entity', terrain: terrainByFaction[patron.faction] || 'Verdant', effect, author: patron.faction }, '', () => serial === patronRenderSerial, { hideIcons: true });
 }
 
 function refreshCardAuthorFilter() {

@@ -1314,6 +1314,8 @@ body.dark-mode #patrons-view .patron-card:hover { background: #204b3b; }
 #patrons-view #patron-list .patron-list-item.selected { background: #b6dcb9; border-bottom-color: #91bd98; }
 #patrons-view #patron-list .card-list-owner { grid-column: 2; justify-content: flex-start; text-align: left; font-size: .7rem; }
 #patrons-view .patron-detail-panel { min-height: 0; overflow-y: auto; }
+#patrons-view .patron-detail { display: flex; min-height: 100%; align-items: flex-start; justify-content: center; }
+#patrons-view #patron-card-canvas { width: min(100%, 300px); height: auto; aspect-ratio: 5 / 7; border-radius: 18px; box-shadow: 0 10px 24px #2225; background: #ece6d8; }
 #patrons-view .patron-detail h2 { margin: 0; color: #265847; }
 #patrons-view .patron-detail h3 { margin: 1.1rem 0 .3rem; color: #456151; font-size: .95rem; }
 #patrons-view .patron-detail .patron-faction { margin: .25rem 0 1rem; }
@@ -1327,4 +1329,5 @@ body.dark-mode #patrons-view .patron-detail blockquote { border-left-color: #76a
 @media (max-width: 850px) {
   #patrons-view.workspace { grid-template-columns: minmax(0, 1fr); height: auto; overflow: visible; }
   #patrons-view .patron-detail-panel { overflow: visible; }
+  #patrons-view .patron-detail { min-height: 0; }
 }
