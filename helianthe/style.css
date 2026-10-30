@@ -396,6 +396,7 @@ body.dark-mode .card-filters #card-filter-terrain:has(option[value="Radiance"]:c
 .deck-list-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .deck-list-owner { display: flex; justify-content: flex-start; min-width: 0; overflow: hidden; text-align: left; }
 #decks-view #deck-list { gap: 0; margin-top: .55rem; }
+#decks-view .deck-table-shell .art-scroll-wrap > #deck-list { padding-bottom: .7rem; box-sizing: border-box; }
 #decks-view .deck-list-head { margin-left: .3rem; margin-right: calc(24px + 2.5rem + .3rem); }
 #decks-view #deck-list .deck-list-item { min-height: 2.75rem; padding: .32rem .3rem; border: 0; border-bottom: 1px solid #e0e5dc; border-radius: 10px; background: transparent; }
 #decks-view #deck-list .deck-list-item:last-child { border-bottom-color: transparent; }
