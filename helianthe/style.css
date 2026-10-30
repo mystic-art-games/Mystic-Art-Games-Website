@@ -56,7 +56,7 @@ body.auth-modal-open { overflow: hidden; }
 form label { display: block; margin: .65rem 0; font-weight: 700; }
 input:not([type=checkbox]):not([type=file]), select, textarea { display: block; width: 100%; min-width: 0; margin-top: .25rem; border: 1px solid #a4b6a5; background: #fffefa; color: #163737; border-radius: 8px; padding: .6rem .7rem; }
 select { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-select option { white-space: nowrap; }
+select option { min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .favorite-card-picker { position: relative; margin-top: .25rem; }
 .favorite-card-native { position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0; pointer-events: none; }
 .favorite-card-trigger { display: flex; align-items: center; gap: .55rem; width: 100%; min-height: 2.55rem; margin: 0; text-align: left; }
@@ -1399,4 +1399,18 @@ body.dark-mode #patrons-view .patron-detail blockquote { border-left-color: #76a
   #patrons-view.workspace { grid-template-columns: minmax(0, 1fr); height: auto; overflow: visible; }
   #patrons-view .patron-detail-panel { overflow: visible; }
   #patrons-view .patron-detail { min-height: 0; }
+}
+
+/* Keep every select arrow inside its field and reserve room for truncated labels. */
+select {
+  max-width: 100%;
+  padding-right: 2.25rem !important;
+  appearance: none !important;
+  background-image: linear-gradient(45deg, transparent 50%, #456151 50%), linear-gradient(135deg, #456151 50%, transparent 50%) !important;
+  background-position: calc(100% - 1rem) 50%, calc(100% - .7rem) 50% !important;
+  background-size: .35rem .35rem !important;
+  background-repeat: no-repeat !important;
+}
+body.dark-mode select {
+  background-image: linear-gradient(45deg, transparent 50%, #d5e6cf 50%), linear-gradient(135deg, #d5e6cf 50%, transparent 50%) !important;
 }
