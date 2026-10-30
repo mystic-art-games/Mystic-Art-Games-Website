@@ -146,6 +146,8 @@ body.dark-mode .about-section p, body.dark-mode .about-section li { color: #d1df
 #decks-view:not(.deck-detail-open) > .editor-panel { display: none; }
 #decks-view:not(.deck-detail-open) > .decks-sidebar { width: min(100%, 1100px); justify-self: center; }
 #decks-view:not(.deck-detail-open) #deck-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: .8rem; }
+#decks-view:not(.deck-detail-open) #deck-list .deck-list-item { width: 100%; height: auto; min-height: 0; align-self: start; }
+#decks-view:not(.deck-detail-open) #deck-list .deck-list-title-wrap { padding-left: 0; }
 #decks-view:not(.deck-detail-open) .deck-table-shell { overflow: visible; }
 .back-to-decks { display: none; }
 #decks-view.deck-detail-open .back-to-decks { display: inline-flex; }
