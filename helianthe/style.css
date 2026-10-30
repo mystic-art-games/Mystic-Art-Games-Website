@@ -159,6 +159,8 @@ body.dark-mode .about-section p, body.dark-mode .about-section li { color: #d1df
 #decks-view.deck-detail-open .back-to-decks { display: inline-flex; }
 #decks-view.deck-detail-open #deck-form { display: block; }
 #decks-view.deck-detail-open #deck-form { position: relative; }
+#decks-view.deck-detail-open #deck-form .deck-meta-row { position: absolute; z-index: 1; top: -3rem; left: 7rem; right: 16rem; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: .6rem; }
+#decks-view.deck-detail-open #deck-form .author-picker { display: none; }
 #decks-view.deck-detail-open .deck-name-field .actions { position: absolute; top: -3rem; right: 0; margin-top: 0; }
 .workspace,
 .patrons-workspace { width: calc(100% - 2rem); }
