@@ -1317,9 +1317,29 @@ $('#download-png').addEventListener('click', async () => {
 $('#delete-card').addEventListener('click', async () => {
   const card = state.card;
   if (!card || !state.user) return;
-  if (!window.confirm(`Delete “${card.title}”? This cannot be undone.`)) return;
+  $('#delete-card-description').textContent = `Delete “${card.title}”? This cannot be undone.`;
+  $('#delete-card-modal').hidden = false;
+  document.body.classList.add('auth-modal-open');
+  $('#cancel-delete-card').focus();
+});
+
+const closeDeleteCardModal = () => {
+  $('#delete-card-modal').hidden = true;
+  document.body.classList.remove('auth-modal-open');
+};
+
+$('#delete-card-backdrop').addEventListener('click', closeDeleteCardModal);
+$('#close-delete-card').addEventListener('click', closeDeleteCardModal);
+$('#cancel-delete-card').addEventListener('click', closeDeleteCardModal);
+
+$('#confirm-delete-card').addEventListener('click', async () => {
+  const card = state.card;
+  if (!card || !state.user) return closeDeleteCardModal();
   const deleteButton = $('#delete-card');
+  const confirmButton = $('#confirm-delete-card');
+  closeDeleteCardModal();
   deleteButton.disabled = true;
+  confirmButton.disabled = true;
   try {
     const artworkId = card.artwork_id;
     await api.deleteCard(state.user.id, card.id, state.isAdmin);
@@ -1330,6 +1350,7 @@ $('#delete-card').addEventListener('click', async () => {
   } catch (cause) {
     status(cause.message, true);
     deleteButton.disabled = false;
+    confirmButton.disabled = false;
   }
 });
 
@@ -1511,6 +1532,7 @@ $('#confirm-delete-account').addEventListener('click', async () => {
 
 document.addEventListener('keydown', event => {
   if (event.key === 'Escape' && !$('#delete-account-modal').hidden) closeDeleteAccountModal();
+  if (event.key === 'Escape' && !$('#delete-card-modal').hidden) closeDeleteCardModal();
 });
 
 function initArtDecoScrollbars() {
