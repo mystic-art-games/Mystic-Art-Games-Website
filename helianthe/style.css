@@ -561,9 +561,11 @@ body.dark-mode #card-edit-hint { color: #fff; }
 .deck-card-row:hover { background: #eef3e8; }
 .deck-card-row.selected { background: #b6dcb9; border-bottom-color: #91bd98; }
 .deck-card-row.selected:hover { background: #acd6b1; }
+body:not(.dark-mode) #decks-view .deck-card-row.selected { background: #b6dcb9 !important; border-bottom-color: transparent !important; box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .58), 0 2px 8px rgba(34, 98, 49, .2) !important; }
 body.dark-mode .deck-card-row { border-bottom-color: #355947; background: transparent; }
 body.dark-mode .deck-card-row:hover { background: #204b3b; }
 body.dark-mode .deck-card-row.selected { border-bottom-color: #416853; background: #285944; }
+body.dark-mode #decks-view .deck-card-row.selected { background: #285944 !important; border-bottom-color: transparent !important; box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .24), 0 2px 8px rgba(0, 18, 12, .18) !important; }
 .deck-card-row select { width: 4rem; margin: 0; grid-column: 3; }
 .deck-card-row strong { grid-column: 3; text-align: right; }
 @media (min-width: 851px) {
