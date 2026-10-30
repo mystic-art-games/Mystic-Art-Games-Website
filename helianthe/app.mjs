@@ -360,6 +360,13 @@ function selectedAuthorIds(container) {
   return [...container.querySelectorAll('input:checked')].map(input => input.value);
 }
 
+function renderDeckAuthorSelect(selectedId) {
+  const select = $('#deck-author-select');
+  select.replaceChildren();
+  for (const profile of state.profiles) select.append(new Option(profile.display_name || ownerName(profile.id), profile.id));
+  select.value = selectedId && [...select.options].some(option => option.value === selectedId) ? selectedId : (state.user?.id || '');
+}
+
 function cardTypeIconElement(card) {
   const radianceEntity = card.card_type === 'Entity' && card.terrain === 'Radiance';
   const icon = card.card_type === 'Event' || radianceEntity ? document.createElement('span') : document.createElement('img');
@@ -884,9 +891,9 @@ async function selectDeck(deck) {
   patronSelect.replaceChildren(new Option('No Patron', ''));
   for (const patron of PATRONS) patronSelect.append(new Option(patron.name, patron.name));
   patronSelect.value = patronByName(deck?.patron_name)?.name || '';
-  renderAuthorOptions($('#deck-author-options'), deck?.author_ids || (deck?.owner_id ? [deck.owner_id] : [state.user?.id].filter(Boolean)));
+  renderDeckAuthorSelect(deck?.author_ids?.[0] || deck?.owner_id || state.user?.id);
   const mine = Boolean(state.user && (!deck || deck.owner_id === state.user.id));
-  for (const field of form.querySelectorAll('input,button')) field.disabled = !mine;
+  for (const field of form.querySelectorAll('input,button,select')) field.disabled = !mine;
   $('#duplicate-deck').disabled = !deck || !state.user;
   $('#delete-deck').disabled = !deck || !state.user || (!mine && !state.isAdmin);
   state.deckCards = deck ? await api.listDeckCards(deck.id) : [];
@@ -937,7 +944,7 @@ let deckSaveQueue = Promise.resolve();
 
 function deckFormValues() {
   const form = $('#deck-form');
-  return { ...Object.fromEntries(new FormData(form)), is_public: true, author_ids: selectedAuthorIds($('#deck-author-options')) };
+  return { ...Object.fromEntries(new FormData(form)), is_public: true, author_ids: [$('#deck-author-select').value].filter(Boolean) };
 }
 
 async function autosaveDeck() {
@@ -1053,15 +1060,15 @@ function startRealtimeSync() {
   };
   const refreshProfiles = async () => {
     const selectedCardAuthors = selectedAuthorIds($('#card-author-options'));
-    const selectedDeckAuthors = selectedAuthorIds($('#deck-author-options'));
+    const selectedDeckAuthor = $('#deck-author-select').value;
     try {
       await reloadCollections();
       renderAuthorOptions($('#card-author-options'), selectedCardAuthors);
-      renderAuthorOptions($('#deck-author-options'), selectedDeckAuthors);
+      renderDeckAuthorSelect(selectedDeckAuthor);
       const cardEditable = canEditCard(state.card);
       const deckEditable = Boolean(state.user && (!state.deck || state.deck.owner_id === state.user.id));
       for (const input of $('#card-author-options').querySelectorAll('input')) input.disabled = !cardEditable;
-      for (const input of $('#deck-author-options').querySelectorAll('input')) input.disabled = !deckEditable;
+      $('#deck-author-select').disabled = !deckEditable;
     } catch (cause) { status(cause.message, true); }
   };
   const refreshDecks = async () => {
@@ -1524,7 +1531,7 @@ $('#confirm-delete-deck').addEventListener('click', async () => {
 for (const field of [$('#deck-form').elements.name, $('#deck-form').elements.patron_name]) {
   field.addEventListener('change', () => { void queueDeckSave().catch(cause => status(cause.message, true)); });
 }
-$('#deck-author-options').addEventListener('change', () => { void queueDeckSave().catch(cause => status(cause.message, true)); });
+$('#deck-author-select').addEventListener('change', () => { void queueDeckSave().catch(cause => status(cause.message, true)); });
 $('#deck-form').addEventListener('submit', event => event.preventDefault());
 
 $('#profile-form').addEventListener('submit', async event => {
