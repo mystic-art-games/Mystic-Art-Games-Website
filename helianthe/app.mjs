@@ -17,7 +17,7 @@ const ADMIN_EMAIL = 'dominik.zielinski3@gmail.com';
 const ADMIN_USER_ID = '7422e970-f1c1-4618-aa73-ea191d97e141';
 let authMode = 'sign-in';
 let profileSaveStatusTimer = null;
-const state = { user: null, isAdmin: false, cards: [], decks: [], profiles: [], card: null, deck: null, profile: null, deckCards: [], deckPreviewCard: null, deckPreviewArtworkUrl: null, deckPreviewSerial: 0, artworkUrl: null, artworkSerial: 0, renderSerial: 0, authVersion: 0, realtimeChannel: null, cardFormDirty: false };
+const state = { user: null, isAdmin: false, cards: [], decks: [], profiles: [], card: null, deck: null, profile: null, deckCards: [], deckPreviewCard: null, deckPreviewArtworkUrl: null, deckPreviewSerial: 0, deckPatronSerial: 0, artworkUrl: null, artworkSerial: 0, renderSerial: 0, authVersion: 0, realtimeChannel: null, cardFormDirty: false };
 const ARTWORK_UPLOAD_LIMIT = 100 * 1024;
 const AVATAR_UPLOAD_LIMIT = 80 * 1024;
 const DECK_PATRONS_KEY = 'helianthe-deck-patrons';
@@ -865,11 +865,17 @@ function renderDeckCards() {
   if (!list.childElementCount) list.textContent = 'This deck has no cards.';
 }
 
-function renderDeckPatron(patron) {
+async function renderDeckPatron(patron) {
   const shell = $('.deck-patron-preview-shell');
+  const canvas = $('#deck-patron-canvas');
+  const serial = ++state.deckPatronSerial;
   shell.className = `deck-patron-preview-shell patron-faction-${(patron?.faction || 'none').toLowerCase().replaceAll(/[^a-z]+/g, '-')}`;
   $('#deck-patron-name').textContent = patron?.name || 'No Patron';
   $('#deck-patron-faction').textContent = patron?.faction || '';
+  canvas.hidden = !patron;
+  if (!patron) return;
+  const patronCard = patronCards.find(card => card.patron?.name === patron.name);
+  if (patronCard) await renderCard(canvas, patronCard, '', () => serial === state.deckPatronSerial).catch(() => {});
 }
 
 async function showDeckCardPreview(card) {
@@ -913,7 +919,7 @@ async function selectDeck(deck) {
   patronSelect.replaceChildren(new Option('No Patron', ''));
   for (const patron of PATRONS) patronSelect.append(new Option(patron.name, patron.name));
   patronSelect.value = patronByName(deck?.patron_name)?.name || '';
-  renderDeckPatron(patronByName(deck?.patron_name));
+  void renderDeckPatron(patronByName(deck?.patron_name));
   renderDeckAuthorSelect(deck?.author_ids?.[0] || deck?.owner_id || state.user?.id);
   const mine = Boolean(state.user && (!deck || deck.owner_id === state.user.id));
   for (const field of form.querySelectorAll('input,button,select')) field.disabled = !mine;
@@ -1572,7 +1578,7 @@ $('#confirm-delete-deck').addEventListener('click', async () => {
 });
 for (const field of [$('#deck-form').elements.name, $('#deck-form').elements.patron_name]) {
   field.addEventListener('change', () => {
-    if (field.name === 'patron_name') renderDeckPatron(patronByName(field.value));
+    if (field.name === 'patron_name') void renderDeckPatron(patronByName(field.value));
     void queueDeckSave().catch(cause => status(cause.message, true));
   });
 }

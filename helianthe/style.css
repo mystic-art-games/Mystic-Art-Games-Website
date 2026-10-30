@@ -491,7 +491,7 @@ body.dark-mode .card-filters #card-filter-terrain:has(option[value="Radiance"]:c
 .deck-card-table h3 { margin: .75rem 0 .1rem; }
 .deck-card-preview-shell { display: flex; flex-direction: column; align-items: center; gap: .45rem; min-width: 0; padding-top: 1.2rem; }
 .deck-patron-preview-shell { position: relative; display: flex; min-width: 0; aspect-ratio: 5 / 7; flex-direction: column; align-items: center; justify-content: flex-end; gap: .25rem; overflow: hidden; padding: 1rem .7rem .8rem; border: 1px solid rgba(73, 120, 94, .55); border-radius: 18px; background: #dceadd; box-shadow: 0 10px 24px rgba(34, 60, 45, .2); text-align: center; }
-.deck-patron-visual { position: absolute; inset: 8% 8% 25%; border-radius: 12px; background: transparent url('./assets/factions-grid-transparent.png') center / contain no-repeat; opacity: .75; }
+.deck-patron-preview-shell canvas { position: relative; z-index: 1; display: block; width: min(100%, 180px); height: auto; aspect-ratio: 5 / 7; border-radius: 14px; box-shadow: 0 8px 20px #2225; background: #ece6d8; }
 .deck-patron-preview-shell h3, .deck-patron-preview-shell p { position: relative; z-index: 1; margin: 0; }
 .deck-patron-preview-shell h3 { color: #163737; font-size: 1rem; }
 .deck-patron-preview-shell p { color: #405b4d; font-size: .82rem; }
