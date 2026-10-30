@@ -338,6 +338,8 @@ body.dark-mode #decks-view:not(.deck-detail-open) #deck-list .deck-list-item:hov
   }
   #decks-view .deck-table-shell > .art-scroll-wrap,
   #decks-view .deck-card-table-shell > .art-scroll-wrap { flex: 1 1 auto; min-height: 0; }
+  #decks-view .deck-card-table-shell > .art-scroll-wrap { height: 100%; overflow: hidden; }
+  #decks-view .deck-card-table-shell > .art-scroll-wrap > .art-scroll-rail { transform: translateX(-.2rem); }
   #decks-view .deck-table-shell > .list-table-head,
   #decks-view .deck-card-table-shell > .list-table-head { flex: 0 0 auto; margin-top: .7rem; }
   #decks-view .deck-table-shell .art-scroll-wrap > .item-list,
