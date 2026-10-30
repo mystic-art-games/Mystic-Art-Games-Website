@@ -389,6 +389,12 @@ function renderDeckAuthorSelect(selectedId) {
 }
 
 function cardTypeIconElement(card) {
+  if (card.card_type === 'Patron') {
+    const icon = document.createElement('span');
+    icon.className = `card-type-icon patron-type-icon ${terrainClass(card.terrain)}`;
+    icon.title = card.card_type;
+    return icon;
+  }
   const radianceEntity = card.card_type === 'Entity' && card.terrain === 'Radiance';
   const icon = card.card_type === 'Event' || radianceEntity ? document.createElement('span') : document.createElement('img');
   icon.className = `card-type-icon${card.card_type === 'Event' ? ' event-type-icon' : ''}${radianceEntity ? ' radiance-entity-type-icon' : ''}`;
@@ -618,7 +624,7 @@ function requireAccount() {
 
 function syncTerrain() {
   const form = $('#card-form');
-  const required = form.elements.card_type.value === 'Entity';
+  const required = ['Entity', 'Patron'].includes(form.elements.card_type.value);
   form.elements.terrain.required = required;
   if (required && !form.elements.terrain.value) form.elements.terrain.value = 'Symbiosis';
 }

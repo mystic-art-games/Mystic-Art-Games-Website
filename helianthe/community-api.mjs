@@ -1,7 +1,7 @@
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.mjs';
 
 const TERRAINS = new Set(['Symbiosis', 'Flow', 'Verdant', 'Radiance']);
-const CARD_TYPES = new Set(['Entity', 'Event']);
+const CARD_TYPES = new Set(['Entity', 'Event', 'Patron']);
 const PREVIOUS_VERDANT_NAME = ['Ever', 'green'].join('');
 
 function result(response) {
@@ -68,8 +68,8 @@ export function cardInput(form) {
   const card_type = text(form.card_type, 20);
   const terrain = text(form.terrain, 20) || null;
   if (!title) throw new Error('Card title is required.');
-  if (!CARD_TYPES.has(card_type)) throw new Error('Choose Entity or Event.');
-  if (card_type === 'Entity' && !terrain) throw new Error('Choose a Terrain for the Entity.');
+  if (!CARD_TYPES.has(card_type)) throw new Error('Choose Entity, Event, or Patron.');
+  if ((card_type === 'Entity' || card_type === 'Patron') && !terrain) throw new Error(`Choose a Terrain for the ${card_type}.`);
   if (terrain && !TERRAINS.has(terrain)) throw new Error('Unknown Terrain.');
   return {
     title, card_type, terrain,
