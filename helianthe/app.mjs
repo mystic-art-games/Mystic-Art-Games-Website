@@ -946,6 +946,7 @@ async function renderDeckPatron(patron) {
   const canvas = $('#deck-patron-canvas');
   const serial = ++state.deckPatronSerial;
   shell.className = `deck-patron-preview-shell patron-faction-${(patron?.faction || 'none').toLowerCase().replaceAll(/[^a-z]+/g, '-')}${patron ? '' : ' is-empty'}`;
+  $('#deck-patron-edit-hint').hidden = !patron;
   canvas.tabIndex = patron ? 0 : -1;
   canvas.setAttribute('aria-disabled', String(!patron));
   $('#patron-download-png').disabled = true;
