@@ -1001,7 +1001,7 @@ body:not(.dark-mode) #new-card:hover:not(:disabled),
 body:not(.dark-mode) #new-deck,
 body:not(.dark-mode) #new-deck:hover:not(:disabled) {
   border-color: transparent;
-  background: #84c08d;
+  background: #acd6b1;
   color: #15241d;
   box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .58), 0 2px 8px rgba(34, 98, 49, .2);
   transition: transform .15s ease, filter .15s ease, box-shadow .15s ease;
