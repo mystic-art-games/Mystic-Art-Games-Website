@@ -871,6 +871,7 @@ async function showDeckCardPreview(card) {
 
 async function selectDeck(deck) {
   state.deck = deck;
+  $('#decks-view').classList.toggle('deck-detail-open', Boolean(deck));
   renderDeckList();
   const canDelete = Boolean(deck && state.user && (deck.owner_id === state.user.id || state.isAdmin));
   $('#duplicate-deck').disabled = !deck || !state.user;
@@ -1136,7 +1137,7 @@ async function loadWorkspace() {
     $('#sign-out').hidden = false;
     showTab(requestedTab());
     selectCard(state.cards[0] || null);
-    await selectDeck(state.decks.find(deck => deck.owner_id === user.id) || state.decks[0] || null);
+    await selectDeck(null);
     const profile = state.profiles.find(profile => profile.id === user.id) || state.profiles[0];
     selectProfile(profile);
     renderAccountButton(profile);
@@ -1177,7 +1178,7 @@ async function loadPublicWorkspace() {
     $('#sign-out').hidden = true;
     $('#account-name').hidden = true;
     selectCard(state.cards[0] || null);
-    await selectDeck(state.decks[0] || null);
+    await selectDeck(null);
     if (state.profiles[0]) selectProfile(state.profiles[0]);
     showTab(requestedTab());
     status('Browsing publicly. Sign in to create cards and decks.');
@@ -1464,6 +1465,7 @@ $('#card-form').addEventListener('submit', event => { event.preventDefault(); vo
 $('#new-deck').addEventListener('click', () => {
   if (requireAccount()) void createNewDeck().catch(cause => status(cause.message, true));
 });
+$('#back-to-decks').addEventListener('click', () => { void selectDeck(null); });
 $('#profile-new-deck').addEventListener('click', () => {
   if (!requireAccount()) return;
   showTab('decks');
