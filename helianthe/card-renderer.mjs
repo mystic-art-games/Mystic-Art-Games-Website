@@ -99,7 +99,7 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
   canvas.setAttribute('aria-label', `${title}, ${type} card preview`);
   let titleSize = 12;
   for (let size = 56; size >= 12; size--) {
-    ctx.font = `700 ${size}px ${cardFont}`;
+    ctx.font = `800 ${size}px ${cardFont}`;
     if (ctx.measureText(title).width <= 500) { titleSize = size; break; }
   }
   const plate = new Path2D();
@@ -124,7 +124,7 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
   if (!options.hideIcons) {
     drawTypeIcon(leftIconX); drawTypeIcon(rightIconX);
   }
-  ctx.font = `700 ${titleSize}px ${cardFont}`;
+  ctx.font = `800 ${titleSize}px ${cardFont}`;
   ctx.fillStyle = type === 'Event' ? '#3b3b3b' : '#123747'; ctx.textAlign = 'center';
   const titleMetrics = ctx.measureText(title);
   const titleBaseline = titleCenterY + (titleMetrics.actualBoundingBoxAscent - titleMetrics.actualBoundingBoxDescent) / 2;
