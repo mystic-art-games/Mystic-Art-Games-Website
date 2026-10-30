@@ -870,8 +870,6 @@ async function renderDeckPatron(patron) {
   const canvas = $('#deck-patron-canvas');
   const serial = ++state.deckPatronSerial;
   shell.className = `deck-patron-preview-shell patron-faction-${(patron?.faction || 'none').toLowerCase().replaceAll(/[^a-z]+/g, '-')}`;
-  $('#deck-patron-name').textContent = patron?.name || 'No Patron';
-  $('#deck-patron-faction').textContent = patron?.faction || '';
   canvas.hidden = !patron;
   if (!patron) return;
   const patronCard = patronCards.find(card => card.patron?.name === patron.name);
