@@ -353,7 +353,7 @@ body.dark-mode #decks-view:not(.deck-detail-open) #deck-list .deck-list-item:hov
   #decks-view .deck-card-preview-shell,
   #decks-view .deck-patron-preview-shell { height: 100%; min-height: 0; overflow: hidden; }
   #decks-view #deck-card-canvas,
-  #decks-view #deck-patron-canvas { width: auto; height: calc(100% - 2.6rem); max-width: 100%; object-fit: contain; }
+  #decks-view #deck-patron-canvas { width: auto; height: calc(100% - 5.5rem); max-width: 100%; object-fit: contain; }
   #decks-view .deck-card-table-shell .art-scroll-wrap > .deck-cards { height: 100%; max-height: none; overflow-y: auto; }
 }
 .profile-group-title { margin-top: .9rem; color: #50705e; font-size: .78rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
@@ -562,6 +562,12 @@ body.dark-mode #card-edit-hint { color: #fff; }
 #download-png { align-self: center; }
 .card-preview-actions { display: flex; justify-content: center; gap: .6rem; margin-top: .65rem; }
 .card-preview-actions > button { height: 2.35rem; min-height: 0; display: inline-flex; align-items: center; justify-content: center; }
+.deck-preview-actions { width: 100%; margin-top: .3rem; }
+.deck-preview-actions > button { padding-inline: .5rem; white-space: nowrap; }
+body:not(.dark-mode) .deck-preview-actions > button:first-child { border-color: rgba(73, 120, 94, .55); background: linear-gradient(145deg, rgba(64, 112, 79, .92), rgba(52, 117, 90, .9) 52%, rgba(38, 88, 71, .88)); color: #fff; }
+body.dark-mode .deck-preview-actions > button:first-child { border-color: rgba(226, 246, 235, .34); background: linear-gradient(145deg, rgba(47, 92, 64, .86), rgba(42, 94, 65, .84) 52%, rgba(28, 70, 52, .88)); color: #fff; }
+.deck-preview-actions > button:last-child { border-color: rgba(166, 75, 67, .55); background: linear-gradient(145deg, rgba(137, 38, 32, .86), rgba(176, 61, 52, .82) 46%, rgba(183, 65, 55, .76)); color: #fff; }
+body.dark-mode .deck-preview-actions > button:last-child { border-color: rgba(224, 143, 132, .5); background: linear-gradient(145deg, rgba(84, 20, 21, .72), rgba(137, 35, 31, .66) 46%, rgba(153, 43, 36, .64)); color: #ffe8e3; }
 .card-preview-actions #download-png { margin-top: 0; }
 #cards-view > .editor-panel .card-preview-actions #download-png { margin-top: 0; }
 .danger-button { background: #a23d35; border-color: #a23d35; color: #fff; }

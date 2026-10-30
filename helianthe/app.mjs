@@ -907,14 +907,24 @@ async function renderDeckPatron(patron) {
   const serial = ++state.deckPatronSerial;
   shell.className = `deck-patron-preview-shell patron-faction-${(patron?.faction || 'none').toLowerCase().replaceAll(/[^a-z]+/g, '-')}`;
   canvas.hidden = !patron;
+  $('#patron-download-png').disabled = true;
+  $('#patron-delete-card').disabled = true;
   if (!patron) return;
   const patronCard = patronCards.find(card => card.patron?.name === patron.name);
-  if (patronCard) await renderCard(canvas, patronCard, '', () => serial === state.deckPatronSerial).catch(() => {});
+  if (patronCard) {
+    const result = await renderCard(canvas, patronCard, '', () => serial === state.deckPatronSerial).catch(() => null);
+    if (serial === state.deckPatronSerial) {
+      $('#patron-download-png').disabled = !result || result.clipped || result.cancelled;
+      $('#patron-delete-card').disabled = !state.user;
+    }
+  }
 }
 
 async function showDeckCardPreview(card) {
   const serial = ++state.deckPreviewSerial;
   state.deckPreviewCard = card;
+  $('#deck-download-png').disabled = true;
+  $('#deck-delete-card').disabled = !card || !state.user || (!card.patron && card.owner_id !== state.user.id && !state.isAdmin);
   if (state.deckPreviewArtworkUrl) URL.revokeObjectURL(state.deckPreviewArtworkUrl);
   state.deckPreviewArtworkUrl = null;
   renderDeckCards();
@@ -926,13 +936,15 @@ async function showDeckCardPreview(card) {
   openDeckCardPreview();
   const previewCard = { ...card, author: authorNames(card.author_ids, card.owner_id).join(', ') };
   $('#deck-card-preview-note').textContent = '';
-  await renderCard($('#deck-card-canvas'), previewCard, '', () => serial === state.deckPreviewSerial).catch(() => {});
+  const result = await renderCard($('#deck-card-canvas'), previewCard, '', () => serial === state.deckPreviewSerial).catch(() => null);
+  if (serial === state.deckPreviewSerial) $('#deck-download-png').disabled = !result || result.clipped || result.cancelled;
   if (!card.artwork_id) return;
   try {
     const blob = await api.fetchArtwork(card.artwork_id);
     if (serial !== state.deckPreviewSerial) return;
     state.deckPreviewArtworkUrl = URL.createObjectURL(blob);
-    await renderCard($('#deck-card-canvas'), previewCard, state.deckPreviewArtworkUrl, () => serial === state.deckPreviewSerial);
+    const artworkResult = await renderCard($('#deck-card-canvas'), previewCard, state.deckPreviewArtworkUrl, () => serial === state.deckPreviewSerial);
+    if (serial === state.deckPreviewSerial) $('#deck-download-png').disabled = artworkResult.clipped || artworkResult.cancelled;
   } catch { /* Keep the deck preview usable when artwork is unavailable. */ }
 }
 
@@ -1443,6 +1455,28 @@ $('#download-png').addEventListener('click', async () => {
   try { await downloadCardPNG($('#card-canvas'), $('#card-form').elements.title.value); }
   catch (cause) { status(cause.message, true); }
 });
+for (const [buttonId, canvasId, getCard] of [
+  ['deck-download-png', 'deck-card-canvas', () => state.deckPreviewCard],
+  ['patron-download-png', 'deck-patron-canvas', () => patronCards.find(card => card.patron?.name === patronByName(state.deck?.patron_name)?.name)],
+]) {
+  $(`#${buttonId}`).addEventListener('click', async () => {
+    const card = getCard();
+    if (!card) return;
+    try { await downloadCardPNG($(`#${canvasId}`), card.title); }
+    catch (cause) { status(cause.message, true); }
+  });
+}
+for (const [buttonId, getCard] of [
+  ['deck-delete-card', () => state.deckPreviewCard],
+  ['patron-delete-card', () => patronCards.find(card => card.patron?.name === patronByName(state.deck?.patron_name)?.name)],
+]) {
+  $(`#${buttonId}`).addEventListener('click', () => {
+    const card = getCard();
+    if (!card || !state.user) return;
+    selectCard(card);
+    $('#delete-card').click();
+  });
+}
 $('#delete-card').addEventListener('click', async () => {
   const card = state.card;
   if (!card || !state.user) return;
@@ -1479,6 +1513,8 @@ $('#confirm-delete-card').addEventListener('click', async () => {
     } else await api.deleteCard(state.user.id, card.id, state.isAdmin);
     deleted = true;
     if (!card.patron) state.cards = state.cards.filter(item => item.id !== card.id);
+    if (state.deckPreviewCard?.id === card.id) void showDeckCardPreview(null);
+    if (card.patron && patronByName(state.deck?.patron_name)?.name === card.patron.name) void renderDeckPatron(null);
     state.card = null;
     closeDeleteCardModal();
     renderCardList();
