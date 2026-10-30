@@ -170,11 +170,13 @@
       </form>
       <div class="deck-card-layout">
         <section class="deck-card-table" aria-label="Cards in this deck">
-          <input id="deck-card-search" type="search" placeholder="Search by card name or effect…" aria-label="Search cards in this deck by name or effect">
-          <div class="card-filters" aria-label="Filter cards in this deck">
-            <label>Type<select id="deck-card-filter-type"><option value="">All types</option><option value="Entity">Entity</option><option value="Event">Event</option></select></label>
-            <label>Author<select id="deck-card-filter-author"><option value="">All authors</option></select></label>
-            <label>Color<select id="deck-card-filter-terrain"><option value="">All colors</option><option value="Symbiosis">Symbiosis</option><option value="Flow">Flow</option><option value="Verdant">Verdant</option><option value="Radiance">Radiance</option><option value="none">No color</option></select></label>
+          <div class="deck-card-filters-row">
+            <div class="card-filters" aria-label="Filter cards in this deck">
+              <label>Type<select id="deck-card-filter-type"><option value="">All types</option><option value="Entity">Entity</option><option value="Event">Event</option></select></label>
+              <label>Author<select id="deck-card-filter-author"><option value="">All authors</option></select></label>
+              <label>Color<select id="deck-card-filter-terrain"><option value="">All colors</option><option value="Symbiosis">Symbiosis</option><option value="Flow">Flow</option><option value="Verdant">Verdant</option><option value="Radiance">Radiance</option><option value="none">No color</option></select></label>
+            </div>
+            <input id="deck-card-search" type="search" placeholder="Search by card name or effect…" aria-label="Search cards in this deck by name or effect">
           </div>
           <div class="deck-card-table-shell">
             <div class="list-table-head deck-card-list-head" aria-hidden="true"><span></span><span>Card name</span><span>Copies</span></div>

@@ -396,6 +396,10 @@ body.dark-mode .profile-save-status.error { color: #ef9187; }
 #profile-new-deck { background: #265847; color: white; border-color: #265847; }
 #profile-new-deck:hover:not(:disabled) { background: #1d4939; }
 .card-filters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .45rem; margin-top: .65rem; }
+.deck-card-filters-row { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 1.5fr); align-items: end; gap: .65rem; }
+.deck-card-filters-row .card-filters { min-width: 0; }
+.deck-card-filters-row #deck-card-search { min-width: 0; margin: 0; }
+@media (max-width: 700px) { .deck-card-filters-row { grid-template-columns: 1fr; } }
 .card-filters label { margin: 0; color: #5a6e64; font-size: .78rem; font-weight: 700; }
 .card-filters select { display: flex; align-items: center; justify-content: space-between; gap: .4rem; margin-top: .2rem; padding: .45rem .4rem; font-size: .82rem; }
 .card-filters select,
