@@ -779,7 +779,7 @@ function renderDeckList() {
     const name = document.createElement('strong');
     name.className = 'deck-list-title';
     name.textContent = deck.name;
-    title.append(name, deckPatronElement(deck));
+    title.append(name);
     const meta = document.createElement('small');
     meta.className = 'deck-list-owner';
     meta.append(authorDisplayElement(deck.author_ids, deck.owner_id));
