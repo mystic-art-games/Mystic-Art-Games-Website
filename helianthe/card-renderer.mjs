@@ -53,7 +53,7 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
   const type = card.card_type || card.type || 'Entity';
   const terrain = Object.hasOwn(terrainColors, card.terrain) ? card.terrain : null;
   const frameName = `Frame_${terrain || 'Event'}.svg`;
-  const symbolName = type === 'Event' ? 'Event.png' : `Entity_${terrain || 'Flow'}.png`;
+  const symbolName = type === 'Event' ? 'Event.png' : type === 'Patron' ? 'Patron.png' : `Entity_${terrain || 'Flow'}.png`;
   const [frame, art, symbol] = await Promise.all([
     loadImage(asset(frameName)), loadImage(artworkUrl || DEFAULT_ARTWORK), loadImage(asset(symbolName)), fontsReady().catch(() => null),
   ]);
@@ -117,7 +117,7 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
   const rightIconX = 672;
   function drawTypeIcon(x) {
     ctx.save(); ctx.translate(x, titleCenterY); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-    if (type === 'Event') { if (symbol) ctx.drawImage(tintedEventSymbol(symbol, terrain), -23, -23, 46, 46); }
+    if (type === 'Event' || type === 'Patron') { if (symbol) ctx.drawImage(tintedEventSymbol(symbol, terrain), -23, -23, 46, 46); }
     else if (symbol) ctx.drawImage(symbol, -27, -27, 54, 54);
     ctx.restore();
   }

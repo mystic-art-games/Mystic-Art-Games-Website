@@ -639,7 +639,7 @@ function renderPreview() {
     author: state.card?.patron ? state.card.author : authorNames(selectedAuthorIds($('#card-author-options')), state.user?.id).join(', '),
   };
   $('#download-png').disabled = true;
-  void renderCard($('#card-canvas'), card, state.artworkUrl || '', () => serial === state.renderSerial, { hideIcons: card.card_type === 'Patron' })
+  void renderCard($('#card-canvas'), card, state.artworkUrl || '', () => serial === state.renderSerial)
     .then(result => {
       if (serial !== state.renderSerial || result.cancelled) return;
       $('#preview-note').textContent = result.clipped ? 'Text is too long — shorten the effect before exporting.' : '';
