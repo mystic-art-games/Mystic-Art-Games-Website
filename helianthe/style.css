@@ -1079,6 +1079,20 @@ body.dark-mode #confirm-delete-card {
   box-shadow: inset 1px 1px 0 rgba(255, 232, 227, .28), 0 6px 16px rgba(40, 10, 8, .3);
 }
 body.dark-mode #confirm-delete-card:hover:not(:disabled) { filter: brightness(1.12); box-shadow: inset 1px 1px 0 rgba(255, 232, 227, .34), 0 6px 16px rgba(40, 10, 8, .38); }
+#delete-card-modal .auth-modal-card,
+#delete-deck-modal .auth-modal-card {
+  border-color: rgba(73, 120, 94, .55) !important;
+  background: linear-gradient(145deg, rgba(255, 255, 255, .9), rgba(225, 238, 229, .84) 62%, rgba(204, 224, 210, .8)) !important;
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .82), 0 18px 60px rgba(10, 35, 27, .32) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+body.dark-mode #delete-card-modal .auth-modal-card,
+body.dark-mode #delete-deck-modal .auth-modal-card {
+  border-color: rgba(226, 246, 235, .48) !important;
+  background: linear-gradient(145deg, rgba(185, 220, 200, .86), rgba(65, 111, 88, .8) 62%, rgba(32, 82, 61, .76)) !important;
+  box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .3), 0 18px 60px rgba(0, 18, 12, .38) !important;
+}
 #cards-view #card-list .card-list-item { border-bottom-color: transparent !important; }
 @media (max-width: 850px) {
   body.dark-mode #about-view > .about-panel {
