@@ -778,6 +778,13 @@ function renderDeckList() {
   list.replaceChildren();
   for (const deck of state.decks) {
     const row = button('', () => void selectDeck(deck), `deck-list-item${state.deck?.id === deck.id ? ' selected' : ''}`);
+    const cover = document.createElement('span');
+    cover.className = 'deck-tile-cover';
+    cover.setAttribute('aria-hidden', 'true');
+    const image = document.createElement('img');
+    image.src = './assets/site-background.jpg';
+    image.alt = '';
+    cover.append(image);
     const title = document.createElement('span');
     title.className = 'deck-list-title-wrap';
     const name = document.createElement('strong');
@@ -787,7 +794,7 @@ function renderDeckList() {
     const meta = document.createElement('small');
     meta.className = 'deck-list-owner';
     meta.append(authorDisplayElement(deck.author_ids, deck.owner_id));
-    row.append(title, meta);
+    row.append(cover, title, meta);
     list.append(row);
   }
   if (!list.childElementCount) list.textContent = 'No decks yet.';

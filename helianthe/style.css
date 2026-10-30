@@ -398,7 +398,9 @@ body.dark-mode .card-filters #card-filter-terrain:has(option[value="Radiance"]:c
 #cards-view #card-list .card-list-title { font-size: .9rem; }
 #cards-view .card-list-head span:last-child { text-align: left; }
 #cards-view #card-list .card-list-owner { justify-content: flex-start; font-size: .7rem; text-align: left; }
-.deck-list-item { display: grid; grid-template-columns: minmax(0, 1fr) 7rem; column-gap: .55rem; align-items: center; }
+.deck-list-item { display: grid; grid-template-columns: 1fr; gap: .35rem; align-items: stretch; }
+.deck-tile-cover { display: block; aspect-ratio: 16 / 9; overflow: hidden; border-radius: 10px; background: #d9e5d7; }
+.deck-tile-cover img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .deck-list-title-wrap { display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
 .deck-list-item .deck-list-title-wrap { padding-left: .45rem; }
 .deck-list-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -408,7 +410,7 @@ body.dark-mode .card-filters #card-filter-terrain:has(option[value="Radiance"]:c
 #decks-view .deck-list-head { margin-left: .3rem; margin-right: calc(24px + 2.5rem + .3rem); }
 #decks-view .deck-list-head { margin-right: calc(4px + .5rem + .3rem); }
 #decks-view #deck-list .deck-list-item { min-height: 2.75rem; padding: .32rem .3rem; border: 0; border-bottom: 1px solid #e0e5dc; border-radius: 10px; background: transparent; }
-#decks-view #deck-list .deck-list-item { min-height: 2.25rem; padding: .22rem .3rem; }
+#decks-view #deck-list .deck-list-item { min-height: 0; padding: .55rem; }
 #decks-view #deck-list .deck-list-item:last-child { border-bottom-color: transparent; }
 #decks-view #deck-list .deck-list-item:hover:not(:disabled) { background: #eef3e8; }
 #decks-view #deck-list .deck-list-item.selected { background: #dceadd; border-bottom-color: #c6d8c8; }
