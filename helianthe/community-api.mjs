@@ -55,6 +55,14 @@ async function writeCardWithLegacyFallback(write, input) {
   return write(values);
 }
 
+async function writeDeckWithLegacyFallback(write, input) {
+  let values = input;
+  const response = await write(values);
+  if (!response.error || !/author_ids/i.test(response.error.message || '')) return response;
+  const { author_ids, ...legacyValues } = values;
+  return write(legacyValues);
+}
+
 export function cardInput(form) {
   const title = text(form.title, 200);
   const card_type = text(form.card_type, 20);
@@ -187,13 +195,17 @@ export function createCommunityApi(client) {
     async createDeck(userId, values) {
       if (!userId) throw new Error('Sign in first.');
       const row = { ...deckInput(values), owner_id: userId, is_public: true };
-      return result(await client.from('decks').insert(row).select().single());
+      return result(await writeDeckWithLegacyFallback(
+        candidate => client.from('decks').insert(candidate).select().single(), row,
+      ));
     },
 
     async saveDeck(userId, deckId, values) {
       if (!userId || !deckId) throw new Error('Select your own deck.');
       const patch = { ...deckInput(values), updated_at: new Date().toISOString() };
-      const rows = result(await client.from('decks').update(patch).eq('id', deckId).eq('owner_id', userId).select());
+      const rows = result(await writeDeckWithLegacyFallback(
+        valuesToSave => client.from('decks').update(valuesToSave).eq('id', deckId).eq('owner_id', userId).select(), patch,
+      ));
       if (!rows?.length) throw new Error('Only the deck owner can edit this deck.');
       return rows[0];
     },
