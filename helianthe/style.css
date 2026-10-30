@@ -1047,9 +1047,9 @@ body:not(.dark-mode) #decks-view #deck-list .deck-list-item.selected {
   box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .58), 0 2px 8px rgba(34, 98, 49, .2) !important;
 }
 body:not(.dark-mode) #cards-view #card-list .card-list-item.selected .card-list-owner,
-body:not(.dark-mode) #decks-view #deck-list .deck-list-item.selected .deck-list-owner,
+body:not(.dark-mode) #decks-view #deck-list .deck-list-item.selected .deck-list-owner { color: #15241d; }
 body.dark-mode #cards-view #card-list .card-list-item.selected .card-list-owner,
-body.dark-mode #decks-view #deck-list .deck-list-item.selected .deck-list-owner { color: #15241d; }
+body.dark-mode #decks-view #deck-list .deck-list-item.selected .deck-list-owner { color: #fff; }
 body:not(.dark-mode) #new-card,
 body:not(.dark-mode) #new-card:hover:not(:disabled),
 body:not(.dark-mode) #card-field-cancel,
