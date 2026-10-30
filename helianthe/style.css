@@ -78,8 +78,8 @@ textarea { resize: vertical; }
 .danger-modal-actions { justify-content: flex-end; }
 .danger-modal-actions button:first-child { background: #a23d35; border-color: #a23d35; }
 .danger-modal-actions button:first-child:hover:not(:disabled) { background: #842f2a; border-color: #842f2a; }
-#new-card { background: linear-gradient(115deg, #2b6b53, #34755a 62%, #3d805f); color: #fff8e8; border-color: #34755a; }
-#new-card:hover:not(:disabled) { background: linear-gradient(115deg, #266047, #2f6c52 62%, #38785a); }
+#new-card { background: #34755a; color: #fff8e8; border-color: #34755a; }
+#new-card:hover:not(:disabled) { background: #3d805f; }
 .form-hint { margin: -0.35rem 0 0.75rem; color: #68756d; font-size: 0.85rem; }
 .hint { color: #5a6e64; font-size: .88rem; line-height: 1.35; }
 .workspace,
@@ -947,7 +947,7 @@ body:not(.dark-mode) #cards-view #card-list .card-list-item.selected {
 body:not(.dark-mode) #new-card,
 body:not(.dark-mode) #new-card:hover:not(:disabled) {
   border-color: transparent;
-  background: linear-gradient(90deg, #93c49b, #78b681);
+  background: #78b681;
   color: #173f32;
   box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .58), 0 2px 8px rgba(34, 98, 49, .2);
   transition: transform .15s ease, filter .15s ease, box-shadow .15s ease;
@@ -956,7 +956,7 @@ body:not(.dark-mode) #new-card:hover:not(:disabled) { transform: translateY(-1px
 body.dark-mode #new-card,
 body.dark-mode #new-card:hover:not(:disabled) {
   border-color: #416853;
-  background: linear-gradient(145deg, #102f27, #246047 62%, #34735a);
+  background: #246047;
   color: #fff8e8;
   box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .28), 0 8px 24px rgba(0, 18, 12, .28);
   transition: transform .15s ease, filter .15s ease, box-shadow .15s ease;
