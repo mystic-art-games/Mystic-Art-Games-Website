@@ -1335,13 +1335,15 @@ $('#cancel-delete-card').addEventListener('click', closeDeleteCardModal);
 $('#confirm-delete-card').addEventListener('click', async () => {
   const card = state.card;
   if (!card || !state.user) return closeDeleteCardModal();
+  const artworkId = card.artwork_id;
   const deleteButton = $('#delete-card');
   const confirmButton = $('#confirm-delete-card');
+  let deleted = false;
   deleteButton.disabled = true;
   confirmButton.disabled = true;
   try {
-    const artworkId = card.artwork_id;
     await api.deleteCard(state.user.id, card.id, state.isAdmin);
+    deleted = true;
     state.cards = state.cards.filter(item => item.id !== card.id);
     state.card = null;
     closeDeleteCardModal();
@@ -1355,7 +1357,9 @@ $('#confirm-delete-card').addEventListener('click', async () => {
     deleteButton.disabled = false;
     confirmButton.disabled = false;
   }
-  if (artworkId) await api.deleteArtwork(artworkId).catch(error => console.error('Artwork cleanup failed', error));
+  if (artworkId && deleted) {
+    await api.deleteArtwork(artworkId).catch(error => console.error('Artwork cleanup failed', error));
+  }
 });
 
 let savingCard = false;
