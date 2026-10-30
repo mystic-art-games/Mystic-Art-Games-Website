@@ -14,7 +14,6 @@ const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_K
 });
 const api = createCommunityApi(client);
 const ADMIN_EMAIL = 'dominik.zielinski3@gmail.com';
-const ADMIN_USER_ID = '7422e970-f1c1-4618-aa73-ea191d97e141';
 let authMode = 'sign-in';
 let profileSaveStatusTimer = null;
 const state = { user: null, isAdmin: false, cards: [], decks: [], profiles: [], card: null, deck: null, profile: null, deckCards: [], deckPreviewCard: null, deckPreviewArtworkUrl: null, deckPreviewSerial: 0, deckPatronSerial: 0, artworkUrl: null, artworkSerial: 0, renderSerial: 0, authVersion: 0, realtimeChannel: null, cardFormDirty: false };
@@ -523,10 +522,24 @@ function setCardFormEditable(canEdit) {
 }
 
 function canEditCard(card) {
-  if (card?.patron) return true;
   if (!state.user) return false;
   if (!card) return true;
-  return state.isAdmin || card.owner_id === state.user.id || card.author_ids?.includes(state.user.id);
+  return state.isAdmin || card.author_ids?.includes(state.user.id);
+}
+
+function closeCardEditDenied() {
+  $('#card-edit-denied-modal').hidden = true;
+  document.body.classList.remove('auth-modal-open');
+}
+
+function requireCardEdit(card) {
+  if (!card) return false;
+  if (!state.user) return requireAccount();
+  if (canEditCard(card)) return true;
+  $('#card-edit-denied-modal').hidden = false;
+  document.body.classList.add('auth-modal-open');
+  $('#confirm-card-edit-denied').focus();
+  return false;
 }
 
 function canEditDeck(deck) {
@@ -691,8 +704,8 @@ function closeCardField(commit = false) {
 }
 
 function openCardField(field) {
+  if (!requireCardEdit(state.card)) return;
   const form = $('#card-form');
-  if (form.elements.title.disabled) return;
   const sources = {
     title: form.elements.title.closest('label'),
     identity: form.elements.card_type.closest('.two-cols'),
@@ -1300,7 +1313,7 @@ async function loadWorkspace() {
     const user = await api.currentUser();
     if (!user || version !== state.authVersion) return;
     state.user = user;
-    state.isAdmin = user.id === ADMIN_USER_ID || user.email?.trim().toLowerCase() === ADMIN_EMAIL;
+    state.isAdmin = user.email?.trim().toLowerCase() === ADMIN_EMAIL;
     updateAuthenticatedControls();
     let ensuredProfile = await api.ensureProfile(user);
     ensuredProfile = await applyPendingAvatar(user, ensuredProfile);
@@ -1506,7 +1519,7 @@ $('#card-canvas').tabIndex = 0;
 $('#card-canvas').addEventListener('click', event => openCardField(cardFieldAt(event)));
 $('#card-canvas').addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openCardField('identity'); } });
 function editDeckPreviewAt(event, card) {
-  if (!card || !canEditCard(card)) return;
+  if (!requireCardEdit(card)) return;
   selectCard(card);
   openCardField(cardFieldAt(event));
 }
@@ -1516,7 +1529,7 @@ $('#deck-card-canvas').addEventListener('keydown', event => {
   if (event.key !== 'Enter' && event.key !== ' ') return;
   event.preventDefault();
   const card = state.deckPreviewCard;
-  if (!card || !canEditCard(card)) return;
+  if (!requireCardEdit(card)) return;
   selectCard(card);
   openCardField('identity');
 });
@@ -1531,11 +1544,15 @@ $('#deck-patron-canvas').addEventListener('keydown', event => {
   event.preventDefault();
   const patron = patronByName(state.deck?.patron_name);
   const card = patronCards.find(item => item.patron?.name === patron?.name);
-  if (!card || !canEditCard(card)) return;
+  if (!requireCardEdit(card)) return;
   selectCard(card);
   openCardField('identity');
 });
 $('#close-card-field').addEventListener('click', closeCardField);
+for (const id of ['card-edit-denied-backdrop', 'close-card-edit-denied', 'confirm-card-edit-denied']) {
+  $(`#${id}`).addEventListener('click', closeCardEditDenied);
+}
+document.addEventListener('keydown', event => { if (event.key === 'Escape' && !$('#card-edit-denied-modal').hidden) closeCardEditDenied(); });
 $('#card-field-save').addEventListener('click', () => { void saveCardForm(); });
 $('#card-field-cancel').addEventListener('click', () => closeCardField(false));
 $('#card-field-modal .card-field-backdrop').addEventListener('click', closeCardField);
@@ -1636,6 +1653,7 @@ $('#confirm-delete-card').addEventListener('click', async () => {
 let savingCard = false;
 async function saveCardForm() {
   if (savingCard) return;
+  if (!requireCardEdit(state.card)) return;
   const form = $('#card-form');
   const modalOpen = !$('#card-field-modal').hidden;
   if (modalOpen) {
