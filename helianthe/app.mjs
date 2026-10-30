@@ -851,6 +851,11 @@ function renderDeckCards() {
   if (!list.childElementCount) list.textContent = 'This deck has no cards.';
 }
 
+function renderDeckPatron(patron) {
+  $('#deck-patron-name').textContent = patron?.name || 'No Patron';
+  $('#deck-patron-faction').textContent = patron?.faction || '';
+}
+
 async function showDeckCardPreview(card) {
   const serial = ++state.deckPreviewSerial;
   state.deckPreviewCard = card;
@@ -892,6 +897,7 @@ async function selectDeck(deck) {
   patronSelect.replaceChildren(new Option('No Patron', ''));
   for (const patron of PATRONS) patronSelect.append(new Option(patron.name, patron.name));
   patronSelect.value = patronByName(deck?.patron_name)?.name || '';
+  renderDeckPatron(patronByName(deck?.patron_name));
   renderDeckAuthorSelect(deck?.author_ids?.[0] || deck?.owner_id || state.user?.id);
   const mine = Boolean(state.user && (!deck || deck.owner_id === state.user.id));
   for (const field of form.querySelectorAll('input,button,select')) field.disabled = !mine;
@@ -1534,7 +1540,10 @@ $('#confirm-delete-deck').addEventListener('click', async () => {
   }
 });
 for (const field of [$('#deck-form').elements.name, $('#deck-form').elements.patron_name]) {
-  field.addEventListener('change', () => { void queueDeckSave().catch(cause => status(cause.message, true)); });
+  field.addEventListener('change', () => {
+    if (field.name === 'patron_name') renderDeckPatron(patronByName(field.value));
+    void queueDeckSave().catch(cause => status(cause.message, true));
+  });
 }
 $('#deck-author-select').addEventListener('change', () => { void queueDeckSave().catch(cause => status(cause.message, true)); });
 $('#deck-form').addEventListener('submit', event => event.preventDefault());
