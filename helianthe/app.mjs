@@ -900,7 +900,7 @@ async function showDeckCardPreview(card) {
 
 async function selectDeck(deck) {
   state.deck = deck;
-  if (!deck) $('#decks-view').classList.remove('deck-detail-open');
+  $('#decks-view').classList.toggle('deck-detail-open', Boolean(deck));
   renderDeckList();
   const canDelete = Boolean(deck && state.user && (deck.owner_id === state.user.id || state.isAdmin));
   $('#duplicate-deck').disabled = !deck || !state.user;
@@ -926,7 +926,6 @@ async function selectDeck(deck) {
   const firstDeckCard = state.cards.find(card => deckIsMine || state.deckCards.some(item => item.card_id === card.id && item.copies > 0));
   state.deckPreviewCard = firstDeckCard || null;
   renderDeckCards();
-  if (deck) $('#decks-view').classList.add('deck-detail-open');
   if (firstDeckCard) await showDeckCardPreview(firstDeckCard);
 }
 
