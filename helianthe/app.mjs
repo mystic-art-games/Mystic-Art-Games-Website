@@ -803,11 +803,18 @@ function openCardField(field) {
         original.dispatchEvent(new Event('input', { bubbles: true }));
         if (original.name === 'card_type') {
           syncTerrain();
-          content.querySelector('[name="terrain"]').value = form.elements.terrain.value;
+          const terrainCopy = content.querySelector('[name="terrain"]');
+          terrainCopy.disabled = form.elements.terrain.disabled;
+          terrainCopy.value = form.elements.terrain.value;
           renderPreview();
         }
       }
     });
+  }
+  const terrainCopy = content.querySelector('[name="terrain"]');
+  if (terrainCopy) {
+    terrainCopy.disabled = form.elements.terrain.disabled;
+    terrainCopy.value = form.elements.terrain.value;
   }
   if (field === 'artwork') {
     const fileInput = content.querySelector('input[type="file"]');
