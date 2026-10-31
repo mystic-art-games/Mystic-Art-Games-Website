@@ -31,7 +31,7 @@ let patronCards = PATRONS.map(patron => ({
   card_type: 'Patron',
   terrain: PATRON_TERRAIN[patron.faction],
   effect: [`Credo: “${patron.credo}”`, `Scoring: ${patron.scoring}`, patron.ability ? `Ability: ${patron.ability}` : ''].filter(Boolean).join('\n\n'),
-  author: 'Helianthe',
+  author: 'El Delfin',
   author_ids: [],
   patron,
 }));
@@ -149,7 +149,7 @@ function status(message, error = false) {
 }
 
 function ownerName(id) {
-  if (!id) return 'Helianthe';
+  if (!id) return 'El Delfin';
   return state.profiles.find(profile => profile.id === id)?.display_name || 'Player';
 }
 
@@ -2116,7 +2116,7 @@ async function saveCardForm() {
     if (state.card?.patron) {
       const authorIds = values.author_ids;
       const artwork = file ? await api.uploadArtwork(file) : null;
-      const updates = { title: values.title, terrain: values.terrain, effect: values.effect, author_ids: authorIds, author: authorNames(authorIds).join(', ') || 'Helianthe', artwork_id: artwork?.id || previousArtworkId };
+      const updates = { title: values.title, terrain: values.terrain, effect: values.effect, author_ids: authorIds, author: authorNames(authorIds).join(', ') || 'El Delfin', artwork_id: artwork?.id || previousArtworkId };
       try {
         const overrides = JSON.parse(localStorage.getItem(PATRON_CARD_OVERRIDES_KEY) || '{}');
         overrides[state.card.id] = updates;
