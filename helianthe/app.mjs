@@ -889,7 +889,7 @@ function renderDeckCards() {
   const type = $('#deck-card-filter-type').value;
   const author = $('#deck-card-filter-author').value;
   const terrain = $('#deck-card-filter-terrain').value;
-  const mine = state.deck.owner_id === state.user?.id;
+  const mine = Boolean(state.user && (state.deck.owner_id === state.user.id || state.isAdmin));
   for (const card of state.cards) {
     const copies = state.deckCards.find(item => item.card_id === card.id)?.copies || 0;
     if (!mine && !copies) continue;
@@ -915,7 +915,7 @@ function renderDeckCards() {
       select.addEventListener('change', async () => {
         select.disabled = true;
         try {
-          await api.setDeckCard(state.user.id, state.deck, card.id, Number(select.value));
+          await api.setDeckCard(state.user.id, state.deck, card.id, Number(select.value), state.isAdmin);
           state.deckCards = await api.listDeckCards(state.deck.id);
           status(`Saved ${card.title} in ${state.deck.name}.`);
         } catch (cause) { status(cause.message, true); }
@@ -1101,7 +1101,7 @@ async function selectDeck(deck) {
   const deckCards = deck ? await api.listDeckCards(deck.id) : [];
   if (deck && state.deck?.id !== deck.id) return;
   state.deckCards = deckCards;
-  const deckIsMine = Boolean(state.deck && state.deck.owner_id === state.user?.id);
+  const deckIsMine = Boolean(state.deck && state.user && (state.deck.owner_id === state.user.id || state.isAdmin));
   const firstDeckCard = state.cards.find(card => deckIsMine || state.deckCards.some(item => item.card_id === card.id && item.copies > 0));
   state.deckPreviewCard = firstDeckCard || null;
   renderDeckCards();

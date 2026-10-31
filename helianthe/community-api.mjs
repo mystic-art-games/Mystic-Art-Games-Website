@@ -240,8 +240,8 @@ export function createCommunityApi(client) {
       return result(await client.from('deck_cards').select('card_id,copies').eq('deck_id', deckId));
     },
 
-    async setDeckCard(userId, deck, cardId, copies) {
-      if (!userId || deck?.owner_id !== userId) throw new Error('Only the deck owner can change its cards.');
+    async setDeckCard(userId, deck, cardId, copies, isAdmin = false) {
+      if (!userId || (deck?.owner_id !== userId && !isAdmin)) throw new Error('Only the deck owner or designated administrator can change its cards.');
       if (!cardId || !Number.isInteger(copies) || copies < 0 || copies > 3) throw new Error('Copies must be between 0 and 3.');
       if (copies === 0) return result(await client.from('deck_cards').delete().eq('deck_id', deck.id).eq('card_id', cardId).select());
       return result(await client.from('deck_cards').upsert({ deck_id: deck.id, card_id: cardId, copies }, { onConflict: 'deck_id,card_id' }).select());
