@@ -290,6 +290,7 @@ function setupFavoriteCardPicker(select) {
   menu.setAttribute('role', 'listbox');
   menu.hidden = true;
   wrapper.append(trigger, menu);
+  initArtDecoScrollbars();
   const stateForPicker = { wrapper, trigger, menu };
   favoritePickerStates.set(select, stateForPicker);
   trigger.addEventListener('click', event => {
@@ -1945,8 +1946,9 @@ document.addEventListener('keydown', event => {
 });
 
 function initArtDecoScrollbars() {
-  for (const element of document.querySelectorAll('.item-list, .deck-cards, .about-content')) {
-    const existingWrapper = element.parentElement?.classList.contains('art-scroll-wrap') ? element.parentElement : null;
+  for (const element of document.querySelectorAll('.item-list, .deck-cards, .about-content, .card-search-suggestions, .favorite-card-menu')) {
+    const dropdown = element.matches('.card-search-suggestions, .favorite-card-menu');
+    const existingWrapper = dropdown ? element.parentElement : (element.parentElement?.classList.contains('art-scroll-wrap') ? element.parentElement : null);
     if (existingWrapper && element.dataset.artScrollReady === 'true') continue;
     const wrapper = existingWrapper || document.createElement('div');
     if (!existingWrapper) {
@@ -1954,31 +1956,36 @@ function initArtDecoScrollbars() {
       element.parentNode.insertBefore(wrapper, element);
       wrapper.append(element);
     }
-    const rail = existingWrapper?.querySelector('.art-scroll-rail') || document.createElement('div');
+    const rail = dropdown ? document.createElement('div') : (existingWrapper?.querySelector('.art-scroll-rail') || document.createElement('div'));
     rail.className = 'art-scroll-rail';
+    if (dropdown) rail.classList.add('dropdown-scroll-rail');
     rail.setAttribute('aria-hidden', 'true');
-    const thumb = existingWrapper?.querySelector('.art-scroll-thumb') || document.createElement('button');
+    const thumb = dropdown ? document.createElement('button') : (existingWrapper?.querySelector('.art-scroll-thumb') || document.createElement('button'));
     thumb.className = 'art-scroll-thumb';
     thumb.type = 'button';
     thumb.tabIndex = -1;
-    if (!existingWrapper) {
+    if (!existingWrapper || dropdown) {
       rail.append(thumb);
       wrapper.append(rail);
     }
     element.dataset.artScrollReady = 'true';
     const update = () => {
       const maxScroll = element.scrollHeight - element.clientHeight;
+      if (dropdown) {
+        rail.style.top = `${element.offsetTop + 4}px`;
+        rail.style.height = `${Math.max(0, element.clientHeight - 8)}px`;
+      }
       const railHeight = rail.clientHeight;
       const thumbHeight = Math.min(railHeight, 44);
       thumb.style.height = `${thumbHeight}px`;
-      rail.style.display = maxScroll > 0 ? '' : 'none';
+      rail.style.display = !element.hidden && maxScroll > 0 ? '' : 'none';
       thumb.style.display = maxScroll > 0 ? '' : 'none';
       thumb.style.transform = `translateY(${maxScroll > 0 ? (element.scrollTop / maxScroll) * (railHeight - thumbHeight) : 0}px)`;
     };
     element.addEventListener('scroll', update, { passive: true });
     new ResizeObserver(update).observe(element);
     new ResizeObserver(update).observe(wrapper);
-    new MutationObserver(update).observe(element, { childList: true, subtree: true });
+    new MutationObserver(update).observe(element, { childList: true, subtree: true, attributes: dropdown, attributeFilter: dropdown ? ['hidden'] : undefined });
     thumb.addEventListener('pointerdown', event => {
       event.preventDefault();
       thumb.setPointerCapture(event.pointerId);
