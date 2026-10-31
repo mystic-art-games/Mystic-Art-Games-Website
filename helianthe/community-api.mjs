@@ -82,7 +82,7 @@ export function cardInput(form) {
 export function deckInput(form) {
   const name = text(form.name, 100);
   if (!name) throw new Error('Deck name is required.');
-  return { name, patron_name: text(form.patron_name, 200), is_public: true, author_ids: Array.isArray(form.author_ids) ? form.author_ids : [] };
+  return { name, patron_name: text(form.patron_name, 200), is_public: true, author_ids: Array.isArray(form.author_ids) ? form.author_ids : [], cover_artwork_id: text(form.cover_artwork_id, 36) || null };
 }
 
 export function createCommunityApi(client) {
@@ -185,10 +185,10 @@ export function createCommunityApi(client) {
 
     async listDecks() {
       try {
-        return result(await client.from('decks').select('id,owner_id,name,patron_name,author_ids,is_public,created_at,updated_at').order('created_at', { ascending: false }));
+        return result(await client.from('decks').select('id,owner_id,name,patron_name,author_ids,cover_artwork_id,is_public,created_at,updated_at').order('created_at', { ascending: false }));
       } catch {
         const decks = result(await client.from('decks').select('id,owner_id,name,patron_name,is_public,created_at,updated_at').order('created_at', { ascending: false }));
-        return decks.map(deck => ({ ...deck, author_ids: deck.owner_id ? [deck.owner_id] : [] }));
+        return decks.map(deck => ({ ...deck, author_ids: deck.owner_id ? [deck.owner_id] : [], cover_artwork_id: null }));
       }
     },
 

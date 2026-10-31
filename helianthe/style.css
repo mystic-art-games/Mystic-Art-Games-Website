@@ -189,7 +189,7 @@ body.dark-mode #decks-view:not(.deck-detail-open) #deck-list .deck-list-item:hov
 #decks-view.deck-detail-open > .editor-panel { position: relative; }
 #decks-view.deck-detail-open .back-to-decks { display: inline-flex; }
 #decks-view.deck-detail-open #deck-form { display: block; }
-#decks-view.deck-detail-open .deck-detail-toolbar { display: grid; grid-template-columns: auto minmax(150px, 1fr) minmax(140px, 1fr) minmax(150px, 1fr) auto; align-items: end; gap: .7rem; }
+#decks-view.deck-detail-open .deck-detail-toolbar { display: grid; grid-template-columns: auto minmax(150px, 1fr) minmax(140px, 1fr) minmax(150px, 1fr) minmax(145px, 1fr) auto; align-items: end; gap: .7rem; }
 #decks-view.deck-detail-open .deck-detail-toolbar label { margin: 0; }
 #decks-view.deck-detail-open .deck-detail-toolbar .back-to-decks { align-self: end; margin-bottom: 0; }
 #decks-view.deck-detail-open .deck-detail-toolbar .actions { margin: 0; align-self: end; white-space: nowrap; }

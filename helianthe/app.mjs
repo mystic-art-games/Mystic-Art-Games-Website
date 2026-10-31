@@ -911,7 +911,7 @@ function renderDeckList() {
     cover.className = 'deck-tile-cover';
     cover.setAttribute('aria-hidden', 'true');
     const image = document.createElement('img');
-    image.src = './assets/site-background.jpg';
+    image.src = deck.cover_artwork_id ? api.mediaUrl(deck.cover_artwork_id) : './assets/site-background.jpg';
     image.alt = '';
     cover.append(image);
     const title = document.createElement('span');
@@ -1165,6 +1165,8 @@ async function selectDeck(deck) {
   patronSelect.value = patronByName(deck?.patron_name)?.name || '';
   void renderDeckPatron(patronByName(deck?.patron_name));
   renderDeckAuthorSelect(deck?.author_ids?.[0] || deck?.owner_id || state.user?.id);
+  $('#deck-cover').value = '';
+  $('#deck-cover-name').textContent = deck?.cover_artwork_id ? 'Cover image selected' : 'Choose an image';
   const mine = Boolean(state.user && (!deck || deck.owner_id === state.user.id));
   for (const field of form.querySelectorAll('input,select, #duplicate-deck, #delete-deck')) field.disabled = !mine;
   $('#duplicate-deck').disabled = !deck || !state.user;
@@ -1219,7 +1221,30 @@ let deckSaveQueue = Promise.resolve();
 
 function deckFormValues() {
   const form = $('#deck-form');
-  return { ...Object.fromEntries(new FormData(form)), is_public: true, author_ids: [$('#deck-author-select').value].filter(Boolean) };
+  return { ...Object.fromEntries(new FormData(form)), is_public: true, author_ids: [$('#deck-author-select').value].filter(Boolean), cover_artwork_id: state.deck?.cover_artwork_id || '' };
+}
+
+let savingDeckCover = false;
+async function saveDeckCover(file) {
+  if (!file || !state.user || !state.deck || savingDeckCover) return;
+  savingDeckCover = true;
+  const input = $('#deck-cover');
+  input.disabled = true;
+  let artwork = null;
+  const previousArtworkId = state.deck.cover_artwork_id || null;
+  try {
+    artwork = await api.uploadArtwork(await compressedArtwork(file));
+    const saved = await api.saveDeck(state.user.id, state.deck.id, { ...deckFormValues(), cover_artwork_id: artwork.id });
+    state.deck = saved;
+    state.decks = state.decks.map(deck => deck.id === saved.id ? saved : deck);
+    renderDeckList();
+    $('#deck-cover-name').textContent = 'Cover image selected';
+    if (previousArtworkId && previousArtworkId !== artwork.id) await api.deleteArtwork(previousArtworkId).catch(console.error);
+    status('Deck cover saved.');
+  } catch (cause) {
+    if (artwork) await api.deleteArtwork(artwork.id).catch(console.error);
+    status(cause.message, true);
+  } finally { savingDeckCover = false; input.disabled = !state.user || !state.deck || !canEditDeck(state.deck); }
 }
 
 async function autosaveDeck() {
@@ -1948,6 +1973,7 @@ for (const field of [$('#deck-form').elements.name, $('#deck-form').elements.pat
   });
 }
 $('#deck-author-select').addEventListener('change', () => { void queueDeckSave().catch(cause => status(cause.message, true)); });
+$('#deck-cover').addEventListener('change', event => { $('#deck-cover-name').textContent = event.target.files?.[0]?.name || 'Choose an image'; void saveDeckCover(event.target.files?.[0]); });
 $('#deck-form').addEventListener('submit', event => event.preventDefault());
 
 $('#profile-form').addEventListener('submit', async event => {
