@@ -193,6 +193,8 @@ body.dark-mode #decks-view:not(.deck-detail-open) #deck-list .deck-list-item:hov
 #decks-view.deck-detail-open .deck-detail-toolbar label { margin: 0; }
 #decks-view.deck-detail-open .deck-detail-toolbar .back-to-decks { align-self: end; margin-bottom: 0; }
 #decks-view.deck-detail-open .deck-detail-toolbar .actions { margin: 0; align-self: end; white-space: nowrap; }
+#deck-cover { display: none; }
+#deck-cover-button { width: 100%; margin-top: .2rem; }
 #decks-view.deck-detail-open .deck-detail-toolbar input,
 #decks-view.deck-detail-open .deck-detail-toolbar select { display: flex; align-items: center; justify-content: space-between; gap: .4rem; margin-top: .2rem; padding: .45rem .4rem; border: 1px solid #a4b6a5; border-radius: 8px; background: #fffefa; color: #163737; font-size: .82rem; }
 #decks-view.deck-detail-open .deck-detail-toolbar select,
@@ -1517,6 +1519,7 @@ body.dark-mode #auth-modal #auth-mode-toggle {
 }
 body.dark-mode #auth-modal #auth-mode-toggle:hover:not(:disabled) { filter: brightness(1.12); box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .34), 0 6px 16px rgba(0, 18, 12, .38); }
 body:not(.dark-mode) #sign-out,
+body:not(.dark-mode) #deck-cover-button,
 body:not(.dark-mode) #sign-out:hover:not(:disabled) {
   border-color: transparent;
   background: linear-gradient(145deg, rgba(255, 255, 255, .99) 0%, rgba(240, 246, 242, .84) 46%, rgba(225, 236, 229, .64) 100%);
@@ -1524,8 +1527,9 @@ body:not(.dark-mode) #sign-out:hover:not(:disabled) {
   box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .58), 0 2px 8px rgba(34, 98, 49, .2);
   transition: transform .15s ease, filter .15s ease, box-shadow .15s ease;
 }
-body:not(.dark-mode) #sign-out:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.06); box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .7), 0 5px 12px rgba(34, 98, 49, .28); }
+body:not(.dark-mode) #sign-out:hover:not(:disabled), body:not(.dark-mode) #deck-cover-button:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.06); box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .7), 0 5px 12px rgba(34, 98, 49, .28); }
 body.dark-mode #sign-out,
+body.dark-mode #deck-cover-button,
 body.dark-mode #sign-out:hover:not(:disabled) {
   border-color: #416853;
   background: linear-gradient(145deg, rgba(220, 244, 226, .4) 0%, rgba(91, 143, 111, .32) 46%, rgba(28, 70, 52, .44) 100%);
@@ -1533,7 +1537,7 @@ body.dark-mode #sign-out:hover:not(:disabled) {
   box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .28), 0 8px 24px rgba(0, 18, 12, .28);
   transition: transform .15s ease, filter .15s ease, box-shadow .15s ease;
 }
-body.dark-mode #sign-out:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.12); box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .34), 0 6px 16px rgba(0, 18, 12, .38); }
+body.dark-mode #sign-out:hover:not(:disabled), body.dark-mode #deck-cover-button:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.12); box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .34), 0 6px 16px rgba(0, 18, 12, .38); }
 #confirm-add-to-deck {
   border-color: rgba(73, 120, 94, .55);
   background: linear-gradient(145deg, rgba(64, 112, 79, .92), rgba(52, 117, 90, .9) 52%, rgba(38, 88, 71, .88));

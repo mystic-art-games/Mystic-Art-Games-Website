@@ -1974,6 +1974,7 @@ for (const field of [$('#deck-form').elements.name, $('#deck-form').elements.pat
 }
 $('#deck-author-select').addEventListener('change', () => { void queueDeckSave().catch(cause => status(cause.message, true)); });
 $('#deck-cover').addEventListener('change', event => { $('#deck-cover-name').textContent = event.target.files?.[0]?.name || 'Choose an image'; void saveDeckCover(event.target.files?.[0]); });
+$('#deck-cover-button').addEventListener('click', () => $('#deck-cover').click());
 $('#deck-form').addEventListener('submit', event => event.preventDefault());
 
 $('#profile-form').addEventListener('submit', async event => {
