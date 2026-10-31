@@ -551,7 +551,7 @@ function updateAddToDeckButtons(card) {
   const isPatron = Boolean(card?.patron);
   const disabled = !state.user || !card || isPatron || !state.decks.some(deck => state.isAdmin || deck.owner_id === state.user.id);
   for (const id of ['add-to-deck', 'deck-add-to-deck', 'patron-add-to-deck']) {
-    $(`#${id}`).hidden = isPatron;
+    $(`#${id}`).hidden = id !== 'add-to-deck' || isPatron;
     $(`#${id}`).disabled = disabled;
   }
 }
