@@ -86,7 +86,7 @@
     <section class="auth-modal-card danger-modal-card" role="dialog" aria-modal="true" aria-labelledby="delete-account-title" aria-describedby="delete-account-description">
       <div class="auth-modal-head"><h1 id="delete-account-title">Delete account?</h1><button id="close-delete-account" class="auth-modal-close" type="button" aria-label="Close delete account dialog">×</button></div>
       <p id="delete-account-description">Deleting your account permanently removes your profile, cards, decks, and uploaded artwork.</p>
-      <div class="actions danger-modal-actions"><button id="confirm-delete-account" type="button">Delete permanently</button><button id="cancel-delete-account" type="button">Cancel</button></div>
+      <div class="actions danger-modal-actions"><button id="confirm-delete-account" class="action-delete" type="button">Delete permanently</button><button id="cancel-delete-account" class="action-cancel" type="button">Cancel</button></div>
     </section>
   </div>
 
@@ -95,7 +95,7 @@
     <section class="auth-modal-card danger-modal-card" role="dialog" aria-modal="true" aria-labelledby="delete-card-title" aria-describedby="delete-card-description">
       <div class="auth-modal-head"><h1 id="delete-card-title">Delete card?</h1><button id="close-delete-card" class="auth-modal-close" type="button" aria-label="Close delete card dialog">×</button></div>
       <p id="delete-card-description">This card will be permanently deleted.</p>
-      <div class="actions danger-modal-actions"><button id="confirm-delete-card" type="button">Delete Card</button><button id="cancel-delete-card" type="button">Cancel</button></div>
+      <div class="actions danger-modal-actions"><button id="confirm-delete-card" class="action-delete" type="button">Delete Card</button><button id="cancel-delete-card" class="action-cancel" type="button">Cancel</button></div>
     </section>
   </div>
 
@@ -104,7 +104,7 @@
     <section class="auth-modal-card" role="dialog" aria-modal="true" aria-labelledby="add-to-deck-title">
       <div class="auth-modal-head"><h1 id="add-to-deck-title">Add card to Deck</h1><button id="close-add-to-deck" class="auth-modal-close" type="button" aria-label="Close add to deck dialog">×</button></div>
       <label>Deck<select id="add-to-deck-select"></select></label>
-      <div class="actions"><button id="confirm-add-to-deck" type="button">Add</button><button id="cancel-add-to-deck" type="button">Cancel</button></div>
+      <div class="actions"><button id="confirm-add-to-deck" class="action-add-save" type="button">Add</button><button id="cancel-add-to-deck" class="action-cancel" type="button">Cancel</button></div>
     </section>
   </div>
 
@@ -122,7 +122,7 @@
     <section class="auth-modal-card danger-modal-card" role="dialog" aria-modal="true" aria-labelledby="delete-deck-title" aria-describedby="delete-deck-description">
       <div class="auth-modal-head"><h1 id="delete-deck-title">Delete deck?</h1><button id="close-delete-deck" class="auth-modal-close" type="button" aria-label="Close delete deck dialog">×</button></div>
       <p id="delete-deck-description">This deck and its card assignments will be permanently deleted.</p>
-      <div class="actions danger-modal-actions"><button id="confirm-delete-deck" type="button">Delete Deck</button><button id="cancel-delete-deck" type="button">Cancel</button></div>
+      <div class="actions danger-modal-actions"><button id="confirm-delete-deck" class="action-delete" type="button">Delete Deck</button><button id="cancel-delete-deck" class="action-cancel" type="button">Cancel</button></div>
     </section>
   </div>
 
@@ -132,7 +132,7 @@
 
   <main id="cards-view" class="workspace" hidden>
     <aside class="panel sidebar cards-sidebar">
-      <div class="panel-head"><h1>Cards</h1><button id="new-card" type="button" hidden>Add New Card</button></div>
+      <div class="panel-head"><h1>Cards</h1><button id="new-card" class="action-add-save" type="button" hidden>Add New Card</button></div>
       <div class="card-search-field">
         <input id="card-search" type="search" placeholder="Search by card name…" aria-label="Search by card name" autocomplete="off">
       </div>
@@ -156,16 +156,16 @@
         <fieldset class="author-picker card-direct-edit-field"><legend>Authors</legend><div id="card-author-options"></div></fieldset>
           <label class="card-direct-edit-field"><input id="card-artwork" type="file" accept="image/png,image/jpeg,image/webp"></label>
           <p class="hint">Artwork is automatically compressed to 100 KB before upload. Source files can be up to 20 MB.</p>
-          <button id="save-card" type="submit">Save card</button>
+          <button id="save-card" class="action-add-save" type="submit">Save card</button>
         </form>
         <section class="card-preview-shell" aria-label="Card preview and export">
           <canvas id="card-canvas" width="1500" height="2100" aria-label="Card preview"></canvas>
           <p id="preview-note" role="status"></p>
           <p id="card-edit-hint" hidden>Click a card area to edit that element.</p>
           <div class="card-preview-actions">
-            <button id="add-to-deck" class="add-to-deck-button" type="button" aria-label="Add to Deck" title="Add to Deck" disabled>Add to Deck</button>
+            <button id="add-to-deck" class="add-to-deck-button action-add-save" type="button" aria-label="Add to Deck" title="Add to Deck" disabled>Add to Deck</button>
             <button id="download-png" class="download-png-button" type="button" aria-label="Download PNG" title="Download PNG" disabled>Download PNG</button>
-            <button id="delete-card" class="delete-card-button danger-button" type="button" aria-label="Delete Card" title="Delete Card" disabled hidden>Delete Card</button>
+            <button id="delete-card" class="delete-card-button danger-button action-delete" type="button" aria-label="Delete Card" title="Delete Card" disabled hidden>Delete Card</button>
           </div>
         </section>
       </div>
@@ -174,7 +174,7 @@
 
   <main id="decks-view" class="workspace" hidden>
     <aside class="panel sidebar decks-sidebar">
-      <div class="panel-head"><h1>Decks</h1><button id="new-deck" type="button" hidden>Add New Deck</button></div>
+      <div class="panel-head"><h1>Decks</h1><button id="new-deck" class="action-add-save" type="button" hidden>Add New Deck</button></div>
       <div class="deck-table-shell">
         <div id="deck-list" class="item-list" role="list"></div>
       </div>
@@ -185,7 +185,7 @@
           <span class="deck-detail-cover"><img id="deck-detail-cover-image" src="./assets/site-background.jpg" alt=""></span>
           <h2 id="deck-detail-name"></h2>
           <div id="deck-detail-author" class="deck-detail-author"></div>
-          <div class="actions"><button id="edit-deck" type="button" hidden>Edit Deck</button><button id="duplicate-deck" type="button" hidden>Duplicate Deck</button><button id="delete-deck" class="danger-button" type="button" hidden>Delete Deck</button></div>
+          <div class="actions"><button id="edit-deck" type="button" hidden>Edit Deck</button><button id="duplicate-deck" type="button" hidden>Duplicate Deck</button><button id="delete-deck" class="danger-button action-delete" type="button" hidden>Delete Deck</button></div>
       </div>
       <div class="deck-card-filters-row">
         <div class="card-filters" aria-label="Filter cards in this deck">
@@ -213,13 +213,13 @@
           <canvas id="deck-card-canvas" width="1500" height="2100" aria-label="Selected card preview"></canvas>
           <div id="deck-card-preview-note" class="deck-empty-preview">Select a card to preview it.</div>
           <p id="deck-preview-edit-hint" class="deck-preview-edit-hint" hidden>Click a card area to edit that element.</p>
-          <div class="card-preview-actions deck-preview-actions"><button id="deck-add-to-deck" class="add-to-deck-button" type="button" aria-label="Add to Deck" title="Add to Deck" disabled hidden>Add to Deck</button><button id="deck-download-png" class="download-png-button" type="button" aria-label="Download PNG" title="Download PNG" disabled>Download PNG</button><button id="deck-delete-card" class="delete-card-button danger-button" type="button" aria-label="Delete Card" title="Delete Card" disabled hidden>Delete Card</button></div>
+          <div class="card-preview-actions deck-preview-actions"><button id="deck-add-to-deck" class="add-to-deck-button action-add-save" type="button" aria-label="Add to Deck" title="Add to Deck" disabled hidden>Add to Deck</button><button id="deck-download-png" class="download-png-button" type="button" aria-label="Download PNG" title="Download PNG" disabled>Download PNG</button><button id="deck-delete-card" class="delete-card-button danger-button action-delete" type="button" aria-label="Delete Card" title="Delete Card" disabled hidden>Delete Card</button></div>
         </section>
         <section class="deck-patron-preview-shell" aria-label="Deck patron preview">
           <canvas id="deck-patron-canvas" width="1500" height="2100" aria-label="Deck patron card preview"></canvas>
           <div id="deck-patron-preview-note" class="deck-empty-preview">Select a Patron to preview it.</div>
           <p id="deck-patron-edit-hint" class="deck-preview-edit-hint" hidden>Click a card area to edit that element.</p>
-          <div class="card-preview-actions deck-preview-actions"><button id="patron-add-to-deck" class="add-to-deck-button" type="button" aria-label="Add to Deck" title="Add to Deck" disabled hidden>Add to Deck</button><button id="patron-download-png" class="download-png-button" type="button" aria-label="Download PNG" title="Download PNG" disabled>Download PNG</button><button id="patron-delete-card" class="delete-card-button danger-button" type="button" aria-label="Delete Card" title="Delete Card" disabled hidden>Delete Card</button></div>
+          <div class="card-preview-actions deck-preview-actions"><button id="patron-add-to-deck" class="add-to-deck-button action-add-save" type="button" aria-label="Add to Deck" title="Add to Deck" disabled hidden>Add to Deck</button><button id="patron-download-png" class="download-png-button" type="button" aria-label="Download PNG" title="Download PNG" disabled>Download PNG</button><button id="patron-delete-card" class="delete-card-button danger-button action-delete" type="button" aria-label="Delete Card" title="Delete Card" disabled hidden>Delete Card</button></div>
         </section>
       </div>
     </section>
@@ -233,7 +233,7 @@
         <label>Deck name<input name="name" required maxlength="100"></label>
         <label>Author<select id="deck-author-select"></select></label>
         <div class="deck-cover-field"><span>Cover image</span><input id="deck-cover" type="file" accept="image/*" aria-label="Deck cover image"><button id="deck-cover-button" type="button">Choose Cover</button><span id="deck-cover-status" class="deck-cover-status" role="status" aria-live="polite" hidden></span></div>
-        <div class="actions"><button id="cancel-deck-edit" type="button">Cancel</button><button id="save-deck-edit" type="submit">Save Deck</button></div>
+        <div class="actions"><button id="cancel-deck-edit" class="action-cancel" type="button">Cancel</button><button id="save-deck-edit" class="action-add-save" type="submit">Save Deck</button></div>
       </form>
     </section>
   </div>
@@ -251,7 +251,7 @@
         <label>Favorite card<select name="favorite_card_id"></select></label>
         <label>Profile photo<input id="profile-avatar" type="file" accept="image/png,image/jpeg,image/webp"></label>
         <p class="hint">The photo is cropped to a square and automatically compressed before upload.</p>
-        <div class="profile-save-actions"><button type="submit">Save profile</button><button id="delete-account" type="button">Delete account</button><span id="profile-save-status" class="profile-save-status" role="status" hidden>Saved ✓</span></div>
+        <div class="profile-save-actions"><button class="action-add-save" type="submit">Save profile</button><button id="delete-account" class="action-delete" type="button">Delete account</button><span id="profile-save-status" class="profile-save-status" role="status" hidden>Saved ✓</span></div>
       </form>
       <p id="profile-bio"></p>
       <p id="profile-favorite-card" class="profile-favorite-card"></p>
@@ -282,7 +282,7 @@
       <div class="panel-head"><h2 id="card-field-title"></h2><button id="close-card-field" type="button" aria-label="Close field editor">×</button></div>
       <div id="card-field-content"></div>
       <p id="card-field-status" class="card-field-status" role="status" hidden></p>
-      <div class="card-field-actions"><button id="card-field-cancel" type="button">Cancel</button><button id="card-field-save" type="button">Save</button></div>
+      <div class="card-field-actions"><button id="card-field-cancel" class="action-cancel" type="button">Cancel</button><button id="card-field-save" class="action-add-save" type="button">Save</button></div>
     </section>
   </div>
 </body>
