@@ -667,8 +667,11 @@ function requireAccount() {
 
 function syncTerrain() {
   const form = $('#card-form');
+  const isEvent = form.elements.card_type.value === 'Event';
   const required = ['Entity', 'Patron'].includes(form.elements.card_type.value);
+  form.elements.terrain.disabled = isEvent;
   form.elements.terrain.required = required;
+  if (isEvent) form.elements.terrain.value = '';
   if (required && !form.elements.terrain.value) form.elements.terrain.value = 'Symbiosis';
 }
 
@@ -1801,6 +1804,7 @@ async function saveCardForm() {
   let cleanupWarning = '';
   try {
     const values = Object.fromEntries(new FormData(form));
+    if (values.card_type === 'Event') values.terrain = '';
     values.author_ids = selectedAuthorIds($('#card-author-options'));
     values.author = authorNames(values.author_ids, state.user?.id).join(', ');
     const sourceFile = $('#card-artwork').files?.[0];
