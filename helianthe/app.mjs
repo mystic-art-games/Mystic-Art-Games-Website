@@ -1166,7 +1166,6 @@ async function selectDeck(deck) {
   void renderDeckPatron(patronByName(deck?.patron_name));
   renderDeckAuthorSelect(deck?.author_ids?.[0] || deck?.owner_id || state.user?.id);
   $('#deck-cover').value = '';
-  $('#deck-cover-name').textContent = deck?.cover_artwork_id ? 'Cover image selected' : 'Choose an image';
   const mine = Boolean(state.user && (!deck || deck.owner_id === state.user.id));
   for (const field of form.querySelectorAll('input,select, #duplicate-deck, #delete-deck')) field.disabled = !mine;
   $('#duplicate-deck').disabled = !deck || !state.user;
@@ -1238,7 +1237,6 @@ async function saveDeckCover(file) {
     state.deck = saved;
     state.decks = state.decks.map(deck => deck.id === saved.id ? saved : deck);
     renderDeckList();
-    $('#deck-cover-name').textContent = 'Cover image selected';
     if (previousArtworkId && previousArtworkId !== artwork.id) await api.deleteArtwork(previousArtworkId).catch(console.error);
     status('Deck cover saved.');
   } catch (cause) {
@@ -1973,7 +1971,7 @@ for (const field of [$('#deck-form').elements.name, $('#deck-form').elements.pat
   });
 }
 $('#deck-author-select').addEventListener('change', () => { void queueDeckSave().catch(cause => status(cause.message, true)); });
-$('#deck-cover').addEventListener('change', event => { $('#deck-cover-name').textContent = event.target.files?.[0]?.name || 'Choose an image'; void saveDeckCover(event.target.files?.[0]); });
+$('#deck-cover').addEventListener('change', event => { void saveDeckCover(event.target.files?.[0]); });
 $('#deck-cover-button').addEventListener('click', () => $('#deck-cover').click());
 $('#deck-form').addEventListener('submit', event => event.preventDefault());
 
