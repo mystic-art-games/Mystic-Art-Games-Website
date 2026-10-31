@@ -548,8 +548,12 @@ function canEditDeck(deck) {
 }
 
 function updateAddToDeckButtons(card) {
-  const disabled = !state.user || !card || Boolean(card.patron) || !state.decks.some(deck => state.isAdmin || deck.owner_id === state.user.id);
-  for (const id of ['add-to-deck', 'deck-add-to-deck', 'patron-add-to-deck']) $(`#${id}`).disabled = disabled;
+  const isPatron = Boolean(card?.patron);
+  const disabled = !state.user || !card || isPatron || !state.decks.some(deck => state.isAdmin || deck.owner_id === state.user.id);
+  for (const id of ['add-to-deck', 'deck-add-to-deck', 'patron-add-to-deck']) {
+    $(`#${id}`).hidden = isPatron;
+    $(`#${id}`).disabled = disabled;
+  }
 }
 
 function openAddToDeckModal(card) {
