@@ -448,6 +448,9 @@ body.dark-mode .profile-save-status.error { color: #ef9187; }
 .card-search-suggestions, .favorite-card-menu { scrollbar-width: none; }
 .card-search-suggestions::-webkit-scrollbar, .favorite-card-menu::-webkit-scrollbar { display: none; }
 .dropdown-scroll-rail { z-index: 31; right: .35rem; bottom: auto; }
+.dropdown-scroll-rail::before { background: rgba(37, 83, 62, .56); box-shadow: 0 0 5px rgba(37, 83, 62, .18); }
+.dropdown-scroll-rail .art-scroll-thumb { border-color: rgba(37, 83, 62, .72); background: linear-gradient(135deg, rgba(255, 255, 255, .86), rgba(160, 198, 169, .76) 48%, rgba(37, 83, 62, .72)); box-shadow: 0 3px 8px rgba(20, 49, 38, .3), inset 2px 2px 3px rgba(255, 255, 255, .8), inset -2px -2px 4px rgba(24, 67, 46, .3); }
+.dropdown-scroll-rail .art-scroll-thumb:hover:not(:disabled) { background: linear-gradient(135deg, rgba(255, 255, 255, .94), rgba(160, 198, 169, .86) 48%, rgba(37, 83, 62, .82)); }
 .card-search-suggestions .card-search-option { display: grid; grid-template-columns: 1.65rem minmax(0, 1fr); gap: .55rem; align-items: center; width: 100%; padding: .45rem .55rem; border: 0; border-radius: 7px; background: transparent; text-align: left; }
 .card-search-suggestions .card-search-option .card-type-icon { width: 1.65rem; height: 1.65rem; }
 .card-search-suggestions .card-search-option:hover, .card-search-suggestions .card-search-option:focus-visible { background: #e0ebda; }
