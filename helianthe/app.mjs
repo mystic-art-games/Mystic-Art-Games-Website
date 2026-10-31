@@ -683,7 +683,7 @@ function requireCardEdit(card) {
 }
 
 function canEditDeck(deck) {
-  return Boolean(state.user && deck && deck.owner_id === state.user.id);
+  return Boolean(state.user && deck && (deck.owner_id === state.user.id || state.isAdmin));
 }
 
 function updateAddToDeckButtons(card) {
@@ -1370,7 +1370,7 @@ async function selectDeck(deck) {
   $('#edit-deck').hidden = !canEditDeck(deck);
   $('#edit-deck').disabled = !deck || !canEditDeck(deck);
   showDeckCoverStatus();
-  const mine = Boolean(state.user && (!deck || deck.owner_id === state.user.id));
+  const mine = Boolean(state.user && (!deck || canEditDeck(deck)));
   for (const field of form.querySelectorAll('input,select, #duplicate-deck, #delete-deck')) field.disabled = !mine;
   syncPatronPicker(patronSelect);
   $('#duplicate-deck').disabled = !deck || !state.user;
@@ -1467,7 +1467,7 @@ async function saveDeckEdit() {
   try {
     await deckSaveQueue.catch(() => {});
     if (file) artwork = await api.uploadArtwork(await compressedArtwork(file));
-    const saved = await api.saveDeck(state.user.id, selectedDeck.id, { ...deckFormValues(), cover_artwork_id: artwork?.id || previousArtworkId });
+    const saved = await api.saveDeck(state.user.id, selectedDeck.id, { ...deckFormValues(), cover_artwork_id: artwork?.id || previousArtworkId }, state.isAdmin);
     state.deck = saved;
     state.decks = state.decks.map(deck => deck.id === saved.id ? saved : deck);
     renderDeckList();
@@ -1491,7 +1491,7 @@ async function autosaveDeck() {
   if (!state.user) return;
   const values = deckFormValues();
   const saved = state.deck
-    ? await api.saveDeck(state.user.id, state.deck.id, values)
+    ? await api.saveDeck(state.user.id, state.deck.id, values, state.isAdmin)
     : await api.createDeck(state.user.id, values);
   rememberDeckPatron(saved.id, values.patron_name);
   if (!state.deck) {
@@ -1597,7 +1597,7 @@ function startRealtimeSync() {
       renderAuthorOptions($('#card-author-options'), selectedCardAuthors);
       renderDeckAuthorSelect(selectedDeckAuthor);
       const cardEditable = canEditCard(state.card);
-      const deckEditable = Boolean(state.user && (!state.deck || state.deck.owner_id === state.user.id));
+      const deckEditable = Boolean(state.user && (!state.deck || canEditDeck(state.deck)));
       for (const input of $('#card-author-options').querySelectorAll('input')) input.disabled = !cardEditable;
       $('#deck-author-select').disabled = !deckEditable;
     } catch (cause) { status(cause.message, true); }

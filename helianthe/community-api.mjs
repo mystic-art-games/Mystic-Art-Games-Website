@@ -225,13 +225,17 @@ export function createCommunityApi(client) {
       ));
     },
 
-    async saveDeck(userId, deckId, values) {
-      if (!userId || !deckId) throw new Error('Select your own deck.');
+    async saveDeck(userId, deckId, values, isAdmin = false) {
+      if (!userId || !deckId) throw new Error('Select a deck first.');
       const patch = { ...deckInput(values), updated_at: new Date().toISOString() };
       const rows = result(await writeDeckWithLegacyFallback(
-        valuesToSave => client.from('decks').update(valuesToSave).eq('id', deckId).eq('owner_id', userId).select(), patch,
+        valuesToSave => {
+          let query = client.from('decks').update(valuesToSave).eq('id', deckId);
+          if (!isAdmin) query = query.eq('owner_id', userId);
+          return query.select();
+        }, patch,
       ));
-      if (!rows?.length) throw new Error('Only the deck owner can edit this deck.');
+      if (!rows?.length) throw new Error('Only the deck owner or designated administrator can edit this deck.');
       return rows[0];
     },
 
