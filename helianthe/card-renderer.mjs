@@ -51,7 +51,7 @@ function tintedEventSymbol(image, terrain) {
 
 export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () => true, options = {}) {
   const type = card.card_type || card.type || 'Entity';
-  const terrain = Object.hasOwn(terrainColors, card.terrain) ? card.terrain : null;
+  const terrain = type !== 'Event' && Object.hasOwn(terrainColors, card.terrain) ? card.terrain : null;
   const frameName = `Frame_${terrain || 'Event'}.svg`;
   const symbolName = type === 'Event' ? 'Event.png' : type === 'Patron' ? 'Patron.png' : `Entity_${terrain || 'Flow'}.png`;
   const [frame, art, symbol] = await Promise.all([
