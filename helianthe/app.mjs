@@ -480,6 +480,7 @@ function syncCardTypeFilter() {
   const isEvent = type.value === 'Event';
   terrain.disabled = isEvent;
   if (isEvent) terrain.value = 'none';
+  else if (!type.value) terrain.value = '';
 }
 
 function renderCardList() {
