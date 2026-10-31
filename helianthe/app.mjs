@@ -1264,7 +1264,6 @@ function selectProfile(profile) {
   $('#profile-heading').replaceChildren(avatarElement(profile), document.createTextNode(profile.display_name || 'Player'));
   const mine = profile.id === state.user?.id;
   $('#profile-form').hidden = !mine;
-  $('#profile-new-deck').hidden = !mine;
   $('#profile-form').elements.display_name.value = profile.display_name;
   $('#profile-form').elements.bio.value = profile.bio;
   populateFavoriteCards($('#profile-form').elements.favorite_card_id, profile.favorite_card_id);
@@ -1885,11 +1884,6 @@ $('#new-deck').addEventListener('click', () => {
   if (requireAccount()) void createNewDeck().catch(cause => status(cause.message, true));
 });
 $('#back-to-decks').addEventListener('click', () => { void selectDeck(null); });
-$('#profile-new-deck').addEventListener('click', () => {
-  if (!requireAccount()) return;
-  showTab('decks');
-  void createNewDeck().catch(cause => status(cause.message, true));
-});
 $('#duplicate-deck').addEventListener('click', async () => {
   if (!state.user || !state.deck) return;
   const duplicate = $('#duplicate-deck'); duplicate.disabled = true;
