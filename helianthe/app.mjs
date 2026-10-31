@@ -18,6 +18,7 @@ let authMode = 'sign-in';
 let profileSaveStatusTimer = null;
 const state = { user: null, isAdmin: false, cards: [], decks: [], profiles: [], card: null, deck: null, profile: null, deckCards: [], deckPreviewCard: null, deckPreviewArtworkUrl: null, deckPreviewSerial: 0, deckPatronSerial: 0, artworkUrl: null, artworkSerial: 0, renderSerial: 0, authVersion: 0, realtimeChannel: null, cardFormDirty: false };
 let addToDeckCard = null;
+let recentDeckCardAddition = null;
 const ARTWORK_UPLOAD_LIMIT = 100 * 1024;
 const AVATAR_UPLOAD_LIMIT = 80 * 1024;
 const DECK_PATRONS_KEY = 'helianthe-deck-patrons';
@@ -1205,16 +1206,17 @@ function renderDeckCardSuggestions() {
       const deck = state.deck;
       const copies = state.deckCards.find(item => item.card_id === card.id)?.copies || 0;
       if (copies >= 2) { void showDeckCardPreview(card); return; }
+      recentDeckCardAddition = { deckId: deck.id, cardId: card.id, expiresAt: performance.now() + 3000 };
       void api.setDeckCard(state.user.id, deck, card.id, copies + 1, state.isAdmin)
         .then(async () => {
           const deckCards = await api.listDeckCards(deck.id);
           if (state.deck?.id !== deck.id) return;
           state.deckCards = deckCards;
-          void showDeckCardPreview(card);
+          await showDeckCardPreview(card);
           scrollToDeckCardRow(card.id);
           status(`Added ${card.title} to ${deck.name}.`);
         })
-        .catch(cause => status(cause.message, true));
+        .catch(cause => { recentDeckCardAddition = null; status(cause.message, true); });
     }));
   }
   suggestions.hidden = !cards.length;
@@ -1595,6 +1597,9 @@ function startRealtimeSync() {
       const previewCard = state.cards.find(card => card.id === selectedPreviewId);
       if (previewCard) await showDeckCardPreview(previewCard);
       else renderDeckCards();
+      if (recentDeckCardAddition?.deckId === updatedDeck.id && performance.now() < recentDeckCardAddition.expiresAt) {
+        scrollToDeckCardRow(recentDeckCardAddition.cardId);
+      }
     } catch (cause) { status(cause.message, true); }
   };
   state.realtimeChannel = client.channel('helianthe-workspace')
