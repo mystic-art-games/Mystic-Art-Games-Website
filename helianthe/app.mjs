@@ -937,6 +937,24 @@ function renderDeckList() {
   if (!list.childElementCount) list.textContent = 'No decks yet.';
 }
 
+function renderDeckHeader() {
+  const deck = state.deck;
+  $('#deck-detail-name').textContent = deck?.name || '';
+  const author = $('#deck-detail-author');
+  author.replaceChildren();
+  if (deck) author.append(authorDisplayElement(deck.author_ids, deck.owner_id));
+  const image = $('#deck-detail-cover-image');
+  image.src = deckCoverArtworkUrls.get(deck?.cover_artwork_id) || './assets/site-background.jpg';
+  if (deck?.cover_artwork_id && !deckCoverArtworkUrls.has(deck.cover_artwork_id)) {
+    const artworkId = deck.cover_artwork_id;
+    void api.fetchArtwork(artworkId).then(blob => {
+      const url = URL.createObjectURL(blob);
+      deckCoverArtworkUrls.set(artworkId, url);
+      if (state.deck?.cover_artwork_id === artworkId) image.src = url;
+    }).catch(() => {});
+  }
+}
+
 function renderDeckCards() {
   const list = $('#deck-cards');
   list.replaceChildren();
@@ -1156,9 +1174,11 @@ async function showDeckCardPreview(card) {
 
 async function selectDeck(deck) {
   state.deck = deck;
+  closeDeckEdit();
   state.deckCards = [];
   $('#decks-view').classList.toggle('deck-detail-open', Boolean(deck));
   renderDeckList();
+  renderDeckHeader();
   renderDeckCards();
   const canDelete = Boolean(deck && state.user && (deck.owner_id === state.user.id || state.isAdmin));
   $('#duplicate-deck').disabled = !deck || !state.user;
@@ -1175,6 +1195,8 @@ async function selectDeck(deck) {
   renderDeckAuthorSelect(deck?.author_ids?.[0] || deck?.owner_id || state.user?.id);
   $('#deck-cover').value = '';
   $('#deck-cover-button').disabled = !deck || !canEditDeck(deck) || savingDeckCover;
+  $('#edit-deck').hidden = !canEditDeck(deck);
+  $('#edit-deck').disabled = !deck || !canEditDeck(deck);
   showDeckCoverStatus();
   const mine = Boolean(state.user && (!deck || deck.owner_id === state.user.id));
   for (const field of form.querySelectorAll('input,select, #duplicate-deck, #delete-deck')) field.disabled = !mine;
@@ -1234,36 +1256,55 @@ function deckFormValues() {
 }
 
 let savingDeckCover = false;
+function closeDeckEdit() {
+  $('#deck-edit-modal').hidden = true;
+  document.body.classList.remove('auth-modal-open');
+  $('#deck-cover').value = '';
+  showDeckCoverStatus();
+}
+function openDeckEdit() {
+  if (!canEditDeck(state.deck)) return;
+  const form = $('#deck-form');
+  form.elements.name.value = state.deck.name;
+  renderDeckAuthorSelect(state.deck.author_ids?.[0] || state.deck.owner_id);
+  $('#deck-cover').value = '';
+  showDeckCoverStatus();
+  $('#deck-edit-modal').hidden = false;
+  document.body.classList.add('auth-modal-open');
+  form.elements.name.focus();
+}
 function showDeckCoverStatus(message = '', error = false) {
   const element = $('#deck-cover-status');
   element.textContent = message;
   element.hidden = !message;
   element.classList.toggle('error', error);
 }
-async function saveDeckCover(file) {
-  if (!file || !state.user || !canEditDeck(state.deck) || savingDeckCover) return;
+async function saveDeckEdit() {
+  if (!state.user || !canEditDeck(state.deck) || savingDeckCover) return;
   savingDeckCover = true;
   const input = $('#deck-cover');
-  const button = $('#deck-cover-button');
+  const button = $('#save-deck-edit');
+  const file = input.files?.[0];
   const selectedDeck = state.deck;
   input.disabled = true;
   button.disabled = true;
-  showDeckCoverStatus('Uploading cover…');
+  showDeckCoverStatus(file ? 'Uploading cover…' : 'Saving deck…');
   let artwork = null;
   const previousArtworkId = selectedDeck.cover_artwork_id || null;
   try {
     await deckSaveQueue.catch(() => {});
-    artwork = await api.uploadArtwork(await compressedArtwork(file));
-    const saved = await api.saveDeck(state.user.id, selectedDeck.id, { ...deckFormValues(), cover_artwork_id: artwork.id });
+    if (file) artwork = await api.uploadArtwork(await compressedArtwork(file));
+    const saved = await api.saveDeck(state.user.id, selectedDeck.id, { ...deckFormValues(), cover_artwork_id: artwork?.id || previousArtworkId });
     state.deck = saved;
     state.decks = state.decks.map(deck => deck.id === saved.id ? saved : deck);
     renderDeckList();
-    if (previousArtworkId && previousArtworkId !== artwork.id) await api.deleteArtwork(previousArtworkId).catch(console.error);
-    await selectDeck(null);
-    status('Deck cover saved.');
+    renderDeckHeader();
+    if (artwork && previousArtworkId && previousArtworkId !== artwork.id) await api.deleteArtwork(previousArtworkId).catch(console.error);
+    closeDeckEdit();
+    status('Deck saved.');
   } catch (cause) {
     if (artwork) await api.deleteArtwork(artwork.id).catch(console.error);
-    showDeckCoverStatus(cause.message || 'Cover upload failed.', true);
+    showDeckCoverStatus(cause.message || 'Deck save failed.', true);
     status(cause.message, true);
   } finally {
     savingDeckCover = false;
@@ -1441,7 +1482,7 @@ async function applyPendingAvatar(user, profile) {
 
 function updateAuthenticatedControls() {
   const signedIn = Boolean(state.user);
-  for (const id of ['new-card', 'new-deck', 'duplicate-deck', 'delete-deck', 'delete-card', 'deck-delete-card', 'patron-delete-card']) {
+  for (const id of ['new-card', 'new-deck', 'duplicate-deck', 'edit-deck', 'delete-deck', 'delete-card', 'deck-delete-card', 'patron-delete-card']) {
     $(`#${id}`).hidden = !signedIn;
   }
   $('#card-edit-hint').hidden = !signedIn;
@@ -1942,6 +1983,10 @@ $('#new-deck').addEventListener('click', () => {
   if (requireAccount()) void createNewDeck().catch(cause => status(cause.message, true));
 });
 $('#back-to-decks').addEventListener('click', () => { void selectDeck(null); });
+$('#edit-deck').addEventListener('click', openDeckEdit);
+$('#deck-edit-backdrop').addEventListener('click', closeDeckEdit);
+$('#close-deck-edit').addEventListener('click', closeDeckEdit);
+$('#cancel-deck-edit').addEventListener('click', closeDeckEdit);
 $('#duplicate-deck').addEventListener('click', async () => {
   if (!state.user || !state.deck) return;
   const duplicate = $('#duplicate-deck'); duplicate.disabled = true;
@@ -1992,16 +2037,13 @@ $('#confirm-delete-deck').addEventListener('click', async () => {
     button.disabled = !state.deck || !state.user || (!canEditDeck(state.deck) && !state.isAdmin);
   }
 });
-for (const field of [$('#deck-form').elements.name, $('#deck-form').elements.patron_name]) {
-  field.addEventListener('change', () => {
-    if (field.name === 'patron_name') void renderDeckPatron(patronByName(field.value));
-    void queueDeckSave().catch(cause => status(cause.message, true));
-  });
-}
-$('#deck-author-select').addEventListener('change', () => { void queueDeckSave().catch(cause => status(cause.message, true)); });
-$('#deck-cover').addEventListener('change', event => { void saveDeckCover(event.target.files?.[0]); });
+$('#deck-form').elements.patron_name.addEventListener('change', event => {
+  void renderDeckPatron(patronByName(event.target.value));
+  void queueDeckSave().catch(cause => status(cause.message, true));
+});
+$('#deck-cover').addEventListener('change', event => showDeckCoverStatus(event.target.files?.[0]?.name || ''));
 $('#deck-cover-button').addEventListener('click', () => $('#deck-cover').click());
-$('#deck-form').addEventListener('submit', event => event.preventDefault());
+$('#deck-form').addEventListener('submit', event => { event.preventDefault(); void saveDeckEdit(); });
 
 $('#profile-form').addEventListener('submit', async event => {
   event.preventDefault();

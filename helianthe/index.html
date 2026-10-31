@@ -180,16 +180,13 @@
       </div>
     </aside>
     <section class="panel editor-panel">
-      <form id="deck-form">
-        <div class="deck-detail-toolbar">
+      <div class="deck-detail-toolbar">
           <button id="back-to-decks" class="back-to-decks" type="button">← Back</button>
-          <label>Deck name<input name="name" required maxlength="100"></label>
-          <label>Patron<select name="patron_name"></select></label>
-          <label>Author<select id="deck-author-select"></select></label>
-          <div class="deck-cover-field"><span>Cover</span><input id="deck-cover" type="file" accept="image/*" aria-label="Deck cover image"><button id="deck-cover-button" type="button">Choose Cover</button><span id="deck-cover-status" class="deck-cover-status" role="status" aria-live="polite" hidden></span></div>
-          <div class="actions"><button id="duplicate-deck" type="button" hidden>Duplicate Deck</button><button id="delete-deck" class="danger-button" type="button" hidden>Delete Deck</button></div>
-        </div>
-      </form>
+          <span class="deck-detail-cover"><img id="deck-detail-cover-image" src="./assets/site-background.jpg" alt=""></span>
+          <h2 id="deck-detail-name"></h2>
+          <div id="deck-detail-author" class="deck-detail-author"></div>
+          <div class="actions"><button id="duplicate-deck" type="button" hidden>Duplicate Deck</button><button id="edit-deck" type="button" hidden>Edit Deck</button><button id="delete-deck" class="danger-button" type="button" hidden>Delete Deck</button></div>
+      </div>
       <div class="deck-card-filters-row">
         <div class="card-filters" aria-label="Filter cards in this deck">
           <label>Type<select id="deck-card-filter-type"><option value="">All Types</option><option value="Entity">Entity</option><option value="Event">Event</option></select></label>
@@ -201,6 +198,7 @@
           <input id="deck-card-search" type="search" placeholder="Search by card name…" aria-label="Search cards in this deck by name" aria-controls="deck-card-search-suggestions" aria-expanded="false" autocomplete="off">
           <div id="deck-card-search-suggestions" class="card-search-suggestions" role="listbox" hidden></div>
         </div>
+        <label class="deck-patron-field">Patron<select name="patron_name" form="deck-form"></select></label>
       </div>
       <div class="deck-card-layout">
         <section class="deck-card-table" aria-label="Cards in this deck">
@@ -226,6 +224,19 @@
       </div>
     </section>
   </main>
+
+  <div id="deck-edit-modal" class="auth-modal" hidden>
+    <button id="deck-edit-backdrop" class="auth-modal-backdrop" type="button" aria-label="Close deck editor"></button>
+    <section class="auth-modal-card deck-edit-card" role="dialog" aria-modal="true" aria-labelledby="deck-edit-title">
+      <div class="auth-modal-head"><h2 id="deck-edit-title">Edit Deck</h2><button id="close-deck-edit" class="auth-modal-close" type="button" aria-label="Close deck editor">×</button></div>
+      <form id="deck-form">
+        <label>Deck name<input name="name" required maxlength="100"></label>
+        <label>Author<select id="deck-author-select"></select></label>
+        <div class="deck-cover-field"><span>Cover image</span><input id="deck-cover" type="file" accept="image/*" aria-label="Deck cover image"><button id="deck-cover-button" type="button">Choose Cover</button><span id="deck-cover-status" class="deck-cover-status" role="status" aria-live="polite" hidden></span></div>
+        <div class="actions"><button id="cancel-deck-edit" type="button">Cancel</button><button id="save-deck-edit" type="submit">Save Deck</button></div>
+      </form>
+    </section>
+  </div>
 
   <main id="profiles-view" class="workspace" hidden>
     <aside class="panel sidebar">
