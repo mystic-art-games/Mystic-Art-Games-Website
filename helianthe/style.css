@@ -408,10 +408,15 @@ body.dark-mode .patron-detail-panel::-webkit-scrollbar-thumb {
   #decks-view .deck-card-table { display: flex; flex-direction: column; height: 100%; min-height: 0; }
   #decks-view .deck-card-layout { grid-template-rows: minmax(0, 1fr); }
   #decks-view .deck-card-preview-shell,
-  #decks-view .deck-patron-preview-shell { height: 100%; min-height: 0; overflow: visible; }
+  #decks-view .deck-patron-preview-shell { height: 100%; min-height: 0; overflow: visible; container-type: size; }
   #decks-view #deck-card-canvas,
   #decks-view #deck-patron-canvas,
-  #decks-view .deck-empty-preview { flex: 0 0 auto; width: auto; height: auto; max-height: calc(100% - 6rem); max-width: calc(100% - .8rem); object-fit: contain; }
+  #decks-view .deck-empty-preview {
+    flex: 0 0 auto;
+    width: min(calc(100% - .8rem), 300px, calc(71.4286cqh - 4.2857rem));
+    height: auto;
+  }
+  #decks-view .deck-preview-edit-hint { min-height: 0; margin: .1rem auto 0; align-items: center; }
   #decks-view .deck-card-table { grid-column: 1; grid-row: 1; }
   #decks-view .deck-card-preview-shell { grid-column: 2; grid-row: 1; }
   #decks-view .deck-patron-preview-shell { grid-column: 3; grid-row: 1; }
