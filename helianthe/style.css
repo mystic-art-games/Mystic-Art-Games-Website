@@ -55,6 +55,7 @@ body.dark-mode .theme-state { margin-left: 0; }
 body.auth-modal-open { overflow: hidden; }
 form label { display: block; margin: .65rem 0; font-weight: 700; }
 input:not([type=checkbox]):not([type=file]), select, textarea { display: block; width: 100%; min-width: 0; margin-top: .25rem; border: 1px solid #a4b6a5; background: #fffefa; color: #163737; border-radius: 8px; padding: .6rem .7rem; }
+#card-form select[name="terrain"]:disabled { border-color: #b9c1bb; background: #e3e6e3; color: #6b756f; cursor: not-allowed; opacity: 1; }
 select { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 select option { min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .favorite-card-picker { position: relative; margin-top: .25rem; }
@@ -991,6 +992,7 @@ body.dark-mode .masthead nav button.active { background: transparent url('./asse
 body.dark-mode input:not([type=checkbox]):not([type=file]),
 body.dark-mode select,
 body.dark-mode textarea { border-color: #587965; background: #0d2b23; color: #e5eee0; }
+body.dark-mode #card-form select[name="terrain"]:disabled { border-color: #4d6255; background: #34453d; color: #aab8af; }
 body.dark-mode .favorite-card-trigger { border-color: #587965; background: #0d2b23; color: #e5eee0; }
 body.dark-mode .favorite-card-menu { border-color: #587965; background: #12372c; box-shadow: 0 10px 24px #0008; }
 body.dark-mode .favorite-card-option:hover:not(:disabled) { background: #285944; }
