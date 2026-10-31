@@ -55,6 +55,7 @@ body.dark-mode .theme-state { margin-left: 0; }
 body.auth-modal-open { overflow: hidden; }
 form label { display: block; margin: .65rem 0; font-weight: 700; }
 input:not([type=checkbox]):not([type=file]), select, textarea { display: block; width: 100%; min-width: 0; margin-top: .25rem; border: 1px solid #a4b6a5; background: #fffefa; color: #163737; border-radius: 8px; padding: .6rem .7rem; }
+#card-search, #deck-card-search, #card-search::placeholder, #deck-card-search::placeholder { font-family: Nunito, Arial, sans-serif; }
 #card-form select[name="terrain"]:disabled { border-color: #b9c1bb; background: #e3e6e3; color: #6b756f; cursor: not-allowed; opacity: 1; }
 select { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 select option { min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
