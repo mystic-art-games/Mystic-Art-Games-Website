@@ -199,7 +199,8 @@ body.dark-mode #decks-view:not(.deck-detail-open) #deck-list .deck-list-item:hov
 #decks-view.deck-detail-open .deck-detail-toolbar .actions { display: flex; flex: 0 0 auto; gap: .4rem; margin: 0 0 0 auto; white-space: nowrap; }
 .deck-detail-cover { display: block; flex: 0 0 96px; width: 96px; aspect-ratio: 16 / 9; overflow: hidden; border-radius: 8px; background: #d9e5d7; }
 .deck-detail-cover img { display: block; width: 100%; height: 100%; object-fit: cover; }
-#deck-detail-name { min-width: 0; margin: 0; font-size: 1.2rem; line-height: 1.2; overflow-wrap: anywhere; }
+#decks-view.deck-detail-open .deck-detail-title-group { display: flex; flex: 0 1 auto; min-width: 0; flex-direction: column; justify-content: center; gap: .12rem; transform: translateY(-3px); }
+#deck-detail-name { min-width: 0; margin: 0; font-size: 1.45rem; line-height: 1.15; overflow-wrap: anywhere; }
 .deck-detail-author { display: flex; align-items: center; min-width: 0; font-size: .85rem; }
 .deck-detail-author .author-display { min-width: 0; }
 #deck-cover { display: none; }
