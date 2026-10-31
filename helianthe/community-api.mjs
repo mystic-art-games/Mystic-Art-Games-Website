@@ -57,10 +57,20 @@ async function writeCardWithLegacyFallback(write, input) {
 
 async function writeDeckWithLegacyFallback(write, input) {
   let values = input;
-  const response = await write(values);
-  if (!response.error || !/author_ids/i.test(response.error.message || '')) return response;
-  const { author_ids, ...legacyValues } = values;
-  return write(legacyValues);
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const response = await write(values);
+    if (!response.error) return response;
+    const message = response.error.message || '';
+    if (/cover_artwork_id/i.test(message) && Object.hasOwn(values, 'cover_artwork_id')) {
+      if (values.cover_artwork_id) throw new Error('Deck covers are not enabled in the database yet. Apply the deck cover migration, then try again.');
+      const { cover_artwork_id, ...legacyValues } = values;
+      values = legacyValues;
+    } else if (/author_ids/i.test(message) && Object.hasOwn(values, 'author_ids')) {
+      const { author_ids, ...legacyValues } = values;
+      values = legacyValues;
+    } else return response;
+  }
+  return write(values);
 }
 
 export function cardInput(form) {
@@ -187,8 +197,13 @@ export function createCommunityApi(client) {
       try {
         return result(await client.from('decks').select('id,owner_id,name,patron_name,author_ids,cover_artwork_id,is_public,created_at,updated_at').order('created_at', { ascending: false }));
       } catch {
-        const decks = result(await client.from('decks').select('id,owner_id,name,patron_name,is_public,created_at,updated_at').order('created_at', { ascending: false }));
-        return decks.map(deck => ({ ...deck, author_ids: deck.owner_id ? [deck.owner_id] : [], cover_artwork_id: null }));
+        try {
+          const decks = result(await client.from('decks').select('id,owner_id,name,patron_name,author_ids,is_public,created_at,updated_at').order('created_at', { ascending: false }));
+          return decks.map(deck => ({ ...deck, cover_artwork_id: null }));
+        } catch {
+          const decks = result(await client.from('decks').select('id,owner_id,name,patron_name,is_public,created_at,updated_at').order('created_at', { ascending: false }));
+          return decks.map(deck => ({ ...deck, author_ids: deck.owner_id ? [deck.owner_id] : [], cover_artwork_id: null }));
+        }
       }
     },
 
