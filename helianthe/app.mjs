@@ -1170,7 +1170,9 @@ async function showDeckCardPreview(card) {
   const canvas = $('#deck-card-canvas');
   updateAddToDeckButtons(card);
   shell.classList.toggle('is-empty', !card);
-  $('#deck-preview-edit-hint').hidden = !card || !state.user;
+  const editHint = $('#deck-preview-edit-hint');
+  editHint.textContent = card ? 'Click a card area to edit that element.' : 'No card selected.';
+  editHint.hidden = !state.deck || (Boolean(card) && !state.user);
   canvas.tabIndex = card ? 0 : -1;
   canvas.setAttribute('aria-disabled', String(!card));
   $('#deck-download-png').disabled = true;
@@ -1510,7 +1512,7 @@ function updateAuthenticatedControls() {
     $(`#${id}`).hidden = !signedIn;
   }
   $('#card-edit-hint').hidden = !signedIn;
-  $('#deck-preview-edit-hint').hidden = !signedIn || !state.deckPreviewCard;
+  $('#deck-preview-edit-hint').hidden = !state.deck || (Boolean(state.deckPreviewCard) && !signedIn);
   $('#deck-patron-edit-hint').hidden = !signedIn || !patronByName(state.deck?.patron_name);
 }
 
