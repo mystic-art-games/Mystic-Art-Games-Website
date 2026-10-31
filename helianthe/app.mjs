@@ -491,7 +491,7 @@ function renderCardList() {
   const list = $('#card-list');
   list.replaceChildren();
   for (const card of [...state.cards, ...patronCards].sort((a, b) => a.title.localeCompare(b.title)).filter(item => {
-    const matchesSearch = `${item.title} ${item.effect}`.toLocaleLowerCase().includes(query);
+    const matchesSearch = item.title.toLocaleLowerCase().includes(query);
     const matchesType = !type || item.card_type === type;
     const matchesAuthor = !author || (item.patron ? (authorNames(item.author_ids).includes(author) || (!item.author_ids?.length && item.author === author)) : authorNames(item.author_ids, item.owner_id).includes(author));
     const matchesTerrain = !terrain || (terrain === 'none' ? !item.terrain : item.terrain === terrain);
@@ -941,7 +941,7 @@ function renderDeckCards() {
   for (const card of state.cards) {
     const copies = state.deckCards.find(item => item.card_id === card.id)?.copies || 0;
     if (!copies) continue;
-    if (query && !`${card.title} ${card.effect}`.toLocaleLowerCase().includes(query)) continue;
+    if (query && !card.title.toLocaleLowerCase().includes(query)) continue;
     if (type && card.card_type !== type) continue;
     if (author && !authorNames(card.author_ids, card.owner_id).includes(author)) continue;
     if (terrain && (terrain === 'none' ? Boolean(card.terrain) : card.terrain !== terrain)) continue;
@@ -1014,7 +1014,7 @@ function renderCardSearchSuggestions() {
   const suggestions = $('#card-search-suggestions');
   const query = input.value.trim().toLocaleLowerCase();
   const cards = [...state.cards, ...patronCards]
-    .filter(card => !query || `${card.title} ${card.effect}`.toLocaleLowerCase().includes(query))
+    .filter(card => !query || card.title.toLocaleLowerCase().includes(query))
     .sort((a, b) => a.title.localeCompare(b.title));
   suggestions.replaceChildren();
   for (const card of cards) suggestions.append(cardSearchOption(card, () => {
@@ -1034,7 +1034,7 @@ function renderDeckCardSuggestions() {
   suggestions.replaceChildren();
   if (!state.deck) { closeCardSearchSuggestions(input, suggestions); return; }
   const cards = state.cards
-    .filter(card => !query || `${card.title} ${card.effect}`.toLocaleLowerCase().includes(query))
+    .filter(card => !query || card.title.toLocaleLowerCase().includes(query))
     .sort((a, b) => a.title.localeCompare(b.title));
   for (const card of cards) {
     suggestions.append(cardSearchOption(card, () => {
