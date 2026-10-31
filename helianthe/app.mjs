@@ -753,7 +753,7 @@ function openCardField(field) {
     effect: form.elements.effect.closest('label'),
     authors: $('#card-author-options').closest('fieldset'),
   };
-  const titles = { title: 'Edit title', identity: 'Edit type and color', artwork: 'Choose artwork', effect: 'Edit effect', authors: 'Edit Author' };
+  const titles = { title: 'Edit title', identity: 'Edit type and Terrain', artwork: 'Choose artwork', effect: 'Edit effect', authors: 'Edit Author' };
   const source = sources[field];
   if (!source) return;
   cardFieldDraft = {
