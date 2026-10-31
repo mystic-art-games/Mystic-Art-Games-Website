@@ -230,6 +230,7 @@ body.dark-mode .deck-cover-status.error { color: #ef9187; }
 .patron-picker :is(.patron-picker-trigger, .patron-picker-option).patron-faction-brightworks { color: #a87318; }
 .patron-picker :is(.patron-picker-trigger, .patron-picker-option).patron-faction-dreamwardens { color: #784997; }
 .patron-picker :is(.patron-picker-trigger, .patron-picker-option).patron-faction-verdant { color: #488057; }
+.patron-picker :is(.patron-picker-trigger, .patron-picker-option).patron-myrr { color: #784997; }
 body.dark-mode .patron-picker-trigger { border-color: #587965; background: #0d2b23; color: #e5eee0; }
 body.dark-mode .patron-picker-trigger::after { border-color: #d5e6cf; }
 body.dark-mode .patron-picker-menu { border-color: #416853; background: #173f32; }
@@ -239,6 +240,7 @@ body.dark-mode .patron-picker :is(.patron-picker-trigger, .patron-picker-option)
 body.dark-mode .patron-picker :is(.patron-picker-trigger, .patron-picker-option).patron-faction-brightworks { color: #e0b65a; }
 body.dark-mode .patron-picker :is(.patron-picker-trigger, .patron-picker-option).patron-faction-dreamwardens { color: #bc91dc; }
 body.dark-mode .patron-picker :is(.patron-picker-trigger, .patron-picker-option).patron-faction-verdant { color: #91c99e; }
+body.dark-mode .patron-picker :is(.patron-picker-trigger, .patron-picker-option).patron-myrr { color: #bc91dc; }
 @media (max-width: 850px) { #decks-view.deck-detail-open .deck-detail-toolbar { flex-wrap: wrap; } #decks-view.deck-detail-open .deck-detail-toolbar .actions { margin-left: 0; width: 100%; flex-wrap: wrap; } }
 .workspace,
 .patrons-workspace { width: calc(100% - 2rem); }

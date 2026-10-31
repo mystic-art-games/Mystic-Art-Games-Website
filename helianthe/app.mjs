@@ -223,7 +223,7 @@ function syncPatronPicker(select) {
   const { trigger, menu } = patronPicker;
   const selected = patronByName(select.value);
   trigger.replaceChildren();
-  trigger.className = `patron-picker-trigger${selected ? ` ${patronFactionClass(selected.faction)}` : ''}`;
+  trigger.className = `patron-picker-trigger${selected ? ` ${patronFactionClass(selected.faction)}${selected.name.startsWith('Myrr,') ? ' patron-myrr' : ''}` : ''}`;
   if (selected) {
     const icon = document.createElement('span');
     icon.className = 'patron-picker-icon';
@@ -240,7 +240,7 @@ function syncPatronPicker(select) {
   for (const patron of [null, ...PATRONS]) {
     const option = document.createElement('button');
     option.type = 'button';
-    option.className = `patron-picker-option${patron ? ` ${patronFactionClass(patron.faction)}` : ''}`;
+    option.className = `patron-picker-option${patron ? ` ${patronFactionClass(patron.faction)}${patron.name.startsWith('Myrr,') ? ' patron-myrr' : ''}` : ''}`;
     option.setAttribute('role', 'option');
     option.setAttribute('aria-selected', String((patron?.name || '') === select.value));
     if (patron) {
