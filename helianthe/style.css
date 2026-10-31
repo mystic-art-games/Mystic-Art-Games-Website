@@ -215,6 +215,29 @@ body.dark-mode .deck-cover-status.error { color: #ef9187; }
 .deck-edit-card #deck-form .actions { display: flex; justify-content: flex-end; gap: .5rem; margin-top: .4rem; }
 .deck-patron-field { min-width: 0; margin: 0; }
 .deck-patron-field select { width: 100%; margin-top: .2rem; }
+.patron-picker { position: relative; display: block; width: 100%; margin-top: .2rem; font-weight: 400; }
+.deck-patron-field .patron-select-native { position: absolute; width: 1px; height: 1px; margin: 0; padding: 0; opacity: 0; pointer-events: none; }
+.patron-picker-trigger { display: flex; align-items: center; gap: .5rem; width: 100%; min-height: 2.6rem; padding: .6rem 2rem .6rem .7rem; border: 1px solid #a4b6a5; border-radius: 8px; background: #fffefa; text-align: left; }
+.patron-picker-trigger::after { position: absolute; right: .8rem; width: .5rem; height: .5rem; border-right: 2px solid #456151; border-bottom: 2px solid #456151; transform: translateY(-.15rem) rotate(45deg); content: ''; }
+.patron-picker-menu { position: absolute; z-index: 35; top: calc(100% + .25rem); left: 0; right: 0; max-height: 17rem; overflow-y: auto; padding: .25rem; border: 1px solid #a4b6a5; border-radius: 10px; background: #fffefa; box-shadow: 0 8px 20px rgba(22, 55, 55, .18); }
+.patron-picker-option { display: flex; align-items: center; gap: .5rem; width: 100%; padding: .45rem .55rem; border: 0; border-radius: 7px; background: transparent; text-align: left; }
+.patron-picker-option:hover:not(:disabled), .patron-picker-option:focus-visible { background: #e0ebda; }
+.patron-picker-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.patron-picker-option .patron-picker-name { white-space: normal; overflow-wrap: anywhere; }
+.patron-picker-icon { display: block; flex: 0 0 auto; width: 1.35rem; height: 1.35rem; background-color: currentColor; -webkit-mask: url('./assets/Patron.png') center / contain no-repeat; mask: url('./assets/Patron.png') center / contain no-repeat; }
+.patron-picker :is(.patron-picker-trigger, .patron-picker-option).patron-faction-flowbound { color: #35758e; }
+.patron-picker :is(.patron-picker-trigger, .patron-picker-option).patron-faction-brightworks { color: #a87318; }
+.patron-picker :is(.patron-picker-trigger, .patron-picker-option).patron-faction-dreamwardens { color: #784997; }
+.patron-picker :is(.patron-picker-trigger, .patron-picker-option).patron-faction-verdant { color: #488057; }
+body.dark-mode .patron-picker-trigger { border-color: #587965; background: #0d2b23; color: #e5eee0; }
+body.dark-mode .patron-picker-trigger::after { border-color: #d5e6cf; }
+body.dark-mode .patron-picker-menu { border-color: #416853; background: #173f32; }
+body.dark-mode .patron-picker-option { background: transparent; color: #e5eee0; }
+body.dark-mode .patron-picker-option:hover:not(:disabled), body.dark-mode .patron-picker-option:focus-visible { background: #285944; }
+body.dark-mode .patron-picker :is(.patron-picker-trigger, .patron-picker-option).patron-faction-flowbound { color: #77b8d1; }
+body.dark-mode .patron-picker :is(.patron-picker-trigger, .patron-picker-option).patron-faction-brightworks { color: #e0b65a; }
+body.dark-mode .patron-picker :is(.patron-picker-trigger, .patron-picker-option).patron-faction-dreamwardens { color: #bc91dc; }
+body.dark-mode .patron-picker :is(.patron-picker-trigger, .patron-picker-option).patron-faction-verdant { color: #91c99e; }
 @media (max-width: 850px) { #decks-view.deck-detail-open .deck-detail-toolbar { flex-wrap: wrap; } #decks-view.deck-detail-open .deck-detail-toolbar .actions { margin-left: 0; width: 100%; flex-wrap: wrap; } }
 .workspace,
 .patrons-workspace { width: calc(100% - 2rem); }

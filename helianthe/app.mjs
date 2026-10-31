@@ -176,6 +176,95 @@ function patronFactionClass(faction) {
   return `patron-faction-${String(faction || '').toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
 }
 
+let patronPicker = null;
+function syncPatronPicker(select) {
+  if (!patronPicker) {
+    const wrapper = document.createElement('span');
+    wrapper.className = 'patron-picker';
+    select.before(wrapper);
+    wrapper.append(select);
+    select.classList.add('patron-select-native');
+    select.tabIndex = -1;
+    select.setAttribute('aria-hidden', 'true');
+    const trigger = document.createElement('button');
+    trigger.type = 'button';
+    trigger.className = 'patron-picker-trigger';
+    trigger.setAttribute('aria-haspopup', 'listbox');
+    trigger.setAttribute('aria-expanded', 'false');
+    const menu = document.createElement('span');
+    menu.className = 'patron-picker-menu';
+    menu.setAttribute('role', 'listbox');
+    menu.hidden = true;
+    wrapper.append(trigger, menu);
+    patronPicker = { trigger, menu };
+    const close = () => { menu.hidden = true; trigger.setAttribute('aria-expanded', 'false'); };
+    const open = () => { menu.hidden = false; trigger.setAttribute('aria-expanded', 'true'); };
+    trigger.addEventListener('click', () => menu.hidden ? open() : close());
+    trigger.addEventListener('keydown', event => {
+      if (event.key === 'Escape') { close(); return; }
+      if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+      event.preventDefault();
+      open();
+      const options = [...menu.querySelectorAll('button')];
+      (event.key === 'ArrowUp' ? options.at(-1) : options[0])?.focus();
+    });
+    menu.addEventListener('keydown', event => {
+      const options = [...menu.querySelectorAll('button')];
+      const index = options.indexOf(document.activeElement);
+      if (event.key === 'Escape') { event.preventDefault(); close(); trigger.focus(); }
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault();
+        options[(index + (event.key === 'ArrowDown' ? 1 : -1) + options.length) % options.length]?.focus();
+      }
+    });
+    document.addEventListener('click', event => { if (!wrapper.contains(event.target)) close(); });
+    wrapper.addEventListener('focusout', event => { if (!wrapper.contains(event.relatedTarget)) close(); });
+  }
+  const { trigger, menu } = patronPicker;
+  const selected = patronByName(select.value);
+  trigger.replaceChildren();
+  trigger.className = `patron-picker-trigger${selected ? ` ${patronFactionClass(selected.faction)}` : ''}`;
+  if (selected) {
+    const icon = document.createElement('span');
+    icon.className = 'patron-picker-icon';
+    icon.setAttribute('aria-hidden', 'true');
+    trigger.append(icon);
+  }
+  const selectedName = document.createElement('span');
+  selectedName.className = 'patron-picker-name';
+  selectedName.textContent = selected?.name || 'No Patron';
+  trigger.append(selectedName);
+  trigger.setAttribute('aria-label', `Patron: ${selected?.name || 'No Patron'}`);
+  trigger.disabled = select.disabled;
+  menu.replaceChildren();
+  for (const patron of [null, ...PATRONS]) {
+    const option = document.createElement('button');
+    option.type = 'button';
+    option.className = `patron-picker-option${patron ? ` ${patronFactionClass(patron.faction)}` : ''}`;
+    option.setAttribute('role', 'option');
+    option.setAttribute('aria-selected', String((patron?.name || '') === select.value));
+    if (patron) {
+      const icon = document.createElement('span');
+      icon.className = 'patron-picker-icon';
+      icon.setAttribute('aria-hidden', 'true');
+      option.append(icon);
+    }
+    const name = document.createElement('span');
+    name.className = 'patron-picker-name';
+    name.textContent = patron?.name || 'No Patron';
+    option.append(name);
+    option.addEventListener('click', () => {
+      select.value = patron?.name || '';
+      menu.hidden = true;
+      trigger.setAttribute('aria-expanded', 'false');
+      syncPatronPicker(select);
+      trigger.focus();
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    menu.append(option);
+  }
+}
+
 function deckPatronElement(deck, className = 'deck-patron') {
   const patron = patronByName(deck?.patron_name);
   const label = document.createElement('span');
@@ -1195,6 +1284,7 @@ async function selectDeck(deck) {
   showDeckCoverStatus();
   const mine = Boolean(state.user && (!deck || deck.owner_id === state.user.id));
   for (const field of form.querySelectorAll('input,select, #duplicate-deck, #delete-deck')) field.disabled = !mine;
+  syncPatronPicker(patronSelect);
   $('#duplicate-deck').disabled = !deck || !state.user;
   $('#delete-deck').disabled = !deck || !state.user || (!mine && !state.isAdmin);
   const deckCards = deck ? await api.listDeckCards(deck.id) : [];
