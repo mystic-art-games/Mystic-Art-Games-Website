@@ -1558,9 +1558,6 @@ document.addEventListener('click', event => {
   if (!event.target.closest('.header-controls')) closeMobileMenu();
 });
 $('#card-search').addEventListener('input', renderCardList);
-$('#card-search').addEventListener('input', renderCardSearchSuggestions);
-$('#card-search').addEventListener('focus', renderCardSearchSuggestions);
-$('#card-search').addEventListener('click', renderCardSearchSuggestions);
 for (const filter of document.querySelectorAll('#card-filter-type, #card-filter-author, #card-filter-terrain')) filter.addEventListener('change', renderCardList);
 $('#deck-card-search').addEventListener('input', renderDeckCards);
 $('#deck-card-search').addEventListener('input', renderDeckCardSuggestions);
@@ -1568,7 +1565,6 @@ $('#deck-card-search').addEventListener('focus', renderDeckCardSuggestions);
 $('#deck-card-search').addEventListener('click', renderDeckCardSuggestions);
 document.addEventListener('click', event => {
   for (const [input, suggestions] of [
-    ['#card-search', '#card-search-suggestions'],
     ['#deck-card-search', '#deck-card-search-suggestions'],
   ]) {
     const searchInput = $(input);
@@ -1581,7 +1577,6 @@ document.addEventListener('click', event => {
 });
 document.addEventListener('keydown', event => {
   if (event.key !== 'Escape') return;
-  closeCardSearchSuggestions($('#card-search'), $('#card-search-suggestions'));
   closeCardSearchSuggestions($('#deck-card-search'), $('#deck-card-search-suggestions'));
 });
 for (const filter of document.querySelectorAll('#deck-card-filter-type, #deck-card-filter-author, #deck-card-filter-terrain')) filter.addEventListener('change', renderDeckCards);
