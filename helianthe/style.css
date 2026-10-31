@@ -674,6 +674,20 @@ body.dark-mode #card-edit-hint { color: #fff; }
 #download-png { align-self: center; }
 .card-preview-actions { display: flex; justify-content: center; gap: .6rem; margin-top: .65rem; }
 .card-preview-actions > button { height: 2.35rem; min-height: 0; display: inline-flex; align-items: center; justify-content: center; }
+.download-png-button {
+  width: 2.35rem;
+  padding: .45rem;
+  overflow: hidden;
+  color: transparent !important;
+  font-size: 0;
+}
+.download-png-button::before {
+  content: '';
+  width: 100%;
+  height: 100%;
+  background: url('./assets/download-icon.png') center / contain no-repeat;
+  filter: invert(1);
+}
 .deck-preview-actions { width: 100%; justify-content: center; }
 .deck-preview-actions > button { padding-inline: .5rem; white-space: nowrap; }
 .card-preview-actions #download-png { margin-top: 0; }
