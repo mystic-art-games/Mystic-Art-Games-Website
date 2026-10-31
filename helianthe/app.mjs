@@ -1064,6 +1064,7 @@ function renderDeckCards() {
     if (author && !authorNames(card.author_ids, card.owner_id).includes(author)) continue;
     if (terrain && (terrain === 'none' ? Boolean(card.terrain) : card.terrain !== terrain)) continue;
     const row = document.createElement('div'); row.className = `card-list-item deck-card-row${state.deckPreviewCard?.id === card.id ? ' selected' : ''}`;
+    row.dataset.cardId = card.id;
     row.setAttribute('role', 'button');
     row.tabIndex = 0;
     row.addEventListener('click', () => showDeckCardPreview(card));
@@ -1132,6 +1133,21 @@ function renderDeckCards() {
   renderDeckSummary();
 }
 
+function scrollToDeckCardRow(cardId) {
+  requestAnimationFrame(() => {
+    const list = $('#deck-cards');
+    let row = [...list.children].find(item => item.dataset.cardId === cardId);
+    if (!row) {
+      for (const id of ['deck-card-filter-type', 'deck-card-filter-author', 'deck-card-filter-terrain']) $(`#${id}`).value = '';
+      renderDeckCards();
+      row = [...list.children].find(item => item.dataset.cardId === cardId);
+    }
+    if (!row) return;
+    const distance = row.getBoundingClientRect().top - list.getBoundingClientRect().top;
+    list.scrollTo({ top: list.scrollTop + distance, behavior: 'smooth' });
+  });
+}
+
 function closeCardSearchSuggestions(input, suggestions) {
   suggestions.hidden = true;
   input.setAttribute('aria-expanded', 'false');
@@ -1194,8 +1210,8 @@ function renderDeckCardSuggestions() {
           const deckCards = await api.listDeckCards(deck.id);
           if (state.deck?.id !== deck.id) return;
           state.deckCards = deckCards;
-          renderDeckCards();
-          await showDeckCardPreview(card);
+          void showDeckCardPreview(card);
+          scrollToDeckCardRow(card.id);
           status(`Added ${card.title} to ${deck.name}.`);
         })
         .catch(cause => status(cause.message, true));
