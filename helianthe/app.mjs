@@ -1069,33 +1069,48 @@ function renderDeckCards() {
     const label = document.createElement('span'); label.className = `card-list-title ${card.card_type === 'Event' ? 'terrain-event' : terrainClass(card.terrain)}`; label.textContent = card.title;
     row.append(label);
     if (mine) {
-      const select = document.createElement('select');
-      select.setAttribute('aria-label', `Copies of ${card.title}`);
-      for (const [value, label] of [['1', '1'], ['2', '2'], ['3', '3'], ['0', 'Remove']]) {
-        const choice = document.createElement('option'); choice.value = value; choice.textContent = label; select.append(choice);
-      }
-      select.value = String(copies);
-      select.addEventListener('change', async () => {
-        const nextCopies = Number(select.value);
-        select.disabled = true;
-        if (nextCopies === 0) {
-          state.deckCards = state.deckCards.filter(item => item.card_id !== card.id);
-          if (state.deckPreviewCard?.id === card.id) void showDeckCardPreview(null);
-          renderDeckCards();
-        }
+      const controls = document.createElement('span');
+      controls.className = 'deck-copy-controls';
+      const decrement = document.createElement('button');
+      decrement.type = 'button';
+      decrement.className = 'deck-copy-button action-delete';
+      decrement.textContent = '−';
+      decrement.setAttribute('aria-label', `Remove one copy of ${card.title}`);
+      const count = document.createElement('strong');
+      count.className = 'deck-copy-count';
+      count.textContent = String(copies);
+      count.setAttribute('aria-label', `${copies} copies of ${card.title}`);
+      const increment = document.createElement('button');
+      increment.type = 'button';
+      increment.className = 'deck-copy-button action-add-save';
+      increment.textContent = '+';
+      increment.setAttribute('aria-label', `Add one copy of ${card.title}`);
+      increment.disabled = copies >= 2;
+      const changeCopies = async nextCopies => {
+        const deck = state.deck;
+        decrement.disabled = true;
+        increment.disabled = true;
         try {
-          await api.setDeckCard(state.user.id, state.deck, card.id, nextCopies, state.isAdmin);
-          state.deckCards = await api.listDeckCards(state.deck.id);
-          status(`Saved ${card.title} in ${state.deck.name}.`);
-          if (nextCopies !== 0) renderDeckCards();
-        } catch (cause) {
-          state.deckCards = await api.listDeckCards(state.deck.id).catch(() => state.deckCards);
+          await api.setDeckCard(state.user.id, deck, card.id, nextCopies, state.isAdmin);
+          const deckCards = await api.listDeckCards(deck.id);
+          if (state.deck?.id !== deck.id) return;
+          state.deckCards = deckCards;
+          if (nextCopies === 0 && state.deckPreviewCard?.id === card.id) await showDeckCardPreview(null);
           renderDeckCards();
+          status(nextCopies === 0 ? `Removed ${card.title} from ${deck.name}.` : `Saved ${card.title} in ${deck.name}.`);
+        } catch (cause) {
+          if (state.deck?.id === deck.id) {
+            state.deckCards = await api.listDeckCards(deck.id).catch(() => state.deckCards);
+            renderDeckCards();
+          }
           status(cause.message, true);
         }
-      });
-       select.addEventListener('click', event => event.stopPropagation());
-      row.append(select);
+      };
+      decrement.addEventListener('click', event => { event.stopPropagation(); void changeCopies(copies - 1); });
+      increment.addEventListener('click', event => { event.stopPropagation(); void changeCopies(copies + 1); });
+      controls.addEventListener('keydown', event => event.stopPropagation());
+      controls.append(decrement, count, increment);
+      row.append(controls);
     } else {
       const count = document.createElement('strong'); count.textContent = `×${copies}`; row.append(count);
     }
@@ -1159,12 +1174,17 @@ function renderDeckCardSuggestions() {
         void showDeckCardPreview(card);
         return;
       }
-      void api.setDeckCard(state.user.id, state.deck, card.id, 1, state.isAdmin)
+      const deck = state.deck;
+      const copies = state.deckCards.find(item => item.card_id === card.id)?.copies || 0;
+      if (copies >= 2) { void showDeckCardPreview(card); return; }
+      void api.setDeckCard(state.user.id, deck, card.id, copies + 1, state.isAdmin)
         .then(async () => {
-          state.deckCards = await api.listDeckCards(state.deck.id);
+          const deckCards = await api.listDeckCards(deck.id);
+          if (state.deck?.id !== deck.id) return;
+          state.deckCards = deckCards;
           renderDeckCards();
           await showDeckCardPreview(card);
-          status(`Added ${card.title} to ${state.deck.name}.`);
+          status(`Added ${card.title} to ${deck.name}.`);
         })
         .catch(cause => status(cause.message, true));
     }));
@@ -1891,7 +1911,13 @@ $('#confirm-add-to-deck').addEventListener('click', async () => {
   const button = $('#confirm-add-to-deck');
   button.disabled = true;
   try {
-    await api.setDeckCard(state.user.id, deck, card.id, 1, state.isAdmin);
+    const deckCards = state.deck?.id === deck.id ? state.deckCards : await api.listDeckCards(deck.id);
+    const copies = deckCards.find(item => item.card_id === card.id)?.copies || 0;
+    if (copies >= 2) {
+      closeAddToDeckModal();
+      return status(`${deck.name} already has two copies of ${card.title}.`);
+    }
+    await api.setDeckCard(state.user.id, deck, card.id, copies + 1, state.isAdmin);
     if (state.deck?.id === deck.id) {
       state.deckCards = await api.listDeckCards(deck.id);
       renderDeckCards();
