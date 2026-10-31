@@ -1606,9 +1606,9 @@ body.dark-mode select option:hover, body.dark-mode select option:focus, body.dar
 }
 
 @media (min-width: 851px) {
-  #cards-view.workspace {
+  #cards-view.workspace,
+  #profiles-view.workspace {
     max-width: 1100px;
-    grid-template-columns: minmax(0, 1fr) 320px;
     justify-content: stretch;
     gap: .8rem;
     padding: .8rem;
@@ -1617,21 +1617,28 @@ body.dark-mode select option:hover, body.dark-mode select option:focus, body.dar
     background: linear-gradient(145deg, rgba(255, 255, 255, .9) 0%, rgba(224, 234, 229, .66) 46%, rgba(202, 219, 211, .42) 100%);
     box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 1), inset -1px -1px 0 rgba(97, 135, 120, .26);
   }
+  #cards-view.workspace { grid-template-columns: minmax(0, 1fr) 320px; }
+  #profiles-view.workspace { grid-template-columns: minmax(260px, 360px) minmax(0, 1fr); }
   #cards-view > .cards-sidebar,
-  #cards-view > .editor-panel {
+  #cards-view > .editor-panel,
+  #profiles-view > .sidebar,
+  #profiles-view > .editor-panel {
     width: auto;
     border: 0;
     border-radius: 0;
     background: transparent;
     box-shadow: none;
   }
-  body.dark-mode #cards-view.workspace {
+  body.dark-mode #cards-view.workspace,
+  body.dark-mode #profiles-view.workspace {
     border-color: #416853;
     background: linear-gradient(145deg, #153f34, #246047 62%, #34735a);
     box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .28), 0 8px 24px rgba(0, 18, 12, .28);
   }
   body.dark-mode #cards-view > .cards-sidebar,
-  body.dark-mode #cards-view > .editor-panel {
+  body.dark-mode #cards-view > .editor-panel,
+  body.dark-mode #profiles-view > .sidebar,
+  body.dark-mode #profiles-view > .editor-panel {
     border: 0 !important;
     background: transparent !important;
     box-shadow: none !important;
