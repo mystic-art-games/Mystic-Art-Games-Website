@@ -409,13 +409,6 @@ body.dark-mode .patron-detail-panel::-webkit-scrollbar-thumb {
   #decks-view .deck-card-layout { grid-template-rows: minmax(0, 1fr); }
   #decks-view .deck-card-preview-shell,
   #decks-view .deck-patron-preview-shell { height: 100%; min-height: 0; overflow: visible; container-type: size; }
-  #decks-view #deck-card-canvas,
-  #decks-view #deck-patron-canvas,
-  #decks-view .deck-empty-preview {
-    flex: 0 0 auto;
-    width: min(calc(100% - .8rem), 300px, calc(71.4286cqh - 4.2857rem));
-    height: auto;
-  }
   #decks-view .deck-preview-edit-hint { min-height: 0; margin: .1rem auto 0; align-items: center; }
   #decks-view .deck-card-table { grid-column: 1; grid-row: 1; }
   #decks-view .deck-card-preview-shell { grid-column: 2; grid-row: 1; }
@@ -600,6 +593,21 @@ body.dark-mode .card-filters :is(#card-filter-terrain, #deck-card-filter-terrain
 #decks-view #deck-card-canvas, #decks-view #deck-patron-canvas { cursor: pointer; }
 #decks-view .is-empty canvas { display: none; }
 #decks-view #deck-card-canvas, #decks-view #deck-patron-canvas, #decks-view .deck-empty-preview { width: min(100%, 300px); height: auto; aspect-ratio: 5 / 7; }
+@media (min-width: 851px) {
+  #decks-view #deck-card-canvas,
+  #decks-view #deck-patron-canvas,
+  #decks-view .deck-empty-preview {
+    flex: 0 0 auto;
+    width: min(calc(100% - .8rem), 300px, calc(71.4286cqh - 4.2857rem));
+  }
+}
+@media (min-width: 851px) and (max-width: 1150px) {
+  #decks-view #deck-card-canvas,
+  #decks-view #deck-patron-canvas,
+  #decks-view .deck-empty-preview {
+    width: min(85%, 255px, calc(60.7143cqh - 3.6429rem));
+  }
+}
 #decks-view .deck-empty-preview { display: none; place-items: center; box-sizing: border-box; padding: 1.5rem; border: 1px solid rgba(255, 255, 255, .72); border-radius: 18px; background: linear-gradient(145deg, rgba(255, 255, 255, .7), rgba(224, 234, 229, .42) 52%, rgba(202, 219, 211, .28)); color: #68756d; text-align: center; font-size: .86rem; box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .9), inset -1px -1px 0 rgba(160, 185, 170, .18), 0 10px 24px rgba(34, 48, 41, .14); backdrop-filter: blur(12px) saturate(.75); -webkit-backdrop-filter: blur(12px) saturate(.75); pointer-events: none; cursor: default; }
 #decks-view .is-empty .deck-empty-preview { display: grid; }
 body.dark-mode #decks-view .deck-empty-preview { border-color: rgba(226, 246, 235, .3); background: linear-gradient(145deg, rgba(220, 244, 226, .22), rgba(91, 143, 111, .16) 52%, rgba(28, 70, 52, .24)); color: #bfd1be; box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .22), inset -1px -1px 0 rgba(5, 30, 21, .2), 0 10px 24px rgba(0, 18, 12, .24); }
