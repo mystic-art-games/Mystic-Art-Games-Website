@@ -892,7 +892,7 @@ function renderDeckCards() {
   const mine = Boolean(state.user && (state.deck.owner_id === state.user.id || state.isAdmin));
   for (const card of state.cards) {
     const copies = state.deckCards.find(item => item.card_id === card.id)?.copies || 0;
-    if (!mine && !copies) continue;
+    if (!copies) continue;
     if (query && !`${card.title} ${card.effect}`.toLocaleLowerCase().includes(query)) continue;
     if (type && card.card_type !== type) continue;
     if (author && !authorNames(card.author_ids, card.owner_id).includes(author)) continue;
@@ -908,8 +908,8 @@ function renderDeckCards() {
     if (mine) {
       const select = document.createElement('select');
       select.setAttribute('aria-label', `Copies of ${card.title}`);
-      for (let count = 0; count <= 3; count++) {
-        const choice = document.createElement('option'); choice.value = String(count); choice.textContent = String(count); select.append(choice);
+      for (const [value, label] of [['1', '1'], ['2', '2'], ['3', '3'], ['0', 'Remove']]) {
+        const choice = document.createElement('option'); choice.value = value; choice.textContent = label; select.append(choice);
       }
       select.value = String(copies);
       select.addEventListener('change', async () => {
@@ -928,7 +928,7 @@ function renderDeckCards() {
     }
     list.append(row);
   }
-  if (!list.childElementCount) list.textContent = state.deckCards.some(item => item.copies > 0) || mine && state.cards.length ? 'No cards found.' : 'This deck has no cards.';
+  if (!list.childElementCount) list.textContent = state.deckCards.some(item => item.copies > 0) ? 'No cards found.' : 'This deck has no cards.';
   renderDeckSummary();
 }
 
@@ -972,6 +972,7 @@ function renderDeckCardSuggestions() {
   const input = $('#deck-card-search');
   const suggestions = $('#deck-card-search-suggestions');
   const query = input.value.trim().toLocaleLowerCase();
+  const mine = Boolean(state.user && (state.deck?.owner_id === state.user.id || state.isAdmin));
   suggestions.replaceChildren();
   if (!state.deck) { closeCardSearchSuggestions(input, suggestions); return; }
   const cards = state.cards
@@ -981,8 +982,18 @@ function renderDeckCardSuggestions() {
     suggestions.append(cardSearchOption(card, () => {
       input.value = '';
       closeCardSearchSuggestions(input, suggestions);
-      renderDeckCards();
-      void showDeckCardPreview(card);
+      if (!mine) {
+        void showDeckCardPreview(card);
+        return;
+      }
+      void api.setDeckCard(state.user.id, state.deck, card.id, 1, state.isAdmin)
+        .then(async () => {
+          state.deckCards = await api.listDeckCards(state.deck.id);
+          renderDeckCards();
+          await showDeckCardPreview(card);
+          status(`Added ${card.title} to ${state.deck.name}.`);
+        })
+        .catch(cause => status(cause.message, true));
     }));
   }
   suggestions.hidden = !cards.length;
