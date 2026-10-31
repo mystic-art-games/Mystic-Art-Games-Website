@@ -2135,6 +2135,7 @@ $('#confirm-delete-deck').addEventListener('click', async () => {
   }
 });
 $('#deck-form').elements.patron_name.addEventListener('change', event => {
+  syncPatronPicker(event.target);
   void renderDeckPatron(patronByName(event.target.value));
   void queueDeckSave().catch(cause => status(cause.message, true));
 });
