@@ -913,13 +913,22 @@ function renderDeckCards() {
       }
       select.value = String(copies);
       select.addEventListener('change', async () => {
+        const nextCopies = Number(select.value);
         select.disabled = true;
+        if (nextCopies === 0) {
+          state.deckCards = state.deckCards.filter(item => item.card_id !== card.id);
+          renderDeckCards();
+        }
         try {
-          await api.setDeckCard(state.user.id, state.deck, card.id, Number(select.value), state.isAdmin);
+          await api.setDeckCard(state.user.id, state.deck, card.id, nextCopies, state.isAdmin);
           state.deckCards = await api.listDeckCards(state.deck.id);
           status(`Saved ${card.title} in ${state.deck.name}.`);
-        } catch (cause) { status(cause.message, true); }
-        renderDeckCards();
+          if (nextCopies !== 0) renderDeckCards();
+        } catch (cause) {
+          state.deckCards = await api.listDeckCards(state.deck.id).catch(() => state.deckCards);
+          renderDeckCards();
+          status(cause.message, true);
+        }
       });
        select.addEventListener('click', event => event.stopPropagation());
       row.append(select);
