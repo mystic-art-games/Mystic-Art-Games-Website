@@ -906,7 +906,31 @@ function closeDeckCardPreview() {
 function renderDeckList() {
   const list = $('#deck-list');
   list.replaceChildren();
-  for (const deck of state.decks) {
+  const userId = state.user?.id;
+  const authoredByCurrentUser = deck => (deck.author_ids?.length ? deck.author_ids : [deck.owner_id]).includes(userId);
+  const sections = userId
+    ? [
+        ['My Decks', state.decks.filter(authoredByCurrentUser)],
+        ['Other Decks', state.decks.filter(deck => !authoredByCurrentUser(deck))],
+      ]
+    : [['All Decks', state.decks]];
+  for (const [heading, decks] of sections) {
+    const section = document.createElement('section');
+    section.className = 'deck-gallery-section';
+    section.setAttribute('aria-label', heading);
+    const title = document.createElement('h2');
+    title.textContent = heading;
+    const tiles = document.createElement('div');
+    tiles.className = 'deck-gallery-tiles';
+    section.append(title, tiles);
+    list.append(section);
+    if (!decks.length) {
+      const empty = document.createElement('p');
+      empty.className = 'deck-gallery-empty';
+      empty.textContent = heading === 'My Decks' ? 'You have no decks yet.' : heading === 'Other Decks' ? 'No other decks yet.' : 'No decks yet.';
+      tiles.append(empty);
+    }
+    for (const deck of decks) {
     const row = button('', () => void selectDeck(deck), `deck-list-item${state.deck?.id === deck.id ? ' selected' : ''}`);
     const cover = document.createElement('span');
     cover.className = 'deck-tile-cover';
@@ -925,7 +949,7 @@ function renderDeckList() {
     meta.className = 'deck-list-owner';
     meta.append(authorDisplayElement(deck.author_ids, deck.owner_id));
     row.append(cover, title, meta);
-    list.append(row);
+    tiles.append(row);
     if (deck.cover_artwork_id && !deckCoverArtworkUrls.has(deck.cover_artwork_id)) {
       void api.fetchArtwork(deck.cover_artwork_id).then(blob => {
         const url = URL.createObjectURL(blob);
@@ -934,7 +958,7 @@ function renderDeckList() {
       }).catch(() => {});
     }
   }
-  if (!list.childElementCount) list.textContent = 'No decks yet.';
+  }
 }
 
 function renderDeckHeader() {

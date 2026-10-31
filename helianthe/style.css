@@ -172,7 +172,13 @@ body.dark-mode .about-section p, body.dark-mode .about-section li { color: #d1df
 #decks-view:not(.deck-detail-open) > .decks-sidebar #new-deck { margin-left: .75rem; }
 #cards-view > .cards-sidebar > .panel-head { justify-content: flex-start; }
 #cards-view > .cards-sidebar #new-card { margin-left: .75rem; }
-#decks-view:not(.deck-detail-open) #deck-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: .8rem; }
+#decks-view:not(.deck-detail-open) #deck-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.3rem; }
+#decks-view:not(.deck-detail-open) .deck-gallery-section { min-width: 0; }
+.deck-gallery-section h2 { margin: 0 0 .65rem; color: #265847; font-size: 1.15rem; }
+.deck-gallery-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: .8rem; }
+.deck-gallery-empty { grid-column: 1 / -1; margin: .1rem 0; color: #68756d; }
+body.dark-mode .deck-gallery-section h2 { color: #c8dfb8; }
+body.dark-mode .deck-gallery-empty { color: #a8bcae; }
 #decks-view:not(.deck-detail-open) #deck-list .deck-list-item { width: 100%; height: auto; min-height: 0; align-self: start; }
 #decks-view:not(.deck-detail-open) #deck-list .deck-list-title-wrap { padding-left: 0; }
 #decks-view:not(.deck-detail-open) #deck-list .deck-list-title,
