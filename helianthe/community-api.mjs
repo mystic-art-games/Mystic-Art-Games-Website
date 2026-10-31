@@ -206,8 +206,13 @@ export function createCommunityApi(client) {
           const coverByDeckId = new Map(covers.map(deck => [deck.id, deck.cover_artwork_id || null]));
           return decks.map(deck => ({ ...deck, cover_artwork_id: coverByDeckId.get(deck.id) || null }));
         } catch {
-          const decks = result(await client.from('decks').select('id,owner_id,name,patron_name,is_public,created_at,updated_at').order('created_at', { ascending: false }));
-          return decks.map(deck => ({ ...deck, author_ids: deck.owner_id ? [deck.owner_id] : [], cover_artwork_id: null }));
+          try {
+            const decks = result(await client.from('decks').select('id,owner_id,name,patron_name,cover_artwork_id,is_public,created_at,updated_at').order('created_at', { ascending: false }));
+            return decks.map(deck => ({ ...deck, author_ids: deck.owner_id ? [deck.owner_id] : [] }));
+          } catch {
+            const decks = result(await client.from('decks').select('id,owner_id,name,patron_name,is_public,created_at,updated_at').order('created_at', { ascending: false }));
+            return decks.map(deck => ({ ...deck, author_ids: deck.owner_id ? [deck.owner_id] : [], cover_artwork_id: null }));
+          }
         }
       }
     },
