@@ -724,6 +724,7 @@ function renderPreview() {
 }
 
 let cardFieldDraft = null;
+let cardFieldArtworkFile = null;
 
 function closeCardField(commit = false) {
   if (!commit && cardFieldDraft) {
@@ -742,6 +743,7 @@ function closeCardField(commit = false) {
   $('#card-field-content').replaceChildren();
   $('#card-field-status').hidden = true;
   cardFieldDraft = null;
+  cardFieldArtworkFile = null;
   $('#card-canvas').focus({ preventScroll: true });
 }
 
@@ -758,6 +760,7 @@ function openCardField(field) {
   const titles = { title: 'Edit title', identity: 'Edit type and Terrain', artwork: 'Choose artwork', effect: 'Edit effect', authors: 'Edit Author' };
   const source = sources[field];
   if (!source) return;
+  cardFieldArtworkFile = null;
   cardFieldDraft = {
     values: Object.fromEntries(['title', 'card_type', 'terrain', 'effect'].map(name => [name, form.elements[name].value])),
     authors: selectedAuthorIds($('#card-author-options')),
@@ -796,9 +799,15 @@ function openCardField(field) {
     copy.removeAttribute('id');
     copy.addEventListener(copy.type === 'file' ? 'change' : 'input', () => {
       if (copy.type === 'file') {
-        original.files = copy.files;
+        const file = copy.files?.[0];
+        if (!file) return;
+        cardFieldArtworkFile = file;
         if (cardFieldDraft) cardFieldDraft.artworkChanged = true;
-        original.dispatchEvent(new Event('change', { bubbles: true }));
+        state.cardFormDirty = true;
+        ++state.artworkSerial;
+        releaseArtwork();
+        state.artworkUrl = URL.createObjectURL(file);
+        renderPreview();
       } else {
         if (copy.type === 'checkbox') original.checked = copy.checked;
         else original.value = copy.value;
@@ -1943,7 +1952,7 @@ async function saveCardForm() {
     if (values.card_type === 'Event') values.terrain = '';
     values.author_ids = selectedAuthorIds($('#card-author-options'));
     values.author = authorNames(values.author_ids, state.user?.id).join(', ');
-    const sourceFile = $('#card-artwork').files?.[0];
+    const sourceFile = cardFieldArtworkFile || $('#card-artwork').files?.[0];
     const file = sourceFile ? await compressedArtwork(sourceFile) : null;
     const previousArtworkId = state.card?.artwork_id || null;
     let card;
