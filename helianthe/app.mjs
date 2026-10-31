@@ -1164,10 +1164,22 @@ async function renderDeckPatron(patron) {
   if (!patron) return;
   const patronCard = patronCards.find(card => card.patron?.name === patron.name);
   if (patronCard) {
-    const result = await renderCard(canvas, patronCard, '', () => serial === state.deckPatronSerial).catch(() => null);
-    if (serial === state.deckPatronSerial) {
-      $('#patron-download-png').disabled = !result || result.clipped || result.cancelled;
-      $('#patron-delete-card').disabled = !state.user;
+    let artworkUrl = '';
+    try {
+      if (patronCard.artwork_id) {
+        try {
+          const blob = await api.fetchArtwork(patronCard.artwork_id);
+          if (serial !== state.deckPatronSerial) return;
+          artworkUrl = URL.createObjectURL(blob);
+        } catch { /* Keep the default illustration if the custom one is unavailable. */ }
+      }
+      const result = await renderCard(canvas, patronCard, artworkUrl, () => serial === state.deckPatronSerial).catch(() => null);
+      if (serial === state.deckPatronSerial) {
+        $('#patron-download-png').disabled = !result || result.clipped || result.cancelled;
+        $('#patron-delete-card').disabled = !state.user;
+      }
+    } finally {
+      if (artworkUrl) URL.revokeObjectURL(artworkUrl);
     }
   }
 }
@@ -1958,12 +1970,22 @@ async function saveCardForm() {
     let card;
     if (state.card?.patron) {
       const authorIds = selectedAuthorIds($('#card-author-options'));
-      const updates = { title: values.title, terrain: values.terrain, effect: values.effect, author_ids: authorIds, author: authorNames(authorIds).join(', ') || 'Helianthe' };
+      const artwork = file ? await api.uploadArtwork(file) : null;
+      const updates = { title: values.title, terrain: values.terrain, effect: values.effect, author_ids: authorIds, author: authorNames(authorIds).join(', ') || 'Helianthe', artwork_id: artwork?.id || previousArtworkId };
+      try {
+        const overrides = JSON.parse(localStorage.getItem(PATRON_CARD_OVERRIDES_KEY) || '{}');
+        overrides[state.card.id] = updates;
+        localStorage.setItem(PATRON_CARD_OVERRIDES_KEY, JSON.stringify(overrides));
+      } catch (cause) {
+        if (artwork) await api.deleteArtwork(artwork.id).catch(console.error);
+        throw cause;
+      }
       Object.assign(state.card, updates);
-      const overrides = JSON.parse(localStorage.getItem(PATRON_CARD_OVERRIDES_KEY) || '{}');
-      overrides[state.card.id] = updates;
-      localStorage.setItem(PATRON_CARD_OVERRIDES_KEY, JSON.stringify(overrides));
       card = state.card;
+      if (artwork && previousArtworkId && previousArtworkId !== artwork.id) {
+        try { await api.deleteArtwork(previousArtworkId); }
+        catch (cause) { cleanupWarning = cause.message; console.error('Old artwork cleanup failed', cause); }
+      }
     } else {
       card = state.card
         ? await api.saveCard(state.user.id, state.card.id, values)
