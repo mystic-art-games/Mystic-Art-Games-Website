@@ -1444,6 +1444,39 @@ body.dark-mode #sign-out:hover:not(:disabled) {
   transition: transform .15s ease, filter .15s ease, box-shadow .15s ease;
 }
 body.dark-mode #sign-out:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.12); box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .34), 0 6px 16px rgba(0, 18, 12, .38); }
+#profile-form input[type=file]::file-selector-button {
+  margin-right: .6rem;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, .99) 0%, rgba(240, 246, 242, .84) 46%, rgba(225, 236, 229, .64) 100%);
+  color: #15241d;
+  padding: .55rem .8rem;
+  font: inherit;
+  cursor: pointer;
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .58), 0 2px 8px rgba(34, 98, 49, .2);
+  transition: transform .15s ease, filter .15s ease, box-shadow .15s ease;
+}
+#profile-form input[type=file]::file-selector-button:hover { transform: translateY(-1px); filter: brightness(1.06); box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .7), 0 5px 12px rgba(34, 98, 49, .28); }
+body.dark-mode #profile-form input[type=file]::file-selector-button { border-color: #416853; background: linear-gradient(145deg, rgba(220, 244, 226, .4) 0%, rgba(91, 143, 111, .32) 46%, rgba(28, 70, 52, .44) 100%); color: #15241d; box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .28), 0 8px 24px rgba(0, 18, 12, .28); }
+body.dark-mode #profile-form input[type=file]::file-selector-button:hover { transform: translateY(-1px); filter: brightness(1.12); box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .34), 0 6px 16px rgba(0, 18, 12, .38); }
+#profile-form .profile-save-actions > button[type=submit],
+#profile-new-deck {
+  border-color: rgba(73, 120, 94, .55);
+  background: linear-gradient(145deg, rgba(64, 112, 79, .92), rgba(52, 117, 90, .9) 52%, rgba(38, 88, 71, .88));
+  color: #fff;
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .5), 0 2px 8px rgba(34, 98, 49, .2);
+  transition: transform .15s ease, filter .15s ease, box-shadow .15s ease;
+}
+#profile-form .profile-save-actions > button[type=submit]:hover:not(:disabled),
+#profile-new-deck:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.06); box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .65), 0 5px 12px rgba(34, 98, 49, .28); }
+body.dark-mode #profile-form .profile-save-actions > button[type=submit],
+body.dark-mode #profile-new-deck { border-color: rgba(226, 246, 235, .34); background: linear-gradient(145deg, rgba(47, 92, 64, .86), rgba(42, 94, 65, .84) 52%, rgba(28, 70, 52, .88)); color: #eef8ed; box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .28), 0 6px 16px rgba(0, 18, 12, .3); }
+body.dark-mode #profile-form .profile-save-actions > button[type=submit]:hover:not(:disabled),
+body.dark-mode #profile-new-deck:hover:not(:disabled) { filter: brightness(1.12); box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .34), 0 6px 16px rgba(0, 18, 12, .38); }
+#profile-form #delete-account { border-color: rgba(166, 75, 67, .55); background: linear-gradient(145deg, rgba(137, 38, 32, .86), rgba(176, 61, 52, .82) 46%, rgba(183, 65, 55, .76) 100%); color: #fff; box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .72), 0 2px 8px rgba(125, 48, 40, .18); transition: transform .15s ease, filter .15s ease, box-shadow .15s ease; }
+#profile-form #delete-account:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.06); box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .82), 0 5px 12px rgba(125, 48, 40, .28); }
+body.dark-mode #profile-form #delete-account { border-color: rgba(224, 143, 132, .5); background: linear-gradient(145deg, rgba(84, 20, 21, .72), rgba(137, 35, 31, .66) 46%, rgba(153, 43, 36, .64) 100%); color: #ffe8e3; box-shadow: inset 1px 1px 0 rgba(255, 232, 227, .28), 0 6px 16px rgba(40, 10, 8, .3); }
+body.dark-mode #profile-form #delete-account:hover:not(:disabled) { filter: brightness(1.12); box-shadow: inset 1px 1px 0 rgba(255, 232, 227, .34), 0 6px 16px rgba(40, 10, 8, .38); }
 #cards-view #card-list .card-list-item { border-bottom-color: transparent !important; }
 @media (max-width: 850px) {
   body.dark-mode #about-view > .about-panel {
