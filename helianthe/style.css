@@ -98,6 +98,7 @@ textarea { resize: vertical; }
 .danger-modal-actions button:first-child { background: #a23d35; border-color: #a23d35; }
 .danger-modal-actions button:first-child:hover:not(:disabled) { background: #842f2a; border-color: #842f2a; }
 #new-card, #new-deck { background: #34755a; color: #fff8e8; border-color: #34755a; font-weight: 400; }
+#decks-view #new-deck { font-weight: 400; }
 #new-card, #new-deck { text-transform: none; }
 #new-card:hover:not(:disabled), #new-deck:hover:not(:disabled) { background: #3d805f; }
 .form-hint { margin: -0.35rem 0 0.75rem; color: #68756d; font-size: 0.85rem; }
