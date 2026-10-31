@@ -197,6 +197,7 @@ body.dark-mode #decks-view:not(.deck-detail-open) #deck-list .deck-list-item:hov
 #deck-cover-button { width: 100%; margin-top: .2rem; }
 #decks-view.deck-detail-open .deck-detail-toolbar input,
 #decks-view.deck-detail-open .deck-detail-toolbar select { display: flex; align-items: center; justify-content: space-between; gap: .4rem; margin-top: .2rem; padding: .45rem .4rem; border: 1px solid #a4b6a5; border-radius: 8px; background: #fffefa; color: #163737; font-size: .82rem; }
+#decks-view.deck-detail-open .deck-detail-toolbar #deck-cover { display: none; }
 #decks-view.deck-detail-open .deck-detail-toolbar select,
 #decks-view.deck-detail-open .deck-detail-toolbar select::picker(select) { appearance: base-select; }
 #decks-view.deck-detail-open .deck-detail-toolbar select::picker(select) { margin-top: .3rem; padding: .25rem; border: 1px solid #a4b6a5; border-radius: 10px; background: #fffefa; box-shadow: 0 8px 20px rgba(22, 55, 55, .18); }
