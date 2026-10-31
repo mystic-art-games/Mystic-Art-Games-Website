@@ -1166,6 +1166,8 @@ async function selectDeck(deck) {
   void renderDeckPatron(patronByName(deck?.patron_name));
   renderDeckAuthorSelect(deck?.author_ids?.[0] || deck?.owner_id || state.user?.id);
   $('#deck-cover').value = '';
+  $('#deck-cover-button').disabled = !deck || !canEditDeck(deck) || savingDeckCover;
+  showDeckCoverStatus();
   const mine = Boolean(state.user && (!deck || deck.owner_id === state.user.id));
   for (const field of form.querySelectorAll('input,select, #duplicate-deck, #delete-deck')) field.disabled = !mine;
   $('#duplicate-deck').disabled = !deck || !state.user;
@@ -1224,16 +1226,27 @@ function deckFormValues() {
 }
 
 let savingDeckCover = false;
+function showDeckCoverStatus(message = '', error = false) {
+  const element = $('#deck-cover-status');
+  element.textContent = message;
+  element.hidden = !message;
+  element.classList.toggle('error', error);
+}
 async function saveDeckCover(file) {
-  if (!file || !state.user || !state.deck || savingDeckCover) return;
+  if (!file || !state.user || !canEditDeck(state.deck) || savingDeckCover) return;
   savingDeckCover = true;
   const input = $('#deck-cover');
+  const button = $('#deck-cover-button');
+  const selectedDeck = state.deck;
   input.disabled = true;
+  button.disabled = true;
+  showDeckCoverStatus('Uploading cover…');
   let artwork = null;
-  const previousArtworkId = state.deck.cover_artwork_id || null;
+  const previousArtworkId = selectedDeck.cover_artwork_id || null;
   try {
+    await deckSaveQueue.catch(() => {});
     artwork = await api.uploadArtwork(await compressedArtwork(file));
-    const saved = await api.saveDeck(state.user.id, state.deck.id, { ...deckFormValues(), cover_artwork_id: artwork.id });
+    const saved = await api.saveDeck(state.user.id, selectedDeck.id, { ...deckFormValues(), cover_artwork_id: artwork.id });
     state.deck = saved;
     state.decks = state.decks.map(deck => deck.id === saved.id ? saved : deck);
     renderDeckList();
@@ -1242,8 +1255,14 @@ async function saveDeckCover(file) {
     status('Deck cover saved.');
   } catch (cause) {
     if (artwork) await api.deleteArtwork(artwork.id).catch(console.error);
+    showDeckCoverStatus(cause.message || 'Cover upload failed.', true);
     status(cause.message, true);
-  } finally { savingDeckCover = false; input.disabled = !state.user || !state.deck || !canEditDeck(state.deck); }
+  } finally {
+    savingDeckCover = false;
+    input.value = '';
+    input.disabled = !canEditDeck(state.deck);
+    button.disabled = !canEditDeck(state.deck);
+  }
 }
 
 async function autosaveDeck() {

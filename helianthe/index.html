@@ -186,7 +186,7 @@
           <label>Deck name<input name="name" required maxlength="100"></label>
           <label>Patron<select name="patron_name"></select></label>
           <label>Author<select id="deck-author-select"></select></label>
-          <label class="deck-cover-field">Cover<input id="deck-cover" type="file" accept="image/*"><button id="deck-cover-button" type="button">Choose Cover</button></label>
+          <div class="deck-cover-field"><span>Cover</span><input id="deck-cover" type="file" accept="image/*" aria-label="Deck cover image"><button id="deck-cover-button" type="button">Choose Cover</button><span id="deck-cover-status" class="deck-cover-status" role="status" aria-live="polite" hidden></span></div>
           <div class="actions"><button id="duplicate-deck" type="button" hidden>Duplicate Deck</button><button id="delete-deck" class="danger-button" type="button" hidden>Delete Deck</button></div>
         </div>
       </form>

@@ -195,6 +195,11 @@ body.dark-mode #decks-view:not(.deck-detail-open) #deck-list .deck-list-item:hov
 #decks-view.deck-detail-open .deck-detail-toolbar .actions { margin: 0; align-self: end; white-space: nowrap; }
 #deck-cover { display: none; }
 #deck-cover-button { width: 100%; margin-top: .2rem; }
+.deck-cover-status { display: block; margin-top: .25rem; font-size: .75rem; line-height: 1.25; color: #315f4b; }
+.deck-cover-status[hidden] { display: none; }
+.deck-cover-status.error { color: #a23d35; }
+body.dark-mode .deck-cover-status { color: #e5eee0; }
+body.dark-mode .deck-cover-status.error { color: #ef9187; }
 #decks-view.deck-detail-open .deck-detail-toolbar input,
 #decks-view.deck-detail-open .deck-detail-toolbar select { display: flex; align-items: center; justify-content: space-between; gap: .4rem; margin-top: .2rem; padding: .45rem .4rem; border: 1px solid #a4b6a5; border-radius: 8px; background: #fffefa; color: #163737; font-size: .82rem; }
 #decks-view.deck-detail-open .deck-detail-toolbar #deck-cover { display: none; }
