@@ -1044,6 +1044,11 @@ function renderDeckHeader() {
   }
 }
 
+const deckCopyUpdates = new Map();
+function hasPendingDeckCopyChanges(deckId) {
+  return [...deckCopyUpdates.keys()].some(key => key.startsWith(`${deckId}:`));
+}
+
 function renderDeckCards() {
   const list = $('#deck-cards');
   list.replaceChildren();
@@ -1086,28 +1091,37 @@ function renderDeckCards() {
       increment.textContent = '+';
       increment.setAttribute('aria-label', `Add one copy of ${card.title}`);
       increment.disabled = copies >= 2;
-      const changeCopies = async nextCopies => {
+      const changeCopies = nextCopies => {
         const deck = state.deck;
-        decrement.disabled = true;
-        increment.disabled = true;
-        try {
-          await api.setDeckCard(state.user.id, deck, card.id, nextCopies, state.isAdmin);
-          const deckCards = await api.listDeckCards(deck.id);
-          if (state.deck?.id !== deck.id) return;
-          state.deckCards = deckCards;
-          if (nextCopies === 0 && state.deckPreviewCard?.id === card.id) await showDeckCardPreview(null);
-          renderDeckCards();
+        if (!deck || nextCopies < 0 || nextCopies > 2) return;
+        const wasPreviewing = state.deckPreviewCard?.id === card.id;
+        state.deckCards = state.deckCards.filter(item => item.card_id !== card.id);
+        if (nextCopies) state.deckCards.push({ card_id: card.id, copies: nextCopies });
+        if (nextCopies === 0 && wasPreviewing) void showDeckCardPreview(null);
+        else renderDeckCards();
+
+        const key = `${deck.id}:${card.id}`;
+        const previous = deckCopyUpdates.get(key)?.promise || Promise.resolve();
+        const token = Symbol();
+        const promise = previous.catch(() => {}).then(() => api.setDeckCard(state.user.id, deck, card.id, nextCopies, state.isAdmin));
+        deckCopyUpdates.set(key, { promise, token });
+        void promise.then(() => {
+          if (deckCopyUpdates.get(key)?.token !== token) return;
+          deckCopyUpdates.delete(key);
           status(nextCopies === 0 ? `Removed ${card.title} from ${deck.name}.` : `Saved ${card.title} in ${deck.name}.`);
-        } catch (cause) {
+        }).catch(async cause => {
+          if (deckCopyUpdates.get(key)?.token !== token) return;
+          deckCopyUpdates.delete(key);
           if (state.deck?.id === deck.id) {
             state.deckCards = await api.listDeckCards(deck.id).catch(() => state.deckCards);
             renderDeckCards();
+            if (wasPreviewing && state.deckCards.some(item => item.card_id === card.id && item.copies > 0)) await showDeckCardPreview(card);
           }
           status(cause.message, true);
-        }
+        });
       };
-      decrement.addEventListener('click', event => { event.stopPropagation(); void changeCopies(copies - 1); });
-      increment.addEventListener('click', event => { event.stopPropagation(); void changeCopies(copies + 1); });
+      decrement.addEventListener('click', event => { event.stopPropagation(); changeCopies(copies - 1); });
+      increment.addEventListener('click', event => { event.stopPropagation(); changeCopies(copies + 1); });
       controls.addEventListener('keydown', event => event.stopPropagation());
       controls.append(decrement, count, increment);
       row.append(controls);
@@ -1555,8 +1569,10 @@ function startRealtimeSync() {
   const refreshDecks = async () => {
     const selectedDeckId = state.deck?.id;
     const selectedPreviewId = state.deckPreviewCard?.id;
+    if (selectedDeckId && hasPendingDeckCopyChanges(selectedDeckId)) return;
     try {
       await reloadCollections();
+      if (selectedDeckId && hasPendingDeckCopyChanges(selectedDeckId)) return;
       if (!selectedDeckId) return;
       const updatedDeck = state.decks.find(deck => deck.id === selectedDeckId);
       if (!updatedDeck) { state.deck = null; renderDeckCards(); return; }
