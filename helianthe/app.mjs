@@ -399,7 +399,7 @@ function cardTypeIconElement(card) {
   const radianceEntity = card.card_type === 'Entity' && card.terrain === 'Radiance';
   const icon = card.card_type === 'Event' || radianceEntity ? document.createElement('span') : document.createElement('img');
   icon.className = `card-type-icon${card.card_type === 'Event' ? ' event-type-icon' : ''}${radianceEntity ? ' radiance-entity-type-icon' : ''}`;
-  if (card.card_type === 'Event') icon.style.setProperty('--event-icon-color', eventIconColor(card.terrain));
+  if (card.card_type === 'Event') icon.style.setProperty('--event-icon-color', '#909592');
   else if (radianceEntity) icon.style.setProperty('--event-icon-color', eventIconColor(card.terrain));
   else { icon.src = cardTypeIcon(card); icon.alt = ''; }
   icon.title = card.card_type;
@@ -494,7 +494,7 @@ function renderCardList() {
     const icon = card.patron ? document.createElement('span') : cardTypeIconElement(card);
     if (card.patron) { icon.className = `card-type-icon patron-type-icon ${terrainClass(card.terrain)}`; icon.setAttribute('aria-hidden', 'true'); }
     const title = document.createElement('span');
-    title.className = `card-list-title ${terrainClass(card.terrain)}`;
+    title.className = `card-list-title ${card.card_type === 'Event' ? 'terrain-event' : terrainClass(card.terrain)}`;
     title.textContent = card.title;
     row.append(icon, title);
     const meta = document.createElement('small');
@@ -935,7 +935,7 @@ function renderDeckCards() {
     row.addEventListener('click', () => showDeckCardPreview(card));
     row.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); showDeckCardPreview(card); } });
     row.append(cardTypeIconElement(card));
-    const label = document.createElement('span'); label.className = `card-list-title ${terrainClass(card.terrain)}`; label.textContent = card.title;
+    const label = document.createElement('span'); label.className = `card-list-title ${card.card_type === 'Event' ? 'terrain-event' : terrainClass(card.terrain)}`; label.textContent = card.title;
     row.append(label);
     if (mine) {
       const select = document.createElement('select');
@@ -986,7 +986,7 @@ function cardSearchOption(card, onSelect) {
   option.setAttribute('role', 'option');
   option.append(cardTypeIconElement(card));
   const title = document.createElement('span');
-  title.className = `card-list-title ${terrainClass(card.terrain)}`;
+  title.className = `card-list-title ${card.card_type === 'Event' ? 'terrain-event' : terrainClass(card.terrain)}`;
   title.textContent = card.title;
   option.append(title);
   option.addEventListener('click', onSelect);
