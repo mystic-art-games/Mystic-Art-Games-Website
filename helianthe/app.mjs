@@ -56,6 +56,7 @@ $('#theme-toggle').addEventListener('click', () => {
   const dark = !document.body.classList.contains('dark-mode');
   localStorage.setItem('mystic-art-theme', dark ? 'dark' : 'light');
   applyTheme(dark);
+  if (patronPicker) syncPatronPicker($('#deck-form').elements.patron_name);
 });
 
 async function compressedArtwork(file) {
@@ -176,14 +177,18 @@ function patronFactionClass(faction) {
   return `patron-faction-${String(faction || '').toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
 }
 
+function patronPickerTerrain(patron) {
+  if (!patron) return '';
+  return patronCards.find(card => card.patron?.name === patron.name)?.terrain || PATRON_TERRAIN[patron.faction] || '';
+}
+
 function patronPickerColor(patron) {
   if (!patron) return '';
   const dark = document.body.classList.contains('dark-mode');
-  if (patron.name.startsWith('Myrr,')) return dark ? '#bc91dc' : '#784997';
   const colors = dark
-    ? { Flowbound: '#77b8d1', Brightworks: '#e0b65a', Dreamwardens: '#bc91dc', Verdant: '#91c99e' }
-    : { Flowbound: '#35758e', Brightworks: '#a87318', Dreamwardens: '#784997', Verdant: '#488057' };
-  return colors[patron.faction] || '';
+    ? { Flow: '#77b8d1', Radiance: '#e0b65a', Symbiosis: '#bc91dc', Verdant: '#91c99e' }
+    : { Flow: '#35758e', Radiance: '#a87318', Symbiosis: '#784997', Verdant: '#488057' };
+  return colors[patronPickerTerrain(patron)] || '';
 }
 
 let patronPicker = null;
@@ -233,7 +238,7 @@ function syncPatronPicker(select) {
   const { trigger, menu } = patronPicker;
   const selected = patronByName(select.value);
   trigger.replaceChildren();
-  trigger.className = `patron-picker-trigger${selected ? ` ${patronFactionClass(selected.faction)}${selected.name.startsWith('Myrr,') ? ' patron-myrr' : ''}` : ''}`;
+  trigger.className = `patron-picker-trigger${selected ? ` patron-picker-terrain-${patronPickerTerrain(selected).toLowerCase()}` : ''}`;
   trigger.style.color = patronPickerColor(selected);
   if (selected) {
     const icon = document.createElement('span');
@@ -252,7 +257,7 @@ function syncPatronPicker(select) {
   for (const patron of [null, ...PATRONS]) {
     const option = document.createElement('button');
     option.type = 'button';
-    option.className = `patron-picker-option${patron ? ` ${patronFactionClass(patron.faction)}${patron.name.startsWith('Myrr,') ? ' patron-myrr' : ''}` : ''}`;
+    option.className = `patron-picker-option${patron ? ` patron-picker-terrain-${patronPickerTerrain(patron).toLowerCase()}` : ''}`;
     option.style.color = patronPickerColor(patron);
     option.setAttribute('role', 'option');
     option.setAttribute('aria-selected', String((patron?.name || '') === select.value));
@@ -2070,6 +2075,7 @@ async function saveCardForm() {
     if (modalOpen) closeCardField();
     const savedCard = state.cards.find(item => item.id === card.id) || patronCards.find(item => item.id === card.id) || card;
     selectCard(savedCard);
+    if (card.patron && patronPicker) syncPatronPicker($('#deck-form').elements.patron_name);
     if (state.deckPreviewCard?.id === card.id) await showDeckCardPreview(savedCard);
     if (card.patron && patronByName(state.deck?.patron_name)?.name === card.patron.name) await renderDeckPatron(card.patron);
     renderCardList();

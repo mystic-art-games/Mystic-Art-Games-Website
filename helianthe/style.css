@@ -226,21 +226,19 @@ body.dark-mode .deck-cover-status.error { color: #ef9187; }
 .patron-picker-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .patron-picker-option .patron-picker-name { white-space: normal; overflow-wrap: anywhere; }
 .patron-picker-icon { display: block; flex: 0 0 auto; width: 1.35rem; height: 1.35rem; background-color: currentColor; -webkit-mask: url('./assets/Patron.png') center / contain no-repeat; mask: url('./assets/Patron.png') center / contain no-repeat; }
-.patron-picker :is(.patron-picker-trigger, .patron-picker-option).patron-faction-flowbound { color: #35758e; }
-.patron-picker :is(.patron-picker-trigger, .patron-picker-option).patron-faction-brightworks { color: #a87318; }
-.patron-picker :is(.patron-picker-trigger, .patron-picker-option).patron-faction-dreamwardens { color: #784997; }
-.patron-picker :is(.patron-picker-trigger, .patron-picker-option).patron-faction-verdant { color: #488057; }
-.patron-picker :is(.patron-picker-trigger, .patron-picker-option).patron-myrr { color: #784997; }
+.patron-picker :is(.patron-picker-trigger, .patron-picker-option).patron-picker-terrain-flow { color: #35758e; }
+.patron-picker :is(.patron-picker-trigger, .patron-picker-option).patron-picker-terrain-radiance { color: #a87318; }
+.patron-picker :is(.patron-picker-trigger, .patron-picker-option).patron-picker-terrain-symbiosis { color: #784997; }
+.patron-picker :is(.patron-picker-trigger, .patron-picker-option).patron-picker-terrain-verdant { color: #488057; }
 body.dark-mode .patron-picker-trigger { border-color: #587965; background: #0d2b23; color: #e5eee0; }
 body.dark-mode .patron-picker-trigger::after { border-color: #d5e6cf; }
 body.dark-mode .patron-picker-menu { border-color: #416853; background: #173f32; }
 body.dark-mode .patron-picker-option { background: transparent; color: #e5eee0; }
 body.dark-mode .patron-picker-option:hover:not(:disabled), body.dark-mode .patron-picker-option:focus-visible { background: #285944; }
-body.dark-mode .patron-picker :is(.patron-picker-trigger, .patron-picker-option).patron-faction-flowbound { color: #77b8d1; }
-body.dark-mode .patron-picker :is(.patron-picker-trigger, .patron-picker-option).patron-faction-brightworks { color: #e0b65a; }
-body.dark-mode .patron-picker :is(.patron-picker-trigger, .patron-picker-option).patron-faction-dreamwardens { color: #bc91dc; }
-body.dark-mode .patron-picker :is(.patron-picker-trigger, .patron-picker-option).patron-faction-verdant { color: #91c99e; }
-body.dark-mode .patron-picker :is(.patron-picker-trigger, .patron-picker-option).patron-myrr { color: #bc91dc; }
+body.dark-mode .patron-picker :is(.patron-picker-trigger, .patron-picker-option).patron-picker-terrain-flow { color: #77b8d1; }
+body.dark-mode .patron-picker :is(.patron-picker-trigger, .patron-picker-option).patron-picker-terrain-radiance { color: #e0b65a; }
+body.dark-mode .patron-picker :is(.patron-picker-trigger, .patron-picker-option).patron-picker-terrain-symbiosis { color: #bc91dc; }
+body.dark-mode .patron-picker :is(.patron-picker-trigger, .patron-picker-option).patron-picker-terrain-verdant { color: #91c99e; }
 @media (max-width: 850px) { #decks-view.deck-detail-open .deck-detail-toolbar { flex-wrap: wrap; } #decks-view.deck-detail-open .deck-detail-toolbar .actions { margin-left: 0; width: 100%; flex-wrap: wrap; } }
 .workspace,
 .patrons-workspace { width: calc(100% - 2rem); }
