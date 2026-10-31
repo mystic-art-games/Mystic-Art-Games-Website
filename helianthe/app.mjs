@@ -189,6 +189,7 @@ function profileById(id) {
 }
 
 const avatarArtworkUrls = new Map();
+const deckCoverArtworkUrls = new Map();
 
 function avatarElement(profile, className = '') {
   const avatar = document.createElement('span');
@@ -911,8 +912,8 @@ function renderDeckList() {
     cover.className = 'deck-tile-cover';
     cover.setAttribute('aria-hidden', 'true');
     const image = document.createElement('img');
-    image.src = deck.cover_artwork_id ? api.mediaUrl(deck.cover_artwork_id) : './assets/site-background.jpg';
     image.alt = '';
+    image.src = deckCoverArtworkUrls.get(deck.cover_artwork_id) || './assets/site-background.jpg';
     cover.append(image);
     const title = document.createElement('span');
     title.className = 'deck-list-title-wrap';
@@ -925,6 +926,13 @@ function renderDeckList() {
     meta.append(authorDisplayElement(deck.author_ids, deck.owner_id));
     row.append(cover, title, meta);
     list.append(row);
+    if (deck.cover_artwork_id && !deckCoverArtworkUrls.has(deck.cover_artwork_id)) {
+      void api.fetchArtwork(deck.cover_artwork_id).then(blob => {
+        const url = URL.createObjectURL(blob);
+        deckCoverArtworkUrls.set(deck.cover_artwork_id, url);
+        if (image.isConnected) image.src = url;
+      }).catch(() => {});
+    }
   }
   if (!list.childElementCount) list.textContent = 'No decks yet.';
 }
