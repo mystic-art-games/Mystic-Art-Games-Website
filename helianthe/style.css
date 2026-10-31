@@ -1441,18 +1441,22 @@ body.dark-mode #download-png:hover:not(:disabled) { filter: brightness(1.12); bo
 body:not(.dark-mode) #new-card,
 body:not(.dark-mode) #new-deck,
 body:not(.dark-mode) #duplicate-deck,
+body:not(.dark-mode) #save-deck-edit,
 body:not(.dark-mode) #download-png { background: linear-gradient(145deg, rgba(64, 112, 79, .92), rgba(52, 117, 90, .9) 52%, rgba(38, 88, 71, .88)); color: #fff; }
 body.dark-mode #new-card,
 body.dark-mode #new-deck,
 body.dark-mode #duplicate-deck,
+body.dark-mode #save-deck-edit,
 body.dark-mode #download-png { background: linear-gradient(145deg, rgba(47, 92, 64, .86), rgba(42, 94, 65, .84) 52%, rgba(28, 70, 52, .88)); color: #fff; }
 body:not(.dark-mode) #new-card:hover:not(:disabled),
 body:not(.dark-mode) #new-deck:hover:not(:disabled),
 body:not(.dark-mode) #duplicate-deck:hover:not(:disabled),
+body:not(.dark-mode) #save-deck-edit:hover:not(:disabled),
 body:not(.dark-mode) #download-png:hover:not(:disabled) { background: linear-gradient(145deg, rgba(64, 112, 79, .92), rgba(52, 117, 90, .9) 52%, rgba(38, 88, 71, .88)); color: #fff; }
 body.dark-mode #new-card:hover:not(:disabled),
 body.dark-mode #new-deck:hover:not(:disabled),
 body.dark-mode #duplicate-deck:hover:not(:disabled),
+body.dark-mode #save-deck-edit:hover:not(:disabled),
 body.dark-mode #download-png:hover:not(:disabled) { background: linear-gradient(145deg, rgba(47, 92, 64, .86), rgba(42, 94, 65, .84) 52%, rgba(28, 70, 52, .88)); color: #fff; }
 body:not(.dark-mode) .deck-preview-actions > button:first-child { border-color: rgba(73, 120, 94, .55); background: linear-gradient(145deg, rgba(64, 112, 79, .92), rgba(52, 117, 90, .9) 52%, rgba(38, 88, 71, .88)); color: #fff; box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .5), 0 2px 8px rgba(34, 98, 49, .2); transition: transform .15s ease, filter .15s ease, box-shadow .15s ease; }
 body.dark-mode .deck-preview-actions > button:first-child { border-color: rgba(226, 246, 235, .34); background: linear-gradient(145deg, rgba(47, 92, 64, .86), rgba(42, 94, 65, .84) 52%, rgba(28, 70, 52, .88)); color: #fff; box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .28), 0 6px 16px rgba(0, 18, 12, .3); }
@@ -1535,6 +1539,7 @@ body.dark-mode #auth-modal #auth-mode-toggle:hover:not(:disabled) { filter: brig
 body:not(.dark-mode) #sign-out,
 body:not(.dark-mode) #deck-cover-button,
 body:not(.dark-mode) #edit-deck,
+body:not(.dark-mode) #cancel-deck-edit,
 body:not(.dark-mode) #sign-out:hover:not(:disabled) {
   border-color: transparent;
   background: linear-gradient(145deg, rgba(255, 255, 255, .99) 0%, rgba(240, 246, 242, .84) 46%, rgba(225, 236, 229, .64) 100%);
@@ -1542,10 +1547,11 @@ body:not(.dark-mode) #sign-out:hover:not(:disabled) {
   box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .58), 0 2px 8px rgba(34, 98, 49, .2);
   transition: transform .15s ease, filter .15s ease, box-shadow .15s ease;
 }
-body:not(.dark-mode) #sign-out:hover:not(:disabled), body:not(.dark-mode) #deck-cover-button:hover:not(:disabled), body:not(.dark-mode) #edit-deck:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.06); box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .7), 0 5px 12px rgba(34, 98, 49, .28); }
+body:not(.dark-mode) #sign-out:hover:not(:disabled), body:not(.dark-mode) #deck-cover-button:hover:not(:disabled), body:not(.dark-mode) #edit-deck:hover:not(:disabled), body:not(.dark-mode) #cancel-deck-edit:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.06); box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .7), 0 5px 12px rgba(34, 98, 49, .28); }
 body.dark-mode #sign-out,
 body.dark-mode #deck-cover-button,
 body.dark-mode #edit-deck,
+body.dark-mode #cancel-deck-edit,
 body.dark-mode #sign-out:hover:not(:disabled) {
   border-color: #416853;
   background: linear-gradient(145deg, rgba(220, 244, 226, .4) 0%, rgba(91, 143, 111, .32) 46%, rgba(28, 70, 52, .44) 100%);
@@ -1553,7 +1559,7 @@ body.dark-mode #sign-out:hover:not(:disabled) {
   box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .28), 0 8px 24px rgba(0, 18, 12, .28);
   transition: transform .15s ease, filter .15s ease, box-shadow .15s ease;
 }
-body.dark-mode #sign-out:hover:not(:disabled), body.dark-mode #deck-cover-button:hover:not(:disabled), body.dark-mode #edit-deck:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.12); box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .34), 0 6px 16px rgba(0, 18, 12, .38); }
+body.dark-mode #sign-out:hover:not(:disabled), body.dark-mode #deck-cover-button:hover:not(:disabled), body.dark-mode #edit-deck:hover:not(:disabled), body.dark-mode #cancel-deck-edit:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.12); box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .34), 0 6px 16px rgba(0, 18, 12, .38); }
 #confirm-add-to-deck {
   border-color: rgba(73, 120, 94, .55);
   background: linear-gradient(145deg, rgba(64, 112, 79, .92), rgba(52, 117, 90, .9) 52%, rgba(38, 88, 71, .88));
