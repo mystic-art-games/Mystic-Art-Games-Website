@@ -259,7 +259,7 @@ function syncPatronPicker(select) {
   const { trigger, menu } = patronPicker;
   const selected = patronByName(select.value);
   trigger.replaceChildren();
-  trigger.className = `patron-picker-trigger${selected ? ` patron-picker-terrain-${patronPickerTerrain(selected).toLowerCase()}` : ''}`;
+  trigger.className = `patron-picker-trigger${selected ? ` is-patron patron-picker-terrain-${patronPickerTerrain(selected).toLowerCase()}` : ''}`;
   trigger.style.color = patronPickerColor(selected);
   if (selected) {
     const icon = document.createElement('span');

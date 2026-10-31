@@ -225,7 +225,7 @@ body.dark-mode .deck-cover-status.error { color: #ef9187; }
 .patron-picker-option:hover:not(:disabled), .patron-picker-option:focus-visible { background: #e0ebda; }
 .patron-picker-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .patron-picker-option .patron-picker-name { white-space: normal; overflow-wrap: anywhere; }
-.patron-picker-option.is-patron .patron-picker-name { font-weight: 800; }
+.patron-picker :is(.patron-picker-trigger, .patron-picker-option).is-patron .patron-picker-name { font-weight: 800; }
 .patron-picker-icon { display: block; flex: 0 0 auto; width: 1.35rem; height: 1.35rem; background-color: currentColor; -webkit-mask: url('./assets/Patron.png') center / contain no-repeat; mask: url('./assets/Patron.png') center / contain no-repeat; }
 .patron-picker :is(.patron-picker-trigger, .patron-picker-option).patron-picker-terrain-flow { color: #35758e; }
 .patron-picker :is(.patron-picker-trigger, .patron-picker-option).patron-picker-terrain-radiance { color: #a87318; }
