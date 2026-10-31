@@ -1053,7 +1053,6 @@ function renderDeckCards() {
   const list = $('#deck-cards');
   list.replaceChildren();
   if (!state.deck) { renderDeckSummary(); return; }
-  const query = $('#deck-card-search').value.trim().toLocaleLowerCase();
   const type = $('#deck-card-filter-type').value;
   const author = $('#deck-card-filter-author').value;
   const terrain = $('#deck-card-filter-terrain').value;
@@ -1061,7 +1060,6 @@ function renderDeckCards() {
   for (const card of state.cards) {
     const copies = state.deckCards.find(item => item.card_id === card.id)?.copies || 0;
     if (!copies) continue;
-    if (query && !card.title.toLocaleLowerCase().includes(query)) continue;
     if (type && card.card_type !== type) continue;
     if (author && !authorNames(card.author_ids, card.owner_id).includes(author)) continue;
     if (terrain && (terrain === 'none' ? Boolean(card.terrain) : card.terrain !== terrain)) continue;
@@ -1812,7 +1810,6 @@ $('#card-search').addEventListener('input', renderCardList);
 $('#card-filter-type').addEventListener('change', () => { syncCardTypeFilter(); renderCardList(); });
 for (const filter of document.querySelectorAll('#card-filter-author, #card-filter-terrain')) filter.addEventListener('change', renderCardList);
 syncCardTypeFilter();
-$('#deck-card-search').addEventListener('input', renderDeckCards);
 $('#deck-card-search').addEventListener('input', renderDeckCardSuggestions);
 $('#deck-card-search').addEventListener('focus', renderDeckCardSuggestions);
 $('#deck-card-search').addEventListener('click', renderDeckCardSuggestions);
