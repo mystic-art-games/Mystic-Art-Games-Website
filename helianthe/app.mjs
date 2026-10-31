@@ -278,7 +278,7 @@ function syncPatronPicker(select) {
   for (const patron of [null, ...availablePatrons()]) {
     const option = document.createElement('button');
     option.type = 'button';
-    option.className = `patron-picker-option${patron ? ` patron-picker-terrain-${patronPickerTerrain(patron).toLowerCase()}` : ''}`;
+    option.className = `patron-picker-option${patron ? ` is-patron patron-picker-terrain-${patronPickerTerrain(patron).toLowerCase()}` : ''}`;
     option.style.color = patronPickerColor(patron);
     option.setAttribute('role', 'option');
     option.setAttribute('aria-selected', String((patron?.name || '') === select.value));
