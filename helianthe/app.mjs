@@ -613,6 +613,12 @@ function syncCardTypeFilter() {
   else if (!type.value) terrain.value = '';
 }
 
+function matchesCardTerrainFilter(card, terrain) {
+  if (!terrain) return true;
+  const cardTerrain = card.card_type === 'Event' ? '' : card.terrain;
+  return terrain === 'none' ? !cardTerrain : cardTerrain === terrain;
+}
+
 function renderCardList() {
   const query = $('#card-search').value.trim().toLocaleLowerCase();
   const type = $('#card-filter-type').value;
@@ -624,7 +630,7 @@ function renderCardList() {
     const matchesSearch = item.title.toLocaleLowerCase().includes(query);
     const matchesType = !type || item.card_type === type;
     const matchesAuthor = !author || (item.patron ? (authorNames(item.author_ids).includes(author) || (!item.author_ids?.length && item.author === author)) : authorNames(item.author_ids, item.owner_id).includes(author));
-    const matchesTerrain = !terrain || (terrain === 'none' ? !item.terrain : item.terrain === terrain);
+    const matchesTerrain = matchesCardTerrainFilter(item, terrain);
     return matchesSearch && matchesType && matchesAuthor && matchesTerrain;
   })) {
     const row = button('', () => selectCard(card, { openMobile: true }), `card-list-item${state.card?.id === card.id ? ' selected' : ''}`);
@@ -1083,7 +1089,7 @@ function renderDeckCards() {
     if (!copies) continue;
     if (type && card.card_type !== type) continue;
     if (author && !authorNames(card.author_ids, card.owner_id).includes(author)) continue;
-    if (terrain && (terrain === 'none' ? Boolean(card.terrain) : card.terrain !== terrain)) continue;
+    if (!matchesCardTerrainFilter(card, terrain)) continue;
     const row = document.createElement('div'); row.className = `card-list-item deck-card-row${state.deckPreviewCard?.id === card.id ? ' selected' : ''}`;
     row.dataset.cardId = card.id;
     row.setAttribute('role', 'button');
