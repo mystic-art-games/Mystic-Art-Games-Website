@@ -244,6 +244,48 @@ body.dark-mode #decks-view:not(.deck-detail-open) #deck-list .deck-list-item:hov
 .art-scroll-thumb { position: absolute; top: 0; width: 12px; height: 44px; min-width: 12px; min-height: 32px; appearance: none; border: 1px solid rgba(255, 255, 255, .9); border-radius: 6px; padding: 0; background: linear-gradient(135deg, rgba(255, 255, 255, .96), rgba(215, 240, 221, .72) 48%, rgba(78, 135, 104, .42)); box-shadow: 0 3px 8px rgba(20, 49, 38, .34), inset 2px 2px 3px rgba(255, 255, 255, .95), inset -2px -2px 4px rgba(65, 119, 88, .28); cursor: grab; pointer-events: auto; touch-action: none; }
 .art-scroll-thumb:hover:not(:disabled) { background: linear-gradient(135deg, rgba(255, 255, 255, 1), rgba(215, 240, 221, .84) 48%, rgba(78, 135, 104, .5)); filter: none; }
 .art-scroll-thumb:active { cursor: grabbing; }
+.favorite-card-menu,
+.card-search-suggestions,
+.auth-modal-card,
+.card-field-dialog,
+.patron-detail-panel {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(78, 135, 104, .72) transparent;
+}
+.favorite-card-menu::-webkit-scrollbar,
+.card-search-suggestions::-webkit-scrollbar,
+.auth-modal-card::-webkit-scrollbar,
+.card-field-dialog::-webkit-scrollbar,
+.patron-detail-panel::-webkit-scrollbar { width: 12px; }
+.favorite-card-menu::-webkit-scrollbar-track,
+.card-search-suggestions::-webkit-scrollbar-track,
+.auth-modal-card::-webkit-scrollbar-track,
+.card-field-dialog::-webkit-scrollbar-track,
+.patron-detail-panel::-webkit-scrollbar-track { background: transparent; }
+.favorite-card-menu::-webkit-scrollbar-thumb,
+.card-search-suggestions::-webkit-scrollbar-thumb,
+.auth-modal-card::-webkit-scrollbar-thumb,
+.card-field-dialog::-webkit-scrollbar-thumb,
+.patron-detail-panel::-webkit-scrollbar-thumb {
+  border: 1px solid rgba(255, 255, 255, .9);
+  border-radius: 6px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, .96), rgba(215, 240, 221, .72) 48%, rgba(78, 135, 104, .42));
+  box-shadow: 0 3px 8px rgba(20, 49, 38, .34), inset 2px 2px 3px rgba(255, 255, 255, .95), inset -2px -2px 4px rgba(65, 119, 88, .28);
+}
+body.dark-mode .favorite-card-menu,
+body.dark-mode .card-search-suggestions,
+body.dark-mode .auth-modal-card,
+body.dark-mode .card-field-dialog,
+body.dark-mode .patron-detail-panel { scrollbar-color: rgba(185, 220, 200, .62) transparent; }
+body.dark-mode .favorite-card-menu::-webkit-scrollbar-thumb,
+body.dark-mode .card-search-suggestions::-webkit-scrollbar-thumb,
+body.dark-mode .auth-modal-card::-webkit-scrollbar-thumb,
+body.dark-mode .card-field-dialog::-webkit-scrollbar-thumb,
+body.dark-mode .patron-detail-panel::-webkit-scrollbar-thumb {
+  border-color: rgba(235, 255, 243, .72);
+  background: linear-gradient(135deg, rgba(220, 244, 226, .72), rgba(91, 143, 111, .5) 48%, rgba(28, 70, 52, .62));
+  box-shadow: 0 3px 8px rgba(0, 18, 12, .38), inset 2px 2px 3px rgba(235, 255, 243, .4), inset -2px -2px 4px rgba(12, 45, 35, .3);
+}
 @media (min-width: 851px) {
   .masthead nav button.active {
     border-color: rgba(73, 120, 94, .55);
