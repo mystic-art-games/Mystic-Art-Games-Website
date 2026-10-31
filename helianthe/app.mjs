@@ -1238,6 +1238,7 @@ async function saveDeckCover(file) {
     state.decks = state.decks.map(deck => deck.id === saved.id ? saved : deck);
     renderDeckList();
     if (previousArtworkId && previousArtworkId !== artwork.id) await api.deleteArtwork(previousArtworkId).catch(console.error);
+    await selectDeck(null);
     status('Deck cover saved.');
   } catch (cause) {
     if (artwork) await api.deleteArtwork(artwork.id).catch(console.error);
