@@ -702,6 +702,7 @@ body.dark-mode #card-edit-hint { color: #fff; }
   background: url('./assets/delete-icon.png') center / contain no-repeat;
   filter: invert(1);
 }
+.add-to-deck-button { white-space: nowrap; }
 .deck-preview-actions { width: 100%; justify-content: center; }
 .deck-preview-actions > button { padding-inline: .5rem; white-space: nowrap; }
 .card-preview-actions #download-png { margin-top: 0; }

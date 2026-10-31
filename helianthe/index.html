@@ -99,6 +99,15 @@
     </section>
   </div>
 
+  <div id="add-to-deck-modal" class="auth-modal" hidden>
+    <button id="add-to-deck-backdrop" class="auth-modal-backdrop" type="button" aria-label="Close add to deck dialog"></button>
+    <section class="auth-modal-card" role="dialog" aria-modal="true" aria-labelledby="add-to-deck-title">
+      <div class="auth-modal-head"><h1 id="add-to-deck-title">Add card to Deck</h1><button id="close-add-to-deck" class="auth-modal-close" type="button" aria-label="Close add to deck dialog">×</button></div>
+      <label>Deck<select id="add-to-deck-select"></select></label>
+      <div class="actions"><button id="confirm-add-to-deck" type="button">Add</button><button id="cancel-add-to-deck" type="button">Cancel</button></div>
+    </section>
+  </div>
+
   <div id="card-edit-denied-modal" class="auth-modal" hidden>
     <button id="card-edit-denied-backdrop" class="auth-modal-backdrop" type="button" aria-label="Close card editing message"></button>
     <section class="auth-modal-card" role="alertdialog" aria-modal="true" aria-labelledby="card-edit-denied-title" aria-describedby="card-edit-denied-description">
@@ -155,6 +164,7 @@
           <p id="preview-note" role="status"></p>
           <p id="card-edit-hint" hidden>Click a card area to edit that element.</p>
           <div class="card-preview-actions">
+            <button id="add-to-deck" class="add-to-deck-button" type="button" aria-label="Add to Deck" title="Add to Deck" disabled>Add to Deck</button>
             <button id="download-png" class="download-png-button" type="button" aria-label="Download PNG" title="Download PNG" disabled>Download PNG</button>
             <button id="delete-card" class="delete-card-button danger-button" type="button" aria-label="Delete Card" title="Delete Card" disabled hidden>Delete Card</button>
           </div>
@@ -205,13 +215,13 @@
           <canvas id="deck-card-canvas" width="1500" height="2100" aria-label="Selected card preview"></canvas>
           <div id="deck-card-preview-note" class="deck-empty-preview">Select a card to preview it.</div>
           <p id="deck-preview-edit-hint" class="deck-preview-edit-hint" hidden>Click a card area to edit that element.</p>
-          <div class="card-preview-actions deck-preview-actions"><button id="deck-download-png" class="download-png-button" type="button" aria-label="Download PNG" title="Download PNG" disabled>Download PNG</button><button id="deck-delete-card" class="delete-card-button danger-button" type="button" aria-label="Delete Card" title="Delete Card" disabled hidden>Delete Card</button></div>
+          <div class="card-preview-actions deck-preview-actions"><button id="deck-add-to-deck" class="add-to-deck-button" type="button" aria-label="Add to Deck" title="Add to Deck" disabled>Add to Deck</button><button id="deck-download-png" class="download-png-button" type="button" aria-label="Download PNG" title="Download PNG" disabled>Download PNG</button><button id="deck-delete-card" class="delete-card-button danger-button" type="button" aria-label="Delete Card" title="Delete Card" disabled hidden>Delete Card</button></div>
         </section>
         <section class="deck-patron-preview-shell" aria-label="Deck patron preview">
           <canvas id="deck-patron-canvas" width="1500" height="2100" aria-label="Deck patron card preview"></canvas>
           <div id="deck-patron-preview-note" class="deck-empty-preview">Select a Patron to preview it.</div>
           <p id="deck-patron-edit-hint" class="deck-preview-edit-hint" hidden>Click a card area to edit that element.</p>
-          <div class="card-preview-actions deck-preview-actions"><button id="patron-download-png" class="download-png-button" type="button" aria-label="Download PNG" title="Download PNG" disabled>Download PNG</button><button id="patron-delete-card" class="delete-card-button danger-button" type="button" aria-label="Delete Card" title="Delete Card" disabled hidden>Delete Card</button></div>
+          <div class="card-preview-actions deck-preview-actions"><button id="patron-add-to-deck" class="add-to-deck-button" type="button" aria-label="Add to Deck" title="Add to Deck" disabled>Add to Deck</button><button id="patron-download-png" class="download-png-button" type="button" aria-label="Download PNG" title="Download PNG" disabled>Download PNG</button><button id="patron-delete-card" class="delete-card-button danger-button" type="button" aria-label="Delete Card" title="Delete Card" disabled hidden>Delete Card</button></div>
         </section>
       </div>
     </section>

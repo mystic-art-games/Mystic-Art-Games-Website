@@ -17,6 +17,7 @@ const ADMIN_EMAIL = 'dominik.zielinski3@gmail.com';
 let authMode = 'sign-in';
 let profileSaveStatusTimer = null;
 const state = { user: null, isAdmin: false, cards: [], decks: [], profiles: [], card: null, deck: null, profile: null, deckCards: [], deckPreviewCard: null, deckPreviewArtworkUrl: null, deckPreviewSerial: 0, deckPatronSerial: 0, artworkUrl: null, artworkSerial: 0, renderSerial: 0, authVersion: 0, realtimeChannel: null, cardFormDirty: false };
+let addToDeckCard = null;
 const ARTWORK_UPLOAD_LIMIT = 100 * 1024;
 const AVATAR_UPLOAD_LIMIT = 80 * 1024;
 const DECK_PATRONS_KEY = 'helianthe-deck-patrons';
@@ -546,6 +547,30 @@ function canEditDeck(deck) {
   return Boolean(state.user && deck && deck.owner_id === state.user.id);
 }
 
+function updateAddToDeckButtons(card) {
+  const disabled = !state.user || !card || Boolean(card.patron) || !state.decks.some(deck => state.isAdmin || deck.owner_id === state.user.id);
+  for (const id of ['add-to-deck', 'deck-add-to-deck', 'patron-add-to-deck']) $(`#${id}`).disabled = disabled;
+}
+
+function openAddToDeckModal(card) {
+  if (!card || card.patron || !requireAccount()) return;
+  const decks = state.decks.filter(deck => state.isAdmin || deck.owner_id === state.user.id);
+  if (!decks.length) return status('Create a deck before adding cards.', true);
+  addToDeckCard = card;
+  $('#add-to-deck-title').textContent = `Add ${card.title} to Deck`;
+  const select = $('#add-to-deck-select');
+  select.replaceChildren(...decks.map(deck => new Option(deck.name, deck.id)));
+  $('#add-to-deck-modal').hidden = false;
+  document.body.classList.add('auth-modal-open');
+  select.focus();
+}
+
+function closeAddToDeckModal() {
+  addToDeckCard = null;
+  $('#add-to-deck-modal').hidden = true;
+  document.body.classList.remove('auth-modal-open');
+}
+
 function showSignIn() {
   state.user = null;
   state.isAdmin = false;
@@ -816,6 +841,7 @@ function selectCard(card, { openMobile = false } = {}) {
   ++state.artworkSerial;
   releaseArtwork();
   state.card = card;
+  updateAddToDeckButtons(card);
   state.cardFormDirty = false;
   const form = $('#card-form');
   form.reset();
@@ -1044,6 +1070,7 @@ function renderDeckSummary() {
 async function renderDeckPatron(patron) {
   const shell = $('.deck-patron-preview-shell');
   const canvas = $('#deck-patron-canvas');
+  updateAddToDeckButtons(null);
   const serial = ++state.deckPatronSerial;
   shell.className = `deck-patron-preview-shell patron-faction-${(patron?.faction || 'none').toLowerCase().replaceAll(/[^a-z]+/g, '-')}${patron ? '' : ' is-empty'}`;
   $('#deck-patron-edit-hint').hidden = !patron || !state.user;
@@ -1067,6 +1094,7 @@ async function showDeckCardPreview(card) {
   state.deckPreviewCard = card;
   const shell = $('.deck-card-preview-shell');
   const canvas = $('#deck-card-canvas');
+  updateAddToDeckButtons(card);
   shell.classList.toggle('is-empty', !card);
   $('#deck-preview-edit-hint').hidden = !card || !state.user;
   canvas.tabIndex = card ? 0 : -1;
@@ -1259,6 +1287,7 @@ async function reloadCollections() {
   const savedPatrons = savedDeckPatrons();
   state.decks = state.decks.map(deck => deck.patron_name || !savedPatrons[deck.id] ? deck : { ...deck, patron_name: savedPatrons[deck.id] });
   refreshCardAuthorFilter();
+  updateAddToDeckButtons(state.card || state.deckPreviewCard);
   renderCardList(); renderDeckList(); renderDeckCards(); renderProfileList();
   if (state.profile) selectProfile(state.profiles.find(profile => profile.id === state.profile.id) || null);
 }
@@ -1639,6 +1668,39 @@ $('#card-artwork').addEventListener('change', event => {
   ++state.artworkSerial; releaseArtwork();
   state.artworkUrl = URL.createObjectURL(file);
   renderPreview();
+});
+for (const [buttonId, getCard] of [
+  ['add-to-deck', () => state.card],
+  ['deck-add-to-deck', () => state.deckPreviewCard],
+  ['patron-add-to-deck', () => patronCards.find(card => card.patron?.name === patronByName(state.deck?.patron_name)?.name)],
+]) {
+  $(`#${buttonId}`).addEventListener('click', () => openAddToDeckModal(getCard()));
+}
+$('#add-to-deck-backdrop').addEventListener('click', closeAddToDeckModal);
+$('#close-add-to-deck').addEventListener('click', closeAddToDeckModal);
+$('#cancel-add-to-deck').addEventListener('click', closeAddToDeckModal);
+$('#confirm-add-to-deck').addEventListener('click', async () => {
+  const card = addToDeckCard;
+  const deck = state.decks.find(item => item.id === $('#add-to-deck-select').value);
+  if (!card || !deck || !state.user) return closeAddToDeckModal();
+  const button = $('#confirm-add-to-deck');
+  button.disabled = true;
+  try {
+    await api.setDeckCard(state.user.id, deck, card.id, 1, state.isAdmin);
+    if (state.deck?.id === deck.id) {
+      state.deckCards = await api.listDeckCards(deck.id);
+      renderDeckCards();
+    }
+    closeAddToDeckModal();
+    status(`Added ${card.title} to ${deck.name}.`);
+  } catch (cause) {
+    status(cause.message, true);
+  } finally {
+    button.disabled = false;
+  }
+});
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && !$('#add-to-deck-modal').hidden) closeAddToDeckModal();
 });
 $('#download-png').addEventListener('click', async () => {
   try { await downloadCardPNG($('#card-canvas'), $('#card-form').elements.title.value); }
