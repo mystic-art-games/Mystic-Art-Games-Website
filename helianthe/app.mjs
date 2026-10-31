@@ -468,7 +468,7 @@ function refreshCardAuthorFilter() {
   ].filter(Boolean))].sort((a, b) => a.localeCompare(b));
   for (const select of [$('#card-filter-author'), $('#deck-card-filter-author')]) {
     const current = select.value;
-    select.replaceChildren(new Option('All authors', ''));
+    select.replaceChildren(new Option('All Authors', ''));
     for (const author of authors) select.append(new Option(author, author));
     select.value = authors.includes(current) ? current : '';
   }
