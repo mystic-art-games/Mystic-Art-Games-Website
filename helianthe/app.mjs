@@ -972,16 +972,14 @@ function renderDeckCardSuggestions() {
   const input = $('#deck-card-search');
   const suggestions = $('#deck-card-search-suggestions');
   const query = input.value.trim().toLocaleLowerCase();
-  const mine = state.deck?.owner_id === state.user?.id;
   suggestions.replaceChildren();
   if (!state.deck) { closeCardSearchSuggestions(input, suggestions); return; }
-  const cards = state.cards.filter(card => {
-    const copies = state.deckCards.find(item => item.card_id === card.id)?.copies || 0;
-    return (mine || copies > 0) && (!query || `${card.title} ${card.effect}`.toLocaleLowerCase().includes(query));
-  }).sort((a, b) => a.title.localeCompare(b.title));
+  const cards = state.cards
+    .filter(card => !query || `${card.title} ${card.effect}`.toLocaleLowerCase().includes(query))
+    .sort((a, b) => a.title.localeCompare(b.title));
   for (const card of cards) {
     suggestions.append(cardSearchOption(card, () => {
-      input.value = card.title;
+      input.value = '';
       closeCardSearchSuggestions(input, suggestions);
       renderDeckCards();
       void showDeckCardPreview(card);
@@ -1528,11 +1526,16 @@ $('#deck-card-search').addEventListener('input', renderDeckCardSuggestions);
 $('#deck-card-search').addEventListener('focus', renderDeckCardSuggestions);
 $('#deck-card-search').addEventListener('click', renderDeckCardSuggestions);
 document.addEventListener('click', event => {
-  for (const [field, input, suggestions] of [
-    ['.card-search-field', '#card-search', '#card-search-suggestions'],
-    ['.deck-card-search-field', '#deck-card-search', '#deck-card-search-suggestions'],
+  for (const [input, suggestions] of [
+    ['#card-search', '#card-search-suggestions'],
+    ['#deck-card-search', '#deck-card-search-suggestions'],
   ]) {
-    if (!event.target.closest(field)) closeCardSearchSuggestions($(input), $(suggestions));
+    const searchInput = $(input);
+    const suggestionList = $(suggestions);
+    const scrollRail = suggestionList.parentElement.querySelector('.dropdown-scroll-rail');
+    if (event.target !== searchInput && !suggestionList.contains(event.target) && !scrollRail?.contains(event.target)) {
+      closeCardSearchSuggestions(searchInput, suggestionList);
+    }
   }
 });
 document.addEventListener('keydown', event => {
