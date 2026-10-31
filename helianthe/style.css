@@ -1777,3 +1777,21 @@ body.dark-mode select option:hover, body.dark-mode select option:focus, body.dar
     box-shadow: none !important;
   }
 }
+
+/* All popup frames share the card editor's frosted glass surface. */
+body:not(.dark-mode) .auth-modal .auth-modal-card,
+body:not(.dark-mode) #card-field-modal .card-field-dialog {
+  border-color: rgba(73, 120, 94, .55) !important;
+  background: linear-gradient(145deg, rgba(255, 255, 255, .9), rgba(225, 238, 229, .84) 62%, rgba(204, 224, 210, .8)) !important;
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .82), 0 18px 60px rgba(10, 35, 27, .32) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+body.dark-mode .auth-modal .auth-modal-card,
+body.dark-mode #card-field-modal .card-field-dialog {
+  border-color: rgba(226, 246, 235, .48) !important;
+  background: linear-gradient(145deg, rgba(185, 220, 200, .86), rgba(65, 111, 88, .8) 62%, rgba(32, 82, 61, .76)) !important;
+  box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .3), 0 18px 60px rgba(0, 18, 12, .38) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
