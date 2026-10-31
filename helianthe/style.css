@@ -438,7 +438,7 @@ body.dark-mode .profile-save-status.error { color: #ef9187; }
 #profile-new-deck { background: #265847; color: white; border-color: #265847; }
 #profile-new-deck:hover:not(:disabled) { background: #1d4939; }
 .card-filters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .45rem; margin-top: .65rem; }
-#cards-view > .sidebar > .card-filters { width: min(100%, 460px); margin-top: .65rem; padding: .55rem; border: 1px solid rgba(73, 120, 94, .42); border-radius: 12px; background: linear-gradient(145deg, rgba(255, 255, 255, .64), rgba(224, 238, 229, .42)); box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .72), 0 3px 10px rgba(10, 35, 27, .08); }
+#cards-view > .sidebar > .card-filters { width: min(100%, 460px); margin-top: .65rem; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
 .deck-card-filters-row { display: grid; grid-template-columns: minmax(0, 460px) minmax(0, 1fr); align-items: end; gap: .65rem; width: 100%; align-self: stretch; }
 .deck-card-filters-row .card-filters { min-width: 0; }
 .card-search-field, .deck-card-search-field { position: relative; min-width: 0; }
