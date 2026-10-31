@@ -723,26 +723,12 @@ function renderPreview() {
     .catch(cause => { if (serial === state.renderSerial) $('#preview-note').textContent = cause.message; });
 }
 
-let cardFieldDraft = null;
 let cardFieldArtworkFile = null;
 
-function closeCardField(commit = false) {
-  if (!commit && cardFieldDraft) {
-    const form = $('#card-form');
-    for (const [name, value] of Object.entries(cardFieldDraft.values)) form.elements[name].value = value;
-    for (const input of $('#card-author-options').querySelectorAll('input')) input.checked = cardFieldDraft.authors.includes(input.value);
-    if (cardFieldDraft.artworkChanged) {
-      $('#card-artwork').value = '';
-      ++state.artworkSerial;
-      releaseArtwork();
-      void showArtwork(state.card);
-    }
-    renderPreview();
-  }
+function closeCardField() {
   $('#card-field-modal').hidden = true;
   $('#card-field-content').replaceChildren();
   $('#card-field-status').hidden = true;
-  cardFieldDraft = null;
   cardFieldArtworkFile = null;
   $('#card-canvas').focus({ preventScroll: true });
 }
@@ -761,11 +747,6 @@ function openCardField(field) {
   const source = sources[field];
   if (!source) return;
   cardFieldArtworkFile = null;
-  cardFieldDraft = {
-    values: Object.fromEntries(['title', 'card_type', 'terrain', 'effect'].map(name => [name, form.elements[name].value])),
-    authors: selectedAuthorIds($('#card-author-options')),
-    artworkChanged: false,
-  };
   const content = $('#card-field-content');
   $('#card-field-status').hidden = true;
   content.replaceChildren(source.cloneNode(true));
@@ -775,11 +756,7 @@ function openCardField(field) {
     label.textContent = 'Author';
     const select = document.createElement('select');
     for (const profile of state.profiles) select.append(new Option(profile.display_name || ownerName(profile.id), profile.id));
-    const originalInputs = [...source.querySelectorAll('input[type="checkbox"]')];
-    select.value = selectedAuthorIds($('#card-author-options'))[0] || originalInputs[0]?.value || '';
-    select.addEventListener('change', () => {
-      for (const input of originalInputs) input.checked = input.value === select.value;
-    });
+    select.value = selectedAuthorIds($('#card-author-options'))[0] || source.querySelector('input[type="checkbox"]')?.value || '';
     label.append(select);
     content.append(label);
   }
@@ -791,35 +768,20 @@ function openCardField(field) {
   }
   $('#card-field-title').textContent = titles[field];
   const copies = content.querySelectorAll('input, select, textarea');
-  for (const [index, original] of [...source.querySelectorAll('input, select, textarea')].entries()) {
+  for (const [index, original] of (field === 'authors' ? [] : [...source.querySelectorAll('input, select, textarea')]).entries()) {
     const copy = copies[index];
     if (!copy) continue;
     if (copy.type === 'checkbox') copy.checked = original.checked;
     else if (copy.type !== 'file') copy.value = original.value;
     copy.removeAttribute('id');
-    copy.addEventListener(copy.type === 'file' ? 'change' : 'input', () => {
-      if (copy.type === 'file') {
-        const file = copy.files?.[0];
-        if (!file) return;
-        cardFieldArtworkFile = file;
-        if (cardFieldDraft) cardFieldDraft.artworkChanged = true;
-        state.cardFormDirty = true;
-        ++state.artworkSerial;
-        releaseArtwork();
-        state.artworkUrl = URL.createObjectURL(file);
-        renderPreview();
-      } else {
-        if (copy.type === 'checkbox') original.checked = copy.checked;
-        else original.value = copy.value;
-        original.dispatchEvent(new Event('input', { bubbles: true }));
-        if (original.name === 'card_type') {
-          syncTerrain();
-          const terrainCopy = content.querySelector('[name="terrain"]');
-          terrainCopy.disabled = form.elements.terrain.disabled;
-          terrainCopy.value = form.elements.terrain.value;
-          renderPreview();
-        }
-      }
+    if (copy.type === 'file') copy.addEventListener('change', () => { cardFieldArtworkFile = copy.files?.[0] || null; });
+    if (copy.name === 'card_type') copy.addEventListener('change', () => {
+      const terrainCopy = content.querySelector('[name="terrain"]');
+      const isEvent = copy.value === 'Event';
+      terrainCopy.disabled = isEvent;
+      terrainCopy.required = !isEvent;
+      if (isEvent) terrainCopy.value = '';
+      else if (!terrainCopy.value) terrainCopy.value = 'Symbiosis';
     });
   }
   const terrainCopy = content.querySelector('[name="terrain"]');
@@ -840,20 +802,6 @@ function openCardField(field) {
     filename.textContent = 'No file chosen';
     fileInput.addEventListener('change', () => { filename.textContent = fileInput.files?.[0]?.name || 'No file chosen'; });
     fileInput.closest('label').after(button, filename);
-  }
-  if (field === 'authors') {
-    const authorInputs = [...content.querySelectorAll('input[type="checkbox"]')];
-    for (const input of authorInputs) input.addEventListener('change', () => {
-      if (!input.checked) return;
-      for (const other of authorInputs) {
-        if (other === input) continue;
-        other.checked = false;
-        const original = [...source.querySelectorAll('input[type="checkbox"]')].find(item => item.value === other.value);
-        if (original) original.checked = false;
-      }
-      const original = [...source.querySelectorAll('input[type="checkbox"]')].find(item => item.value === input.value);
-      if (original) original.checked = true;
-    });
   }
   $('#card-field-modal').hidden = false;
   (field === 'artwork' ? content.querySelector('.artwork-file-button') : content.querySelector('input:not([type="checkbox"]), select, textarea, input[type="checkbox"]'))?.focus();
@@ -1803,9 +1751,9 @@ for (const id of ['card-edit-denied-backdrop', 'close-card-edit-denied', 'confir
 }
 document.addEventListener('keydown', event => { if (event.key === 'Escape' && !$('#card-edit-denied-modal').hidden) closeCardEditDenied(); });
 $('#card-field-save').addEventListener('click', () => { void saveCardForm(); });
-$('#card-field-cancel').addEventListener('click', () => closeCardField(false));
+$('#card-field-cancel').addEventListener('click', closeCardField);
 $('#card-field-modal .card-field-backdrop').addEventListener('click', closeCardField);
-document.addEventListener('keydown', event => { if (event.key === 'Escape' && !$('#card-field-modal').hidden) { event.stopPropagation(); closeCardField(false); } });
+document.addEventListener('keydown', event => { if (event.key === 'Escape' && !$('#card-field-modal').hidden) { event.stopPropagation(); closeCardField(); } });
 $('#close-deck-card-preview').addEventListener('click', closeDeckCardPreview);
 $('#card-form').addEventListener('input', () => { state.cardFormDirty = true; renderPreview(); });
 $('#card-form').elements.card_type.addEventListener('change', () => { syncTerrain(); renderPreview(); });
@@ -1938,14 +1886,10 @@ async function saveCardForm() {
   if (!requireCardEdit(state.card)) return;
   const form = $('#card-form');
   const modalOpen = !$('#card-field-modal').hidden;
-  if (modalOpen) {
-    for (const field of $('#card-field-content').querySelectorAll('[name]')) {
-      if (['title', 'card_type', 'terrain', 'effect'].includes(field.name)) form.elements[field.name].value = field.value;
-    }
-  }
+  const modalContent = $('#card-field-content');
   const modalStatus = $('#card-field-status');
   modalStatus.hidden = true;
-  const invalidField = [...form.elements].find(field => !field.checkValidity());
+  const invalidField = [...form.elements, ...(modalOpen ? modalContent.querySelectorAll('input,select,textarea') : [])].find(field => !field.checkValidity());
   if (invalidField) {
     if (modalOpen) {
       modalStatus.textContent = invalidField.validationMessage || 'Check the card fields before saving.';
@@ -1961,15 +1905,21 @@ async function saveCardForm() {
   let cleanupWarning = '';
   try {
     const values = Object.fromEntries(new FormData(form));
+    if (modalOpen) {
+      for (const field of modalContent.querySelectorAll('[name]')) {
+        if (['title', 'card_type', 'terrain', 'effect'].includes(field.name)) values[field.name] = field.value;
+      }
+    }
     if (values.card_type === 'Event') values.terrain = '';
-    values.author_ids = selectedAuthorIds($('#card-author-options'));
+    const modalAuthor = modalOpen ? modalContent.querySelector('select:not([name])') : null;
+    values.author_ids = modalAuthor ? [modalAuthor.value].filter(Boolean) : selectedAuthorIds($('#card-author-options'));
     values.author = authorNames(values.author_ids, state.user?.id).join(', ');
     const sourceFile = cardFieldArtworkFile || $('#card-artwork').files?.[0];
     const file = sourceFile ? await compressedArtwork(sourceFile) : null;
     const previousArtworkId = state.card?.artwork_id || null;
     let card;
     if (state.card?.patron) {
-      const authorIds = selectedAuthorIds($('#card-author-options'));
+      const authorIds = values.author_ids;
       const artwork = file ? await api.uploadArtwork(file) : null;
       const updates = { title: values.title, terrain: values.terrain, effect: values.effect, author_ids: authorIds, author: authorNames(authorIds).join(', ') || 'Helianthe', artwork_id: artwork?.id || previousArtworkId };
       try {
@@ -2013,7 +1963,7 @@ async function saveCardForm() {
       $('#card-filter-author').value = '';
       $('#card-filter-terrain').value = '';
     }
-    if (modalOpen) closeCardField(true);
+    if (modalOpen) closeCardField();
     const savedCard = state.cards.find(item => item.id === card.id) || patronCards.find(item => item.id === card.id) || card;
     selectCard(savedCard);
     if (state.deckPreviewCard?.id === card.id) await showDeckCardPreview(savedCard);
