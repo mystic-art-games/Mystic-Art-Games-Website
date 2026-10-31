@@ -153,10 +153,21 @@ function ownerName(id) {
   return state.profiles.find(profile => profile.id === id)?.display_name || 'Player';
 }
 
+function availablePatrons() {
+  const custom = state.cards.filter(card => card.card_type === 'Patron').map(card => ({ name: card.title, terrain: card.terrain }));
+  const customNames = new Set(custom.map(patron => patron.name.toLowerCase()));
+  return [...PATRONS.filter(patron => !customNames.has(patron.name.toLowerCase())), ...custom];
+}
+
+function patronCardByName(name) {
+  return state.cards.find(card => card.card_type === 'Patron' && card.title.toLowerCase() === name?.toLowerCase())
+    || patronCards.find(card => card.patron?.name === name);
+}
+
 function patronByName(name) {
   const normalized = String(name || '').trim().toLowerCase();
   if (!normalized) return null;
-  return PATRONS.find(patron => {
+  return availablePatrons().find(patron => {
     const fullName = patron.name.toLowerCase();
     const shortName = patron.name.split(',')[0].trim().toLowerCase();
     return fullName === normalized || shortName === normalized;
@@ -180,7 +191,16 @@ function patronFactionClass(faction) {
 
 function patronPickerTerrain(patron) {
   if (!patron) return '';
-  return patronCards.find(card => card.patron?.name === patron.name)?.terrain || PATRON_TERRAIN[patron.faction] || '';
+  return patron.terrain || patronCardByName(patron.name)?.terrain || PATRON_TERRAIN[patron.faction] || '';
+}
+
+function refreshDeckPatronOptions() {
+  const select = $('#deck-form').elements.patron_name;
+  const selected = select.value;
+  select.replaceChildren(new Option('No Patron', ''));
+  for (const patron of availablePatrons()) select.append(new Option(patron.name, patron.name));
+  select.value = selected;
+  if (patronPicker) syncPatronPicker(select);
 }
 
 function patronPickerColor(patron) {
@@ -255,7 +275,7 @@ function syncPatronPicker(select) {
   trigger.setAttribute('aria-label', `Patron: ${selected?.name || 'No Patron'}`);
   trigger.disabled = select.disabled;
   menu.replaceChildren();
-  for (const patron of [null, ...PATRONS]) {
+  for (const patron of [null, ...availablePatrons()]) {
     const option = document.createElement('button');
     option.type = 'button';
     option.className = `patron-picker-option${patron ? ` patron-picker-terrain-${patronPickerTerrain(patron).toLowerCase()}` : ''}`;
@@ -1268,7 +1288,7 @@ async function renderDeckPatron(patron) {
   $('#patron-download-png').disabled = true;
   $('#patron-delete-card').disabled = true;
   if (!patron) return;
-  const patronCard = patronCards.find(card => card.patron?.name === patron.name);
+  const patronCard = patronCardByName(patron.name);
   if (patronCard) {
     let artworkUrl = '';
     try {
@@ -1341,8 +1361,7 @@ async function selectDeck(deck) {
   form.reset();
   form.elements.name.value = deck?.name || '';
   const patronSelect = form.elements.patron_name;
-  patronSelect.replaceChildren(new Option('No Patron', ''));
-  for (const patron of PATRONS) patronSelect.append(new Option(patron.name, patron.name));
+  refreshDeckPatronOptions();
   patronSelect.value = patronByName(deck?.patron_name)?.name || '';
   void renderDeckPatron(patronByName(deck?.patron_name));
   renderDeckAuthorSelect(deck?.author_ids?.[0] || deck?.owner_id || state.user?.id);
@@ -1542,6 +1561,7 @@ function selectProfile(profile) {
 async function reloadCollections() {
   [state.cards, state.decks, state.profiles] = await Promise.all([api.listCards(), api.listDecks(), api.listProfiles()]);
   state.cards = resolveLegacyCardAuthors(state.cards, state.profiles);
+  refreshDeckPatronOptions();
   const savedPatrons = savedDeckPatrons();
   state.decks = state.decks.map(deck => deck.patron_name || !savedPatrons[deck.id] ? deck : { ...deck, patron_name: savedPatrons[deck.id] });
   refreshCardAuthorFilter();
@@ -1896,14 +1916,14 @@ $('#deck-card-canvas').addEventListener('keydown', event => {
 $('#deck-patron-canvas').tabIndex = 0;
 $('#deck-patron-canvas').addEventListener('click', event => {
   const patron = patronByName(state.deck?.patron_name);
-  const card = patronCards.find(item => item.patron?.name === patron?.name);
+  const card = patronCardByName(patron?.name);
   editDeckPreviewAt(event, card);
 });
 $('#deck-patron-canvas').addEventListener('keydown', event => {
   if (event.key !== 'Enter' && event.key !== ' ') return;
   event.preventDefault();
   const patron = patronByName(state.deck?.patron_name);
-  const card = patronCards.find(item => item.patron?.name === patron?.name);
+  const card = patronCardByName(patron?.name);
   if (!requireCardEdit(card)) return;
   selectCard(card);
   openCardField('identity');
@@ -1931,7 +1951,7 @@ $('#card-artwork').addEventListener('change', event => {
 for (const [buttonId, getCard] of [
   ['add-to-deck', () => state.card],
   ['deck-add-to-deck', () => state.deckPreviewCard],
-  ['patron-add-to-deck', () => patronCards.find(card => card.patron?.name === patronByName(state.deck?.patron_name)?.name)],
+  ['patron-add-to-deck', () => patronCardByName(patronByName(state.deck?.patron_name)?.name)],
 ]) {
   $(`#${buttonId}`).addEventListener('click', () => openAddToDeckModal(getCard()));
 }
@@ -1973,7 +1993,7 @@ $('#download-png').addEventListener('click', async () => {
 });
 for (const [buttonId, canvasId, getCard] of [
   ['deck-download-png', 'deck-card-canvas', () => state.deckPreviewCard],
-  ['patron-download-png', 'deck-patron-canvas', () => patronCards.find(card => card.patron?.name === patronByName(state.deck?.patron_name)?.name)],
+  ['patron-download-png', 'deck-patron-canvas', () => patronCardByName(patronByName(state.deck?.patron_name)?.name)],
 ]) {
   $(`#${buttonId}`).addEventListener('click', async () => {
     const card = getCard();
@@ -1984,7 +2004,7 @@ for (const [buttonId, canvasId, getCard] of [
 }
 for (const [buttonId, getCard] of [
   ['deck-delete-card', () => state.deckPreviewCard],
-  ['patron-delete-card', () => patronCards.find(card => card.patron?.name === patronByName(state.deck?.patron_name)?.name)],
+  ['patron-delete-card', () => patronCardByName(patronByName(state.deck?.patron_name)?.name)],
 ]) {
   $(`#${buttonId}`).addEventListener('click', () => {
     const card = getCard();
