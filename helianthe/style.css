@@ -636,6 +636,7 @@ body.dark-mode .deck-preview-edit-hint { color: #fff; }
 #card-canvas { width: min(100%, 280px); height: auto; aspect-ratio: 5 / 7; }
 #card-canvas, #deck-card-canvas, #deck-patron-canvas { border-radius: 18px; box-shadow: 0 10px 24px #2225; background: #ece6d8; }
 #card-canvas { cursor: pointer; }
+#card-edit-hint { font-family: Nunito, Arial, sans-serif; }
 #card-form > .card-direct-edit-field { display: none; }
 .card-field-modal { position: fixed; z-index: 70; inset: 0; display: grid; place-items: center; padding: 1rem; }
 .card-field-backdrop { position: absolute; inset: 0; background: rgba(8, 38, 31, .65); }
