@@ -1271,16 +1271,6 @@ function selectProfile(profile) {
   $('#profile-bio').textContent = profile.bio || (mine ? 'Add a short bio to your profile.' : 'No bio yet.');
   $('#profile-favorite-card').hidden = mine;
   $('#profile-favorite-card').textContent = `Favorite card: ${favoriteCardName(profile.favorite_card_id)}`;
-  const list = $('#profile-decks'); list.replaceChildren();
-  for (const deck of state.decks.filter(item => item.owner_id === profile.id && item.is_public)) {
-    const deckButton = button('', () => { showTab('decks'); void selectDeck(deck); });
-    const deckName = document.createElement('strong');
-    deckName.className = 'profile-deck-name';
-    deckName.textContent = deck.name;
-    deckButton.append(deckName, deckPatronElement(deck, 'profile-deck-patron'));
-    list.append(deckButton);
-  }
-  if (!list.childElementCount) list.textContent = 'No decks yet.';
   renderProfileList();
 }
 
