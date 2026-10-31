@@ -172,7 +172,7 @@ body.dark-mode .about-section p, body.dark-mode .about-section li { color: #d1df
 #decks-view:not(.deck-detail-open) > .decks-sidebar #new-deck { margin-left: .75rem; }
 #cards-view > .cards-sidebar > .panel-head { justify-content: flex-start; }
 #cards-view > .cards-sidebar #new-card { margin-left: .75rem; }
-#decks-view:not(.deck-detail-open) #deck-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.3rem; }
+#decks-view:not(.deck-detail-open) #deck-list { display: grid; grid-template-columns: minmax(0, 1fr); grid-auto-rows: max-content; align-content: start; gap: 1.3rem; }
 #decks-view:not(.deck-detail-open) .deck-gallery-section { min-width: 0; }
 .deck-gallery-section h2 { margin: 0 0 .65rem; color: #265847; font-size: 1.15rem; }
 .deck-gallery-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: .8rem; }
