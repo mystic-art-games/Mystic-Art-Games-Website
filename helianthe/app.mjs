@@ -176,6 +176,16 @@ function patronFactionClass(faction) {
   return `patron-faction-${String(faction || '').toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
 }
 
+function patronPickerColor(patron) {
+  if (!patron) return '';
+  const dark = document.body.classList.contains('dark-mode');
+  if (patron.name.startsWith('Myrr,')) return dark ? '#bc91dc' : '#784997';
+  const colors = dark
+    ? { Flowbound: '#77b8d1', Brightworks: '#e0b65a', Dreamwardens: '#bc91dc', Verdant: '#91c99e' }
+    : { Flowbound: '#35758e', Brightworks: '#a87318', Dreamwardens: '#784997', Verdant: '#488057' };
+  return colors[patron.faction] || '';
+}
+
 let patronPicker = null;
 function syncPatronPicker(select) {
   if (!patronPicker) {
@@ -224,6 +234,7 @@ function syncPatronPicker(select) {
   const selected = patronByName(select.value);
   trigger.replaceChildren();
   trigger.className = `patron-picker-trigger${selected ? ` ${patronFactionClass(selected.faction)}${selected.name.startsWith('Myrr,') ? ' patron-myrr' : ''}` : ''}`;
+  trigger.style.color = patronPickerColor(selected);
   if (selected) {
     const icon = document.createElement('span');
     icon.className = 'patron-picker-icon';
@@ -233,6 +244,7 @@ function syncPatronPicker(select) {
   const selectedName = document.createElement('span');
   selectedName.className = 'patron-picker-name';
   selectedName.textContent = selected?.name || 'No Patron';
+  selectedName.style.color = patronPickerColor(selected);
   trigger.append(selectedName);
   trigger.setAttribute('aria-label', `Patron: ${selected?.name || 'No Patron'}`);
   trigger.disabled = select.disabled;
@@ -241,6 +253,7 @@ function syncPatronPicker(select) {
     const option = document.createElement('button');
     option.type = 'button';
     option.className = `patron-picker-option${patron ? ` ${patronFactionClass(patron.faction)}${patron.name.startsWith('Myrr,') ? ' patron-myrr' : ''}` : ''}`;
+    option.style.color = patronPickerColor(patron);
     option.setAttribute('role', 'option');
     option.setAttribute('aria-selected', String((patron?.name || '') === select.value));
     if (patron) {
@@ -252,6 +265,7 @@ function syncPatronPicker(select) {
     const name = document.createElement('span');
     name.className = 'patron-picker-name';
     name.textContent = patron?.name || 'No Patron';
+    name.style.color = patronPickerColor(patron);
     option.append(name);
     option.addEventListener('click', () => {
       select.value = patron?.name || '';
