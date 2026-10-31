@@ -466,6 +466,7 @@ body.dark-mode .card-search-suggestions .card-search-option:hover, body.dark-mod
 @media (max-width: 1050px) { .deck-card-filters-row { grid-template-columns: 1fr; } }
 .card-filters label { margin: 0; color: #5a6e64; font-size: .78rem; font-weight: 700; }
 .card-filters select { display: flex; align-items: center; justify-content: space-between; gap: .4rem; margin-top: .2rem; padding: .45rem .4rem; font-size: .82rem; }
+#cards-view .card-filters #card-filter-terrain:disabled { border-color: #b9c1bb; background: #e3e6e3; color: #6b756f; cursor: not-allowed; opacity: 1; }
 .cards-sidebar #card-search,
 .deck-card-filters-row #deck-card-search,
 .card-filters select { height: 2.35rem; box-sizing: border-box; }
@@ -493,6 +494,7 @@ body.dark-mode .card-search-suggestions .card-search-option:hover, body.dark-mod
 .card-filters :is(#card-filter-terrain, #deck-card-filter-terrain) option[value="Radiance"],
 .card-filters :is(#card-filter-terrain, #deck-card-filter-terrain):has(option[value="Radiance"]:checked) { color: #b88425; }
 body.dark-mode .card-filters select::picker(select) { border-color: #416853; background: #173f32; color: #e5eee0; }
+body.dark-mode #cards-view .card-filters #card-filter-terrain:disabled { border-color: #4d6255; background: #34453d; color: #aab8af; }
 body.dark-mode #cards-view > .sidebar > .card-filters { border-color: rgba(203, 234, 210, .3); background: linear-gradient(145deg, rgba(185, 220, 200, .18), rgba(65, 111, 88, .16)); box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .2), 0 3px 10px rgba(0, 18, 12, .2); }
 body.dark-mode .card-filters select option:hover,
 body.dark-mode .card-filters select option:focus,

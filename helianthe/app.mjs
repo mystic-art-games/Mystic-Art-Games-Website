@@ -474,6 +474,14 @@ function refreshCardAuthorFilter() {
   }
 }
 
+function syncCardTypeFilter() {
+  const type = $('#card-filter-type');
+  const terrain = $('#card-filter-terrain');
+  const isEvent = type.value === 'Event';
+  terrain.disabled = isEvent;
+  if (isEvent) terrain.value = 'none';
+}
+
 function renderCardList() {
   const query = $('#card-search').value.trim().toLocaleLowerCase();
   const type = $('#card-filter-type').value;
@@ -1561,7 +1569,9 @@ document.addEventListener('click', event => {
   if (!event.target.closest('.header-controls')) closeMobileMenu();
 });
 $('#card-search').addEventListener('input', renderCardList);
-for (const filter of document.querySelectorAll('#card-filter-type, #card-filter-author, #card-filter-terrain')) filter.addEventListener('change', renderCardList);
+$('#card-filter-type').addEventListener('change', () => { syncCardTypeFilter(); renderCardList(); });
+for (const filter of document.querySelectorAll('#card-filter-author, #card-filter-terrain')) filter.addEventListener('change', renderCardList);
+syncCardTypeFilter();
 $('#deck-card-search').addEventListener('input', renderDeckCards);
 $('#deck-card-search').addEventListener('input', renderDeckCardSuggestions);
 $('#deck-card-search').addEventListener('focus', renderDeckCardSuggestions);
