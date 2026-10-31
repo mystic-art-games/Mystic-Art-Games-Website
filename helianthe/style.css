@@ -1812,24 +1812,24 @@ body.dark-mode #card-field-modal .card-field-dialog {
   -webkit-backdrop-filter: blur(10px);
 }
 
-/* Shared action styles: Cancel mirrors Sign in, Add/Save mirrors Add New Card,
+/* Shared action styles: Cancel/Choose mirrors Sign in, Add/Save mirrors Add New Card,
    and Delete mirrors Delete Deck throughout the app. */
-body:not(.dark-mode) button.action-cancel {
+body:not(.dark-mode) button:is(.action-cancel, .action-choose) {
   border-color: transparent !important;
   background: linear-gradient(145deg, rgba(255, 255, 255, .99) 0%, rgba(240, 246, 242, .84) 46%, rgba(225, 236, 229, .64) 100%) !important;
   color: #15241d !important;
   box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .58), 0 2px 8px rgba(34, 98, 49, .2) !important;
   transition: transform .15s ease, filter .15s ease, box-shadow .15s ease;
 }
-body.dark-mode button.action-cancel {
+body.dark-mode button:is(.action-cancel, .action-choose) {
   border-color: #416853 !important;
   background: linear-gradient(145deg, rgba(220, 244, 226, .4) 0%, rgba(91, 143, 111, .32) 46%, rgba(28, 70, 52, .44) 100%) !important;
   color: #15241d !important;
   box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .28), 0 8px 24px rgba(0, 18, 12, .28) !important;
   transition: transform .15s ease, filter .15s ease, box-shadow .15s ease;
 }
-body:not(.dark-mode) button.action-cancel:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.06); box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .7), 0 5px 12px rgba(34, 98, 49, .28) !important; }
-body.dark-mode button.action-cancel:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.12); box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .34), 0 6px 16px rgba(0, 18, 12, .38) !important; }
+body:not(.dark-mode) button:is(.action-cancel, .action-choose):hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.06); box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .7), 0 5px 12px rgba(34, 98, 49, .28) !important; }
+body.dark-mode button:is(.action-cancel, .action-choose):hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.12); box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .34), 0 6px 16px rgba(0, 18, 12, .38) !important; }
 
 body:not(.dark-mode) button.action-add-save {
   border-color: rgba(73, 120, 94, .55) !important;

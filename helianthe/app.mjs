@@ -284,7 +284,7 @@ function setupFavoriteCardPicker(select) {
   wrapper.append(select);
   const trigger = document.createElement('button');
   trigger.type = 'button';
-  trigger.className = 'favorite-card-trigger';
+  trigger.className = 'favorite-card-trigger action-choose';
   trigger.setAttribute('aria-haspopup', 'listbox');
   trigger.setAttribute('aria-expanded', 'false');
   const menu = document.createElement('div');
@@ -315,7 +315,7 @@ function populateFavoriteCards(select, selectedId = '') {
   const addOption = (card, value = '') => {
     const option = document.createElement('button');
     option.type = 'button';
-    option.className = 'favorite-card-option';
+    option.className = card ? 'favorite-card-option' : 'favorite-card-option action-choose';
     option.setAttribute('role', 'option');
     option.append(card ? cardTypeIconElement(card) : document.createElement('span'));
     const label = document.createElement('span');
@@ -823,7 +823,7 @@ function openCardField(field) {
     fileInput.classList.add('artwork-file-input');
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = 'artwork-file-button';
+    button.className = 'artwork-file-button action-choose';
     button.textContent = 'Choose File';
     button.addEventListener('click', () => fileInput.click());
     const filename = document.createElement('span');
