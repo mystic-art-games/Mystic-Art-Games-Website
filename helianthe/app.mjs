@@ -946,6 +946,7 @@ function renderDeckCards() {
         select.disabled = true;
         if (nextCopies === 0) {
           state.deckCards = state.deckCards.filter(item => item.card_id !== card.id);
+          if (state.deckPreviewCard?.id === card.id) void showDeckCardPreview(null);
           renderDeckCards();
         }
         try {
@@ -1152,8 +1153,7 @@ async function selectDeck(deck) {
   const deckCards = deck ? await api.listDeckCards(deck.id) : [];
   if (deck && state.deck?.id !== deck.id) return;
   state.deckCards = deckCards;
-  const deckIsMine = Boolean(state.deck && state.user && (state.deck.owner_id === state.user.id || state.isAdmin));
-  const firstDeckCard = state.cards.find(card => deckIsMine || state.deckCards.some(item => item.card_id === card.id && item.copies > 0));
+  const firstDeckCard = state.cards.find(card => state.deckCards.some(item => item.card_id === card.id && item.copies > 0));
   state.deckPreviewCard = firstDeckCard || null;
   renderDeckCards();
   if (firstDeckCard) await showDeckCardPreview(firstDeckCard);
