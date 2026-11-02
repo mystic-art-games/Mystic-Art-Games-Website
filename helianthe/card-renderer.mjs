@@ -111,7 +111,7 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
     for (let size = 34; size >= 18; size--) {
       ctx.font = `500 ${size}px ${rulesFont}`;
       const lines = wrapText(value, 560);
-      const verticalLimit = Math.floor((905 - 681) / (size * 1.25)) + 1;
+      const verticalLimit = Math.floor((885 - 705) / (size * 1.25)) + 1;
       if (lines.length <= Math.min(8, verticalLimit)) return { lines, size, clipped: false };
     }
     ctx.font = `500 18px ${rulesFont}`;
@@ -122,7 +122,7 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
   const fitted = fitText(effect);
   ctx.fillStyle = card.effect?.trim() ? '#112f40' : '#817586';
   ctx.font = `500 ${fitted.size}px ${rulesFont}`;
-  let y = 685;
+  let y = 705;
   let credoItalic = false;
   for (const line of fitted.lines) {
     let x = 95;
@@ -139,7 +139,7 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
     ctx.fillStyle = baseColor;
     y += fitted.size * 1.25;
   }
-  if (fitted.clipped) { ctx.font = '700 14px Segoe UI,Arial,sans-serif'; ctx.fillStyle = '#b34739'; ctx.fillText('TEXT DOES NOT FIT ON CARD', 95, 909); }
+  if (fitted.clipped) { ctx.font = '700 14px Segoe UI,Arial,sans-serif'; ctx.fillStyle = '#b34739'; ctx.fillText('TEXT DOES NOT FIT ON CARD', 95, 895); }
   if (card.author) {
     ctx.save(); ctx.font = `500 21px ${rulesFont}`; ctx.fillStyle = '#4d463f'; ctx.textAlign = 'center';
     ctx.fillText(`Author · ${card.author}`, 375, 979, 470); ctx.restore();
