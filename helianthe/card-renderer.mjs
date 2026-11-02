@@ -39,6 +39,21 @@ function drawFrameWithBackground(ctx, frame, background, accent) {
   const frameCtx = frameCanvas.getContext('2d');
   frameCtx.drawImage(frame, 0, 0, 750, 1050);
   const frameData = frameCtx.getImageData(0, 0, 750, 1050);
+  // Follow the actual opaque silhouette: the PNG's bottom margin and corner
+  // shapes differ from the canvas bounds and between Terrain templates.
+  const left = new Int32Array(1050).fill(750);
+  const right = new Int32Array(1050).fill(-1);
+  const top = new Int32Array(750).fill(1050);
+  const bottom = new Int32Array(750).fill(-1);
+  for (let y = 0; y < 1050; y++) {
+    for (let x = 0; x < 750; x++) {
+      if (frameData.data[(y * 750 + x) * 4 + 3] < 240) continue;
+      left[y] = Math.min(left[y], x);
+      right[y] = Math.max(right[y], x);
+      top[x] = Math.min(top[x], y);
+      bottom[x] = Math.max(bottom[x], y);
+    }
+  }
   const watercolorCanvas = document.createElement('canvas');
   watercolorCanvas.width = 750; watercolorCanvas.height = 1050;
   const watercolorCtx = watercolorCanvas.getContext('2d');
@@ -58,10 +73,8 @@ function drawFrameWithBackground(ctx, frame, background, accent) {
     const isCreamSurface = r > 170 && g > 140 && b > 90 && r >= g * 0.92 && g >= b * 0.9;
     const pixel = i / 4;
     const x = pixel % 750, y = Math.floor(pixel / 750);
-    const cornerX = x < 32 ? 32 : x > 717 ? 717 : null;
-    const cornerY = y < 32 ? 32 : y > 1017 ? 1017 : null;
-    const onOuterRim = Math.min(x, y, 749 - x, 1049 - y) < 12
-      || (cornerX !== null && cornerY !== null && Math.hypot(x - cornerX, y - cornerY) > 20);
+    const onOuterRim = x <= left[y] + 5 || x >= right[y] - 5
+      || y <= top[x] + 5 || y >= bottom[x] - 5;
     if (isCreamSurface || onOuterRim) {
       for (let channel = 0; channel < 3; channel++) {
         const wash = watercolorData.data[i + channel];
