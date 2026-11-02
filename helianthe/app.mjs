@@ -946,9 +946,9 @@ function cardFieldAt(event) {
   const box = event.currentTarget.getBoundingClientRect();
   const x = (event.clientX - box.left) * 750 / box.width;
   const y = (event.clientY - box.top) * 1050 / box.height;
-  if (y < 155) return x < 145 || x > 605 ? 'identity' : 'title';
-  if (y < 765) return 'artwork';
-  if (y < 955) return 'effect';
+  if (y < 200) return x < 145 || x > 605 ? 'identity' : 'title';
+  if (y < 640) return 'artwork';
+  if (y < 925) return 'effect';
   return 'authors';
 }
 
