@@ -59,7 +59,7 @@ function drawFrameWithBackground(ctx, frame, background, accent) {
     if (isCreamSurface) {
       for (let channel = 0; channel < 3; channel++) {
         const wash = watercolorData.data[i + channel];
-        const evenWash = channelMeans[channel] + (wash - channelMeans[channel]) * 0.65;
+        const evenWash = channelMeans[channel] + (wash - channelMeans[channel]) * 0.85;
         const tintedPaper = 255 * 0.55 + accentRgb[channel] * 0.45;
         frameData.data[i + channel] = Math.max(0, Math.min(255, Math.round(evenWash * 0.58 + tintedPaper * 0.42)));
       }
