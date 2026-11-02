@@ -58,8 +58,8 @@ function drawFrameWithBackground(ctx, frame, background) {
     if (isCreamSurface) {
       for (let channel = 0; channel < 3; channel++) {
         const wash = watercolorData.data[i + channel];
-        const richerWash = channelMeans[channel] + (wash - channelMeans[channel]) * 1.65;
-        frameData.data[i + channel] = Math.max(0, Math.min(255, Math.round(richerWash)));
+        const evenWash = channelMeans[channel] + (wash - channelMeans[channel]) * 0.65;
+        frameData.data[i + channel] = Math.max(0, Math.min(255, Math.round(evenWash)));
       }
     }
   }
@@ -97,7 +97,7 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
 
   // The artwork is drawn inside the blank window, leaving the painted border visible.
   const illustrationBox = { x: 108, y: 156, width: 534, height: 470 };
-  if (background || art) {
+  if (art) {
     ctx.save();
     ctx.beginPath();
     ctx.moveTo(375, 145);
@@ -106,12 +106,9 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
     ctx.lineTo(125, 627); ctx.quadraticCurveTo(55, 627, 55, 553);
     ctx.lineTo(55, 285); ctx.bezierCurveTo(55, 193, 200, 145, 375, 145);
     ctx.clip();
-    if (background) ctx.drawImage(background, 55, 145, 640, 482);
-    if (art) {
-      const ratio = Math.min(illustrationBox.width / art.width, illustrationBox.height / art.height);
-      const width = art.width * ratio, height = art.height * ratio;
-      ctx.drawImage(art, illustrationBox.x + (illustrationBox.width - width) / 2, illustrationBox.y + (illustrationBox.height - height) / 2, width, height);
-    }
+    const ratio = Math.min(illustrationBox.width / art.width, illustrationBox.height / art.height);
+    const width = art.width * ratio, height = art.height * ratio;
+    ctx.drawImage(art, illustrationBox.x + (illustrationBox.width - width) / 2, illustrationBox.y + (illustrationBox.height - height) / 2, width, height);
     ctx.restore();
   }
 
