@@ -1464,10 +1464,9 @@ async function saveDeckEdit() {
   const input = $('#deck-cover');
   const button = $('#save-deck-edit');
   const file = input.files?.[0];
+  const stopLoading = setButtonLoading(button, file ? 'Uploading…' : 'Saving…');
   const selectedDeck = state.deck;
   input.disabled = true;
-  button.disabled = true;
-  showDeckCoverStatus(file ? 'Uploading cover…' : 'Saving deck…');
   let artwork = null;
   const previousArtworkId = selectedDeck.cover_artwork_id || null;
   try {
@@ -1480,7 +1479,6 @@ async function saveDeckEdit() {
     renderDeckHeader();
     if (artwork && previousArtworkId && previousArtworkId !== artwork.id) await api.deleteArtwork(previousArtworkId).catch(console.error);
     closeDeckEdit();
-    status('Deck saved.');
   } catch (cause) {
     if (artwork) await api.deleteArtwork(artwork.id).catch(console.error);
     showDeckCoverStatus(cause.message || 'Deck save failed.', true);
@@ -1490,6 +1488,7 @@ async function saveDeckEdit() {
     input.value = '';
     input.disabled = !canEditDeck(state.deck);
     button.disabled = !canEditDeck(state.deck);
+    stopLoading();
   }
 }
 
@@ -1759,13 +1758,7 @@ async function loadPublicWorkspace() {
 async function submitAuthForm(event) {
   event.preventDefault();
   const form = event.currentTarget;
-  const submitButton = form.querySelector('button[type="submit"]');
-  const originalLabel = submitButton.textContent;
-  submitButton.disabled = true;
-  submitButton.classList.add('is-loading');
-  submitButton.setAttribute('aria-busy', 'true');
-  submitButton.textContent = 'Signing in…';
-  status('Signing in…');
+  const stopLoading = setButtonLoading(form.querySelector('button[type="submit"]'), 'Signing in…');
   try {
     const { error } = await client.auth.signInWithPassword({ email: form.elements.email.value.trim(), password: form.elements.password.value });
     if (error) {
@@ -1775,11 +1768,22 @@ async function submitAuthForm(event) {
   } catch (cause) {
     showAuthMessage('Sign in failed. Please try again.', true);
   } finally {
-    submitButton.disabled = false;
-    submitButton.classList.remove('is-loading');
-    submitButton.removeAttribute('aria-busy');
-    submitButton.textContent = originalLabel;
+    stopLoading();
   }
+}
+
+function setButtonLoading(button, label) {
+  const originalLabel = button.textContent;
+  button.disabled = true;
+  button.classList.add('is-loading');
+  button.setAttribute('aria-busy', 'true');
+  button.textContent = label;
+  return () => {
+    button.disabled = false;
+    button.classList.remove('is-loading');
+    button.removeAttribute('aria-busy');
+    button.textContent = originalLabel;
+  };
 }
 
 $('#auth-form').addEventListener('submit', submitAuthForm);
@@ -1984,7 +1988,7 @@ $('#confirm-add-to-deck').addEventListener('click', async () => {
   const deck = state.decks.find(item => item.id === $('#add-to-deck-select').value);
   if (!card || !deck || !state.user) return closeAddToDeckModal();
   const button = $('#confirm-add-to-deck');
-  button.disabled = true;
+  const stopLoading = setButtonLoading(button, 'Adding…');
   try {
     const deckCards = state.deck?.id === deck.id ? state.deckCards : await api.listDeckCards(deck.id);
     const copies = deckCards.find(item => item.card_id === card.id)?.copies || 0;
@@ -1998,11 +2002,10 @@ $('#confirm-add-to-deck').addEventListener('click', async () => {
       renderDeckCards();
     }
     closeAddToDeckModal();
-    status(`Added ${card.title} to ${deck.name}.`);
   } catch (cause) {
     status(cause.message, true);
   } finally {
-    button.disabled = false;
+    stopLoading();
   }
 });
 document.addEventListener('keydown', event => {
@@ -2109,8 +2112,10 @@ async function saveCardForm() {
   }
   savingCard = true;
   const isNewCard = !state.card;
-  const save = $('#save-card'); save.disabled = true;
-  const modalSave = $('#card-field-save'); modalSave.disabled = true;
+  const save = $('#save-card');
+  const modalSave = $('#card-field-save');
+  const stopSaveLoading = setButtonLoading(save, 'Saving…');
+  const stopModalLoading = setButtonLoading(modalSave, 'Saving…');
   let persistedCard = null;
   let cleanupWarning = '';
   try {
@@ -2193,7 +2198,7 @@ async function saveCardForm() {
       modalStatus.hidden = false;
     }
   }
-  finally { savingCard = false; save.disabled = false; modalSave.disabled = false; }
+  finally { savingCard = false; stopSaveLoading(); stopModalLoading(); }
 }
 $('#card-form').addEventListener('submit', event => { event.preventDefault(); void saveCardForm(); });
 
@@ -2267,10 +2272,7 @@ $('#deck-form').addEventListener('submit', event => { event.preventDefault(); vo
 $('#profile-form').addEventListener('submit', async event => {
   event.preventDefault();
   const submitButton = event.currentTarget.querySelector('button[type="submit"]');
-  const originalLabel = submitButton.textContent;
-  submitButton.disabled = true;
-  submitButton.textContent = 'Saving…';
-  showProfileSaveStatus('Saving…');
+  const stopLoading = setButtonLoading(submitButton, 'Saving…');
   let uploadedAvatar = null;
   try {
     const values = Object.fromEntries(new FormData(event.currentTarget));
@@ -2285,15 +2287,12 @@ $('#profile-form').addEventListener('submit', async event => {
     renderAccountButton(ownProfile);
     $('#profile-avatar').value = '';
     if (uploadedAvatar && previousAvatarId && previousAvatarId !== uploadedAvatar.id) await api.deleteArtwork(previousAvatarId).catch(console.error);
-    showProfileSaveStatus();
-    status('Profile saved.');
+    $('#profile-save-status').hidden = true;
   } catch (cause) {
     if (uploadedAvatar) await api.deleteArtwork(uploadedAvatar.id).catch(console.error);
-    showProfileSaveStatus(cause.message || 'Could not save profile.', true);
     status(cause.message, true);
   } finally {
-    submitButton.disabled = false;
-    submitButton.textContent = originalLabel;
+    stopLoading();
   }
 });
 
