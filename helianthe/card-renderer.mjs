@@ -56,7 +56,13 @@ function drawFrameWithBackground(ctx, frame, background, accent) {
   for (let i = 0; i < frameData.data.length; i += 4) {
     const r = frameData.data[i], g = frameData.data[i + 1], b = frameData.data[i + 2];
     const isCreamSurface = r > 170 && g > 140 && b > 90 && r >= g * 0.92 && g >= b * 0.9;
-    if (isCreamSurface) {
+    const pixel = i / 4;
+    const x = pixel % 750, y = Math.floor(pixel / 750);
+    const cornerX = x < 32 ? 32 : x > 717 ? 717 : null;
+    const cornerY = y < 32 ? 32 : y > 1017 ? 1017 : null;
+    const onOuterRim = Math.min(x, y, 749 - x, 1049 - y) < 12
+      || (cornerX !== null && cornerY !== null && Math.hypot(x - cornerX, y - cornerY) > 20);
+    if (isCreamSurface || onOuterRim) {
       for (let channel = 0; channel < 3; channel++) {
         const wash = watercolorData.data[i + channel];
         const evenWash = channelMeans[channel] + (wash - channelMeans[channel]) * 1.05;
