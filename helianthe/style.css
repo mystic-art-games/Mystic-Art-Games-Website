@@ -677,7 +677,8 @@ body.dark-mode .deck-preview-edit-hint { color: #fff; }
 .card-preview-shell { align-self: start; display: flex; flex-direction: column; align-items: center; gap: .4rem; min-width: 0; }
 .mobile-editor-close { display: none; }
 #card-canvas { width: min(100%, 280px); height: auto; aspect-ratio: 5 / 7; }
-#card-canvas, #deck-card-canvas, #deck-patron-canvas { border-radius: 0; box-shadow: none; filter: none; background: transparent; }
+#card-canvas, #deck-card-canvas, #deck-patron-canvas, #patron-card-canvas { border-radius: 0; box-shadow: none; filter: drop-shadow(0 4px 7px rgba(10, 35, 27, .12)); background: transparent; }
+body.dark-mode :is(#card-canvas, #deck-card-canvas, #deck-patron-canvas, #patron-card-canvas) { filter: drop-shadow(0 5px 8px rgba(0, 18, 12, .28)); }
 #card-canvas { cursor: pointer; }
 #card-edit-hint { font-family: Nunito, Arial, sans-serif; }
 #card-form > .card-direct-edit-field { display: none; }
