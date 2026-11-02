@@ -28,6 +28,34 @@ function loadImage(url) {
   return imageCache.get(url);
 }
 
+function drawFrameWithBackground(ctx, frame, background) {
+  if (!background) {
+    ctx.drawImage(frame, 0, 0, 750, 1050);
+    return;
+  }
+  const frameCanvas = document.createElement('canvas');
+  frameCanvas.width = 750; frameCanvas.height = 1050;
+  const frameCtx = frameCanvas.getContext('2d');
+  frameCtx.drawImage(frame, 0, 0, 750, 1050);
+  const frameData = frameCtx.getImageData(0, 0, 750, 1050);
+  const watercolorCanvas = document.createElement('canvas');
+  watercolorCanvas.width = 750; watercolorCanvas.height = 1050;
+  const watercolorCtx = watercolorCanvas.getContext('2d');
+  watercolorCtx.drawImage(background, -150, 0, 1050, 1050);
+  const watercolorData = watercolorCtx.getImageData(0, 0, 750, 1050);
+  for (let i = 0; i < frameData.data.length; i += 4) {
+    const r = frameData.data[i], g = frameData.data[i + 1], b = frameData.data[i + 2];
+    const isCreamSurface = r > 170 && g > 140 && b > 90 && r >= g * 0.92 && g >= b * 0.9;
+    if (isCreamSurface) {
+      frameData.data[i] = Math.round(r * 0.34 + watercolorData.data[i] * 0.66);
+      frameData.data[i + 1] = Math.round(g * 0.34 + watercolorData.data[i + 1] * 0.66);
+      frameData.data[i + 2] = Math.round(b * 0.34 + watercolorData.data[i + 2] * 0.66);
+    }
+  }
+  frameCtx.putImageData(frameData, 0, 0);
+  ctx.drawImage(frameCanvas, 0, 0);
+}
+
 async function fontsReady() {
   await Promise.all([
     document.fonts.load(`36px ${cardFont}`),
@@ -54,7 +82,7 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
   ctx.clearRect(0, 0, 750, 1050);
   ctx.save();
   ctx.beginPath(); ctx.roundRect(0, 0, 750, 1050, 32); ctx.clip();
-  ctx.drawImage(frame, 0, 0, 750, 1050);
+  drawFrameWithBackground(ctx, frame, background);
 
   // The artwork is drawn inside the blank window, leaving the painted border visible.
   const illustrationBox = { x: 108, y: 156, width: 534, height: 470 };
