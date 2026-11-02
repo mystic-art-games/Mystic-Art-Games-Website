@@ -1546,7 +1546,7 @@ function renderProfileList() {
     }
   };
   addGroup('Your profile', ownProfile ? [ownProfile] : [], 'profile-own');
-  addGroup('Other profiles', otherProfiles);
+  addGroup(state.user ? 'Other profiles' : 'All profiles', otherProfiles);
 }
 
 function selectProfile(profile) {
