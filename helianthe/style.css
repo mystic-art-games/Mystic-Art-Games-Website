@@ -1540,6 +1540,9 @@ body:not(.dark-mode) #auth-submit:hover:not(:disabled) { background: linear-grad
 body.dark-mode #auth-submit,
 body.dark-mode #auth-submit:hover:not(:disabled) { background: linear-gradient(145deg, rgba(47, 92, 64, .86), rgba(42, 94, 65, .84) 52%, rgba(28, 70, 52, .88)); color: #fff; }
 body:not(.dark-mode) #auth-submit:hover:not(:disabled), body.dark-mode #auth-submit:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.06); }
+#auth-submit.is-loading { cursor: progress; opacity: .88; }
+#auth-submit.is-loading::before { content: ""; display: inline-block; width: .85em; height: .85em; margin-right: .55em; vertical-align: -.12em; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: auth-submit-spin .7s linear infinite; }
+@keyframes auth-submit-spin { to { transform: rotate(360deg); } }
 #auth-modal .auth-modal-card {
   border-color: rgba(73, 120, 94, .55) !important;
   background: linear-gradient(145deg, rgba(255, 255, 255, .9), rgba(225, 238, 229, .84) 62%, rgba(204, 224, 210, .8)) !important;

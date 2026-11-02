@@ -1759,12 +1759,27 @@ async function loadPublicWorkspace() {
 async function submitAuthForm(event) {
   event.preventDefault();
   const form = event.currentTarget;
+  const submitButton = form.querySelector('button[type="submit"]');
+  const originalLabel = submitButton.textContent;
+  submitButton.disabled = true;
+  submitButton.classList.add('is-loading');
+  submitButton.setAttribute('aria-busy', 'true');
+  submitButton.textContent = 'Signing in…';
   status('Signing in…');
-  const { error } = await client.auth.signInWithPassword({ email: form.elements.email.value.trim(), password: form.elements.password.value });
-  if (error) {
-    const message = 'No account was found for this email address, or the password is incorrect.';
-    showAuthMessage(message, true);
-  } else await loadWorkspace();
+  try {
+    const { error } = await client.auth.signInWithPassword({ email: form.elements.email.value.trim(), password: form.elements.password.value });
+    if (error) {
+      const message = 'No account was found for this email address, or the password is incorrect.';
+      showAuthMessage(message, true);
+    } else await loadWorkspace();
+  } catch (cause) {
+    showAuthMessage('Sign in failed. Please try again.', true);
+  } finally {
+    submitButton.disabled = false;
+    submitButton.classList.remove('is-loading');
+    submitButton.removeAttribute('aria-busy');
+    submitButton.textContent = originalLabel;
+  }
 }
 
 $('#auth-form').addEventListener('submit', submitAuthForm);
