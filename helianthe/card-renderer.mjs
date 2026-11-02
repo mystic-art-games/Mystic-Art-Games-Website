@@ -10,6 +10,7 @@ const terrainBackgrounds = {
   Verdant: 'Terrain_Watercolor_Verdant.png',
   Radiance: 'Terrain_Watercolor_Radiance.png',
 };
+const eventBackground = 'Terrain_Watercolor_Event.png';
 const cardFont = 'Nunito';
 const rulesFont = 'Nunito, Segoe UI, Arial, sans-serif';
 
@@ -69,7 +70,7 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
   const terrain = type !== 'Event' && Object.hasOwn(terrainColors, card.terrain) ? card.terrain : null;
   const frameName = `CardFrame_${terrain || 'Event'}.png`;
   const symbolName = type === 'Patron' ? 'Patron.png' : type === 'Event' ? 'CardType_Event.png' : 'CardType_Entity.png';
-  const backgroundName = terrain ? terrainBackgrounds[terrain] : null;
+  const backgroundName = terrain ? terrainBackgrounds[terrain] : type === 'Event' ? eventBackground : null;
   const [frame, art, symbol, background] = await Promise.all([
     loadImage(asset(frameName)), loadImage(artworkUrl || DEFAULT_ARTWORK), loadImage(asset(symbolName)),
     loadImage(backgroundName ? asset(backgroundName) : ''), fontsReady().catch(() => null),
