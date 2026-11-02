@@ -635,6 +635,8 @@ body.dark-mode .card-filters :is(#card-filter-terrain, #deck-card-filter-terrain
 .deck-card-table h3 { margin: .75rem 0 .1rem; }
 .deck-card-preview-shell,
 .deck-patron-preview-shell { display: flex; min-width: 0; flex-direction: column; align-items: center; justify-content: center; gap: .45rem; padding-top: 0; }
+.deck-card-preview-shell:not(.is-empty),
+.deck-patron-preview-shell:not(.is-empty) { border: 0; background: transparent; box-shadow: none; }
 .deck-patron-preview-shell canvas { display: block; }
 #decks-view #deck-card-canvas, #decks-view #deck-patron-canvas { cursor: pointer; }
 #decks-view .is-empty canvas { display: none; }
