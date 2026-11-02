@@ -398,6 +398,7 @@ body.dark-mode .patron-detail-panel::-webkit-scrollbar-thumb {
   #cards-view > .editor-panel { width: 320px; justify-self: start; }
   #cards-view > .editor-panel .card-layout { display: flex; justify-content: center; width: 100%; }
   #cards-view > .editor-panel .card-preview-shell { align-self: stretch; width: 100%; padding-top: 1.6rem; }
+  #cards-view > .editor-panel { overflow: visible; }
   #cards-view > .editor-panel form label { margin: .25rem 0; }
   #cards-view > .editor-panel .actions { margin-top: .65rem; }
   #cards-view > .editor-panel #card-canvas { width: min(100%, 280px); max-width: none; }
@@ -640,18 +641,16 @@ body.dark-mode .card-filters :is(#card-filter-terrain, #deck-card-filter-terrain
 .deck-patron-preview-shell canvas { display: block; }
 #decks-view #deck-card-canvas, #decks-view #deck-patron-canvas { cursor: pointer; }
 #decks-view .is-empty canvas { display: none; }
-#decks-view #deck-card-canvas, #decks-view #deck-patron-canvas, #decks-view .deck-empty-preview { width: min(100%, 300px); height: auto; aspect-ratio: 5 / 7; }
+#decks-view .card-terrain-aura, #decks-view .deck-empty-preview { width: min(100%, 300px); height: auto; aspect-ratio: 5 / 7; }
 @media (min-width: 851px) {
-  #decks-view #deck-card-canvas,
-  #decks-view #deck-patron-canvas,
+  #decks-view .card-terrain-aura,
   #decks-view .deck-empty-preview {
     flex: 0 0 auto;
     width: min(calc(100% - .8rem), 300px, calc(71.4286cqh - 4.2857rem));
   }
 }
 @media (min-width: 851px) and (max-width: 1150px) {
-  #decks-view #deck-card-canvas,
-  #decks-view #deck-patron-canvas,
+  #decks-view .card-terrain-aura,
   #decks-view .deck-empty-preview {
     width: min(85%, 255px, calc(60.7143cqh - 3.6429rem));
   }
@@ -676,7 +675,15 @@ body.dark-mode #decks-view .deck-empty-preview { border-color: rgba(226, 246, 23
 body.dark-mode .deck-preview-edit-hint { color: #fff; }
 .card-preview-shell { align-self: start; display: flex; flex-direction: column; align-items: center; gap: .4rem; min-width: 0; }
 .mobile-editor-close { display: none; }
-#card-canvas { width: min(100%, 280px); height: auto; aspect-ratio: 5 / 7; }
+.card-preview-shell .card-terrain-aura { width: min(100%, 280px); }
+.card-terrain-aura { position: relative; flex: 0 0 auto; isolation: isolate; }
+.card-terrain-aura::before { content: ''; position: absolute; z-index: 0; inset: -70px; pointer-events: none; background-image: var(--terrain-aura-image); background-position: center; background-repeat: no-repeat; background-size: 165% auto; opacity: .3; mask-image: radial-gradient(ellipse 50% 50% at center, #000 40%, transparent 100%); -webkit-mask-image: radial-gradient(ellipse 50% 50% at center, #000 40%, transparent 100%); }
+.card-terrain-aura[data-terrain="Symbiosis"] { --terrain-aura-image: url('./assets/Terrain_Aura_Symbiosis.png'); }
+.card-terrain-aura[data-terrain="Flow"] { --terrain-aura-image: url('./assets/Terrain_Aura_Flow.png'); }
+.card-terrain-aura[data-terrain="Verdant"] { --terrain-aura-image: url('./assets/Terrain_Aura_Verdant.png'); }
+.card-terrain-aura[data-terrain="Radiance"] { --terrain-aura-image: url('./assets/Terrain_Aura_Radiance.png'); }
+.card-terrain-aura:not([data-terrain])::before, .card-terrain-aura[data-terrain=""]::before, #decks-view .is-empty .card-terrain-aura { display: none; }
+.card-terrain-aura > canvas { position: relative; z-index: 1; display: block; width: 100% !important; height: auto; aspect-ratio: 5 / 7; }
 #card-canvas, #deck-card-canvas, #deck-patron-canvas, #patron-card-canvas { border-radius: 0; box-shadow: none; filter: drop-shadow(0 4px 7px rgba(10, 35, 27, .12)); background: transparent; }
 body.dark-mode :is(#card-canvas, #deck-card-canvas, #deck-patron-canvas, #patron-card-canvas) { filter: drop-shadow(0 5px 8px rgba(0, 18, 12, .28)); }
 #card-canvas { cursor: pointer; }
@@ -915,7 +922,7 @@ body.dark-mode .masthead nav.mobile-menu-open button.active {
     font-size: 1.5rem;
     line-height: 1;
   }
-  #decks-view.mobile-card-preview-open #deck-card-canvas { width: min(100%, 420px); }
+  #decks-view.mobile-card-preview-open .card-terrain-aura { width: min(100%, 420px); }
   .workspace,
   #decks-view.workspace { grid-template-columns: 1fr; }
   .card-layout { grid-template-columns: 1fr; }

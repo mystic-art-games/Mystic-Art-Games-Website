@@ -99,6 +99,9 @@ async function fontsReady() {
 export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () => true, options = {}) {
   const type = card.card_type || card.type || 'Entity';
   const terrain = type !== 'Event' && Object.hasOwn(terrainColors, card.terrain) ? card.terrain : null;
+  if (canvas.parentElement?.classList.contains('card-terrain-aura')) {
+    canvas.parentElement.dataset.terrain = terrain || '';
+  }
   const frameName = `CardFrame_${terrain || 'Event'}.png`;
   const symbolName = type === 'Patron' ? 'Patron.png' : type === 'Event' ? 'CardType_Event.png' : 'CardType_Entity.png';
   const backgroundName = terrain ? terrainBackgrounds[terrain] : type === 'Event' ? eventBackground : null;
