@@ -29,7 +29,7 @@ function loadImage(url) {
   return imageCache.get(url);
 }
 
-function drawFrameWithBackground(ctx, frame, background) {
+function drawFrameWithBackground(ctx, frame, background, accent) {
   if (!background) {
     ctx.drawImage(frame, 0, 0, 750, 1050);
     return;
@@ -52,6 +52,7 @@ function drawFrameWithBackground(ctx, frame, background) {
   }
   const pixelCount = watercolorData.data.length / 4;
   for (let channel = 0; channel < 3; channel++) channelMeans[channel] /= pixelCount;
+  const accentRgb = accent.match(/[\da-f]{2}/gi).map(value => parseInt(value, 16));
   for (let i = 0; i < frameData.data.length; i += 4) {
     const r = frameData.data[i], g = frameData.data[i + 1], b = frameData.data[i + 2];
     const isCreamSurface = r > 170 && g > 140 && b > 90 && r >= g * 0.92 && g >= b * 0.9;
@@ -59,7 +60,8 @@ function drawFrameWithBackground(ctx, frame, background) {
       for (let channel = 0; channel < 3; channel++) {
         const wash = watercolorData.data[i + channel];
         const evenWash = channelMeans[channel] + (wash - channelMeans[channel]) * 0.65;
-        frameData.data[i + channel] = Math.max(0, Math.min(255, Math.round(evenWash)));
+        const tintedPaper = 255 * 0.55 + accentRgb[channel] * 0.45;
+        frameData.data[i + channel] = Math.max(0, Math.min(255, Math.round(evenWash * 0.58 + tintedPaper * 0.42)));
       }
     }
   }
@@ -93,7 +95,7 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
   ctx.clearRect(0, 0, 750, 1050);
   ctx.save();
   ctx.beginPath(); ctx.roundRect(0, 0, 750, 1050, 32); ctx.clip();
-  drawFrameWithBackground(ctx, frame, background);
+  drawFrameWithBackground(ctx, frame, background, terrain ? terrainColors[terrain] : '#909592');
 
   // The artwork is drawn inside the blank window, leaving the painted border visible.
   const illustrationBox = { x: 108, y: 156, width: 534, height: 470 };
