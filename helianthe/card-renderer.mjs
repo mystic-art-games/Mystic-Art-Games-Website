@@ -48,9 +48,9 @@ function drawFrameWithBackground(ctx, frame, background) {
     const r = frameData.data[i], g = frameData.data[i + 1], b = frameData.data[i + 2];
     const isCreamSurface = r > 170 && g > 140 && b > 90 && r >= g * 0.92 && g >= b * 0.9;
     if (isCreamSurface) {
-      frameData.data[i] = Math.round(r * 0.12 + watercolorData.data[i] * 0.88);
-      frameData.data[i + 1] = Math.round(g * 0.12 + watercolorData.data[i + 1] * 0.88);
-      frameData.data[i + 2] = Math.round(b * 0.12 + watercolorData.data[i + 2] * 0.88);
+      frameData.data[i] = Math.round(r * 0.04 + watercolorData.data[i] * 0.96);
+      frameData.data[i + 1] = Math.round(g * 0.04 + watercolorData.data[i + 1] * 0.96);
+      frameData.data[i + 2] = Math.round(b * 0.04 + watercolorData.data[i + 2] * 0.96);
     }
   }
   frameCtx.putImageData(frameData, 0, 0);
