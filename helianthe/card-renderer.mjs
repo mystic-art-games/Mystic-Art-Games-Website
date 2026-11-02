@@ -4,6 +4,12 @@ const ASSETS = new URL('./assets/', import.meta.url);
 const DEFAULT_ARTWORK = asset('Poseidons_Chosen_One_Comic.png?v=3');
 const imageCache = new Map();
 const terrainColors = { Symbiosis: '#784997', Flow: '#428da7', Verdant: '#68a66c', Radiance: '#e0b52f' };
+const terrainBackgrounds = {
+  Symbiosis: 'Terrain_Watercolor_Symbiosis.png',
+  Flow: 'Terrain_Watercolor_Flow.png',
+  Verdant: 'Terrain_Watercolor_Verdant.png',
+  Radiance: 'Terrain_Watercolor_Radiance.png',
+};
 const cardFont = 'Nunito';
 const rulesFont = 'Nunito, Segoe UI, Arial, sans-serif';
 
@@ -35,8 +41,10 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
   const terrain = type !== 'Event' && Object.hasOwn(terrainColors, card.terrain) ? card.terrain : null;
   const frameName = `CardFrame_${terrain || 'Event'}.png`;
   const symbolName = type === 'Patron' ? 'Patron.png' : type === 'Event' ? 'CardType_Event.png' : 'CardType_Entity.png';
-  const [frame, art, symbol] = await Promise.all([
-    loadImage(asset(frameName)), loadImage(artworkUrl || DEFAULT_ARTWORK), loadImage(asset(symbolName)), fontsReady().catch(() => null),
+  const backgroundName = terrain ? terrainBackgrounds[terrain] : null;
+  const [frame, art, symbol, background] = await Promise.all([
+    loadImage(asset(frameName)), loadImage(artworkUrl || DEFAULT_ARTWORK), loadImage(asset(symbolName)),
+    loadImage(backgroundName ? asset(backgroundName) : ''), fontsReady().catch(() => null),
   ]);
   if (!shouldDraw()) return { cancelled: true };
   if (!frame) throw new Error('The card frame could not be loaded.');
@@ -50,7 +58,7 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
 
   // The artwork is drawn inside the blank window, leaving the painted border visible.
   const illustrationBox = { x: 108, y: 156, width: 534, height: 470 };
-  if (art) {
+  if (background || art) {
     ctx.save();
     ctx.beginPath();
     ctx.moveTo(375, 145);
@@ -59,9 +67,12 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
     ctx.lineTo(125, 627); ctx.quadraticCurveTo(55, 627, 55, 553);
     ctx.lineTo(55, 285); ctx.bezierCurveTo(55, 193, 200, 145, 375, 145);
     ctx.clip();
-    const ratio = Math.min(illustrationBox.width / art.width, illustrationBox.height / art.height);
-    const width = art.width * ratio, height = art.height * ratio;
-    ctx.drawImage(art, illustrationBox.x + (illustrationBox.width - width) / 2, illustrationBox.y + (illustrationBox.height - height) / 2, width, height);
+    if (background) ctx.drawImage(background, 55, 145, 640, 482);
+    if (art) {
+      const ratio = Math.min(illustrationBox.width / art.width, illustrationBox.height / art.height);
+      const width = art.width * ratio, height = art.height * ratio;
+      ctx.drawImage(art, illustrationBox.x + (illustrationBox.width - width) / 2, illustrationBox.y + (illustrationBox.height - height) / 2, width, height);
+    }
     ctx.restore();
   }
 
