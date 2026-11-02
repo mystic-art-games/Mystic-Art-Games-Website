@@ -44,13 +44,23 @@ function drawFrameWithBackground(ctx, frame, background) {
   const watercolorCtx = watercolorCanvas.getContext('2d');
   watercolorCtx.drawImage(background, -150, 0, 1050, 1050);
   const watercolorData = watercolorCtx.getImageData(0, 0, 750, 1050);
+  const channelMeans = [0, 0, 0];
+  for (let i = 0; i < watercolorData.data.length; i += 4) {
+    channelMeans[0] += watercolorData.data[i];
+    channelMeans[1] += watercolorData.data[i + 1];
+    channelMeans[2] += watercolorData.data[i + 2];
+  }
+  const pixelCount = watercolorData.data.length / 4;
+  for (let channel = 0; channel < 3; channel++) channelMeans[channel] /= pixelCount;
   for (let i = 0; i < frameData.data.length; i += 4) {
     const r = frameData.data[i], g = frameData.data[i + 1], b = frameData.data[i + 2];
     const isCreamSurface = r > 170 && g > 140 && b > 90 && r >= g * 0.92 && g >= b * 0.9;
     if (isCreamSurface) {
-      frameData.data[i] = Math.round(r * 0.04 + watercolorData.data[i] * 0.96);
-      frameData.data[i + 1] = Math.round(g * 0.04 + watercolorData.data[i + 1] * 0.96);
-      frameData.data[i + 2] = Math.round(b * 0.04 + watercolorData.data[i + 2] * 0.96);
+      for (let channel = 0; channel < 3; channel++) {
+        const wash = watercolorData.data[i + channel];
+        const richerWash = channelMeans[channel] + (wash - channelMeans[channel]) * 1.65;
+        frameData.data[i + channel] = Math.max(0, Math.min(255, Math.round(richerWash)));
+      }
     }
   }
   frameCtx.putImageData(frameData, 0, 0);
