@@ -120,15 +120,16 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
   drawFrameWithBackground(ctx, frame, background, terrain ? terrainColors[terrain] : '#909592');
 
   // The artwork is drawn inside the blank window, leaving the painted border visible.
-  const illustrationBox = { x: 55, y: 145, width: 640, height: 482 };
+  // Match the inner ink line of the 1060 × 1484 frame after scaling to 750 × 1050.
+  const illustrationBox = { x: 52, y: 140, width: 646, height: 487 };
   if (art) {
     ctx.save();
     ctx.beginPath();
-    ctx.moveTo(375, 145);
-    ctx.bezierCurveTo(550, 145, 695, 193, 695, 285);
-    ctx.lineTo(695, 553); ctx.quadraticCurveTo(695, 627, 625, 627);
-    ctx.lineTo(125, 627); ctx.quadraticCurveTo(55, 627, 55, 553);
-    ctx.lineTo(55, 285); ctx.bezierCurveTo(55, 193, 200, 145, 375, 145);
+    ctx.moveTo(375, 140);
+    ctx.bezierCurveTo(550, 140, 698, 205, 698, 315);
+    ctx.lineTo(698, 530); ctx.bezierCurveTo(698, 597, 650, 627, 550, 627);
+    ctx.lineTo(200, 627); ctx.bezierCurveTo(100, 627, 52, 597, 52, 530);
+    ctx.lineTo(52, 315); ctx.bezierCurveTo(52, 205, 200, 140, 375, 140);
     ctx.clip();
     const ratio = Math.max(illustrationBox.width / art.width, illustrationBox.height / art.height);
     const width = art.width * ratio, height = art.height * ratio;
