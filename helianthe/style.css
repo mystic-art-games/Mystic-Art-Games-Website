@@ -682,6 +682,7 @@ body.dark-mode .deck-preview-edit-hint { color: #fff; }
 .card-terrain-aura[data-terrain="Flow"] { --terrain-aura-image: url('./assets/Terrain_Aura_Flow.png'); }
 .card-terrain-aura[data-terrain="Verdant"] { --terrain-aura-image: url('./assets/Terrain_Aura_Verdant.png'); }
 .card-terrain-aura[data-terrain="Radiance"] { --terrain-aura-image: url('./assets/Terrain_Aura_Radiance.png'); }
+.card-terrain-aura[data-terrain="Event"]::before { background-image: none; background-color: #909592; opacity: .25; }
 .card-terrain-aura:not([data-terrain])::before, .card-terrain-aura[data-terrain=""]::before, #decks-view .is-empty .card-terrain-aura { display: none; }
 .card-terrain-aura > canvas { position: relative; z-index: 1; display: block; width: 100% !important; height: auto; aspect-ratio: 5 / 7; }
 #card-canvas, #deck-card-canvas, #deck-patron-canvas, #patron-card-canvas { border-radius: 0; box-shadow: none; filter: drop-shadow(0 4px 7px rgba(10, 35, 27, .12)); background: transparent; }
