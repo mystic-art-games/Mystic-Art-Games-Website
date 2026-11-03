@@ -105,9 +105,9 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
   const frameName = `CardFrame_${terrain || 'Event'}.png`;
   const symbolName = type === 'Patron' ? 'Type_Patron_Simple.png' : type === 'Event' ? 'Type_Event_Scroll.png' : 'Type_Entity_Simple.png';
   const backgroundName = terrain ? terrainBackgrounds[terrain] : type === 'Event' ? eventBackground : null;
-  const [frame, art, symbol, background] = await Promise.all([
+  const [frame, art, symbol, background, neutralFaction] = await Promise.all([
     loadImage(asset(frameName)), loadImage(artworkUrl || DEFAULT_ARTWORK), loadImage(asset(symbolName)),
-    loadImage(backgroundName ? asset(backgroundName) : ''), fontsReady().catch(() => null),
+    loadImage(backgroundName ? asset(backgroundName) : ''), loadImage(!terrain ? asset('Faction_Neutral.png') : ''), fontsReady().catch(() => null),
   ]);
   if (!shouldDraw()) return { cancelled: true };
   if (!frame) throw new Error('The card frame could not be loaded.');
@@ -157,6 +157,13 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
     ctx.restore();
   }
   if (!options.hideIcons) {
+    if (neutralFaction) {
+      for (const x of [88, 662]) {
+        ctx.fillStyle = '#fff7e8';
+        ctx.beginPath(); ctx.arc(x, 82, 48, 0, Math.PI * 2); ctx.fill();
+        ctx.drawImage(neutralFaction, x - 42, 40, 84, 84);
+      }
+    }
     drawTypeIcon(leftIconX); drawTypeIcon(rightIconX);
   }
   ctx.font = `800 ${titleSize}px ${cardFont}`;
