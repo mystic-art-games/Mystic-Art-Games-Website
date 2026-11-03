@@ -152,7 +152,7 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
     const width = symbol.width * scale;
     const height = symbol.height * scale;
     ctx.save();
-    ctx.filter = { Symbiosis: 'hue-rotate(240deg)', Flow: 'hue-rotate(160deg)', Verdant: 'hue-rotate(95deg)' }[terrain] || 'none';
+    ctx.filter = terrain ? ({ Symbiosis: 'hue-rotate(240deg)', Flow: 'hue-rotate(160deg)', Verdant: 'hue-rotate(95deg)' }[terrain] || 'none') : 'grayscale(1)';
     ctx.drawImage(symbol, x - width / 2, 180 - height / 2, width, height);
     ctx.restore();
   }
