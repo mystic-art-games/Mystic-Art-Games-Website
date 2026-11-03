@@ -20,7 +20,7 @@ const factionSymbols = {
   Verdant: 'Faction_Verdant.png',
   Radiance: 'Faction_Radiance.png',
 };
-const cardFont = 'Nunito';
+const cardFont = 'Fraunces';
 const rulesFont = 'Nunito, Segoe UI, Arial, sans-serif';
 
 function asset(name) { return new URL(name, ASSETS).href; }
@@ -123,7 +123,7 @@ function drawArtwork(ctx, frame, art) {
 
 async function fontsReady() {
   await Promise.all([
-    document.fonts.load(`36px ${cardFont}`),
+    document.fonts.load(`800 36px ${cardFont}`),
     document.fonts.load('500 28px Nunito'),
     document.fonts.load('700 28px Nunito'),
     document.fonts.load('italic 500 26px Nunito'),
