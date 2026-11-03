@@ -140,7 +140,7 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
   const symbolType = type === 'Patron' ? 'Patron' : type === 'Event' ? 'Event' : 'Entity';
   const symbolName = `Type_${symbolType}_${terrain || 'Nomads'}.png`;
   const [frame, art, symbol, factionSymbol] = await Promise.all([
-    loadImage(asset(`${frameName}?v=2`)), loadImage(artworkUrl || DEFAULT_ARTWORK), loadImage(asset(symbolName)),
+    loadImage(asset(`${frameName}?v=2`)), loadImage(artworkUrl || DEFAULT_ARTWORK), loadImage(asset(`${symbolName}?v=2`)),
     loadImage(asset(terrain ? factionSymbols[terrain] : 'Faction_Nomads_Cairn.png')), fontsReady().catch(() => null),
   ]);
   if (!shouldDraw()) return { cancelled: true };

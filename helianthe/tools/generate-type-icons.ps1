@@ -80,6 +80,11 @@ function Get-TypeSource([string]$path) {
 function Write-TypeIcon($source, $palette, [string]$path) {
   $output = [System.Drawing.Bitmap]::new(512, 512, [System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
   try {
+    $opacityByLight = [double[]]::new(256)
+    for ($light = 0; $light -lt 256; $light++) {
+      $wash = [math]::Max(0, ($source.Percentiles[$light] - 0.15) / 0.85)
+      $opacityByLight[$light] = 1 - 0.4 * $wash
+    }
     for ($y = 0; $y -lt 512; $y++) {
       for ($x = 0; $x -lt 512; $x++) {
         $color = $source.Image.GetPixel($x, $y)
@@ -87,7 +92,8 @@ function Write-TypeIcon($source, $palette, [string]$path) {
         $light = [int][math]::Round((54 * $color.R + 183 * $color.G + 19 * $color.B) / 256)
         $index = [int][math]::Round($source.Percentiles[$light] * 255)
         $match = $palette[$index]
-        $output.SetPixel($x, $y, [System.Drawing.Color]::FromArgb($color.A, $match.R, $match.G, $match.B))
+        $alpha = [int][math]::Round($color.A * $opacityByLight[$light])
+        $output.SetPixel($x, $y, [System.Drawing.Color]::FromArgb($alpha, $match.R, $match.G, $match.B))
       }
     }
     $output.Save($path, [System.Drawing.Imaging.ImageFormat]::Png)
