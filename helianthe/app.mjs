@@ -811,18 +811,35 @@ function syncTerrain() {
 }
 
 function releaseArtwork() {
-  if (state.artworkUrl) URL.revokeObjectURL(state.artworkUrl);
   state.artworkUrl = null;
+}
+
+const cardArtworkUrlCache = new Map();
+
+function preloadCardArtwork(cards = []) {
+  for (const card of cards) {
+    if (!card?.artwork_id || cardArtworkUrlCache.has(card.artwork_id)) continue;
+    void api.fetchArtwork(card.artwork_id).then(blob => {
+      if (!cardArtworkUrlCache.has(card.artwork_id)) cardArtworkUrlCache.set(card.artwork_id, URL.createObjectURL(blob));
+    }).catch(() => {});
+  }
 }
 
 async function showArtwork(card) {
   const serial = ++state.artworkSerial;
   releaseArtwork();
   if (!card?.artwork_id) return;
+  const cachedUrl = cardArtworkUrlCache.get(card.artwork_id);
+  if (cachedUrl) {
+    state.artworkUrl = cachedUrl;
+    renderPreview();
+    return;
+  }
   try {
     const blob = await api.fetchArtwork(card.artwork_id);
     if (serial !== state.artworkSerial) return;
     state.artworkUrl = URL.createObjectURL(blob);
+    cardArtworkUrlCache.set(card.artwork_id, state.artworkUrl);
     renderPreview();
   } catch { /* Keep the card preview usable when artwork is unavailable. */ }
 }
@@ -1554,6 +1571,7 @@ function selectProfile(profile) {
 async function reloadCollections() {
   [state.cards, state.decks, state.profiles] = await Promise.all([api.listCards(), api.listDecks(), api.listProfiles()]);
   state.cards = resolveLegacyCardAuthors(state.cards, state.profiles);
+  preloadCardArtwork(state.cards);
   refreshDeckPatronOptions();
   const savedPatrons = savedDeckPatrons();
   state.decks = state.decks.map(deck => deck.patron_name || !savedPatrons[deck.id] ? deck : { ...deck, patron_name: savedPatrons[deck.id] });
