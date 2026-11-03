@@ -5,13 +5,12 @@ const DEFAULT_ARTWORK = asset('Poseidons_Chosen_One_Comic.png?v=3');
 const imageCache = new Map();
 const artworkWindows = new WeakMap();
 const terrainColors = { Symbiosis: '#784997', Flow: '#428da7', Verdant: '#68a66c', Radiance: '#e0b52f' };
-const terrainBackgrounds = {
-  Symbiosis: 'Terrain_Watercolor_Symbiosis.png',
-  Flow: 'Terrain_Watercolor_Flow.png',
-  Verdant: 'Terrain_Watercolor_Verdant.png',
-  Radiance: 'Terrain_Watercolor_Radiance.png',
+const factionSymbols = {
+  Symbiosis: 'Faction_Symbiosis.png',
+  Flow: 'Faction_Flow.png',
+  Verdant: 'Faction_Verdant.png',
+  Radiance: 'Faction_Radiance.png',
 };
-const eventBackground = 'Terrain_Watercolor_Event.png';
 const cardFont = 'Nunito';
 const rulesFont = 'Nunito, Segoe UI, Arial, sans-serif';
 
@@ -52,7 +51,8 @@ function artworkWindow(frame) {
     if (visited[index]) return;
     visited[index] = 1;
     const offset = index * 4;
-    if (source[offset + 3] < 240 || Math.max(source[offset], source[offset + 1], source[offset + 2]) < 120) return;
+    const luminance = source[offset] * 0.2126 + source[offset + 1] * 0.7152 + source[offset + 2] * 0.0722;
+    if (source[offset + 3] < 240 || luminance < 180) return;
     queue[tail++] = index;
   }
   while (head < tail) {
@@ -91,65 +91,6 @@ function drawArtwork(ctx, frame, art) {
   ctx.drawImage(layer, 0, 0, 750, 1050);
 }
 
-function drawFrameWithBackground(ctx, frame, background, accent) {
-  if (!background) {
-    ctx.drawImage(frame, 0, 0, 750, 1050);
-    return;
-  }
-  const frameCanvas = document.createElement('canvas');
-  frameCanvas.width = 750; frameCanvas.height = 1050;
-  const frameCtx = frameCanvas.getContext('2d');
-  frameCtx.drawImage(frame, 0, 0, 750, 1050);
-  const frameData = frameCtx.getImageData(0, 0, 750, 1050);
-  // Follow the actual opaque silhouette: the PNG's bottom margin and corner
-  // shapes differ from the canvas bounds and between Terrain templates.
-  const left = new Int32Array(1050).fill(750);
-  const right = new Int32Array(1050).fill(-1);
-  const top = new Int32Array(750).fill(1050);
-  const bottom = new Int32Array(750).fill(-1);
-  for (let y = 0; y < 1050; y++) {
-    for (let x = 0; x < 750; x++) {
-      if (frameData.data[(y * 750 + x) * 4 + 3] < 240) continue;
-      left[y] = Math.min(left[y], x);
-      right[y] = Math.max(right[y], x);
-      top[x] = Math.min(top[x], y);
-      bottom[x] = Math.max(bottom[x], y);
-    }
-  }
-  const watercolorCanvas = document.createElement('canvas');
-  watercolorCanvas.width = 750; watercolorCanvas.height = 1050;
-  const watercolorCtx = watercolorCanvas.getContext('2d');
-  watercolorCtx.drawImage(background, -150, 0, 1050, 1050);
-  const watercolorData = watercolorCtx.getImageData(0, 0, 750, 1050);
-  const channelMeans = [0, 0, 0];
-  for (let i = 0; i < watercolorData.data.length; i += 4) {
-    channelMeans[0] += watercolorData.data[i];
-    channelMeans[1] += watercolorData.data[i + 1];
-    channelMeans[2] += watercolorData.data[i + 2];
-  }
-  const pixelCount = watercolorData.data.length / 4;
-  for (let channel = 0; channel < 3; channel++) channelMeans[channel] /= pixelCount;
-  const accentRgb = accent.match(/[\da-f]{2}/gi).map(value => parseInt(value, 16));
-  for (let i = 0; i < frameData.data.length; i += 4) {
-    const r = frameData.data[i], g = frameData.data[i + 1], b = frameData.data[i + 2];
-    const isCreamSurface = r > 170 && g > 140 && b > 90 && r >= g * 0.92 && g >= b * 0.9;
-    const pixel = i / 4;
-    const x = pixel % 750, y = Math.floor(pixel / 750);
-    const onOuterRim = x <= left[y] + 5 || x >= right[y] - 5
-      || y <= top[x] + 5 || y >= bottom[x] - 5;
-    if (isCreamSurface || onOuterRim) {
-      for (let channel = 0; channel < 3; channel++) {
-        const wash = watercolorData.data[i + channel];
-        const evenWash = channelMeans[channel] + (wash - channelMeans[channel]) * 1.05;
-        const tintedPaper = 255 * 0.55 + accentRgb[channel] * 0.45;
-        frameData.data[i + channel] = Math.max(0, Math.min(255, Math.round(evenWash * 0.58 + tintedPaper * 0.42)));
-      }
-    }
-  }
-  frameCtx.putImageData(frameData, 0, 0);
-  ctx.drawImage(frameCanvas, 0, 0);
-}
-
 async function fontsReady() {
   await Promise.all([
     document.fonts.load(`36px ${cardFont}`),
@@ -164,12 +105,11 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
   if (canvas.parentElement?.classList.contains('card-terrain-aura')) {
     canvas.parentElement.dataset.terrain = terrain || (type === 'Event' ? 'Event' : '');
   }
-  const frameName = terrain ? `CardFrame_${terrain}.png` : 'CardFrame_Event_IntegratedOrnaments_v3.png';
+  const frameName = terrain ? `${terrain}_CardFrame.png` : 'Nomads_CardFrame.png';
   const symbolName = type === 'Patron' ? 'Type_Patron_Simple.png' : type === 'Event' ? 'Type_Event_Scroll_v2.png' : 'Type_Entity_Simple.png';
-  const backgroundName = terrain ? terrainBackgrounds[terrain] : type === 'Event' ? eventBackground : null;
-  const [frame, art, symbol, background, neutralFaction] = await Promise.all([
+  const [frame, art, symbol, factionSymbol] = await Promise.all([
     loadImage(asset(frameName)), loadImage(artworkUrl || DEFAULT_ARTWORK), loadImage(asset(symbolName)),
-    loadImage(backgroundName ? asset(backgroundName) : ''), loadImage(!terrain ? asset('Faction_Nomads_Cairn.png') : ''), fontsReady().catch(() => null),
+    loadImage(asset(terrain ? factionSymbols[terrain] : 'Faction_Nomads_Cairn.png')), fontsReady().catch(() => null),
   ]);
   if (!shouldDraw()) return { cancelled: true };
   if (!frame) throw new Error('The card frame could not be loaded.');
@@ -179,7 +119,7 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
   ctx.clearRect(0, 0, 750, 1050);
   ctx.save();
   ctx.beginPath(); ctx.roundRect(0, 0, 750, 1050, 32); ctx.clip();
-  drawFrameWithBackground(ctx, frame, background, terrain ? terrainColors[terrain] : '#909592');
+  ctx.drawImage(frame, 0, 0, 750, 1050);
 
   if (art) drawArtwork(ctx, frame, art);
 
@@ -191,8 +131,8 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
     if (ctx.measureText(title).width <= 410) { titleSize = size; break; }
   }
   const titleCenterY = 87;
-  const leftIconX = 74;
-  const rightIconX = 676;
+  const leftIconX = 63;
+  const rightIconX = 687;
   function drawTypeIcon(x) {
     if (!symbol) return;
     const scale = Math.min(44 / symbol.width, 44 / symbol.height);
@@ -200,16 +140,12 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
     const height = symbol.height * scale;
     ctx.save();
     ctx.filter = terrain ? ({ Symbiosis: 'hue-rotate(240deg)', Flow: 'hue-rotate(160deg)', Verdant: 'hue-rotate(95deg)' }[terrain] || 'none') : 'grayscale(1)';
-    ctx.drawImage(symbol, x - width / 2, 180 - height / 2, width, height);
+    ctx.drawImage(symbol, x - width / 2, 167 - height / 2, width, height);
     ctx.restore();
   }
   if (!options.hideIcons) {
-    if (neutralFaction) {
-      for (const x of [88, 662]) {
-        ctx.fillStyle = '#fff7e8';
-        ctx.beginPath(); ctx.arc(x, 82, 48, 0, Math.PI * 2); ctx.fill();
-        ctx.drawImage(neutralFaction, x - 42, 40, 84, 84);
-      }
+    if (factionSymbol) {
+      for (const x of [81, 669]) ctx.drawImage(factionSymbol, x - 42, 33, 84, 84);
     }
     drawTypeIcon(leftIconX); drawTypeIcon(rightIconX);
   }
