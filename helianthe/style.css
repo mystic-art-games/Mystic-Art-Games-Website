@@ -579,19 +579,19 @@ body.dark-mode .card-filters :is(#card-filter-terrain, #deck-card-filter-terrain
 .card-faction-icon.terrain-radiance { background-image: url('./assets/Faction_Radiance.png'); }
 .card-faction-icon.terrain-event { background-image: url('./assets/Faction_Nomads_Cairn.png'); }
 .card-kind-icon { background-position: center; background-size: contain; background-repeat: no-repeat; }
-.card-kind-icon.kind-entity.terrain-symbiosis { background-image: url('./assets/Type_Entity_Symbiosis.png?v=2'); }
+.card-kind-icon.kind-entity.terrain-symbiosis { background-image: url('./assets/Type_Entity_Symbiosis.png?v=3'); }
 .card-kind-icon.kind-entity.terrain-flow { background-image: url('./assets/Type_Entity_Flow.png?v=2'); }
-.card-kind-icon.kind-entity.terrain-verdant { background-image: url('./assets/Type_Entity_Verdant.png?v=2'); }
+.card-kind-icon.kind-entity.terrain-verdant { background-image: url('./assets/Type_Entity_Verdant.png?v=3'); }
 .card-kind-icon.kind-entity.terrain-radiance { background-image: url('./assets/Type_Entity_Radiance.png?v=2'); }
 .card-kind-icon.kind-entity.terrain-event { background-image: url('./assets/Type_Entity_Nomads.png?v=2'); }
-.card-kind-icon.kind-event.terrain-symbiosis { background-image: url('./assets/Type_Event_Symbiosis.png?v=2'); }
+.card-kind-icon.kind-event.terrain-symbiosis { background-image: url('./assets/Type_Event_Symbiosis.png?v=3'); }
 .card-kind-icon.kind-event.terrain-flow { background-image: url('./assets/Type_Event_Flow.png?v=2'); }
-.card-kind-icon.kind-event.terrain-verdant { background-image: url('./assets/Type_Event_Verdant.png?v=2'); }
+.card-kind-icon.kind-event.terrain-verdant { background-image: url('./assets/Type_Event_Verdant.png?v=3'); }
 .card-kind-icon.kind-event.terrain-radiance { background-image: url('./assets/Type_Event_Radiance.png?v=2'); }
 .card-kind-icon.kind-event.terrain-event { background-image: url('./assets/Type_Event_Nomads.png?v=2'); }
-.card-kind-icon.kind-patron.terrain-symbiosis { background-image: url('./assets/Type_Patron_Symbiosis.png?v=2'); }
+.card-kind-icon.kind-patron.terrain-symbiosis { background-image: url('./assets/Type_Patron_Symbiosis.png?v=3'); }
 .card-kind-icon.kind-patron.terrain-flow { background-image: url('./assets/Type_Patron_Flow.png?v=2'); }
-.card-kind-icon.kind-patron.terrain-verdant { background-image: url('./assets/Type_Patron_Verdant.png?v=2'); }
+.card-kind-icon.kind-patron.terrain-verdant { background-image: url('./assets/Type_Patron_Verdant.png?v=3'); }
 .card-kind-icon.kind-patron.terrain-radiance { background-image: url('./assets/Type_Patron_Radiance.png?v=2'); }
 .card-kind-icon.kind-patron.terrain-event { background-image: url('./assets/Type_Patron_Nomads.png?v=2'); }
 .card-list-item .card-type-icon { grid-column: 1; grid-row: 1; width: 2rem; height: 2rem; object-fit: contain; }

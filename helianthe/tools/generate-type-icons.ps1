@@ -77,9 +77,18 @@ function Get-TypeSource([string]$path) {
   finally { $original.Dispose() }
 }
 
-function Write-TypeIcon($source, $palette, [string]$path) {
+function Write-TypeIcon($source, $palette, [string]$path, [double]$lighten) {
   $output = [System.Drawing.Bitmap]::new(512, 512, [System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
   try {
+    $colors = [System.Drawing.Color[]]::new(256)
+    for ($index = 0; $index -lt 256; $index++) {
+      $color = $palette[$index]
+      $colors[$index] = [System.Drawing.Color]::FromArgb(
+        [int][math]::Round($color.R + (255 - $color.R) * $lighten),
+        [int][math]::Round($color.G + (255 - $color.G) * $lighten),
+        [int][math]::Round($color.B + (255 - $color.B) * $lighten)
+      )
+    }
     $opacityByLight = [double[]]::new(256)
     for ($light = 0; $light -lt 256; $light++) {
       $wash = [math]::Max(0, ($source.Percentiles[$light] - 0.15) / 0.85)
@@ -91,7 +100,7 @@ function Write-TypeIcon($source, $palette, [string]$path) {
         if ($color.A -eq 0) { continue }
         $light = [int][math]::Round((54 * $color.R + 183 * $color.G + 19 * $color.B) / 256)
         $index = [int][math]::Round($source.Percentiles[$light] * 255)
-        $match = $palette[$index]
+        $match = $colors[$index]
         $alpha = [int][math]::Round($color.A * $opacityByLight[$light])
         $output.SetPixel($x, $y, [System.Drawing.Color]::FromArgb($alpha, $match.R, $match.G, $match.B))
       }
@@ -107,7 +116,8 @@ foreach ($type in $types.Keys) {
   $source = Get-TypeSource (Join-Path $assets $types[$type])
   try {
     foreach ($faction in $factions.Keys) {
-      Write-TypeIcon $source $palettes[$faction] (Join-Path $assets "Type_${type}_${faction}.png")
+      $lighten = if ($faction -in 'Verdant', 'Symbiosis') { 0.14 } else { 0 }
+      Write-TypeIcon $source $palettes[$faction] (Join-Path $assets "Type_${type}_${faction}.png") $lighten
     }
   }
   finally { $source.Image.Dispose() }
