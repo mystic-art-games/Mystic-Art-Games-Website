@@ -582,11 +582,11 @@ body.dark-mode .card-filters :is(#card-filter-terrain, #deck-card-filter-terrain
 .card-kind-icon.kind-entity { background-image: url('./assets/Type_Entity_Simple.png'); }
 .card-kind-icon.kind-event { background-image: url('./assets/Type_Event_Scroll_v2.png'); }
 .card-kind-icon.kind-patron { background-image: url('./assets/Type_Patron_Simple.png'); }
-.card-kind-icon.terrain-symbiosis { filter: hue-rotate(240deg) saturate(1.8) brightness(.72); }
-.card-kind-icon.terrain-flow { filter: hue-rotate(160deg) saturate(1.8) brightness(.72); }
-.card-kind-icon.terrain-verdant { filter: hue-rotate(95deg) saturate(1.8) brightness(.72); }
-.card-kind-icon.terrain-radiance { filter: saturate(1.8) brightness(.72); }
-.card-kind-icon.terrain-event { filter: grayscale(1) brightness(.72); }
+.card-kind-icon.terrain-symbiosis { filter: hue-rotate(240deg) saturate(1.8) brightness(.9); }
+.card-kind-icon.terrain-flow { filter: hue-rotate(160deg) saturate(1.8) brightness(.9); }
+.card-kind-icon.terrain-verdant { filter: hue-rotate(95deg) saturate(1.8) brightness(.9); }
+.card-kind-icon.terrain-radiance { filter: saturate(1.8) brightness(.9); }
+.card-kind-icon.terrain-event { filter: grayscale(1) brightness(.9); }
 .card-list-item .card-type-icon { grid-column: 1; grid-row: 1; width: 2rem; height: 2rem; object-fit: contain; }
 .card-list-item .event-type-icon { background: var(--event-icon-color); -webkit-mask: url('./assets/Event.png') center / contain no-repeat; mask: url('./assets/Event.png') center / contain no-repeat; }
 .card-list-item .radiance-entity-type-icon { background: var(--event-icon-color); -webkit-mask: url('./assets/Entity_Radiance.png') center / contain no-repeat; mask: url('./assets/Entity_Radiance.png') center / contain no-repeat; }
