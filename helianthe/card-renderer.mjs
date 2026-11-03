@@ -136,23 +136,23 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
     if (ctx.measureText(title).width <= 410) { titleSize = size; break; }
   }
   const titleCenterY = 87;
-  const leftIconX = 63;
-  const rightIconX = 687;
+  const upperIconXs = [81, 669];
+  const lowerIconXs = [63, 687];
   function drawTypeIcon(x) {
     if (!symbol) return;
-    const scale = Math.min(44 / symbol.width, 44 / symbol.height);
+    const scale = Math.min(84 / symbol.width, 84 / symbol.height);
     const width = symbol.width * scale;
     const height = symbol.height * scale;
     ctx.save();
     ctx.filter = terrain ? ({ Symbiosis: 'hue-rotate(240deg)', Flow: 'hue-rotate(160deg)', Verdant: 'hue-rotate(95deg)' }[terrain] || 'none') : 'grayscale(1)';
-    ctx.drawImage(symbol, x - width / 2, 167 - height / 2, width, height);
+    ctx.drawImage(symbol, x - width / 2, 75 - height / 2, width, height);
     ctx.restore();
   }
   if (!options.hideIcons) {
+    for (const x of upperIconXs) drawTypeIcon(x);
     if (factionSymbol) {
-      for (const x of [81, 669]) ctx.drawImage(factionSymbol, x - 42, 33, 84, 84);
+      for (const x of lowerIconXs) ctx.drawImage(factionSymbol, x - 22, 145, 44, 44);
     }
-    drawTypeIcon(leftIconX); drawTypeIcon(rightIconX);
   }
   ctx.font = `800 ${titleSize}px ${cardFont}`;
   ctx.fillStyle = '#302b27'; ctx.textAlign = 'center';
