@@ -136,22 +136,27 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
     if (ctx.measureText(title).width <= 410) { titleSize = size; break; }
   }
   const titleCenterY = 87;
-  const upperIconXs = [81, 669];
-  const lowerIconXs = [63, 687];
-  function drawTypeIcon(x) {
+  // Circle centers measured on the source frame, mapped through its inset crop.
+  const framePoint = (x, y) => ({
+    x: (x - inset) * 750 / (frame.naturalWidth - 2 * inset),
+    y: (y - inset) * 1050 / (frame.naturalHeight - 2 * inset),
+  });
+  const upperIconCenters = [[112, 112], [912, 112]].map(([x, y]) => framePoint(x, y));
+  const lowerIconCenters = [[85, 245], [939, 245]].map(([x, y]) => framePoint(x, y));
+  function drawTypeIcon({ x, y }) {
     if (!symbol) return;
     const scale = Math.min(84 / symbol.width, 84 / symbol.height);
     const width = symbol.width * scale;
     const height = symbol.height * scale;
     ctx.save();
     ctx.filter = terrain ? ({ Symbiosis: 'hue-rotate(240deg)', Flow: 'hue-rotate(160deg)', Verdant: 'hue-rotate(95deg)' }[terrain] || 'none') : 'grayscale(1)';
-    ctx.drawImage(symbol, x - width / 2, 75 - height / 2, width, height);
+    ctx.drawImage(symbol, x - width / 2, y - height / 2, width, height);
     ctx.restore();
   }
   if (!options.hideIcons) {
-    for (const x of upperIconXs) drawTypeIcon(x);
+    for (const center of upperIconCenters) drawTypeIcon(center);
     if (factionSymbol) {
-      for (const x of lowerIconXs) ctx.drawImage(factionSymbol, x - 22, 145, 44, 44);
+      for (const { x, y } of lowerIconCenters) ctx.drawImage(factionSymbol, x - 22, y - 22, 44, 44);
     }
   }
   ctx.font = `800 ${titleSize}px ${cardFont}`;
