@@ -121,6 +121,48 @@ function drawArtwork(ctx, frame, art) {
   ctx.drawImage(layer, 0, 0, 750, 1050);
 }
 
+function drawEffectSideOrnaments(ctx, frame, terrain) {
+  if (terrain && terrain !== 'Radiance') return;
+  const radiance = terrain === 'Radiance';
+  ctx.save();
+  ctx.scale(750 / frame.naturalWidth, 1050 / frame.naturalHeight);
+  for (const mirrored of [false, true]) {
+    ctx.save();
+    if (mirrored) { ctx.translate(frame.naturalWidth, 0); ctx.scale(-1, 1); }
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = radiance ? '#704217' : '#454340';
+    ctx.fillStyle = radiance ? '#c28b38' : '#92908b';
+    ctx.lineWidth = 2.7;
+    ctx.beginPath();
+    ctx.moveTo(60, 1199);
+    ctx.bezierCurveTo(93, 1172, 55, 1147, 72, 1128);
+    ctx.bezierCurveTo(90, 1105, 53, 1087, 67, 1057);
+    ctx.stroke();
+    if (radiance) {
+      ctx.beginPath(); ctx.arc(76, 1112, 12, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#f5d38a';
+      ctx.beginPath(); ctx.arc(76, 1112, 5.5, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#a96920'; ctx.lineWidth = 2.3;
+      for (const [dx, dy] of [[0, -22], [0, 22], [-21, 0], [18, 0], [-14, -16], [14, 16]]) {
+        ctx.beginPath(); ctx.moveTo(76 + dx * .73, 1112 + dy * .73);
+        ctx.lineTo(76 + dx, 1112 + dy); ctx.stroke();
+      }
+      ctx.fillStyle = '#b17a2f';
+      ctx.beginPath(); ctx.arc(70, 1180, 4, 0, Math.PI * 2); ctx.fill();
+    } else {
+      for (const [x, y, rx, ry] of [[77, 1098, 9, 5], [68, 1111, 12, 6], [76, 1126, 15, 7]]) {
+        ctx.beginPath(); ctx.ellipse(x, y, rx, ry, -.13, 0, Math.PI * 2);
+        ctx.fill(); ctx.stroke();
+      }
+      ctx.strokeStyle = '#c5c0b7'; ctx.lineWidth = 1.8;
+      ctx.beginPath(); ctx.moveTo(62, 1156); ctx.bezierCurveTo(84, 1170, 70, 1183, 57, 1193); ctx.stroke();
+    }
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
 async function fontsReady() {
   await Promise.all([
     document.fonts.load(`36px ${cardFont}`),
@@ -157,6 +199,7 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
   ctx.drawImage(frame, 0, 0, 750, 1050);
 
   if (art) drawArtwork(ctx, frame, art);
+  drawEffectSideOrnaments(ctx, frame, terrain);
 
   const title = (card.title || 'New card').replace(/\s+/g, ' ').trim() || 'New card';
   canvas.setAttribute('aria-label', `${title}, ${type} card preview`);
