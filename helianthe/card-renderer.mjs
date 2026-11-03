@@ -3,6 +3,7 @@
 const ASSETS = new URL('./assets/', import.meta.url);
 const DEFAULT_ARTWORK = asset('Poseidons_Chosen_One_Comic.png?v=3');
 const imageCache = new Map();
+const artworkWindows = new WeakMap();
 const terrainColors = { Symbiosis: '#784997', Flow: '#428da7', Verdant: '#68a66c', Radiance: '#e0b52f' };
 const terrainBackgrounds = {
   Symbiosis: 'Terrain_Watercolor_Symbiosis.png',
@@ -27,6 +28,67 @@ function loadImage(url) {
   if (url.startsWith('blob:')) return load();
   if (!imageCache.has(url)) imageCache.set(url, load());
   return imageCache.get(url);
+}
+
+function artworkWindow(frame) {
+  if (artworkWindows.has(frame)) return artworkWindows.get(frame);
+  // Trace the enclosed paper inside this particular frame's ink outline.
+  // Working at the PNG's native resolution preserves its hand-drawn contour.
+  const mask = document.createElement('canvas');
+  const width = mask.width = frame.naturalWidth;
+  const height = mask.height = frame.naturalHeight;
+  const context = mask.getContext('2d');
+  context.drawImage(frame, 0, 0);
+  const source = context.getImageData(0, 0, width, height).data;
+  const pixels = context.createImageData(width, height);
+  const visited = new Uint8Array(width * height);
+  const queue = new Int32Array(width * height);
+  const seed = Math.floor(height * 0.4) * width + Math.floor(width / 2);
+  let head = 0, tail = 1;
+  queue[0] = seed;
+  visited[seed] = 1;
+  let left = width, right = 0, top = height, bottom = 0;
+  function enqueue(index) {
+    if (visited[index]) return;
+    visited[index] = 1;
+    const offset = index * 4;
+    if (source[offset + 3] < 240 || Math.max(source[offset], source[offset + 1], source[offset + 2]) < 120) return;
+    queue[tail++] = index;
+  }
+  while (head < tail) {
+    const index = queue[head++];
+    const x = index % width, y = Math.floor(index / width);
+    pixels.data[index * 4 + 3] = 255;
+    left = Math.min(left, x); right = Math.max(right, x);
+    top = Math.min(top, y); bottom = Math.max(bottom, y);
+    if (x > 0) enqueue(index - 1);
+    if (x + 1 < width) enqueue(index + 1);
+    if (y > 0) enqueue(index - width);
+    if (y + 1 < height) enqueue(index + width);
+  }
+  if (left < width * 0.03 || right > width * 0.97 || top < height * 0.1 || bottom > height * 0.65) {
+    throw new Error('The artwork window outline is not closed.');
+  }
+  context.putImageData(pixels, 0, 0);
+  const window = { mask, left, top, width: right - left + 1, height: bottom - top + 1 };
+  artworkWindows.set(frame, window);
+  return window;
+}
+
+function drawArtwork(ctx, frame, art) {
+  const window = artworkWindow(frame);
+  const layer = document.createElement('canvas');
+  layer.width = 1500; layer.height = 2100;
+  const context = layer.getContext('2d');
+  const scaleX = layer.width / frame.naturalWidth;
+  const scaleY = layer.height / frame.naturalHeight;
+  const boxWidth = window.width * scaleX, boxHeight = window.height * scaleY;
+  const ratio = Math.max(boxWidth / art.width, boxHeight / art.height);
+  const width = art.width * ratio, height = art.height * ratio;
+  context.drawImage(art, window.left * scaleX + (boxWidth - width) / 2, window.top * scaleY + (boxHeight - height) / 2, width, height);
+  context.globalCompositeOperation = 'destination-in';
+  context.drawImage(window.mask, 0, 0, layer.width, layer.height);
+  ctx.drawImage(layer, 0, 0, 750, 1050);
 }
 
 function drawFrameWithBackground(ctx, frame, background, accent) {
@@ -119,23 +181,7 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
   ctx.beginPath(); ctx.roundRect(0, 0, 750, 1050, 32); ctx.clip();
   drawFrameWithBackground(ctx, frame, background, terrain ? terrainColors[terrain] : '#909592');
 
-  // The artwork is drawn inside the blank window, leaving the painted border visible.
-  // Match the inner ink line of the 1060 × 1484 frame after scaling to 750 × 1050.
-  const illustrationBox = { x: 52, y: 140, width: 646, height: 487 };
-  if (art) {
-    ctx.save();
-    ctx.beginPath();
-    ctx.moveTo(375, 140);
-    ctx.bezierCurveTo(550, 140, 698, 205, 698, 315);
-    ctx.lineTo(698, 530); ctx.bezierCurveTo(698, 597, 650, 627, 550, 627);
-    ctx.lineTo(200, 627); ctx.bezierCurveTo(100, 627, 52, 597, 52, 530);
-    ctx.lineTo(52, 315); ctx.bezierCurveTo(52, 205, 200, 140, 375, 140);
-    ctx.clip();
-    const ratio = Math.max(illustrationBox.width / art.width, illustrationBox.height / art.height);
-    const width = art.width * ratio, height = art.height * ratio;
-    ctx.drawImage(art, illustrationBox.x + (illustrationBox.width - width) / 2, illustrationBox.y + (illustrationBox.height - height) / 2, width, height);
-    ctx.restore();
-  }
+  if (art) drawArtwork(ctx, frame, art);
 
   const title = (card.title || 'New card').replace(/\s+/g, ' ').trim() || 'New card';
   canvas.setAttribute('aria-label', `${title}, ${type} card preview`);
