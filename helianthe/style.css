@@ -566,10 +566,10 @@ body.dark-mode .card-filters :is(#card-filter-terrain, #deck-card-filter-terrain
 .card-list-icons { grid-column: 1; display: flex; align-items: center; gap: .22rem; }
 .card-faction-icon, .card-kind-icon { display: block; flex: 0 0 1.6rem; width: 1.6rem; height: 1.6rem; }
 .card-faction-icon { background-position: center; background-size: contain; background-repeat: no-repeat; }
-.card-faction-icon.terrain-symbiosis { background-image: url('./assets/Entity_Symbiosis.png'); }
-.card-faction-icon.terrain-flow { background-image: url('./assets/Entity_Flow.png'); }
-.card-faction-icon.terrain-verdant { background-image: url('./assets/Entity_Verdant.png'); }
-.card-faction-icon.terrain-radiance { background-image: url('./assets/Entity_Radiance.png'); }
+.card-faction-icon.terrain-symbiosis { background-image: url('./assets/Faction_Symbiosis.png'); }
+.card-faction-icon.terrain-flow { background-image: url('./assets/Faction_Flow.png'); }
+.card-faction-icon.terrain-verdant { background-image: url('./assets/Faction_Verdant.png'); }
+.card-faction-icon.terrain-radiance { background-image: url('./assets/Faction_Radiance.png'); }
 .card-faction-icon.terrain-event { border: 2px solid #909592; border-radius: 50%; box-sizing: border-box; }
 .card-kind-icon { background: #594637; -webkit-mask: center / contain no-repeat; mask: center / contain no-repeat; }
 .card-kind-icon.kind-entity { -webkit-mask-image: url('./assets/CardType_Entity.png'); mask-image: url('./assets/CardType_Entity.png'); }
