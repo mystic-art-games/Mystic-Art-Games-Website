@@ -137,7 +137,8 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
   }
   const frameName = terrain === 'Radiance' ? 'Radiance_CardFrame_v2.png'
     : terrain ? `${terrain}_CardFrame.png` : 'Nomads_CardFrame_v2.png';
-  const symbolName = type === 'Patron' ? 'Type_Patron_Simple.png' : type === 'Event' ? 'Type_Event_Scroll_v2.png' : 'Type_Entity_Simple.png';
+  const symbolType = type === 'Patron' ? 'Patron' : type === 'Event' ? 'Event' : 'Entity';
+  const symbolName = `Type_${symbolType}_${terrain || 'Nomads'}.png`;
   const [frame, art, symbol, factionSymbol] = await Promise.all([
     loadImage(asset(`${frameName}?v=2`)), loadImage(artworkUrl || DEFAULT_ARTWORK), loadImage(asset(symbolName)),
     loadImage(asset(terrain ? factionSymbols[terrain] : 'Faction_Nomads_Cairn.png')), fontsReady().catch(() => null),
@@ -182,11 +183,7 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
   }
   function drawTypeIcon({ x, y }) {
     if (!symbol) return;
-    ctx.save();
-    const hue = { Symbiosis: 'hue-rotate(240deg)', Flow: 'hue-rotate(160deg)', Verdant: 'hue-rotate(95deg)' }[terrain] || '';
-    ctx.filter = terrain ? `${hue} saturate(1.8) brightness(.9)` : 'grayscale(1) brightness(.9)';
     drawCenteredIcon(symbol, { x, y }, 84);
-    ctx.restore();
   }
   if (!options.hideIcons) {
     for (const center of upperIconCenters) drawTypeIcon(center);
