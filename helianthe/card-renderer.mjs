@@ -123,7 +123,7 @@ function drawArtwork(ctx, frame, art) {
 
 async function fontsReady() {
   await Promise.all([
-    document.fonts.load(`600 36px ${cardFont}`),
+    document.fonts.load(`700 36px ${cardFont}`),
     document.fonts.load('500 28px Nunito'),
     document.fonts.load('700 28px Nunito'),
     document.fonts.load('italic 500 26px Nunito'),
@@ -166,7 +166,7 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
   canvas.setAttribute('aria-label', `${title}, ${type} card preview`);
   let titleSize = 12;
   for (let size = 56; size >= 12; size--) {
-    ctx.font = `600 ${size}px ${cardFont}`;
+    ctx.font = `700 ${size}px ${cardFont}`;
     if (ctx.measureText(title).width <= 410) { titleSize = size; break; }
   }
   const titleCenterY = 87;
@@ -193,7 +193,7 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
       for (const center of lowerIconCenters) drawCenteredIcon(factionSymbol, center, 44);
     }
   }
-  ctx.font = `600 ${titleSize}px ${cardFont}`;
+  ctx.font = `700 ${titleSize}px ${cardFont}`;
   ctx.fillStyle = '#302b27'; ctx.textAlign = 'center';
   const titleMetrics = ctx.measureText(title);
   const titleBaseline = titleCenterY + (titleMetrics.actualBoundingBoxAscent - titleMetrics.actualBoundingBoxDescent) / 2;
