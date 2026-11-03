@@ -573,7 +573,7 @@ body.dark-mode .card-filters :is(#card-filter-terrain, #deck-card-filter-terrain
 .card-faction-icon.terrain-flow { background-image: url('./assets/Faction_Flow.png'); }
 .card-faction-icon.terrain-verdant { background-image: url('./assets/Faction_Verdant.png'); }
 .card-faction-icon.terrain-radiance { background-image: url('./assets/Faction_Radiance.png'); }
-.card-faction-icon.terrain-event { background-image: url('./assets/Faction_Neutral.png'); }
+.card-faction-icon.terrain-event { background-image: url('./assets/Faction_Nomads.png'); }
 .card-kind-icon { background-position: center; background-size: contain; background-repeat: no-repeat; }
 .card-kind-icon.kind-entity { background-image: url('./assets/Type_Entity_Simple.png'); }
 .card-kind-icon.kind-event { background-image: url('./assets/Type_Event_Scroll.png'); }
