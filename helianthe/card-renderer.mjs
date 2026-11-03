@@ -130,7 +130,7 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
     ctx.lineTo(125, 627); ctx.quadraticCurveTo(55, 627, 55, 553);
     ctx.lineTo(55, 285); ctx.bezierCurveTo(55, 193, 200, 145, 375, 145);
     ctx.clip();
-    const ratio = Math.min(illustrationBox.width / art.width, illustrationBox.height / art.height);
+    const ratio = Math.max(illustrationBox.width / art.width, illustrationBox.height / art.height);
     const width = art.width * ratio, height = art.height * ratio;
     ctx.drawImage(art, illustrationBox.x + (illustrationBox.width - width) / 2, illustrationBox.y + (illustrationBox.height - height) / 2, width, height);
     ctx.restore();
