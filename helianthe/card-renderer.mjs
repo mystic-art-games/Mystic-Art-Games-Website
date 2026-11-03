@@ -4,6 +4,15 @@ const ASSETS = new URL('./assets/', import.meta.url);
 const DEFAULT_ARTWORK = asset('Poseidons_Chosen_One_Comic.png?v=3');
 const imageCache = new Map();
 const artworkWindows = new WeakMap();
+const iconBounds = new WeakMap();
+// Centers of the enclosed paper circles in each 1024 × 1536 frame PNG.
+const frameIconCenters = {
+  Flow: { upper: [[116.5, 115], [902.5, 115]], lower: [[88.5, 246.5], [931.5, 247]] },
+  Radiance: { upper: [[112.5, 113], [907, 113.5]], lower: [[85.5, 245], [935.5, 245]] },
+  Verdant: { upper: [[115.5, 114], [903, 114.5]], lower: [[88, 246.5], [931, 246.5]] },
+  Symbiosis: { upper: [[116, 115], [903, 115]], lower: [[88, 246], [932, 246]] },
+  Neutral: { upper: [[111.5, 113], [905, 113.5]], lower: [[83.5, 245], [934, 245.5]] },
+};
 const terrainColors = { Symbiosis: '#784997', Flow: '#428da7', Verdant: '#68a66c', Radiance: '#e0b52f' };
 const factionSymbols = {
   Symbiosis: 'Faction_Symbiosis.png',
@@ -27,6 +36,27 @@ function loadImage(url) {
   if (url.startsWith('blob:')) return load();
   if (!imageCache.has(url)) imageCache.set(url, load());
   return imageCache.get(url);
+}
+
+function visibleIconCenter(icon) {
+  if (iconBounds.has(icon)) return iconBounds.get(icon);
+  const layer = document.createElement('canvas');
+  layer.width = icon.width; layer.height = icon.height;
+  const context = layer.getContext('2d');
+  context.drawImage(icon, 0, 0);
+  const pixels = context.getImageData(0, 0, layer.width, layer.height).data;
+  let left = icon.width, right = -1, top = icon.height, bottom = -1;
+  for (let y = 0; y < icon.height; y++) {
+    for (let x = 0; x < icon.width; x++) {
+      if (pixels[(y * icon.width + x) * 4 + 3] < 32) continue;
+      left = Math.min(left, x); right = Math.max(right, x);
+      top = Math.min(top, y); bottom = Math.max(bottom, y);
+    }
+  }
+  const center = right < 0 ? { x: icon.width / 2, y: icon.height / 2 }
+    : { x: (left + right + 1) / 2, y: (top + bottom + 1) / 2 };
+  iconBounds.set(icon, center);
+  return center;
 }
 
 function artworkWindow(frame) {
@@ -141,22 +171,25 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
     x: x * 750 / frame.naturalWidth,
     y: y * 1050 / frame.naturalHeight,
   });
-  const upperIconCenters = [[112, 112], [912, 112]].map(([x, y]) => framePoint(x, y));
-  const lowerIconCenters = [[85, 245], [939, 245]].map(([x, y]) => framePoint(x, y));
+  const centers = frameIconCenters[terrain || 'Neutral'];
+  const upperIconCenters = centers.upper.map(([x, y]) => framePoint(x, y));
+  const lowerIconCenters = centers.lower.map(([x, y]) => framePoint(x, y));
+  function drawCenteredIcon(icon, { x, y }, size) {
+    const center = visibleIconCenter(icon);
+    const scale = Math.min(size / icon.width, size / icon.height);
+    ctx.drawImage(icon, x - center.x * scale, y - center.y * scale, icon.width * scale, icon.height * scale);
+  }
   function drawTypeIcon({ x, y }) {
     if (!symbol) return;
-    const scale = Math.min(84 / symbol.width, 84 / symbol.height);
-    const width = symbol.width * scale;
-    const height = symbol.height * scale;
     ctx.save();
     ctx.filter = terrain ? ({ Symbiosis: 'hue-rotate(240deg)', Flow: 'hue-rotate(160deg)', Verdant: 'hue-rotate(95deg)' }[terrain] || 'none') : 'grayscale(1)';
-    ctx.drawImage(symbol, x - width / 2, y - height / 2, width, height);
+    drawCenteredIcon(symbol, { x, y }, 84);
     ctx.restore();
   }
   if (!options.hideIcons) {
     for (const center of upperIconCenters) drawTypeIcon(center);
     if (factionSymbol) {
-      for (const { x, y } of lowerIconCenters) ctx.drawImage(factionSymbol, x - 22, y - 22, 44, 44);
+      for (const center of lowerIconCenters) drawCenteredIcon(factionSymbol, center, 44);
     }
   }
   ctx.font = `800 ${titleSize}px ${cardFont}`;
