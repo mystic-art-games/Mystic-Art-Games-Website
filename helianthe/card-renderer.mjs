@@ -107,7 +107,7 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
   const backgroundName = terrain ? terrainBackgrounds[terrain] : type === 'Event' ? eventBackground : null;
   const [frame, art, symbol, background, neutralFaction] = await Promise.all([
     loadImage(asset(frameName)), loadImage(artworkUrl || DEFAULT_ARTWORK), loadImage(asset(symbolName)),
-    loadImage(backgroundName ? asset(backgroundName) : ''), loadImage(!terrain ? asset('Faction_Nomads.png') : ''), fontsReady().catch(() => null),
+    loadImage(backgroundName ? asset(backgroundName) : ''), loadImage(!terrain ? asset('Faction_Nomads_Cairn.png') : ''), fontsReady().catch(() => null),
   ]);
   if (!shouldDraw()) return { cancelled: true };
   if (!frame) throw new Error('The card frame could not be loaded.');
