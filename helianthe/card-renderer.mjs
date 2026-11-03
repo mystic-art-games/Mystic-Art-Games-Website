@@ -119,6 +119,11 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
   ctx.clearRect(0, 0, 750, 1050);
   ctx.save();
   ctx.beginPath(); ctx.roundRect(0, 0, 750, 1050, 32); ctx.clip();
+  // The source frames include a paper margin around the outer ink edge.
+  // Fill the 5:7 card with that edge while keeping artwork, text and icons aligned.
+  const inset = 20;
+  ctx.translate(-750 * inset / (frame.naturalWidth - 2 * inset), -1050 * inset / (frame.naturalHeight - 2 * inset));
+  ctx.scale(frame.naturalWidth / (frame.naturalWidth - 2 * inset), frame.naturalHeight / (frame.naturalHeight - 2 * inset));
   ctx.drawImage(frame, 0, 0, 750, 1050);
 
   if (art) drawArtwork(ctx, frame, art);

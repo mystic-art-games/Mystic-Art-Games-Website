@@ -952,7 +952,7 @@ function cardFieldAt(event) {
   const y = (event.clientY - box.top) * 1050 / box.height;
   if (y < 200) return x < 145 || x > 605 ? 'identity' : 'title';
   if (y < 640) return 'artwork';
-  if (y < 925) return 'effect';
+  if (y < 940) return 'effect';
   return 'authors';
 }
 
