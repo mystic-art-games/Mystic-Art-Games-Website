@@ -148,7 +148,10 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
   const rightIconX = 676;
   function drawTypeIcon(x) {
     if (!symbol) return;
+    ctx.save();
+    ctx.filter = { Symbiosis: 'hue-rotate(240deg)', Flow: 'hue-rotate(160deg)', Verdant: 'hue-rotate(95deg)' }[terrain] || 'none';
     ctx.drawImage(symbol, x - 22, 158, 44, 44);
+    ctx.restore();
   }
   if (!options.hideIcons) {
     drawTypeIcon(leftIconX); drawTypeIcon(rightIconX);
