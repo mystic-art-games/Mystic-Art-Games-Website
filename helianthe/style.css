@@ -226,7 +226,7 @@ body.dark-mode .deck-cover-status.error { color: #ef9187; }
 .patron-picker-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .patron-picker-option .patron-picker-name { white-space: normal; overflow-wrap: anywhere; }
 .patron-picker :is(.patron-picker-trigger, .patron-picker-option).is-patron .patron-picker-name { font-weight: 800; }
-.patron-picker-icon { display: block; flex: 0 0 auto; width: 1.35rem; height: 1.35rem; background-color: currentColor; -webkit-mask: url('./assets/Type_Patron.png') center / contain no-repeat; mask: url('./assets/Type_Patron.png') center / contain no-repeat; }
+.patron-picker-icon { display: block; flex: 0 0 auto; width: 1.35rem; height: 1.35rem; background: url('./assets/Type_Patron.png') center / contain no-repeat; }
 .patron-picker :is(.patron-picker-trigger, .patron-picker-option).patron-picker-terrain-flow { color: #35758e; }
 .patron-picker :is(.patron-picker-trigger, .patron-picker-option).patron-picker-terrain-radiance { color: #a87318; }
 .patron-picker :is(.patron-picker-trigger, .patron-picker-option).patron-picker-terrain-symbiosis { color: #784997; }
@@ -501,7 +501,7 @@ body.dark-mode .profile-save-status.error { color: #ef9187; }
 .card-search-suggestions .card-search-option { display: grid; grid-template-columns: 1.65rem minmax(0, 1fr); gap: .55rem; align-items: center; width: 100%; padding: .45rem .55rem; border: 0; border-radius: 7px; background: transparent; text-align: left; }
 .card-search-suggestions .card-search-option .card-type-icon { width: 1.65rem; height: 1.65rem; }
 .card-search-suggestions .card-search-option:hover, .card-search-suggestions .card-search-option:focus-visible { background: #e0ebda; }
-.card-search-suggestions .patron-type-icon { display: block; background-color: currentColor; -webkit-mask: url('./assets/Type_Patron.png') center / contain no-repeat; mask: url('./assets/Type_Patron.png') center / contain no-repeat; }
+.card-search-suggestions .patron-type-icon { display: block; background: url('./assets/Type_Patron.png') center / contain no-repeat; }
 .card-search-suggestions .patron-type-icon.terrain-flow { color: #35758e; }
 .card-search-suggestions .patron-type-icon.terrain-radiance { color: #a87318; }
 .card-search-suggestions .patron-type-icon.terrain-symbiosis { color: #784997; }
@@ -571,15 +571,10 @@ body.dark-mode .card-filters :is(#card-filter-terrain, #deck-card-filter-terrain
 .card-faction-icon.terrain-verdant { background-image: url('./assets/Faction_Verdant.png'); }
 .card-faction-icon.terrain-radiance { background-image: url('./assets/Faction_Radiance.png'); }
 .card-faction-icon.terrain-event { border: 2px solid #909592; border-radius: 50%; box-sizing: border-box; }
-.card-kind-icon { background: #594637; -webkit-mask: center / contain no-repeat; mask: center / contain no-repeat; }
-.card-kind-icon.kind-entity { -webkit-mask-image: url('./assets/Type_Entity.png'); mask-image: url('./assets/Type_Entity.png'); }
-.card-kind-icon.kind-event { -webkit-mask-image: url('./assets/Type_Event.png'); mask-image: url('./assets/Type_Event.png'); }
-.card-kind-icon.kind-patron { -webkit-mask-image: url('./assets/Type_Patron.png'); mask-image: url('./assets/Type_Patron.png'); }
-.card-kind-icon.terrain-symbiosis { background-color: #784997; }
-.card-kind-icon.terrain-flow { background-color: #35758e; }
-.card-kind-icon.terrain-verdant { background-color: #488057; }
-.card-kind-icon.terrain-radiance { background-color: #b88425; }
-.card-kind-icon.terrain-event { background-color: #909592; }
+.card-kind-icon { background-position: center; background-size: contain; background-repeat: no-repeat; }
+.card-kind-icon.kind-entity { background-image: url('./assets/Type_Entity.png'); }
+.card-kind-icon.kind-event { background-image: url('./assets/Type_Event.png'); }
+.card-kind-icon.kind-patron { background-image: url('./assets/Type_Patron.png'); }
 .card-list-item .card-type-icon { grid-column: 1; grid-row: 1; width: 2rem; height: 2rem; object-fit: contain; }
 .card-list-item .event-type-icon { background: var(--event-icon-color); -webkit-mask: url('./assets/Event.png') center / contain no-repeat; mask: url('./assets/Event.png') center / contain no-repeat; }
 .card-list-item .radiance-entity-type-icon { background: var(--event-icon-color); -webkit-mask: url('./assets/Entity_Radiance.png') center / contain no-repeat; mask: url('./assets/Entity_Radiance.png') center / contain no-repeat; }
@@ -596,7 +591,7 @@ body.dark-mode .card-filters :is(#card-filter-terrain, #deck-card-filter-terrain
 #cards-view #card-list .card-list-item:hover:not(:disabled) { background: #eef3e8; }
 #cards-view #card-list .card-list-item.selected { background: #b6dcb9; border-bottom-color: #91bd98; }
 #cards-view #card-list .card-type-icon { width: 1.65rem; height: 1.65rem; }
-#cards-view #card-list .patron-type-icon { display: block; border-radius: 0; background-color: currentColor; -webkit-mask: url('./assets/Type_Patron.png') center / contain no-repeat; mask: url('./assets/Type_Patron.png') center / contain no-repeat; }
+#cards-view #card-list .patron-type-icon { display: block; border-radius: 0; background: url('./assets/Type_Patron.png') center / contain no-repeat; }
 #cards-view #card-list .patron-type-icon.terrain-flow { color: #35758e; }
 #cards-view #card-list .patron-type-icon.terrain-radiance { color: #a87318; }
 #cards-view #card-list .patron-type-icon.terrain-symbiosis { color: #784997; }

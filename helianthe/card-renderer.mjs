@@ -148,14 +148,7 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
   const rightIconX = 676;
   function drawTypeIcon(x) {
     if (!symbol) return;
-    const icon = document.createElement('canvas');
-    icon.width = 44; icon.height = 44;
-    const iconCtx = icon.getContext('2d');
-    iconCtx.drawImage(symbol, 0, 0, 44, 44);
-    iconCtx.globalCompositeOperation = 'source-in';
-    iconCtx.fillStyle = terrain ? terrainColors[terrain] : '#909592';
-    iconCtx.fillRect(0, 0, 44, 44);
-    ctx.drawImage(icon, x - 22, 158);
+    ctx.drawImage(symbol, x - 22, 158, 44, 44);
   }
   if (!options.hideIcons) {
     drawTypeIcon(leftIconX); drawTypeIcon(rightIconX);
