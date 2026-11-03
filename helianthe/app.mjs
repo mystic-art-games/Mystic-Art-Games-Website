@@ -880,18 +880,20 @@ function openCardField(field) {
   const form = $('#card-form');
   const sources = {
     title: form.elements.title.closest('label'),
-    identity: form.elements.card_type.closest('.two-cols'),
+    type: form.elements.card_type.closest('label'),
+    terrain: form.elements.terrain.closest('label'),
     artwork: $('#card-artwork').closest('label'),
     effect: form.elements.effect.closest('label'),
     authors: $('#card-author-options').closest('fieldset'),
   };
-  const titles = { title: 'Edit title', identity: 'Edit type and Terrain', artwork: 'Choose artwork', effect: 'Edit effect', authors: 'Edit Author' };
+  const titles = { title: 'Edit title', type: 'Edit card type', terrain: 'Edit faction color', artwork: 'Choose artwork', effect: 'Edit effect', authors: 'Edit Author' };
   const source = sources[field];
   if (!source) return;
   cardFieldArtworkFile = null;
   const content = $('#card-field-content');
   $('#card-field-status').hidden = true;
   content.replaceChildren(source.cloneNode(true));
+  if (field === 'terrain') content.querySelector('label').firstChild.textContent = 'Color (Terrain)';
   if (field === 'authors') {
     content.replaceChildren();
     const label = document.createElement('label');
@@ -917,11 +919,6 @@ function openCardField(field) {
     else if (copy.type !== 'file') copy.value = original.value;
     copy.removeAttribute('id');
     if (copy.type === 'file') copy.addEventListener('change', () => { cardFieldArtworkFile = copy.files?.[0] || null; });
-    if (copy.name === 'card_type') copy.addEventListener('change', () => {
-      const terrainCopy = content.querySelector('[name="terrain"]');
-      terrainCopy.required = copy.value !== 'Event';
-      if (terrainCopy.required && !terrainCopy.value) terrainCopy.value = 'Symbiosis';
-    });
   }
   const terrainCopy = content.querySelector('[name="terrain"]');
   if (terrainCopy) {
@@ -950,7 +947,8 @@ function cardFieldAt(event) {
   const box = event.currentTarget.getBoundingClientRect();
   const x = (event.clientX - box.left) * 750 / box.width;
   const y = (event.clientY - box.top) * 1050 / box.height;
-  if (y < 200) return x < 145 || x > 605 ? 'identity' : 'title';
+  if (y < 200 && (x < 145 || x > 605)) return y < 130 ? 'type' : 'terrain';
+  if (y < 200) return 'title';
   if (y < 640) return 'artwork';
   if (y < 940) return 'effect';
   return 'authors';
@@ -1928,7 +1926,7 @@ $('#new-card').addEventListener('click', async () => {
 $('#close-mobile-editor').addEventListener('click', closeMobileEditor);
 $('#card-canvas').tabIndex = 0;
 $('#card-canvas').addEventListener('click', event => openCardField(cardFieldAt(event)));
-$('#card-canvas').addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openCardField('identity'); } });
+$('#card-canvas').addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openCardField('type'); } });
 function editDeckPreviewAt(event, card) {
   if (!requireCardEdit(card)) return;
   selectCard(card);
@@ -1942,7 +1940,7 @@ $('#deck-card-canvas').addEventListener('keydown', event => {
   const card = state.deckPreviewCard;
   if (!requireCardEdit(card)) return;
   selectCard(card);
-  openCardField('identity');
+  openCardField('type');
 });
 $('#deck-patron-canvas').tabIndex = 0;
 $('#deck-patron-canvas').addEventListener('click', event => {
@@ -1957,7 +1955,7 @@ $('#deck-patron-canvas').addEventListener('keydown', event => {
   const card = patronCardByName(patron?.name);
   if (!requireCardEdit(card)) return;
   selectCard(card);
-  openCardField('identity');
+  openCardField('type');
 });
 $('#close-card-field').addEventListener('click', closeCardField);
 for (const id of ['card-edit-denied-backdrop', 'close-card-edit-denied', 'confirm-card-edit-denied']) {
@@ -2114,6 +2112,12 @@ async function saveCardForm() {
       modalStatus.textContent = invalidField.validationMessage || 'Check the card fields before saving.';
       modalStatus.hidden = false;
     } else status(invalidField.validationMessage || 'Check the card fields before saving.', true);
+    return;
+  }
+  const selectedType = modalContent.querySelector('[name="card_type"]')?.value || form.elements.card_type.value;
+  if (modalOpen && ['Entity', 'Patron'].includes(selectedType) && !form.elements.terrain.value) {
+    modalStatus.textContent = 'Choose a Terrain using the faction color circle before changing to this card type.';
+    modalStatus.hidden = false;
     return;
   }
   savingCard = true;
