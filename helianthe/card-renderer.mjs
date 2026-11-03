@@ -182,7 +182,8 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
   function drawTypeIcon({ x, y }) {
     if (!symbol) return;
     ctx.save();
-    ctx.filter = terrain ? ({ Symbiosis: 'hue-rotate(240deg)', Flow: 'hue-rotate(160deg)', Verdant: 'hue-rotate(95deg)' }[terrain] || 'none') : 'grayscale(1)';
+    const hue = { Symbiosis: 'hue-rotate(240deg)', Flow: 'hue-rotate(160deg)', Verdant: 'hue-rotate(95deg)' }[terrain] || '';
+    ctx.filter = terrain ? `${hue} saturate(1.8) brightness(.72)` : 'grayscale(1) brightness(.72)';
     drawCenteredIcon(symbol, { x, y }, 84);
     ctx.restore();
   }
