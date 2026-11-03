@@ -120,7 +120,7 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
   drawFrameWithBackground(ctx, frame, background, terrain ? terrainColors[terrain] : '#909592');
 
   // The artwork is drawn inside the blank window, leaving the painted border visible.
-  const illustrationBox = { x: 108, y: 156, width: 534, height: 470 };
+  const illustrationBox = { x: 55, y: 145, width: 640, height: 482 };
   if (art) {
     ctx.save();
     ctx.beginPath();
