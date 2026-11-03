@@ -136,10 +136,10 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
     if (ctx.measureText(title).width <= 410) { titleSize = size; break; }
   }
   const titleCenterY = 87;
-  // Circle centers measured on the source frame, mapped through its inset crop.
+  // Frame and icons share the inset transform already applied to the context.
   const framePoint = (x, y) => ({
-    x: (x - inset) * 750 / (frame.naturalWidth - 2 * inset),
-    y: (y - inset) * 1050 / (frame.naturalHeight - 2 * inset),
+    x: x * 750 / frame.naturalWidth,
+    y: y * 1050 / frame.naturalHeight,
   });
   const upperIconCenters = [[112, 112], [912, 112]].map(([x, y]) => framePoint(x, y));
   const lowerIconCenters = [[85, 245], [939, 245]].map(([x, y]) => framePoint(x, y));
