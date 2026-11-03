@@ -67,6 +67,10 @@ select option { min-width: 0; max-width: 100%; overflow: hidden; text-overflow: 
 .favorite-card-option { display: flex; align-items: center; gap: .55rem; width: 100%; border: 0; border-radius: 8px; background: transparent; text-align: left; }
 .favorite-card-option:hover:not(:disabled) { background: #e0ebda; }
 .favorite-card-option-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.favorite-card-option-label.terrain-flow { color: #35758e; }
+.favorite-card-option-label.terrain-radiance { color: #a87318; }
+.favorite-card-option-label.terrain-symbiosis { color: #784997; }
+.favorite-card-option-label.terrain-verdant { color: #488057; }
 .favorite-card-menu { position: absolute; z-index: 25; top: calc(100% + .25rem); left: 0; right: 0; max-height: 280px; overflow-y: auto; padding: .25rem; border: 1px solid #a4b6a5; border-radius: 10px; background: #fffefa; box-shadow: 0 10px 24px #16373733; }
 .favorite-card-hover-preview { position: fixed; z-index: 60; width: 250px; height: 350px; pointer-events: none; filter: drop-shadow(0 10px 20px #16373755); }
 .favorite-card-hover-preview canvas { display: block; width: 100%; height: 100%; border-radius: 12px; background: #ece6d8; }
@@ -1075,6 +1079,10 @@ body.dark-mode #card-form select[name="terrain"]:disabled { border-color: #4d625
 body.dark-mode .favorite-card-trigger { border-color: #587965; background: #0d2b23; color: #e5eee0; }
 body.dark-mode .favorite-card-menu { border-color: #587965; background: #12372c; box-shadow: 0 10px 24px #0008; }
 body.dark-mode .favorite-card-option:hover:not(:disabled) { background: #285944; }
+body.dark-mode .favorite-card-option-label.terrain-flow { color: #77b8d1; }
+body.dark-mode .favorite-card-option-label.terrain-radiance { color: #e0b65a; }
+body.dark-mode .favorite-card-option-label.terrain-symbiosis { color: #bc91dc; }
+body.dark-mode .favorite-card-option-label.terrain-verdant { color: #91c99e; }
 body.dark-mode #profile-form .favorite-card-trigger { border-color: #587965; background: #0d2b23; color: #e5eee0; }
 body.dark-mode #profile-form .favorite-card-option { background: transparent; color: #e5eee0; border-color: transparent; }
 body.dark-mode #profile-form .favorite-card-option:hover:not(:disabled) { background: #285944; color: #e5eee0; }
