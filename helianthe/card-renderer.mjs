@@ -103,7 +103,7 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
     canvas.parentElement.dataset.terrain = terrain || (type === 'Event' ? 'Event' : '');
   }
   const frameName = `CardFrame_${terrain || 'Event'}.png`;
-  const symbolName = type === 'Patron' ? 'Type_Patron.png' : type === 'Event' ? 'Type_Event.png' : 'Type_Entity.png';
+  const symbolName = type === 'Patron' ? 'Type_Patron_v2.png' : type === 'Event' ? 'Type_Event.png' : 'Type_Entity.png';
   const backgroundName = terrain ? terrainBackgrounds[terrain] : type === 'Event' ? eventBackground : null;
   const [frame, art, symbol, background] = await Promise.all([
     loadImage(asset(frameName)), loadImage(artworkUrl || DEFAULT_ARTWORK), loadImage(asset(symbolName)),
@@ -148,9 +148,12 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
   const rightIconX = 676;
   function drawTypeIcon(x) {
     if (!symbol) return;
+    const scale = Math.min(44 / symbol.width, 44 / symbol.height);
+    const width = symbol.width * scale;
+    const height = symbol.height * scale;
     ctx.save();
     ctx.filter = { Symbiosis: 'hue-rotate(240deg)', Flow: 'hue-rotate(160deg)', Verdant: 'hue-rotate(95deg)' }[terrain] || 'none';
-    ctx.drawImage(symbol, x - 22, 158, 44, 44);
+    ctx.drawImage(symbol, x - width / 2, 180 - height / 2, width, height);
     ctx.restore();
   }
   if (!options.hideIcons) {
