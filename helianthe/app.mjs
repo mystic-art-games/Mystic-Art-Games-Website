@@ -1,6 +1,6 @@
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.mjs';
 import { createCommunityApi, resolveLegacyCardAuthors } from './community-api.mjs';
-import { renderCard, downloadCardPNG } from './card-renderer.mjs?v=art-window-cover-1';
+import { renderCard, downloadCardPNG } from './card-renderer.mjs?v=colored-events-1';
 import { PATRONS } from './patrons.mjs';
 
 document.title = ['127.0.0.1', 'localhost', '::1'].includes(window.location.hostname)
@@ -529,7 +529,7 @@ function cardTypeIconElement(card) {
   const radianceEntity = card.card_type === 'Entity' && card.terrain === 'Radiance';
   const icon = card.card_type === 'Event' || radianceEntity ? document.createElement('span') : document.createElement('img');
   icon.className = `card-type-icon${card.card_type === 'Event' ? ' event-type-icon' : ''}${radianceEntity ? ' radiance-entity-type-icon' : ''}`;
-  if (card.card_type === 'Event') icon.style.setProperty('--event-icon-color', '#909592');
+  if (card.card_type === 'Event') icon.style.setProperty('--event-icon-color', eventIconColor(card.terrain));
   else if (radianceEntity) icon.style.setProperty('--event-icon-color', eventIconColor(card.terrain));
   else { icon.src = cardTypeIcon(card); icon.alt = ''; }
   icon.title = card.card_type;
@@ -550,6 +550,21 @@ function eventIconColor(terrain) {
 
 function terrainClass(terrain) {
   return ['Symbiosis', 'Flow', 'Verdant', 'Radiance'].includes(terrain) ? `terrain-${terrain.toLowerCase()}` : 'terrain-event';
+}
+
+function cardListIcons(card) {
+  const icons = document.createElement('span');
+  icons.className = 'card-list-icons';
+  const faction = document.createElement('span');
+  faction.className = `card-faction-icon ${terrainClass(card.terrain)}`;
+  faction.title = card.terrain || 'No Terrain';
+  faction.setAttribute('aria-hidden', 'true');
+  const type = document.createElement('span');
+  type.className = `card-kind-icon kind-${card.card_type.toLowerCase()}`;
+  type.title = card.card_type;
+  type.setAttribute('aria-hidden', 'true');
+  icons.append(faction, type);
+  return icons;
 }
 
 function button(label, action, className = '') {
@@ -607,16 +622,12 @@ function refreshCardAuthorFilter() {
 function syncCardTypeFilter() {
   const type = $('#card-filter-type');
   const terrain = $('#card-filter-terrain');
-  const isEvent = type.value === 'Event';
-  terrain.disabled = isEvent;
-  if (isEvent) terrain.value = 'none';
-  else if (!type.value) terrain.value = '';
+  if (!type.value) terrain.value = '';
 }
 
 function matchesCardTerrainFilter(card, terrain) {
   if (!terrain) return true;
-  const cardTerrain = card.card_type === 'Event' ? '' : card.terrain;
-  return terrain === 'none' ? !cardTerrain : cardTerrain === terrain;
+  return terrain === 'none' ? !card.terrain : card.terrain === terrain;
 }
 
 function renderCardList() {
@@ -635,13 +646,11 @@ function renderCardList() {
   })) {
     const row = button('', () => selectCard(card, { openMobile: true }), `card-list-item${state.card?.id === card.id ? ' selected' : ''}`);
     row.dataset.cardId = card.id;
-    row.setAttribute('aria-label', `${card.card_type}: ${card.title}`);
-    const icon = card.patron ? document.createElement('span') : cardTypeIconElement(card);
-    if (card.patron) { icon.className = `card-type-icon patron-type-icon ${terrainClass(card.terrain)}`; icon.setAttribute('aria-hidden', 'true'); }
+    row.setAttribute('aria-label', `${card.terrain || 'Neutral'} ${card.card_type}: ${card.title}`);
     const title = document.createElement('span');
-    title.className = `card-list-title ${card.card_type === 'Event' ? 'terrain-event' : terrainClass(card.terrain)}`;
+    title.className = `card-list-title ${terrainClass(card.terrain)}`;
     title.textContent = card.title;
-    row.append(icon, title);
+    row.append(cardListIcons(card), title);
     const meta = document.createElement('small');
     meta.className = 'card-list-owner';
     if (card.patron && card.author_ids?.length) meta.append(authorDisplayElement(card.author_ids));
@@ -812,11 +821,8 @@ function requireAccount() {
 
 function syncTerrain() {
   const form = $('#card-form');
-  const isEvent = form.elements.card_type.value === 'Event';
   const required = ['Entity', 'Patron'].includes(form.elements.card_type.value);
-  form.elements.terrain.disabled = isEvent;
   form.elements.terrain.required = required;
-  if (isEvent) form.elements.terrain.value = '';
   if (required && !form.elements.terrain.value) form.elements.terrain.value = 'Symbiosis';
 }
 
@@ -912,11 +918,8 @@ function openCardField(field) {
     if (copy.type === 'file') copy.addEventListener('change', () => { cardFieldArtworkFile = copy.files?.[0] || null; });
     if (copy.name === 'card_type') copy.addEventListener('change', () => {
       const terrainCopy = content.querySelector('[name="terrain"]');
-      const isEvent = copy.value === 'Event';
-      terrainCopy.disabled = isEvent;
-      terrainCopy.required = !isEvent;
-      if (isEvent) terrainCopy.value = '';
-      else if (!terrainCopy.value) terrainCopy.value = 'Symbiosis';
+      terrainCopy.required = copy.value !== 'Event';
+      if (terrainCopy.required && !terrainCopy.value) terrainCopy.value = 'Symbiosis';
     });
   }
   const terrainCopy = content.querySelector('[name="terrain"]');
@@ -1093,11 +1096,12 @@ function renderDeckCards() {
     const row = document.createElement('div'); row.className = `card-list-item deck-card-row${state.deckPreviewCard?.id === card.id ? ' selected' : ''}`;
     row.dataset.cardId = card.id;
     row.setAttribute('role', 'button');
+    row.setAttribute('aria-label', `${card.terrain || 'Neutral'} ${card.card_type}: ${card.title}`);
     row.tabIndex = 0;
     row.addEventListener('click', () => showDeckCardPreview(card));
     row.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); showDeckCardPreview(card); } });
-    row.append(cardTypeIconElement(card));
-    const label = document.createElement('span'); label.className = `card-list-title ${card.card_type === 'Event' ? 'terrain-event' : terrainClass(card.terrain)}`; label.textContent = card.title;
+    row.append(cardListIcons(card));
+    const label = document.createElement('span'); label.className = `card-list-title ${terrainClass(card.terrain)}`; label.textContent = card.title;
     row.append(label);
     if (mine) {
       const controls = document.createElement('span');
@@ -1187,7 +1191,7 @@ function cardSearchOption(card, onSelect) {
   option.setAttribute('role', 'option');
   option.append(cardTypeIconElement(card));
   const title = document.createElement('span');
-  title.className = `card-list-title ${card.card_type === 'Event' ? 'terrain-event' : terrainClass(card.terrain)}`;
+  title.className = `card-list-title ${terrainClass(card.terrain)}`;
   title.textContent = card.title;
   option.append(title);
   option.addEventListener('click', onSelect);
@@ -2125,7 +2129,6 @@ async function saveCardForm() {
         if (['title', 'card_type', 'terrain', 'effect'].includes(field.name)) values[field.name] = field.value;
       }
     }
-    if (values.card_type === 'Event') values.terrain = '';
     const modalAuthor = modalOpen ? modalContent.querySelector('select:not([name])') : null;
     values.author_ids = modalAuthor ? [modalAuthor.value].filter(Boolean) : selectedAuthorIds($('#card-author-options'));
     values.author = authorNames(values.author_ids, state.user?.id).join(', ');
