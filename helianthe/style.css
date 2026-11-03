@@ -576,7 +576,7 @@ body.dark-mode .card-filters :is(#card-filter-terrain, #deck-card-filter-terrain
 .card-faction-icon.terrain-event { background-image: url('./assets/Faction_Nomads.png'); }
 .card-kind-icon { background-position: center; background-size: contain; background-repeat: no-repeat; }
 .card-kind-icon.kind-entity { background-image: url('./assets/Type_Entity_Simple.png'); }
-.card-kind-icon.kind-event { background-image: url('./assets/Type_Event_Scroll.png'); }
+.card-kind-icon.kind-event { background-image: url('./assets/Type_Event_Scroll_v2.png'); }
 .card-kind-icon.kind-patron { background-image: url('./assets/Type_Patron_Simple.png'); }
 .card-kind-icon.terrain-symbiosis { filter: hue-rotate(240deg); }
 .card-kind-icon.terrain-flow { filter: hue-rotate(160deg); }
