@@ -102,7 +102,7 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
   if (canvas.parentElement?.classList.contains('card-terrain-aura')) {
     canvas.parentElement.dataset.terrain = terrain || (type === 'Event' ? 'Event' : '');
   }
-  const frameName = `CardFrame_${terrain || 'Event'}.png`;
+  const frameName = terrain ? `CardFrame_${terrain}.png` : 'CardFrame_Event_IntegratedOrnaments.png';
   const symbolName = type === 'Patron' ? 'Type_Patron_Simple.png' : type === 'Event' ? 'Type_Event_Scroll_v2.png' : 'Type_Entity_Simple.png';
   const backgroundName = terrain ? terrainBackgrounds[terrain] : type === 'Event' ? eventBackground : null;
   const [frame, art, symbol, background, neutralFaction] = await Promise.all([
