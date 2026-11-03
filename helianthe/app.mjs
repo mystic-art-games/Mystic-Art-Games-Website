@@ -1,6 +1,6 @@
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.mjs';
 import { createCommunityApi, resolveLegacyCardAuthors } from './community-api.mjs';
-import { renderCard, downloadCardPNG } from './card-renderer.mjs?v=colored-events-1';
+import { renderCard, downloadCardPNG } from './card-renderer.mjs?v=card-type-icons-2';
 import { PATRONS } from './patrons.mjs';
 
 document.title = ['127.0.0.1', 'localhost', '::1'].includes(window.location.hostname)
@@ -520,26 +520,10 @@ function renderDeckAuthorSelect(selectedId) {
 }
 
 function cardTypeIconElement(card) {
-  if (card.card_type === 'Patron') {
-    const icon = document.createElement('span');
-    icon.className = `card-type-icon patron-type-icon ${terrainClass(card.terrain)}`;
-    icon.title = card.card_type;
-    return icon;
-  }
-  const radianceEntity = card.card_type === 'Entity' && card.terrain === 'Radiance';
-  const icon = card.card_type === 'Event' || radianceEntity ? document.createElement('span') : document.createElement('img');
-  icon.className = `card-type-icon${card.card_type === 'Event' ? ' event-type-icon' : ''}${radianceEntity ? ' radiance-entity-type-icon' : ''}`;
-  if (card.card_type === 'Event') icon.style.setProperty('--event-icon-color', eventIconColor(card.terrain));
-  else if (radianceEntity) icon.style.setProperty('--event-icon-color', eventIconColor(card.terrain));
-  else { icon.src = cardTypeIcon(card); icon.alt = ''; }
+  const icon = document.createElement('span');
+  icon.className = `card-type-icon card-kind-icon kind-${card.card_type.toLowerCase()} ${terrainClass(card.terrain)}`;
   icon.title = card.card_type;
   return icon;
-}
-
-function cardTypeIcon(card) {
-  if (card.card_type === 'Event') return './assets/Event.png';
-  const terrain = ['Symbiosis', 'Flow', 'Verdant', 'Radiance'].includes(card.terrain) ? card.terrain : 'Flow';
-  return `./assets/Entity_${terrain}.png`;
 }
 
 function eventIconColor(terrain) {
@@ -560,7 +544,7 @@ function cardListIcons(card) {
   faction.title = card.terrain || 'No Terrain';
   faction.setAttribute('aria-hidden', 'true');
   const type = document.createElement('span');
-  type.className = `card-kind-icon kind-${card.card_type.toLowerCase()}`;
+  type.className = `card-kind-icon kind-${card.card_type.toLowerCase()} ${terrainClass(card.terrain)}`;
   type.title = card.card_type;
   type.setAttribute('aria-hidden', 'true');
   icons.append(faction, type);

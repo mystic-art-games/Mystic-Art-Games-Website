@@ -103,7 +103,7 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
     canvas.parentElement.dataset.terrain = terrain || (type === 'Event' ? 'Event' : '');
   }
   const frameName = `CardFrame_${terrain || 'Event'}.png`;
-  const symbolName = type === 'Patron' ? 'Patron.png' : type === 'Event' ? 'CardType_Event.png' : 'CardType_Entity.png';
+  const symbolName = type === 'Patron' ? 'Type_Patron.png' : type === 'Event' ? 'Type_Event.png' : 'Type_Entity.png';
   const backgroundName = terrain ? terrainBackgrounds[terrain] : type === 'Event' ? eventBackground : null;
   const [frame, art, symbol, background] = await Promise.all([
     loadImage(asset(frameName)), loadImage(artworkUrl || DEFAULT_ARTWORK), loadImage(asset(symbolName)),
@@ -148,11 +148,14 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
   const rightIconX = 676;
   function drawTypeIcon(x) {
     if (!symbol) return;
-    if (type === 'Patron') ctx.drawImage(symbol, x - 22, 158, 44, 44);
-    else {
-      const crop = type === 'Event' ? [370, 360, 515, 550] : [310, 250, 640, 760];
-      ctx.drawImage(symbol, ...crop, x - 22, 158, 44, 44);
-    }
+    const icon = document.createElement('canvas');
+    icon.width = 44; icon.height = 44;
+    const iconCtx = icon.getContext('2d');
+    iconCtx.drawImage(symbol, 0, 0, 44, 44);
+    iconCtx.globalCompositeOperation = 'source-in';
+    iconCtx.fillStyle = terrain ? terrainColors[terrain] : '#909592';
+    iconCtx.fillRect(0, 0, 44, 44);
+    ctx.drawImage(icon, x - 22, 158);
   }
   if (!options.hideIcons) {
     drawTypeIcon(leftIconX); drawTypeIcon(rightIconX);
