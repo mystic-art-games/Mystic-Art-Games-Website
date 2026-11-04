@@ -13,7 +13,7 @@
   <link rel="apple-touch-icon" href="../images/helianthe-logo.png?v=helianthe-logo-1">
   <link rel="manifest" href="./manifest.webmanifest">
   <title>Helianthe</title>
-  <link rel="stylesheet" href="./style.css?v=helianthe-ui-138">
+  <link rel="stylesheet" href="./style.css?v=helianthe-ui-139">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script type="module" src="./app.mjs?v=helianthe-ui-93"></script>
 </head>
@@ -206,7 +206,6 @@
             <div class="list-table-head deck-card-list-head" aria-hidden="true"><span></span><span>Card name</span><span>Copies</span></div>
             <div id="deck-cards" class="deck-cards"></div>
           </div>
-          <section id="deck-summary" class="deck-summary" aria-label="Deck card summary"></section>
         </section>
         <section class="deck-card-preview-shell" aria-label="Selected card preview">
           <button id="close-deck-card-preview" class="deck-card-preview-close" type="button" aria-label="Close card preview">×</button>
@@ -221,6 +220,7 @@
           <p id="deck-patron-edit-hint" class="deck-preview-edit-hint" hidden>Click a card area to edit that element.</p>
           <div class="card-preview-actions deck-preview-actions"><button id="patron-add-to-deck" class="add-to-deck-button action-add-save" type="button" aria-label="Add to Deck" title="Add to Deck" disabled hidden>Add to Deck</button><button id="patron-download-png" class="download-png-button" type="button" aria-label="Download PNG" title="Download PNG" disabled>Download PNG</button><button id="patron-delete-card" class="delete-card-button danger-button action-delete" type="button" aria-label="Delete Card" title="Delete Card" disabled hidden>Delete Card</button></div>
         </section>
+        <section id="deck-summary" class="deck-summary" aria-label="Deck card summary"></section>
       </div>
     </section>
   </main>
