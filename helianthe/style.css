@@ -811,7 +811,7 @@ body.dark-mode #card-edit-hint { color: #fff; }
   color: transparent !important;
   font-size: 0;
 }
-.card-preview-actions :is(#download-png, #deck-download-png, #deck-delete-card).is-rendering:disabled { opacity: 1; }
+.card-preview-actions :is(#download-png, #deck-download-png, #deck-delete-card, #patron-download-png, #patron-delete-card).is-rendering:disabled { opacity: 1; }
 .download-png-button::before {
   content: '';
   width: 100%;

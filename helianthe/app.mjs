@@ -1362,38 +1362,54 @@ function renderDeckSummary() {
   summary.append(summaryGroup(typeCounts), summaryGroup(terrainCounts, true));
 }
 
-async function renderDeckPatron(patron) {
+async function renderDeckPatron(patron, { clearPrevious = false } = {}) {
   const shell = $('.deck-patron-preview-shell');
   const canvas = $('#deck-patron-canvas');
+  const downloadButton = $('#patron-download-png');
+  const deleteButton = $('#patron-delete-card');
+  const keepExistingPreview = Boolean(patron && !clearPrevious && !shell.classList.contains('is-empty') && canvas.style.visibility !== 'hidden');
   updateAddToDeckButtons(null);
   const serial = ++state.deckPatronSerial;
   shell.className = `deck-patron-preview-shell patron-faction-${(patron?.faction || 'none').toLowerCase().replaceAll(/[^a-z]+/g, '-')}${patron ? '' : ' is-empty'}`;
   $('#deck-patron-edit-hint').hidden = !patron || !state.user;
-  canvas.tabIndex = patron ? 0 : -1;
-  canvas.setAttribute('aria-disabled', String(!patron));
-  $('#patron-download-png').disabled = true;
-  $('#patron-delete-card').disabled = true;
+  canvas.tabIndex = -1;
+  canvas.setAttribute('aria-disabled', 'true');
+  canvas.style.pointerEvents = patron ? 'none' : '';
+  canvas.style.visibility = patron && !keepExistingPreview ? 'hidden' : '';
+  if (!keepExistingPreview) canvas.parentElement.dataset.terrain = '';
+  downloadButton.classList.toggle('is-rendering', Boolean(keepExistingPreview && (!downloadButton.disabled || downloadButton.classList.contains('is-rendering'))));
+  downloadButton.disabled = true;
+  deleteButton.classList.toggle('is-rendering', Boolean(keepExistingPreview && (!deleteButton.disabled || deleteButton.classList.contains('is-rendering'))));
+  deleteButton.disabled = true;
   if (!patron) return;
   const patronCard = patronCardByName(patron.name);
-  if (patronCard) {
-    let artworkUrl = '';
-    try {
-      if (patronCard.artwork_id) {
-        try {
-          const blob = await api.fetchArtwork(patronCard.artwork_id);
-          if (serial !== state.deckPatronSerial) return;
-          artworkUrl = URL.createObjectURL(blob);
-        } catch { /* Keep the default illustration if the custom one is unavailable. */ }
-      }
-      const result = await renderCard(canvas, patronCard, artworkUrl, () => serial === state.deckPatronSerial).catch(() => null);
-      if (serial === state.deckPatronSerial) {
-        $('#patron-download-png').disabled = !result || result.clipped || result.cancelled;
-        $('#patron-delete-card').disabled = !state.user;
-      }
-    } finally {
-      if (artworkUrl) URL.revokeObjectURL(artworkUrl);
-    }
+  if (!patronCard) return;
+  let artworkUrl = '';
+  if (patronCard.artwork_id) {
+    try { artworkUrl = await getCardArtworkUrl(patronCard.artwork_id); }
+    catch { /* Keep the default illustration if the custom one is unavailable. */ }
   }
+  if (serial !== state.deckPatronSerial) return;
+  const stagedAura = document.createElement('div');
+  stagedAura.className = 'card-terrain-aura';
+  const stagedCanvas = document.createElement('canvas');
+  stagedAura.append(stagedCanvas);
+  const result = await renderCard(stagedCanvas, patronCard, artworkUrl, () => serial === state.deckPatronSerial).catch(() => null);
+  if (serial !== state.deckPatronSerial) return;
+  downloadButton.classList.remove('is-rendering');
+  deleteButton.classList.remove('is-rendering');
+  if (!result || result.cancelled) return;
+  canvas.width = stagedCanvas.width;
+  canvas.height = stagedCanvas.height;
+  canvas.getContext('2d').drawImage(stagedCanvas, 0, 0);
+  canvas.parentElement.dataset.terrain = stagedAura.dataset.terrain;
+  canvas.setAttribute('aria-label', stagedCanvas.getAttribute('aria-label'));
+  canvas.style.visibility = '';
+  canvas.style.pointerEvents = '';
+  canvas.tabIndex = 0;
+  canvas.setAttribute('aria-disabled', 'false');
+  downloadButton.disabled = result.clipped;
+  deleteButton.disabled = !state.user;
 }
 
 async function showDeckCardPreview(card) {
@@ -1414,6 +1430,7 @@ async function showDeckCardPreview(card) {
   canvas.setAttribute('aria-disabled', 'true');
   canvas.style.pointerEvents = card ? 'none' : '';
   canvas.style.visibility = card && !keepExistingPreview ? 'hidden' : '';
+  if (!card) canvas.parentElement.dataset.terrain = '';
   downloadButton.classList.toggle('is-rendering', Boolean(keepExistingPreview && (!downloadButton.disabled || downloadButton.classList.contains('is-rendering'))));
   downloadButton.disabled = true;
   deleteButton.classList.toggle('is-rendering', Boolean(keepExistingPreview && (!deleteButton.disabled || deleteButton.classList.contains('is-rendering'))));
@@ -1458,9 +1475,9 @@ async function selectDeck(deck) {
   closeDeckEdit();
   state.deckCards = [];
   $('#decks-view').classList.toggle('deck-detail-open', Boolean(deck));
+  void renderDeckPatron(patronByName(deck?.patron_name), { clearPrevious: true });
   renderDeckList();
   renderDeckHeader();
-  renderDeckCards();
   const canDelete = Boolean(deck && state.user && (deck.owner_id === state.user.id || state.isAdmin));
   $('#duplicate-deck').disabled = !deck || !state.user;
   $('#delete-deck').disabled = !canDelete;
@@ -1471,7 +1488,6 @@ async function selectDeck(deck) {
   const patronSelect = form.elements.patron_name;
   refreshDeckPatronOptions();
   patronSelect.value = patronByName(deck?.patron_name)?.name || '';
-  void renderDeckPatron(patronByName(deck?.patron_name));
   renderDeckAuthorSelect(deck?.author_ids?.[0] || deck?.owner_id || state.user?.id);
   $('#deck-cover').value = '';
   $('#deck-cover-button').disabled = !deck || !canEditDeck(deck) || savingDeckCover;
@@ -1667,7 +1683,7 @@ function selectProfile(profile) {
 async function reloadCollections() {
   [state.cards, state.decks, state.profiles] = await Promise.all([api.listCards(), api.listDecks(), api.listProfiles()]);
   state.cards = resolveLegacyCardAuthors(state.cards, state.profiles);
-  preloadCardArtwork(state.cards);
+  preloadCardArtwork([...state.cards, ...patronCards]);
   refreshDeckPatronOptions();
   const savedPatrons = savedDeckPatrons();
   state.decks = state.decks.map(deck => deck.patron_name || !savedPatrons[deck.id] ? deck : { ...deck, patron_name: savedPatrons[deck.id] });
