@@ -499,7 +499,7 @@ body.dark-mode .profile-save-status.error { color: #ef9187; }
 .deck-card-filters-row { display: grid; grid-template-columns: minmax(0, 1fr); align-items: end; gap: .65rem; width: 100%; align-self: stretch; }
 .deck-card-filters-row .card-filters { grid-column: 1 / -1; min-width: 0; margin-top: 0; }
 .card-search-field, .deck-card-search-field { position: relative; min-width: 0; }
-.deck-card-search-field { width: min(100%, 460px); }
+.deck-card-search-field { grid-column: 1 / -1; width: min(100%, 460px); }
 .card-search-field #card-search { margin-top: 0; }
 .deck-card-search-label { display: block; margin: 0; color: #5a6e64; font-size: .78rem; font-weight: 700; }
 .deck-card-filters-row #deck-card-search { width: 100%; min-width: 0; margin: .2rem 0 0; box-sizing: border-box; }
@@ -551,6 +551,11 @@ body.dark-mode .card-search-suggestions .card-search-option:hover, body.dark-mod
   .deck-card-filters-row .card-filters { grid-template-columns: max-content max-content minmax(150px, 220px); width: min(100%, 600px); }
   #deck-card-filter-terrain { margin-right: 1.1rem; }
   .deck-card-filters-row .filter-author-field { display: flex; grid-column: auto; flex-direction: column; align-items: stretch; gap: .2rem; }
+}
+@media (min-width: 800px) {
+  .deck-card-filters-row .card-filters { grid-template-columns: max-content max-content minmax(150px, 220px) minmax(180px, 1fr); column-gap: 1.55rem; width: min(100%, 920px); }
+  #deck-card-filter-type, #deck-card-filter-terrain { margin-right: 0; }
+  .deck-card-search-field { grid-column: auto; }
 }
 .cards-sidebar #card-search,
 .deck-card-filters-row #deck-card-search,
