@@ -648,7 +648,9 @@ function renderCardList() {
   const terrains = selectedFilterValues('card-filter-terrain');
   const list = $('#card-list');
   list.replaceChildren();
-  for (const card of [...state.cards, ...patronCards].sort((a, b) => a.title.localeCompare(b.title)).filter(item => {
+  const allCards = [...state.cards, ...patronCards];
+  renderCollectionSummary(allCards);
+  for (const card of allCards.sort((a, b) => a.title.localeCompare(b.title)).filter(item => {
     const matchesSearch = item.title.toLocaleLowerCase().includes(query);
     const matchesType = !types.size || types.has(item.card_type);
     const matchesAuthor = !author || (item.patron ? (authorNames(item.author_ids).includes(author) || (!item.author_ids?.length && item.author === author)) : authorNames(item.author_ids, item.owner_id).includes(author));
@@ -1280,6 +1282,30 @@ function renderDeckCardSuggestions() {
   input.setAttribute('aria-expanded', String(Boolean(cards.length)));
 }
 
+function summaryGroup(entries, colorized = false) {
+  const section = document.createElement('div');
+  section.className = `deck-summary-group ${colorized ? 'deck-summary-colors' : 'deck-summary-types'}`;
+  for (const [name, count] of Object.entries(entries)) {
+    const item = document.createElement('span');
+    item.className = `deck-summary-item${colorized ? ` ${terrainClass(name)}` : ''}`;
+    const displayName = { Entity: 'Entities', Event: 'Events', Patron: 'Patrons' }[name] || name;
+    item.textContent = `${displayName} ${count}`;
+    section.append(item);
+  }
+  return section;
+}
+
+function renderCollectionSummary(cards) {
+  const typeCounts = { 'All Cards': cards.length, Entity: 0, Event: 0, Patron: 0 };
+  const terrainCounts = { Symbiosis: 0, Flow: 0, Verdant: 0, Radiance: 0, Nomads: 0 };
+  for (const card of cards) {
+    if (Object.hasOwn(typeCounts, card.card_type)) typeCounts[card.card_type]++;
+    const terrain = Object.hasOwn(terrainCounts, card.terrain) ? card.terrain : 'Nomads';
+    terrainCounts[terrain]++;
+  }
+  $('#cards-summary').replaceChildren(summaryGroup(typeCounts), summaryGroup(terrainCounts, true));
+}
+
 function renderDeckSummary() {
   const summary = $('#deck-summary');
   summary.replaceChildren();
@@ -1297,20 +1323,7 @@ function renderDeckSummary() {
     if (Object.hasOwn(terrainCounts, card.terrain)) terrainCounts[card.terrain] += copies;
   }
 
-  const group = (entries, colorized = false) => {
-    const section = document.createElement('div');
-    section.className = `deck-summary-group ${colorized ? 'deck-summary-colors' : 'deck-summary-types'}`;
-    for (const [name, count] of Object.entries(entries)) {
-      const item = document.createElement('span');
-      item.className = `deck-summary-item${colorized ? ` ${terrainClass(name)}` : ''}`;
-      const displayName = name === 'Entity' ? 'Entities' : name === 'Event' ? 'Events' : name;
-      item.textContent = `${displayName} ${count}`;
-      section.append(item);
-    }
-    return section;
-  };
-
-  summary.append(group(typeCounts), group(terrainCounts, true));
+  summary.append(summaryGroup(typeCounts), summaryGroup(terrainCounts, true));
 }
 
 async function renderDeckPatron(patron) {
