@@ -472,7 +472,7 @@ body.dark-mode .patron-detail-panel::-webkit-scrollbar-thumb {
   #decks-view .deck-card-table { grid-column: 1; grid-row: 1 / 3; }
   #decks-view .deck-card-preview-shell { grid-column: 2; grid-row: 1; }
   #decks-view .deck-patron-preview-shell { grid-column: 3; grid-row: 1; }
-  #decks-view .deck-card-layout > .deck-summary { grid-column: 2 / 4; grid-row: 2; }
+  #decks-view .deck-card-layout > .deck-summary { grid-column: 2 / 4; grid-row: 2; margin-top: 1.5rem; }
   #decks-view .deck-card-table-shell .art-scroll-wrap > .deck-cards { height: 100%; max-height: none; overflow-y: auto; }
 }
 .profile-group-title { margin-top: .9rem; color: #50705e; font-size: .78rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
