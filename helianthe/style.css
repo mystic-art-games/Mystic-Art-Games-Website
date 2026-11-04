@@ -392,6 +392,8 @@ body.dark-mode .patron-detail-panel::-webkit-scrollbar-thumb {
   #about-view .about-principles .vision-board-link { grid-column: 2; grid-row: 2 / span 3; }
   #about-view > .about-panel .about-scroll-wrap { inset: .8rem; }
   #cards-view > .editor-panel {
+    display: flex;
+    flex-direction: column;
     border: 1px solid rgba(55, 91, 78, .46);
     border-image: none;
     border-radius: 22px;
@@ -408,8 +410,9 @@ body.dark-mode .patron-detail-panel::-webkit-scrollbar-thumb {
   #cards-view > .sidebar .card-table-shell { display: flex; flex: 1 1 auto; flex-direction: column; min-height: 0; overflow: hidden; }
   #cards-view > .sidebar #card-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
   #cards-view > .editor-panel { width: 320px; justify-self: start; }
-  #cards-view > .editor-panel .card-layout { display: flex; justify-content: center; width: 100%; }
+  #cards-view > .editor-panel .card-layout { display: flex; flex: 1 1 auto; justify-content: center; width: 100%; min-height: 0; }
   #cards-view > .editor-panel .card-preview-shell { align-self: stretch; width: 100%; padding-top: 1.6rem; }
+  #cards-view > .editor-panel .cards-summary { margin-top: auto; }
   #cards-view > .editor-panel { overflow: visible; }
   #cards-view > .editor-panel form label { margin: .25rem 0; }
   #cards-view > .editor-panel .actions { margin-top: .65rem; }
