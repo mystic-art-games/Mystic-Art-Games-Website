@@ -13,7 +13,7 @@
   <link rel="apple-touch-icon" href="../images/helianthe-logo.png?v=helianthe-logo-1">
   <link rel="manifest" href="./manifest.webmanifest">
   <title>Helianthe</title>
-  <link rel="stylesheet" href="./style.css?v=helianthe-ui-132">
+  <link rel="stylesheet" href="./style.css?v=helianthe-ui-133">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script type="module" src="./app.mjs?v=helianthe-ui-91"></script>
 </head>
@@ -188,17 +188,17 @@
           <div class="actions"><button id="edit-deck" type="button" hidden>Edit Deck</button><button id="duplicate-deck" type="button" hidden>Duplicate Deck</button><button id="delete-deck" class="danger-button action-delete" type="button" hidden>Delete Deck</button></div>
       </div>
       <div class="deck-card-filters-row">
-        <div class="card-filters" aria-label="Filter cards in this deck">
-          <div id="deck-card-filter-type" class="filter-icon-group" role="group" aria-label="Card types"><span class="filter-icon-label" aria-hidden="true">Type</span><div class="filter-icon-tiles"></div></div>
-          <div id="deck-card-filter-terrain" class="filter-icon-group" role="group" aria-label="Terrains"><span class="filter-icon-label" aria-hidden="true">Terrain</span><div class="filter-icon-tiles"></div></div>
-          <label class="filter-author-field"><span>Author</span><select id="deck-card-filter-author"><option value="">All Authors</option></select></label>
-        </div>
+        <label class="deck-patron-field">Patron<select name="patron_name" form="deck-form"></select></label>
         <div class="deck-card-search-field">
           <span class="deck-card-search-label">Add card to this deck</span>
           <input id="deck-card-search" type="search" placeholder="Search by card name…" aria-label="Search cards in this deck by name" aria-controls="deck-card-search-suggestions" aria-expanded="false" autocomplete="off">
           <div id="deck-card-search-suggestions" class="card-search-suggestions" role="listbox" hidden></div>
         </div>
-        <label class="deck-patron-field">Patron<select name="patron_name" form="deck-form"></select></label>
+        <div class="card-filters" aria-label="Filter cards in this deck">
+          <div id="deck-card-filter-type" class="filter-icon-group" role="group" aria-label="Card types"><span class="filter-icon-label" aria-hidden="true">Type</span><div class="filter-icon-tiles"></div></div>
+          <div id="deck-card-filter-terrain" class="filter-icon-group" role="group" aria-label="Terrains"><span class="filter-icon-label" aria-hidden="true">Terrain</span><div class="filter-icon-tiles"></div></div>
+          <label class="filter-author-field"><span>Author</span><select id="deck-card-filter-author"><option value="">All Authors</option></select></label>
+        </div>
       </div>
       <div class="deck-card-layout">
         <section class="deck-card-table" aria-label="Cards in this deck">
