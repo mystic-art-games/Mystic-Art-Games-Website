@@ -201,6 +201,8 @@ body.dark-mode #decks-view:not(.deck-detail-open) #deck-list .deck-list-item:hov
 #decks-view.deck-detail-open .deck-detail-toolbar { display: flex; align-items: center; gap: .8rem; min-width: 0; }
 #decks-view.deck-detail-open .deck-detail-toolbar .back-to-decks { flex: 0 0 auto; margin-bottom: 0; }
 #decks-view.deck-detail-open .deck-detail-toolbar .actions { display: flex; flex: 0 0 auto; gap: .4rem; margin: 0 0 0 auto; white-space: nowrap; }
+#decks-view.deck-detail-open .deck-detail-toolbar .deck-patron-field { flex: 0 1 220px; width: 220px; margin-left: auto; color: #5a6e64; font-size: .78rem; font-weight: 700; }
+body.dark-mode #decks-view.deck-detail-open .deck-detail-toolbar .deck-patron-field { color: #bfd1be; }
 .deck-detail-cover { display: block; flex: 0 0 96px; width: 96px; aspect-ratio: 16 / 9; overflow: hidden; border-radius: 8px; background: #d9e5d7; }
 .deck-detail-cover img { display: block; width: 100%; height: 100%; object-fit: cover; }
 #decks-view.deck-detail-open .deck-detail-title-group { display: flex; flex: 0 1 auto; min-width: 0; flex-direction: column; justify-content: center; gap: .12rem; transform: translateY(-3px); }
@@ -247,7 +249,8 @@ body.dark-mode .patron-picker :is(.patron-picker-trigger, .patron-picker-option)
 body.dark-mode .patron-picker :is(.patron-picker-trigger, .patron-picker-option).patron-picker-terrain-radiance { color: #e0b65a; }
 body.dark-mode .patron-picker :is(.patron-picker-trigger, .patron-picker-option).patron-picker-terrain-symbiosis { color: #bc91dc; }
 body.dark-mode .patron-picker :is(.patron-picker-trigger, .patron-picker-option).patron-picker-terrain-verdant { color: #91c99e; }
-@media (max-width: 850px) { #decks-view.deck-detail-open .deck-detail-toolbar { flex-wrap: wrap; } #decks-view.deck-detail-open .deck-detail-toolbar .actions { margin-left: 0; width: 100%; flex-wrap: wrap; } }
+@media (max-width: 950px) { #decks-view.deck-detail-open .deck-detail-toolbar { flex-wrap: wrap; } #decks-view.deck-detail-open .deck-detail-toolbar .deck-patron-field { margin-left: 0; } #decks-view.deck-detail-open .deck-detail-toolbar .actions { margin-left: 0; width: 100%; flex-wrap: wrap; } }
+@media (max-width: 600px) { #decks-view.deck-detail-open .deck-detail-toolbar .deck-patron-field { flex-basis: 100%; max-width: 220px; margin-left: 0; } }
 .workspace,
 .patrons-workspace { width: calc(100% - 2rem); }
 .workspace > .panel,
@@ -493,7 +496,7 @@ body.dark-mode .profile-save-status.error { color: #ef9187; }
 #profile-new-deck:hover:not(:disabled) { background: #1d4939; }
 .card-filters { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: .4rem .45rem; margin-top: .65rem; }
 #cards-view > .sidebar > .card-filters { width: min(100%, 460px); margin-top: .65rem; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
-.deck-card-filters-row { display: grid; grid-template-columns: minmax(150px, 220px) minmax(0, 1fr); align-items: end; gap: .65rem; width: 100%; align-self: stretch; }
+.deck-card-filters-row { display: grid; grid-template-columns: minmax(0, 1fr); align-items: end; gap: .65rem; width: 100%; align-self: stretch; }
 .deck-card-filters-row .card-filters { grid-column: 1 / -1; min-width: 0; margin-top: 0; }
 .card-search-field, .deck-card-search-field { position: relative; min-width: 0; }
 .deck-card-search-field { width: min(100%, 460px); }
@@ -517,7 +520,6 @@ body.dark-mode .profile-save-status.error { color: #ef9187; }
 .card-search-suggestions .patron-type-icon.terrain-verdant { color: #488057; }
 body.dark-mode .card-search-suggestions { border-color: #416853; background: #173f32; color: #e5eee0; }
 body.dark-mode .card-search-suggestions .card-search-option:hover, body.dark-mode .card-search-suggestions .card-search-option:focus-visible { background: #285944; }
-@media (max-width: 429px) { .deck-card-filters-row { grid-template-columns: 1fr; } }
 .card-filters label { margin: 0; color: #5a6e64; font-size: .78rem; font-weight: 700; }
 .card-filters .filter-icon-group { display: flex; flex-direction: column; align-items: flex-start; gap: .2rem; min-width: 0; }
 .card-filters [id$="filter-type"] { margin-right: .6rem; }

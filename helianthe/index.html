@@ -13,7 +13,7 @@
   <link rel="apple-touch-icon" href="../images/helianthe-logo.png?v=helianthe-logo-1">
   <link rel="manifest" href="./manifest.webmanifest">
   <title>Helianthe</title>
-  <link rel="stylesheet" href="./style.css?v=helianthe-ui-135">
+  <link rel="stylesheet" href="./style.css?v=helianthe-ui-136">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script type="module" src="./app.mjs?v=helianthe-ui-92"></script>
 </head>
@@ -185,10 +185,10 @@
           <button id="back-to-decks" class="back-to-decks" type="button">← Back</button>
           <span class="deck-detail-cover"><img id="deck-detail-cover-image" src="./assets/site-background.jpg" alt=""></span>
           <div class="deck-detail-title-group"><h2 id="deck-detail-name"></h2><div id="deck-detail-author" class="deck-detail-author"></div></div>
+          <label class="deck-patron-field">Patron<select name="patron_name" form="deck-form"></select></label>
           <div class="actions"><button id="edit-deck" type="button" hidden>Edit Deck</button><button id="duplicate-deck" type="button" hidden>Duplicate Deck</button><button id="delete-deck" class="danger-button action-delete" type="button" hidden>Delete Deck</button></div>
       </div>
       <div class="deck-card-filters-row">
-        <label class="deck-patron-field">Patron<select name="patron_name" form="deck-form"></select></label>
         <div class="deck-card-search-field">
           <span class="deck-card-search-label">Add card to this deck</span>
           <input id="deck-card-search" type="search" placeholder="Search by card name…" aria-label="Search cards in this deck by name" aria-controls="deck-card-search-suggestions" aria-expanded="false" autocomplete="off">
