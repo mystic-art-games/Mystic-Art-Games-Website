@@ -491,7 +491,7 @@ body.dark-mode .profile-save-status.error { color: #ef9187; }
 .profile-decks-head h3 { margin: 0; }
 #profile-new-deck { background: #265847; color: white; border-color: #265847; }
 #profile-new-deck:hover:not(:disabled) { background: #1d4939; }
-.card-filters { display: grid; grid-template-columns: minmax(0, 1fr); gap: .4rem; margin-top: .65rem; }
+.card-filters { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: .4rem .45rem; margin-top: .65rem; }
 #cards-view > .sidebar > .card-filters { width: min(100%, 460px); margin-top: .65rem; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
 .deck-card-filters-row { display: grid; grid-template-columns: minmax(0, 460px) minmax(0, 1fr) minmax(150px, 220px); align-items: end; gap: .65rem; width: 100%; align-self: stretch; }
 .deck-card-filters-row .card-filters { min-width: 0; }
@@ -519,16 +519,16 @@ body.dark-mode .card-search-suggestions .card-search-option:hover, body.dark-mod
 @media (max-width: 1050px) { .deck-card-filters-row { grid-template-columns: 1fr 1fr; } .deck-card-filters-row .card-filters { grid-column: 1 / -1; } }
 @media (max-width: 600px) { .deck-card-filters-row { grid-template-columns: 1fr; } }
 .card-filters label { margin: 0; color: #5a6e64; font-size: .78rem; font-weight: 700; }
-.card-filters .filter-icon-group,
-.card-filters .filter-author-field { display: grid; grid-template-columns: 3.75rem minmax(0, 1fr); align-items: center; gap: .45rem; min-width: 0; }
+.card-filters .filter-icon-group { display: flex; flex-direction: column; align-items: flex-start; gap: .2rem; min-width: 0; }
+.card-filters .filter-author-field { display: grid; grid-column: 1 / -1; grid-template-columns: 3.75rem minmax(0, 1fr); align-items: center; gap: .45rem; min-width: 0; }
 .filter-icon-label { color: #5a6e64; font-size: .78rem; font-weight: 700; }
-.filter-icon-tiles { display: flex; flex-wrap: wrap; gap: .3rem; min-width: 0; }
-.card-filters .filter-icon-tile { --tile-color: #68766f; display: grid; place-items: center; flex: 0 0 2.3rem; width: 2.3rem; height: 2.3rem; min-height: 0; margin: 0; padding: .22rem; border: 1px solid color-mix(in srgb, var(--tile-color) 45%, #d8dfd5); border-radius: .65rem; background: color-mix(in srgb, var(--tile-color) 9%, #fffdf7); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .8); transition: background .15s ease, border-color .15s ease, box-shadow .15s ease; }
+.filter-icon-tiles { display: flex; flex-wrap: wrap; gap: .2rem; min-width: 0; }
+.card-filters .filter-icon-tile { --tile-color: #68766f; display: grid; place-items: center; flex: 0 0 1.9rem; width: 1.9rem; height: 1.9rem; min-height: 0; margin: 0; padding: .15rem; border: 1px solid color-mix(in srgb, var(--tile-color) 45%, #d8dfd5); border-radius: .6rem; background: color-mix(in srgb, var(--tile-color) 9%, #fffdf7); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .8); transition: background .15s ease, border-color .15s ease, box-shadow .15s ease; }
 .card-filters .filter-icon-tile:hover:not(:disabled) { background: color-mix(in srgb, var(--tile-color) 18%, #fffdf7); }
 .card-filters .filter-icon-tile[aria-pressed="true"] { border-color: var(--tile-color); background: color-mix(in srgb, var(--tile-color) 25%, #fffdf7); box-shadow: inset 0 0 0 1px var(--tile-color), 0 2px 5px rgba(22, 55, 55, .15); }
 .card-filters .filter-icon-tile:focus-visible { outline: 2px solid var(--tile-color); outline-offset: 2px; }
 .filter-icon-tile .card-kind-icon,
-.filter-icon-tile .card-faction-icon { flex: none; width: 1.85rem; height: 1.85rem; }
+.filter-icon-tile .card-faction-icon { flex: none; width: 1.6rem; height: 1.6rem; }
 .filter-icon-tile[data-kind="type"][data-value="Entity"] { --tile-color: #547e63; }
 .filter-icon-tile[data-kind="type"][data-value="Event"] { --tile-color: #a7743c; }
 .filter-icon-tile[data-kind="type"][data-value="Patron"] { --tile-color: #785d8e; }
@@ -1070,7 +1070,7 @@ body.dark-mode .masthead nav.mobile-menu-open button.active {
 }
 
 @media (max-width: 430px) {
-  .card-filters { grid-template-columns: minmax(0, 1fr); }
+  .card-filters { grid-template-columns: max-content minmax(0, 1fr); }
   .deck-meta-row { grid-template-columns: 1fr; }
   .masthead { padding-inline: .65rem; }
   .masthead nav button, #sign-in, #sign-out { padding: .5rem .6rem; }
