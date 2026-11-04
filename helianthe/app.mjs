@@ -687,11 +687,27 @@ function renderCardList() {
 function scrollToCardRow(cardId) {
   requestAnimationFrame(() => {
     const list = $('#card-list');
-    const row = [...list.children].find(item => item.dataset.cardId === cardId);
+    const row = [...list.children].find(item => item.dataset.cardId === String(cardId));
     if (!row) return;
     const distance = row.getBoundingClientRect().top - list.getBoundingClientRect().top;
     list.scrollTo({ top: list.scrollTop + distance - (list.clientHeight - row.clientHeight) / 2, behavior: 'smooth' });
   });
+}
+
+function navigateCardList(direction) {
+  const list = $('#card-list');
+  const rows = [...list.children].filter(row => row.dataset.cardId);
+  if (!rows.length) return;
+  const currentIndex = rows.findIndex(row => row.dataset.cardId === String(state.card?.id));
+  const nextIndex = currentIndex < 0 ? (direction > 0 ? 0 : rows.length - 1) : currentIndex + direction;
+  const nextRow = rows[nextIndex];
+  if (!nextRow) return;
+  const card = [...state.cards, ...patronCards].find(item => String(item.id) === nextRow.dataset.cardId);
+  if (!card) return;
+  const focusList = list.contains(document.activeElement);
+  selectCardFromList(card);
+  if (focusList) [...list.children].find(row => row.dataset.cardId === String(card.id))?.focus();
+  scrollToCardRow(card.id);
 }
 
 function setCardFormEditable(canEdit) {
@@ -2003,6 +2019,16 @@ $('#card-search').addEventListener('input', renderCardList);
 initializeFilterTiles('card-filter-type', ['Entity', 'Event', 'Patron'], 'type', renderCardList);
 initializeFilterTiles('card-filter-terrain', ['Symbiosis', 'Flow', 'Verdant', 'Radiance', 'none'], 'terrain', renderCardList);
 $('#card-filter-author').addEventListener('change', renderCardList);
+document.addEventListener('keydown', event => {
+  if (event.defaultPrevented || (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') || $('#cards-view').hidden) return;
+  if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.isComposing) return;
+  if (document.querySelector('[role="dialog"]:not([hidden])')) return;
+  const focusedControl = event.target instanceof Element && event.target.closest('input, textarea, select, [contenteditable], [role="listbox"]');
+  if (focusedControl && focusedControl.id !== 'card-search') return;
+  if (!$('#card-list').querySelector('[data-card-id]')) return;
+  event.preventDefault();
+  navigateCardList(event.key === 'ArrowDown' ? 1 : -1);
+});
 $('#deck-card-search').addEventListener('input', renderDeckCardSuggestions);
 $('#deck-card-search').addEventListener('focus', renderDeckCardSuggestions);
 $('#deck-card-search').addEventListener('click', renderDeckCardSuggestions);
