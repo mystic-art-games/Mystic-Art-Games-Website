@@ -1391,19 +1391,26 @@ async function renderDeckPatron(patron) {
 
 async function showDeckCardPreview(card) {
   const serial = ++state.deckPreviewSerial;
+  const previousCard = state.deckPreviewCard;
   state.deckPreviewCard = card;
   const shell = $('.deck-card-preview-shell');
   const canvas = $('#deck-card-canvas');
+  const downloadButton = $('#deck-download-png');
+  const deleteButton = $('#deck-delete-card');
+  const keepExistingPreview = Boolean(card && previousCard && canvas.style.visibility !== 'hidden');
   updateAddToDeckButtons(card);
   shell.classList.toggle('is-empty', !card);
   const editHint = $('#deck-preview-edit-hint');
   editHint.textContent = card ? 'Click a card area to edit that element.' : 'No card selected.';
   editHint.hidden = !state.deck || (Boolean(card) && !state.user);
-  canvas.tabIndex = card ? 0 : -1;
-  canvas.setAttribute('aria-disabled', String(!card));
-  canvas.style.visibility = card ? 'hidden' : '';
-  $('#deck-download-png').disabled = true;
-  $('#deck-delete-card').disabled = !card || !state.user || (!card.patron && card.owner_id !== state.user.id && !state.isAdmin);
+  canvas.tabIndex = -1;
+  canvas.setAttribute('aria-disabled', 'true');
+  canvas.style.pointerEvents = card ? 'none' : '';
+  canvas.style.visibility = card && !keepExistingPreview ? 'hidden' : '';
+  downloadButton.classList.toggle('is-rendering', Boolean(keepExistingPreview && (!downloadButton.disabled || downloadButton.classList.contains('is-rendering'))));
+  downloadButton.disabled = true;
+  deleteButton.classList.toggle('is-rendering', Boolean(keepExistingPreview && (!deleteButton.disabled || deleteButton.classList.contains('is-rendering'))));
+  deleteButton.disabled = true;
   renderDeckCards();
   if (!card) {
     closeDeckCardPreview();
@@ -1417,10 +1424,26 @@ async function showDeckCardPreview(card) {
     catch { /* Keep the deck preview usable when artwork is unavailable. */ }
   }
   if (serial !== state.deckPreviewSerial) return;
-  const result = await renderCard(canvas, previewCard, artworkUrl, () => serial === state.deckPreviewSerial).catch(() => null);
+  const stagedAura = document.createElement('div');
+  stagedAura.className = 'card-terrain-aura';
+  const stagedCanvas = document.createElement('canvas');
+  stagedAura.append(stagedCanvas);
+  const result = await renderCard(stagedCanvas, previewCard, artworkUrl, () => serial === state.deckPreviewSerial).catch(() => null);
   if (serial !== state.deckPreviewSerial) return;
+  downloadButton.classList.remove('is-rendering');
+  deleteButton.classList.remove('is-rendering');
+  if (!result || result.cancelled) return;
+  canvas.width = stagedCanvas.width;
+  canvas.height = stagedCanvas.height;
+  canvas.getContext('2d').drawImage(stagedCanvas, 0, 0);
+  canvas.parentElement.dataset.terrain = stagedAura.dataset.terrain;
+  canvas.setAttribute('aria-label', stagedCanvas.getAttribute('aria-label'));
   canvas.style.visibility = '';
-  $('#deck-download-png').disabled = !result || result.clipped || result.cancelled;
+  canvas.style.pointerEvents = '';
+  canvas.tabIndex = 0;
+  canvas.setAttribute('aria-disabled', 'false');
+  downloadButton.disabled = result.clipped;
+  deleteButton.disabled = !state.user || (!card.patron && card.owner_id !== state.user.id && !state.isAdmin);
 }
 
 async function selectDeck(deck) {
@@ -1457,9 +1480,8 @@ async function selectDeck(deck) {
   if (deck && state.deck?.id !== deck.id) return;
   state.deckCards = deckCards;
   const firstDeckCard = state.cards.find(card => state.deckCards.some(item => item.card_id === card.id && item.copies > 0));
-  state.deckPreviewCard = firstDeckCard || null;
-  renderDeckCards();
   if (firstDeckCard) await showDeckCardPreview(firstDeckCard);
+  else renderDeckCards();
 }
 
 function nextNewDeckName() {
