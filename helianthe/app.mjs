@@ -886,14 +886,13 @@ function openCardField(field) {
     effect: form.elements.effect.closest('label'),
     authors: $('#card-author-options').closest('fieldset'),
   };
-  const titles = { title: 'Edit title', type: 'Edit card type', terrain: 'Edit faction color', artwork: 'Choose artwork', effect: 'Edit effect', authors: 'Edit Author' };
+  const titles = { title: 'Edit title', type: 'Edit card type', terrain: 'Edit Terrain', artwork: 'Choose artwork', effect: 'Edit effect', authors: 'Edit Author' };
   const source = sources[field];
   if (!source) return;
   cardFieldArtworkFile = null;
   const content = $('#card-field-content');
   $('#card-field-status').hidden = true;
   content.replaceChildren(source.cloneNode(true));
-  if (field === 'terrain') content.querySelector('label').firstChild.textContent = 'Color (Terrain)';
   if (field === 'authors') {
     content.replaceChildren();
     const label = document.createElement('label');
@@ -2116,7 +2115,7 @@ async function saveCardForm() {
   }
   const selectedType = modalContent.querySelector('[name="card_type"]')?.value || form.elements.card_type.value;
   if (modalOpen && ['Entity', 'Patron'].includes(selectedType) && !form.elements.terrain.value) {
-    modalStatus.textContent = 'Choose a Terrain using the faction color circle before changing to this card type.';
+    modalStatus.textContent = 'Choose a Terrain in the lower circle before changing to this card type.';
     modalStatus.hidden = false;
     return;
   }
