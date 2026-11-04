@@ -494,7 +494,7 @@ body.dark-mode .profile-save-status.error { color: #ef9187; }
 .profile-decks-head h3 { margin: 0; }
 #profile-new-deck { background: #265847; color: white; border-color: #265847; }
 #profile-new-deck:hover:not(:disabled) { background: #1d4939; }
-.card-filters { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: .4rem .45rem; margin-top: .65rem; }
+.card-filters { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: .75rem .45rem; margin-top: .65rem; }
 #cards-view > .sidebar > .card-filters { width: min(100%, 460px); margin-top: .65rem; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
 .deck-card-filters-row { display: grid; grid-template-columns: minmax(0, 1fr); align-items: end; gap: .65rem; width: 100%; align-self: stretch; }
 .deck-card-filters-row .card-filters { grid-column: 1 / -1; min-width: 0; margin-top: 0; }
@@ -522,7 +522,7 @@ body.dark-mode .card-search-suggestions { border-color: #416853; background: #17
 body.dark-mode .card-search-suggestions .card-search-option:hover, body.dark-mode .card-search-suggestions .card-search-option:focus-visible { background: #285944; }
 .card-filters label { margin: 0; color: #5a6e64; font-size: .78rem; font-weight: 700; }
 .card-filters .filter-icon-group { display: flex; flex-direction: column; align-items: flex-start; gap: .2rem; min-width: 0; }
-.card-filters [id$="filter-type"] { margin-right: .6rem; }
+.card-filters [id$="filter-type"] { margin-right: 1.1rem; }
 @media (max-width: 429px) { .card-filters [id$="filter-type"] { margin-right: .3rem; } }
 .card-filters .filter-author-field { display: grid; grid-column: 1 / -1; grid-template-columns: 3.75rem minmax(0, 1fr); align-items: center; gap: .45rem; min-width: 0; }
 .filter-icon-label { color: #5a6e64; font-size: .78rem; font-weight: 700; }
@@ -542,14 +542,14 @@ body.dark-mode .card-search-suggestions .card-search-option:hover, body.dark-mod
 .filter-icon-tile[data-value="Radiance"] { --tile-color: #b88425; }
 .filter-icon-tile[data-value="none"] { --tile-color: #707986; }
 .card-filters select { display: flex; align-items: center; justify-content: space-between; gap: .4rem; width: 100%; margin-top: 0; padding: .45rem .4rem; font-size: .82rem; }
-@media (min-width: 430px) {
+@media (min-width: 520px) {
   #cards-view > .sidebar > .card-filters { grid-template-columns: max-content max-content minmax(0, 1fr); }
-  #card-filter-terrain { margin-right: .6rem; }
+  #card-filter-terrain { margin-right: 1.1rem; }
   #cards-view .card-filters .filter-author-field { display: flex; grid-column: auto; flex-direction: column; align-items: stretch; gap: .2rem; }
 }
 @media (min-width: 600px) {
   .deck-card-filters-row .card-filters { grid-template-columns: max-content max-content minmax(150px, 220px); width: min(100%, 600px); }
-  #deck-card-filter-terrain { margin-right: .6rem; }
+  #deck-card-filter-terrain { margin-right: 1.1rem; }
   .deck-card-filters-row .filter-author-field { display: flex; grid-column: auto; flex-direction: column; align-items: stretch; gap: .2rem; }
 }
 .cards-sidebar #card-search,
