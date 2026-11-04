@@ -903,15 +903,22 @@ function renderPreview() {
     effect: form.elements.effect.value,
     author: state.card?.patron ? authorNames(selectedAuthorIds($('#card-author-options'))).join(', ') || state.card.author : authorNames(selectedAuthorIds($('#card-author-options')), state.user?.id).join(', '),
   };
-  $('#download-png').disabled = true;
+  const downloadButton = $('#download-png');
+  downloadButton.classList.toggle('is-rendering', !downloadButton.disabled || downloadButton.classList.contains('is-rendering'));
+  downloadButton.disabled = true;
   void renderCard($('#card-canvas'), card, state.artworkUrl || '', () => serial === state.renderSerial)
     .then(result => {
       if (serial !== state.renderSerial || result.cancelled) return;
       $('#preview-note').textContent = result.clipped ? 'Text is too long — shorten the effect before exporting.' : '';
-      $('#download-png').disabled = result.clipped;
+      downloadButton.classList.remove('is-rendering');
+      downloadButton.disabled = result.clipped;
       $('#delete-card').disabled = !state.card || !state.user || (!state.card.patron && state.card.owner_id !== state.user.id && !state.isAdmin);
     })
-    .catch(cause => { if (serial === state.renderSerial) $('#preview-note').textContent = cause.message; });
+    .catch(cause => {
+      if (serial !== state.renderSerial) return;
+      downloadButton.classList.remove('is-rendering');
+      $('#preview-note').textContent = cause.message;
+    });
 }
 
 let cardFieldArtworkFile = null;
