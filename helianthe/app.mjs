@@ -16,7 +16,7 @@ const api = createCommunityApi(client);
 const ADMIN_EMAIL = 'dominik.zielinski3@gmail.com';
 let authMode = 'sign-in';
 let profileSaveStatusTimer = null;
-const state = { user: null, isAdmin: false, cards: [], decks: [], profiles: [], card: null, deck: null, profile: null, deckCards: [], deckPreviewCard: null, deckPreviewArtworkUrl: null, deckPreviewSerial: 0, deckPatronSerial: 0, artworkUrl: null, artworkSerial: 0, renderSerial: 0, authVersion: 0, realtimeChannel: null, cardFormDirty: false };
+const state = { user: null, isAdmin: false, cards: [], decks: [], profiles: [], card: null, deck: null, profile: null, deckCards: [], deckPreviewCard: null, deckPreviewSerial: 0, deckPatronSerial: 0, artworkUrl: null, artworkSerial: 0, renderSerial: 0, authVersion: 0, realtimeChannel: null, cardFormDirty: false };
 let addToDeckCard = null;
 let recentDeckCardAddition = null;
 const ARTWORK_UPLOAD_LIMIT = 100 * 1024;
@@ -844,13 +844,25 @@ function releaseArtwork() {
 }
 
 const cardArtworkUrlCache = new Map();
+const cardArtworkRequests = new Map();
+
+function getCardArtworkUrl(artworkId) {
+  if (cardArtworkUrlCache.has(artworkId)) return Promise.resolve(cardArtworkUrlCache.get(artworkId));
+  if (!cardArtworkRequests.has(artworkId)) {
+    const request = api.fetchArtwork(artworkId).then(blob => {
+      if (cardArtworkUrlCache.has(artworkId)) return cardArtworkUrlCache.get(artworkId);
+      const url = URL.createObjectURL(blob);
+      cardArtworkUrlCache.set(artworkId, url);
+      return url;
+    }).finally(() => cardArtworkRequests.delete(artworkId));
+    cardArtworkRequests.set(artworkId, request);
+  }
+  return cardArtworkRequests.get(artworkId);
+}
 
 function preloadCardArtwork(cards = []) {
   for (const card of cards) {
-    if (!card?.artwork_id || cardArtworkUrlCache.has(card.artwork_id)) continue;
-    void api.fetchArtwork(card.artwork_id).then(blob => {
-      if (!cardArtworkUrlCache.has(card.artwork_id)) cardArtworkUrlCache.set(card.artwork_id, URL.createObjectURL(blob));
-    }).catch(() => {});
+    if (card?.artwork_id) void getCardArtworkUrl(card.artwork_id).catch(() => {});
   }
 }
 
@@ -865,10 +877,9 @@ async function showArtwork(card) {
     return;
   }
   try {
-    const blob = await api.fetchArtwork(card.artwork_id);
+    const artworkUrl = await getCardArtworkUrl(card.artwork_id);
     if (serial !== state.artworkSerial) return;
-    state.artworkUrl = URL.createObjectURL(blob);
-    cardArtworkUrlCache.set(card.artwork_id, state.artworkUrl);
+    state.artworkUrl = artworkUrl;
     renderPreview();
   } catch { /* Keep the card preview usable when artwork is unavailable. */ }
 }
@@ -1372,10 +1383,9 @@ async function showDeckCardPreview(card) {
   editHint.hidden = !state.deck || (Boolean(card) && !state.user);
   canvas.tabIndex = card ? 0 : -1;
   canvas.setAttribute('aria-disabled', String(!card));
+  canvas.style.visibility = card ? 'hidden' : '';
   $('#deck-download-png').disabled = true;
   $('#deck-delete-card').disabled = !card || !state.user || (!card.patron && card.owner_id !== state.user.id && !state.isAdmin);
-  if (state.deckPreviewArtworkUrl) URL.revokeObjectURL(state.deckPreviewArtworkUrl);
-  state.deckPreviewArtworkUrl = null;
   renderDeckCards();
   if (!card) {
     closeDeckCardPreview();
@@ -1383,16 +1393,16 @@ async function showDeckCardPreview(card) {
   }
   openDeckCardPreview();
   const previewCard = { ...card, author: authorNames(card.author_ids, card.owner_id).join(', ') };
-  const result = await renderCard(canvas, previewCard, '', () => serial === state.deckPreviewSerial).catch(() => null);
-  if (serial === state.deckPreviewSerial) $('#deck-download-png').disabled = !result || result.clipped || result.cancelled;
-  if (!card.artwork_id) return;
-  try {
-    const blob = await api.fetchArtwork(card.artwork_id);
-    if (serial !== state.deckPreviewSerial) return;
-    state.deckPreviewArtworkUrl = URL.createObjectURL(blob);
-    const artworkResult = await renderCard($('#deck-card-canvas'), previewCard, state.deckPreviewArtworkUrl, () => serial === state.deckPreviewSerial);
-    if (serial === state.deckPreviewSerial) $('#deck-download-png').disabled = artworkResult.clipped || artworkResult.cancelled;
-  } catch { /* Keep the deck preview usable when artwork is unavailable. */ }
+  let artworkUrl = '';
+  if (card.artwork_id) {
+    try { artworkUrl = await getCardArtworkUrl(card.artwork_id); }
+    catch { /* Keep the deck preview usable when artwork is unavailable. */ }
+  }
+  if (serial !== state.deckPreviewSerial) return;
+  const result = await renderCard(canvas, previewCard, artworkUrl, () => serial === state.deckPreviewSerial).catch(() => null);
+  if (serial !== state.deckPreviewSerial) return;
+  canvas.style.visibility = '';
+  $('#deck-download-png').disabled = !result || result.clipped || result.cancelled;
 }
 
 async function selectDeck(deck) {
