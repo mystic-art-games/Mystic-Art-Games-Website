@@ -478,6 +478,10 @@ body.dark-mode .patron-detail-panel::-webkit-scrollbar-thumb {
   #decks-view .deck-card-layout > .deck-summary { grid-column: 2 / 4; grid-row: 2; margin-top: .75rem; }
   #decks-view .deck-card-table-shell .art-scroll-wrap > .deck-cards { height: 100%; max-height: none; overflow-y: auto; }
 }
+@media (min-width: 851px) and (max-height: 850px) {
+  #cards-view > .editor-panel .card-preview-shell { padding-top: .4rem; }
+  #cards-view > .editor-panel .card-terrain-aura { width: min(100%, 280px, calc(71.4286dvh - 300px)); }
+}
 .profile-group-title { margin-top: .9rem; color: #50705e; font-size: .78rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
 .profile-group-title:first-child { margin-top: .2rem; }
 .profile-list-entry { display: flex; flex-direction: column; gap: .15rem; }
