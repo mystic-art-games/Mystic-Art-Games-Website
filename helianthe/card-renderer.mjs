@@ -15,6 +15,14 @@ const frameIconCenters = {
 };
 // Vertical centers of the enclosed title plates in the frame PNGs, at native resolution.
 const titlePlateCenters = { Flow: 121.5, Radiance: 120, Verdant: 122, Symbiosis: 121.5, Neutral: 119 };
+// Source-frame crop at the top and bottom, balanced against the side paper edge.
+const frameVerticalInsets = {
+  Flow: { top: 20, bottom: 11 },
+  Radiance: { top: 17, bottom: 12 },
+  Verdant: { top: 20, bottom: 11 },
+  Symbiosis: { top: 19, bottom: 11 },
+  Neutral: { top: 17, bottom: 13 },
+};
 const terrainColors = { Symbiosis: '#784997', Flow: '#428da7', Verdant: '#68a66c', Radiance: '#e0b52f' };
 const factionSymbols = {
   Symbiosis: 'Faction_Symbiosis.png',
@@ -155,12 +163,13 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
   ctx.clearRect(0, 0, 750, 1050);
   ctx.save();
   ctx.beginPath(); ctx.roundRect(0, 0, 750, 1050, 32); ctx.clip();
-  // Preserve a slim paper edge around the ink frame on all four sides.
-  // The 2:3 source needs less horizontal cropping on the 5:7 card.
+  // Keep the straight outer ink strokes equally spaced from the card edges.
+  // The source frames have different top and bottom paper margins.
   const insetX = 6;
-  const insetY = 20;
-  ctx.translate(-750 * insetX / (frame.naturalWidth - 2 * insetX), -1050 * insetY / (frame.naturalHeight - 2 * insetY));
-  ctx.scale(frame.naturalWidth / (frame.naturalWidth - 2 * insetX), frame.naturalHeight / (frame.naturalHeight - 2 * insetY));
+  const { top: insetTop, bottom: insetBottom } = frameVerticalInsets[terrain || 'Neutral'];
+  const visibleFrameHeight = frame.naturalHeight - insetTop - insetBottom;
+  ctx.translate(-750 * insetX / (frame.naturalWidth - 2 * insetX), -1050 * insetTop / visibleFrameHeight);
+  ctx.scale(frame.naturalWidth / (frame.naturalWidth - 2 * insetX), frame.naturalHeight / visibleFrameHeight);
   ctx.drawImage(frame, 0, 0, 750, 1050);
 
   if (art) drawArtwork(ctx, frame, art);
