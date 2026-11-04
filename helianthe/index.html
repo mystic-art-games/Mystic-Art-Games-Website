@@ -13,9 +13,9 @@
   <link rel="apple-touch-icon" href="../images/helianthe-logo.png?v=helianthe-logo-1">
   <link rel="manifest" href="./manifest.webmanifest">
   <title>Helianthe</title>
-  <link rel="stylesheet" href="./style.css?v=helianthe-ui-127">
+  <link rel="stylesheet" href="./style.css?v=helianthe-ui-128">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script type="module" src="./app.mjs?v=helianthe-ui-89"></script>
+  <script type="module" src="./app.mjs?v=helianthe-ui-90"></script>
 </head>
 <body>
   <header class="masthead">
@@ -137,9 +137,9 @@
         <input id="card-search" type="search" placeholder="Search by card name…" aria-label="Search by card name" autocomplete="off">
       </div>
       <div class="card-filters" aria-label="Filter cards">
-        <label>Type<select id="card-filter-type"><option value="">All Types</option><option value="Entity">Entity</option><option value="Event">Event</option><option value="Patron">Patron</option></select></label>
-        <label>Terrain<select id="card-filter-terrain"><option value="">All Terrains</option><option value="Symbiosis">Symbiosis</option><option value="Flow">Flow</option><option value="Verdant">Verdant</option><option value="Radiance">Radiance</option><option value="none">Nomads</option></select></label>
-        <label>Author<select id="card-filter-author"><option value="">All Authors</option></select></label>
+        <div id="card-filter-type" class="filter-icon-group" role="group" aria-label="Card types"><span class="filter-icon-label" aria-hidden="true">Type</span><div class="filter-icon-tiles"></div></div>
+        <div id="card-filter-terrain" class="filter-icon-group" role="group" aria-label="Terrains"><span class="filter-icon-label" aria-hidden="true">Terrain</span><div class="filter-icon-tiles"></div></div>
+        <label class="filter-author-field"><span>Author</span><select id="card-filter-author"><option value="">All Authors</option></select></label>
       </div>
       <div class="card-table-shell">
         <div class="list-table-head card-list-head" aria-hidden="true"><span></span><span>Card name</span><span>Author</span></div>
@@ -188,9 +188,9 @@
       </div>
       <div class="deck-card-filters-row">
         <div class="card-filters" aria-label="Filter cards in this deck">
-          <label>Type<select id="deck-card-filter-type"><option value="">All Types</option><option value="Entity">Entity</option><option value="Event">Event</option></select></label>
-          <label>Terrain<select id="deck-card-filter-terrain"><option value="">All Terrains</option><option value="Symbiosis">Symbiosis</option><option value="Flow">Flow</option><option value="Verdant">Verdant</option><option value="Radiance">Radiance</option><option value="none">Nomads</option></select></label>
-          <label>Author<select id="deck-card-filter-author"><option value="">All Authors</option></select></label>
+          <div id="deck-card-filter-type" class="filter-icon-group" role="group" aria-label="Card types"><span class="filter-icon-label" aria-hidden="true">Type</span><div class="filter-icon-tiles"></div></div>
+          <div id="deck-card-filter-terrain" class="filter-icon-group" role="group" aria-label="Terrains"><span class="filter-icon-label" aria-hidden="true">Terrain</span><div class="filter-icon-tiles"></div></div>
+          <label class="filter-author-field"><span>Author</span><select id="deck-card-filter-author"><option value="">All Authors</option></select></label>
         </div>
         <div class="deck-card-search-field">
           <span class="deck-card-search-label">Add card to this deck</span>

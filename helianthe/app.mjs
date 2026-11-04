@@ -603,29 +603,56 @@ function refreshCardAuthorFilter() {
   }
 }
 
-function syncCardTypeFilter() {
-  const type = $('#card-filter-type');
-  const terrain = $('#card-filter-terrain');
-  if (!type.value) terrain.value = '';
+function initializeFilterTiles(groupId, values, kind, render) {
+  const tiles = $(`#${groupId} .filter-icon-tiles`);
+  for (const value of values) {
+    const label = value === 'none' ? 'Nomads' : value;
+    const tile = document.createElement('button');
+    tile.type = 'button';
+    tile.className = 'filter-icon-tile';
+    tile.dataset.value = value;
+    tile.dataset.kind = kind;
+    tile.setAttribute('aria-label', label);
+    tile.setAttribute('aria-pressed', 'false');
+    tile.title = label;
+    const icon = document.createElement('span');
+    icon.className = kind === 'type'
+      ? `card-kind-icon kind-${value.toLowerCase()} terrain-event`
+      : `card-faction-icon ${terrainClass(value === 'none' ? '' : value)}`;
+    icon.setAttribute('aria-hidden', 'true');
+    tile.append(icon);
+    tile.addEventListener('click', () => {
+      tile.setAttribute('aria-pressed', String(tile.getAttribute('aria-pressed') !== 'true'));
+      render();
+    });
+    tiles.append(tile);
+  }
 }
 
-function matchesCardTerrainFilter(card, terrain) {
-  if (!terrain) return true;
-  return terrain === 'none' ? !card.terrain : card.terrain === terrain;
+function selectedFilterValues(groupId) {
+  return new Set([...$(`#${groupId}`).querySelectorAll('.filter-icon-tile[aria-pressed="true"]')].map(tile => tile.dataset.value));
+}
+
+function clearFilterTiles(groupId) {
+  for (const tile of $(`#${groupId}`).querySelectorAll('.filter-icon-tile')) tile.setAttribute('aria-pressed', 'false');
+}
+
+function matchesCardTerrainFilter(card, terrains) {
+  return !terrains.size || terrains.has(card.terrain || 'none');
 }
 
 function renderCardList() {
   const query = $('#card-search').value.trim().toLocaleLowerCase();
-  const type = $('#card-filter-type').value;
+  const types = selectedFilterValues('card-filter-type');
   const author = $('#card-filter-author').value;
-  const terrain = $('#card-filter-terrain').value;
+  const terrains = selectedFilterValues('card-filter-terrain');
   const list = $('#card-list');
   list.replaceChildren();
   for (const card of [...state.cards, ...patronCards].sort((a, b) => a.title.localeCompare(b.title)).filter(item => {
     const matchesSearch = item.title.toLocaleLowerCase().includes(query);
-    const matchesType = !type || item.card_type === type;
+    const matchesType = !types.size || types.has(item.card_type);
     const matchesAuthor = !author || (item.patron ? (authorNames(item.author_ids).includes(author) || (!item.author_ids?.length && item.author === author)) : authorNames(item.author_ids, item.owner_id).includes(author));
-    const matchesTerrain = matchesCardTerrainFilter(item, terrain);
+    const matchesTerrain = matchesCardTerrainFilter(item, terrains);
     return matchesSearch && matchesType && matchesAuthor && matchesTerrain;
   })) {
     const row = button('', () => selectCard(card, { openMobile: true }), `card-list-item${state.card?.id === card.id ? ' selected' : ''}`);
@@ -1081,16 +1108,16 @@ function renderDeckCards() {
   const list = $('#deck-cards');
   list.replaceChildren();
   if (!state.deck) { renderDeckSummary(); return; }
-  const type = $('#deck-card-filter-type').value;
+  const types = selectedFilterValues('deck-card-filter-type');
   const author = $('#deck-card-filter-author').value;
-  const terrain = $('#deck-card-filter-terrain').value;
+  const terrains = selectedFilterValues('deck-card-filter-terrain');
   const mine = Boolean(state.user && (state.deck.owner_id === state.user.id || state.isAdmin));
   for (const card of state.cards) {
     const copies = state.deckCards.find(item => item.card_id === card.id)?.copies || 0;
     if (!copies) continue;
-    if (type && card.card_type !== type) continue;
+    if (types.size && !types.has(card.card_type)) continue;
     if (author && !authorNames(card.author_ids, card.owner_id).includes(author)) continue;
-    if (!matchesCardTerrainFilter(card, terrain)) continue;
+    if (!matchesCardTerrainFilter(card, terrains)) continue;
     const row = document.createElement('div'); row.className = `card-list-item deck-card-row${state.deckPreviewCard?.id === card.id ? ' selected' : ''}`;
     row.dataset.cardId = card.id;
     row.setAttribute('role', 'button');
@@ -1167,7 +1194,9 @@ function scrollToDeckCardRow(cardId) {
     const list = $('#deck-cards');
     let row = [...list.children].find(item => item.dataset.cardId === cardId);
     if (!row) {
-      for (const id of ['deck-card-filter-type', 'deck-card-filter-author', 'deck-card-filter-terrain']) $(`#${id}`).value = '';
+      clearFilterTiles('deck-card-filter-type');
+      clearFilterTiles('deck-card-filter-terrain');
+      $('#deck-card-filter-author').value = '';
       renderDeckCards();
       row = [...list.children].find(item => item.dataset.cardId === cardId);
     }
@@ -1876,9 +1905,9 @@ document.addEventListener('click', event => {
   if (!event.target.closest('.header-controls')) closeMobileMenu();
 });
 $('#card-search').addEventListener('input', renderCardList);
-$('#card-filter-type').addEventListener('change', () => { syncCardTypeFilter(); renderCardList(); });
-for (const filter of document.querySelectorAll('#card-filter-author, #card-filter-terrain')) filter.addEventListener('change', renderCardList);
-syncCardTypeFilter();
+initializeFilterTiles('card-filter-type', ['Entity', 'Event', 'Patron'], 'type', renderCardList);
+initializeFilterTiles('card-filter-terrain', ['Symbiosis', 'Flow', 'Verdant', 'Radiance', 'none'], 'terrain', renderCardList);
+$('#card-filter-author').addEventListener('change', renderCardList);
 $('#deck-card-search').addEventListener('input', renderDeckCardSuggestions);
 $('#deck-card-search').addEventListener('focus', renderDeckCardSuggestions);
 $('#deck-card-search').addEventListener('click', renderDeckCardSuggestions);
@@ -1898,7 +1927,9 @@ document.addEventListener('keydown', event => {
   if (event.key !== 'Escape') return;
   closeCardSearchSuggestions($('#deck-card-search'), $('#deck-card-search-suggestions'));
 });
-for (const filter of document.querySelectorAll('#deck-card-filter-type, #deck-card-filter-author, #deck-card-filter-terrain')) filter.addEventListener('change', renderDeckCards);
+initializeFilterTiles('deck-card-filter-type', ['Entity', 'Event'], 'type', renderDeckCards);
+initializeFilterTiles('deck-card-filter-terrain', ['Symbiosis', 'Flow', 'Verdant', 'Radiance', 'none'], 'terrain', renderDeckCards);
+$('#deck-card-filter-author').addEventListener('change', renderDeckCards);
 $('#new-card').addEventListener('click', async () => {
   if (!requireAccount()) return;
   const create = $('#new-card');
@@ -1913,9 +1944,9 @@ $('#new-card').addEventListener('click', async () => {
     });
     await reloadCollections();
     $('#card-search').value = '';
-    $('#card-filter-type').value = '';
+    clearFilterTiles('card-filter-type');
     $('#card-filter-author').value = '';
-    $('#card-filter-terrain').value = '';
+    clearFilterTiles('card-filter-terrain');
     selectCard(state.cards.find(card => card.id === created.id) || created);
     scrollToCardRow(created.id);
     status('Card created. Select it to edit.');
@@ -2182,9 +2213,9 @@ async function saveCardForm() {
     if (!state.card?.patron) await reloadCollections();
     if (isNewCard) {
       $('#card-search').value = '';
-      $('#card-filter-type').value = '';
+      clearFilterTiles('card-filter-type');
       $('#card-filter-author').value = '';
-      $('#card-filter-terrain').value = '';
+      clearFilterTiles('card-filter-terrain');
     }
     if (modalOpen) closeCardField();
     const savedCard = state.cards.find(item => item.id === card.id) || patronCards.find(item => item.id === card.id) || card;
