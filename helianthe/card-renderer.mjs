@@ -13,6 +13,8 @@ const frameIconCenters = {
   Symbiosis: { upper: [[116, 115], [903, 115]], lower: [[88, 246], [932, 246]] },
   Neutral: { upper: [[111.5, 113], [905, 113.5]], lower: [[83.5, 245], [934, 245.5]] },
 };
+// Vertical centers of the enclosed title plates in the frame PNGs, at native resolution.
+const titlePlateCenters = { Flow: 121.5, Radiance: 120, Verdant: 122, Symbiosis: 121.5, Neutral: 119 };
 const terrainColors = { Symbiosis: '#784997', Flow: '#428da7', Verdant: '#68a66c', Radiance: '#e0b52f' };
 const factionSymbols = {
   Symbiosis: 'Faction_Symbiosis.png',
@@ -169,7 +171,7 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
     ctx.font = `700 ${size}px ${cardFont}`;
     if (ctx.measureText(title).width <= 410) { titleSize = size; break; }
   }
-  const titleCenterY = 87;
+  const titleCenterY = titlePlateCenters[terrain || 'Neutral'] * 1050 / frame.naturalHeight;
   // Frame and icons share the inset transform already applied to the context.
   const framePoint = (x, y) => ({
     x: x * 750 / frame.naturalWidth,
