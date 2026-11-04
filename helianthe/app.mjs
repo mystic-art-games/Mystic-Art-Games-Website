@@ -2240,12 +2240,6 @@ async function saveCardForm() {
     } else status(invalidField.validationMessage || 'Check the card fields before saving.', true);
     return;
   }
-  const selectedType = modalContent.querySelector('[name="card_type"]')?.value || form.elements.card_type.value;
-  if (modalOpen && ['Entity', 'Patron'].includes(selectedType) && !form.elements.terrain.value) {
-    modalStatus.textContent = 'Choose a Terrain in the lower circle before changing to this card type.';
-    modalStatus.hidden = false;
-    return;
-  }
   savingCard = true;
   const isNewCard = !state.card;
   const save = $('#save-card');
@@ -2261,6 +2255,7 @@ async function saveCardForm() {
         if (['title', 'card_type', 'terrain', 'effect'].includes(field.name)) values[field.name] = field.value;
       }
     }
+    if (['Entity', 'Patron'].includes(values.card_type) && !values.terrain) values.terrain = 'Symbiosis';
     const modalAuthor = modalOpen ? modalContent.querySelector('select:not([name])') : null;
     values.author_ids = modalAuthor ? [modalAuthor.value].filter(Boolean) : selectedAuthorIds($('#card-author-options'));
     values.author = authorNames(values.author_ids, state.user?.id).join(', ');
