@@ -2022,7 +2022,7 @@ $('#card-filter-author').addEventListener('change', renderCardList);
 document.addEventListener('keydown', event => {
   if (event.defaultPrevented || (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') || $('#cards-view').hidden) return;
   if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.isComposing) return;
-  if (document.querySelector('[role="dialog"]:not([hidden])')) return;
+  if ([...document.querySelectorAll('[role="dialog"]')].some(dialog => dialog.getClientRects().length)) return;
   const focusedControl = event.target instanceof Element && event.target.closest('input, textarea, select, [contenteditable], [role="listbox"]');
   if (focusedControl && focusedControl.id !== 'card-search') return;
   if (!$('#card-list').querySelector('[data-card-id]')) return;
