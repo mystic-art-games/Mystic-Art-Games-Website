@@ -15,13 +15,13 @@ const frameIconCenters = {
 };
 // Vertical centers of the enclosed title plates in the frame PNGs, at native resolution.
 const titlePlateCenters = { Flow: 121.5, Radiance: 120, Verdant: 122, Symbiosis: 121.5, Neutral: 119 };
-// Source-frame crop at the top and bottom, balanced against the side paper edge.
+// Source-frame crop, balancing the outermost top ornaments with the side paper edge.
 const frameVerticalInsets = {
-  Flow: { top: 20, bottom: 11 },
-  Radiance: { top: 17, bottom: 12 },
-  Verdant: { top: 20, bottom: 11 },
-  Symbiosis: { top: 19, bottom: 11 },
-  Neutral: { top: 17, bottom: 13 },
+  Flow: { top: 6, bottom: 11 },
+  Radiance: { top: 4, bottom: 12 },
+  Verdant: { top: 4, bottom: 11 },
+  Symbiosis: { top: 4, bottom: 11 },
+  Neutral: { top: 2, bottom: 13 },
 };
 const terrainColors = { Symbiosis: '#784997', Flow: '#428da7', Verdant: '#68a66c', Radiance: '#e0b52f' };
 const factionSymbols = {
@@ -163,7 +163,7 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
   ctx.clearRect(0, 0, 750, 1050);
   ctx.save();
   ctx.beginPath(); ctx.roundRect(0, 0, 750, 1050, 32); ctx.clip();
-  // Keep the straight outer ink strokes equally spaced from the card edges.
+  // Keep the outermost top ornaments and bottom ink equally spaced from the card edges.
   // The source frames have different top and bottom paper margins.
   const insetX = 6;
   const { top: insetTop, bottom: insetBottom } = frameVerticalInsets[terrain || 'Neutral'];
