@@ -2,6 +2,7 @@
 // Card Editor. Preview and exported PNG both render onto a 1500 × 2100 canvas.
 const ASSETS = new URL('./assets/', import.meta.url);
 const DEFAULT_ARTWORK = asset('Poseidons_Chosen_One_Comic.png?v=3');
+const DEFAULT_ARTWORK_SCALE = 0.88;
 const imageCache = new Map();
 const artworkWindows = new WeakMap();
 const iconBounds = new WeakMap();
@@ -115,7 +116,7 @@ function artworkWindow(frame) {
   return window;
 }
 
-function drawArtwork(ctx, frame, art) {
+function drawArtwork(ctx, frame, art, scale = 1) {
   const window = artworkWindow(frame);
   const layer = document.createElement('canvas');
   layer.width = 1500; layer.height = 2100;
@@ -123,7 +124,7 @@ function drawArtwork(ctx, frame, art) {
   const scaleX = layer.width / frame.naturalWidth;
   const scaleY = layer.height / frame.naturalHeight;
   const boxWidth = window.width * scaleX, boxHeight = window.height * scaleY;
-  const ratio = Math.max(boxWidth / art.width, boxHeight / art.height);
+  const ratio = Math.max(boxWidth / art.width, boxHeight / art.height) * scale;
   const width = art.width * ratio, height = art.height * ratio;
   context.drawImage(art, window.left * scaleX + (boxWidth - width) / 2, window.top * scaleY + (boxHeight - height) / 2, width, height);
   context.globalCompositeOperation = 'destination-in';
@@ -172,7 +173,7 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
   ctx.scale(frame.naturalWidth / (frame.naturalWidth - 2 * insetX), frame.naturalHeight / visibleFrameHeight);
   ctx.drawImage(frame, 0, 0, 750, 1050);
 
-  if (art) drawArtwork(ctx, frame, art);
+  if (art) drawArtwork(ctx, frame, art, artworkUrl ? 1 : DEFAULT_ARTWORK_SCALE);
 
   const title = (card.title || 'New card').replace(/\s+/g, ' ').trim() || 'New card';
   canvas.setAttribute('aria-label', `${title}, ${type} card preview`);
