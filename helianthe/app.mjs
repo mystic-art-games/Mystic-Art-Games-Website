@@ -641,6 +641,15 @@ function matchesCardTerrainFilter(card, terrains) {
   return !terrains.size || terrains.has(card.terrain || 'none');
 }
 
+function selectCardFromList(card) {
+  if (state.card === card) {
+    $('#cards-view').classList.add('mobile-editor-open');
+    document.body.classList.add('mobile-editor-visible');
+    return;
+  }
+  selectCard(card, { openMobile: true });
+}
+
 function renderCardList() {
   const query = $('#card-search').value.trim().toLocaleLowerCase();
   const types = selectedFilterValues('card-filter-type');
@@ -657,7 +666,7 @@ function renderCardList() {
     const matchesTerrain = matchesCardTerrainFilter(item, terrains);
     return matchesSearch && matchesType && matchesAuthor && matchesTerrain;
   })) {
-    const row = button('', () => selectCard(card, { openMobile: true }), `card-list-item${state.card?.id === card.id ? ' selected' : ''}`);
+    const row = button('', () => selectCardFromList(card), `card-list-item${state.card?.id === card.id ? ' selected' : ''}`);
     row.dataset.cardId = card.id;
     row.setAttribute('aria-label', `${card.terrain || 'Neutral'} ${card.card_type}: ${card.title}`);
     const title = document.createElement('span');
@@ -1117,6 +1126,14 @@ function hasPendingDeckCopyChanges(deckId) {
   return [...deckCopyUpdates.keys()].some(key => key.startsWith(`${deckId}:`));
 }
 
+function selectDeckCardFromList(card) {
+  if (state.deckPreviewCard === card) {
+    openDeckCardPreview();
+    return;
+  }
+  void showDeckCardPreview(card);
+}
+
 function renderDeckCards() {
   const list = $('#deck-cards');
   list.replaceChildren();
@@ -1136,8 +1153,8 @@ function renderDeckCards() {
     row.setAttribute('role', 'button');
     row.setAttribute('aria-label', `${card.terrain || 'Neutral'} ${card.card_type}: ${card.title}`);
     row.tabIndex = 0;
-    row.addEventListener('click', () => showDeckCardPreview(card));
-    row.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); showDeckCardPreview(card); } });
+    row.addEventListener('click', () => selectDeckCardFromList(card));
+    row.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); selectDeckCardFromList(card); } });
     row.append(cardListIcons(card));
     const label = document.createElement('span'); label.className = `card-list-title ${terrainClass(card.terrain)}`; label.textContent = card.title;
     row.append(label);
@@ -1249,7 +1266,8 @@ function renderCardSearchSuggestions() {
   for (const card of cards) suggestions.append(cardSearchOption(card, () => {
     input.value = card.title;
     closeCardSearchSuggestions(input, suggestions);
-    selectCard(card, { openMobile: true });
+    if (state.card === card) renderCardList();
+    selectCardFromList(card);
   }));
   suggestions.hidden = !cards.length;
   input.setAttribute('aria-expanded', String(Boolean(cards.length)));
@@ -1270,12 +1288,12 @@ function renderDeckCardSuggestions() {
       input.value = '';
       closeCardSearchSuggestions(input, suggestions);
       if (!mine) {
-        void showDeckCardPreview(card);
+        selectDeckCardFromList(card);
         return;
       }
       const deck = state.deck;
       const copies = state.deckCards.find(item => item.card_id === card.id)?.copies || 0;
-      if (copies >= 2) { void showDeckCardPreview(card); return; }
+      if (copies >= 2) { selectDeckCardFromList(card); return; }
       recentDeckCardAddition = { deckId: deck.id, cardId: card.id, expiresAt: performance.now() + 3000 };
       void api.setDeckCard(state.user.id, deck, card.id, copies + 1, state.isAdmin)
         .then(async () => {
