@@ -399,7 +399,7 @@ body.dark-mode .patron-detail-panel::-webkit-scrollbar-thumb {
   }
   #cards-view > .editor-panel .card-layout { gap: .8rem; }
   #cards-view > .editor-panel #card-form { display: none; }
-  #cards-view.workspace { grid-template-columns: minmax(300px, 410px) 320px; align-items: stretch; justify-content: center; max-width: 1450px; }
+  #cards-view.workspace { grid-template-columns: minmax(440px, 500px) 320px; align-items: stretch; justify-content: center; max-width: 1450px; }
   #cards-view > .sidebar { display: flex; flex-direction: column; min-height: 0; }
   #cards-view > .sidebar .card-table-shell { display: flex; flex: 1 1 auto; flex-direction: column; min-height: 0; overflow: hidden; }
   #cards-view > .sidebar #card-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
@@ -538,6 +538,10 @@ body.dark-mode .card-search-suggestions .card-search-option:hover, body.dark-mod
 .filter-icon-tile[data-value="Radiance"] { --tile-color: #b88425; }
 .filter-icon-tile[data-value="none"] { --tile-color: #707986; }
 .card-filters select { display: flex; align-items: center; justify-content: space-between; gap: .4rem; width: 100%; margin-top: 0; padding: .45rem .4rem; font-size: .82rem; }
+@media (min-width: 430px) {
+  #cards-view > .sidebar > .card-filters { grid-template-columns: max-content max-content minmax(0, 1fr); }
+  #cards-view .card-filters .filter-author-field { display: flex; grid-column: auto; flex-direction: column; align-items: stretch; gap: .2rem; }
+}
 .cards-sidebar #card-search,
 .deck-card-filters-row #deck-card-search,
 .card-filters select { height: 2.35rem; box-sizing: border-box; }
