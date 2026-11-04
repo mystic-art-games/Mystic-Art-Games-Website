@@ -16,7 +16,7 @@ const api = createCommunityApi(client);
 const ADMIN_EMAIL = 'dominik.zielinski3@gmail.com';
 let authMode = 'sign-in';
 let profileSaveStatusTimer = null;
-const state = { user: null, isAdmin: false, cards: [], decks: [], profiles: [], card: null, deck: null, profile: null, deckCards: [], deckPreviewCard: null, deckPreviewSerial: 0, deckPatronSerial: 0, artworkUrl: null, artworkSerial: 0, renderSerial: 0, authVersion: 0, realtimeChannel: null, cardFormDirty: false };
+const state = { user: null, isAdmin: false, cards: [], decks: [], profiles: [], card: null, deck: null, profile: null, deckCards: [], deckPreviewCard: null, deckPreviewSerial: 0, deckPatronSerial: 0, artworkUrl: null, artworkLoading: false, artworkSerial: 0, renderSerial: 0, authVersion: 0, realtimeChannel: null, cardFormDirty: false };
 let addToDeckCard = null;
 let recentDeckCardAddition = null;
 const ARTWORK_UPLOAD_LIMIT = 100 * 1024;
@@ -878,10 +878,15 @@ function preloadCardArtwork(cards = []) {
 async function showArtwork(card) {
   const serial = ++state.artworkSerial;
   releaseArtwork();
-  if (!card?.artwork_id) return;
+  state.artworkLoading = Boolean(card?.artwork_id);
+  if (!card?.artwork_id) {
+    renderPreview();
+    return;
+  }
   const cachedUrl = cardArtworkUrlCache.get(card.artwork_id);
   if (cachedUrl) {
     state.artworkUrl = cachedUrl;
+    state.artworkLoading = false;
     renderPreview();
     return;
   }
@@ -889,11 +894,14 @@ async function showArtwork(card) {
     const artworkUrl = await getCardArtworkUrl(card.artwork_id);
     if (serial !== state.artworkSerial) return;
     state.artworkUrl = artworkUrl;
-    renderPreview();
   } catch { /* Keep the card preview usable when artwork is unavailable. */ }
+  if (serial !== state.artworkSerial) return;
+  state.artworkLoading = false;
+  renderPreview();
 }
 
 function renderPreview() {
+  if (state.artworkLoading) return;
   const form = $('#card-form');
   const serial = ++state.renderSerial;
   const card = {
@@ -1012,7 +1020,9 @@ function cardFieldAt(event) {
 function selectCard(card, { openMobile = false } = {}) {
   if (!$('#card-field-modal').hidden) closeCardField();
   ++state.artworkSerial;
+  ++state.renderSerial;
   releaseArtwork();
+  $('#download-png').disabled = true;
   state.card = card;
   updateAddToDeckButtons(card);
   state.cardFormDirty = false;
@@ -1027,7 +1037,6 @@ function selectCard(card, { openMobile = false } = {}) {
   $('#card-edit-hint').hidden = !state.user;
   setCardFormEditable(canEditCard(card));
   syncTerrain();
-  renderPreview();
   void showArtwork(card);
   renderCardList();
   if (openMobile) {
@@ -2090,6 +2099,7 @@ $('#card-artwork').addEventListener('change', event => {
   if (!file) return;
   state.cardFormDirty = true;
   ++state.artworkSerial; releaseArtwork();
+  state.artworkLoading = false;
   state.artworkUrl = URL.createObjectURL(file);
   renderPreview();
 });
