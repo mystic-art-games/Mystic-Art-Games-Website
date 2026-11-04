@@ -682,11 +682,11 @@ body.dark-mode .card-filters select option:checked { background: #285944; }
 .patron-faction-brightworks { color: #a87318; }
 .patron-faction-dreamwardens { color: #784997; }
 .patron-faction-verdant { color: #488057; }
-.card-list-title.terrain-symbiosis { color: #784997; }
-.card-list-title.terrain-flow { color: #35758e; }
-.card-list-title.terrain-verdant { color: #488057; }
-.card-list-title.terrain-radiance { color: #b88425; }
-.card-list-title.terrain-event { color: #4d5b55; }
+:is(.card-list-title, .deck-summary-item).terrain-symbiosis { color: #784997; }
+:is(.card-list-title, .deck-summary-item).terrain-flow { color: #35758e; }
+:is(.card-list-title, .deck-summary-item).terrain-verdant { color: #488057; }
+:is(.card-list-title, .deck-summary-item).terrain-radiance { color: #b88425; }
+:is(.card-list-title, .deck-summary-item).terrain-event { color: #4d5b55; }
 .card-layout { display: grid; grid-template-columns: minmax(260px, 1fr) minmax(280px, 420px); gap: 1.6rem; }
 .card-layout > *, .deck-meta-row > *, .deck-card-layout > * { min-width: 0; }
 .two-cols { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; }
@@ -730,15 +730,10 @@ body.dark-mode #decks-view .deck-empty-preview { border-color: rgba(226, 246, 23
 .deck-summary-colors .deck-summary-item { grid-row: 2; }
 .deck-summary-item { justify-self: center; }
 .deck-summary-item { color: #344d42; font-size: .86rem; font-weight: 800; white-space: nowrap; }
-.deck-summary-item.terrain-symbiosis { color: #784997; }
-.deck-summary-item.terrain-flow { color: #35758e; }
-.deck-summary-item.terrain-verdant { color: #488057; }
-.deck-summary-item.terrain-radiance { color: #a87318; }
 .cards-summary.deck-summary { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; width: 100%; min-height: 0; align-self: stretch; gap: .55rem; margin-top: .7rem; padding: .7rem .8rem; box-sizing: border-box; }
 .cards-summary .deck-summary-group { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .35rem .5rem; }
 .cards-summary .deck-summary-colors { padding-top: .55rem; border-top: 1px solid rgba(73, 120, 94, .25); }
 .cards-summary :is(.deck-summary-types, .deck-summary-colors) .deck-summary-item { grid-row: auto; justify-self: start; font-size: .78rem; }
-.cards-summary .deck-summary-item.terrain-event { color: #65717b; }
 .deck-card-preview-close { display: none; }
 #deck-card-canvas { width: min(100%, 300px); height: auto; aspect-ratio: 5 / 7; }
 .deck-preview-edit-hint { max-width: 24rem; min-height: 2.6rem; display: flex; align-items: flex-end; justify-content: center; margin: .8rem auto 0; color: #68756d; font-size: .95rem; line-height: 1.35; text-align: center; pointer-events: none; }
@@ -888,9 +883,8 @@ body.dark-mode .deck-card-row.selected { border-bottom-color: #416853; backgroun
 body.dark-mode .deck-patron-preview-shell { border: 0; background: transparent; box-shadow: none; }
 body.dark-mode .deck-summary { border-color: rgba(226, 246, 235, .3); background: linear-gradient(145deg, rgba(185, 220, 200, .2), rgba(45, 88, 68, .18)); box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .2), 0 4px 14px rgba(0, 18, 12, .22); }
 body.dark-mode .deck-summary-heading { color: #bfd1be; }
-body.dark-mode .deck-summary-item:not(.terrain-symbiosis):not(.terrain-flow):not(.terrain-verdant):not(.terrain-radiance) { color: #e5eee0; }
+body.dark-mode .deck-summary-item:not(.terrain-symbiosis):not(.terrain-flow):not(.terrain-verdant):not(.terrain-radiance):not(.terrain-event) { color: #e5eee0; }
 body.dark-mode .cards-summary .deck-summary-colors { border-top-color: rgba(226, 246, 235, .2); }
-body.dark-mode .cards-summary .deck-summary-item.terrain-event { color: #c0cec7; }
 body.dark-mode #decks-view .deck-card-row.selected { background: #285944 !important; border-bottom-color: transparent !important; box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .24), 0 2px 8px rgba(0, 18, 12, .18) !important; }
 .deck-copy-controls { display: flex; grid-column: 3; align-items: center; justify-content: space-between; gap: .2rem; width: 6.4rem; }
 #decks-view .deck-copy-button { display: inline-flex; flex: 0 0 1.5rem; align-items: center; justify-content: center; width: 1.5rem; height: 1.5rem; padding: 0; font-size: 1rem; font-weight: 700; line-height: 1; }
@@ -1168,11 +1162,11 @@ body.dark-mode .deck-cards { border-top-color: #416853; }
 body.dark-mode .deck-card-row:hover { background: #204b3b; box-shadow: inset 0 0 0 1px #416853; }
 body.dark-mode .deck-card-row.selected { background: #285944; box-shadow: inset 0 0 0 1px #76a889; }
 body.dark-mode .deck-card-row.selected:hover { background: #30634d; }
-body.dark-mode .card-list-title.terrain-symbiosis { color: #c18ad5; }
-body.dark-mode .card-list-title.terrain-flow { color: #83bfd1; }
-body.dark-mode .card-list-title.terrain-verdant { color: #8fc99a; }
-body.dark-mode .card-list-title.terrain-radiance { color: #e2bd70; }
-body.dark-mode .card-list-title.terrain-event { color: #c0cec7; }
+body.dark-mode :is(.card-list-title, .deck-summary-item).terrain-symbiosis { color: #c18ad5; }
+body.dark-mode :is(.card-list-title, .deck-summary-item).terrain-flow { color: #83bfd1; }
+body.dark-mode :is(.card-list-title, .deck-summary-item).terrain-verdant { color: #8fc99a; }
+body.dark-mode :is(.card-list-title, .deck-summary-item).terrain-radiance { color: #e2bd70; }
+body.dark-mode :is(.card-list-title, .deck-summary-item).terrain-event { color: #c0cec7; }
 body.dark-mode #decks-view.mobile-card-preview-open .deck-card-preview-shell { border-color: #416853; background: #12372c; }
 body.dark-mode #cards-view .cards-sidebar,
 body.dark-mode #cards-view > .editor-panel,
