@@ -749,7 +749,7 @@ body.dark-mode #decks-view .deck-empty-preview { border-color: rgba(226, 246, 23
 .deck-summary-item { justify-self: center; }
 .deck-summary-item { color: #344d42; font-size: .86rem; font-weight: 800; white-space: nowrap; }
 .cards-summary.deck-summary { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; flex: 1 1 auto; width: auto; min-width: 0; min-height: 0; align-self: center; gap: .15rem; margin: 0; padding: .3rem .6rem; box-sizing: border-box; }
-.cards-summary .deck-summary-group { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-start; gap: .15rem .4rem; min-width: 0; }
+.cards-summary .deck-summary-group { display: grid; grid-template-columns: repeat(auto-fit, minmax(78px, 1fr)); align-items: center; gap: .2rem .4rem; min-width: 0; }
 .cards-summary .deck-summary-colors { padding-top: .2rem; border-top: 1px solid rgba(73, 120, 94, .25); }
 .cards-summary :is(.deck-summary-types, .deck-summary-colors) .deck-summary-item { grid-row: auto; justify-self: auto; font-size: .75rem; }
 .deck-card-preview-close { display: none; }
@@ -955,7 +955,6 @@ body.dark-mode .masthead nav.mobile-menu-open button.active {
 @media (max-width: 850px) {
   #cards-view .cards-toolbar { flex-wrap: wrap; gap: .45rem; padding: 0 1rem; }
   #cards-view .cards-toolbar .cards-summary { flex-basis: 100%; }
-  #cards-view .cards-toolbar .deck-summary-group { flex-wrap: wrap; justify-content: flex-start; column-gap: .9rem; }
   #cards-view .cards-toolbar .deck-summary-item { font-size: .72rem; }
   #cards-view .card-preview-shell #preview-note:empty { display: none; }
   #cards-view .card-preview-shell #card-edit-hint { display: block; margin: .15rem auto 0; font-size: .95rem; }
