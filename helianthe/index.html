@@ -13,7 +13,7 @@
   <link rel="apple-touch-icon" href="../images/helianthe-logo.png?v=helianthe-logo-1">
   <link rel="manifest" href="./manifest.webmanifest">
   <title>Helianthe</title>
-  <link rel="stylesheet" href="./style.css?v=helianthe-ui-164">
+  <link rel="stylesheet" href="./style.css?v=helianthe-ui-165">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script type="module" src="./app.mjs?v=helianthe-ui-100"></script>
 </head>
@@ -194,7 +194,7 @@
           <button id="back-to-decks" class="back-to-decks" type="button">← Back</button>
           <span class="deck-detail-cover"><img id="deck-detail-cover-image" src="./assets/site-background.jpg" alt=""></span>
           <div class="deck-detail-title-group"><h2 id="deck-detail-name"></h2><div id="deck-detail-author" class="deck-detail-author"></div></div>
-          <label class="deck-patron-field">Patron<select name="patron_name" form="deck-form"></select></label>
+          <section id="deck-summary" class="deck-summary" aria-label="Deck card summary"></section>
           <div class="actions"><button id="edit-deck" type="button" hidden>Edit Deck</button><button id="duplicate-deck" type="button" hidden>Duplicate Deck</button><button id="delete-deck" class="danger-button action-delete" type="button" hidden>Delete Deck</button></div>
       </div>
       <div class="deck-card-filters-row">
@@ -205,10 +205,13 @@
             <label class="filter-status-field"><span>Status</span><select id="deck-card-filter-status"><option value="">All Statuses</option><option value="draft">Draft</option><option value="ready">Ready</option></select></label>
             <label class="filter-author-field"><span>Author</span><select id="deck-card-filter-author"><option value="">All Authors</option></select></label>
           </div>
-          <div class="deck-card-search-field">
-            <span class="deck-card-search-label">Add card to this deck</span>
-            <input id="deck-card-search" type="search" placeholder="Search by card name…" aria-label="Search cards in this deck by name" aria-controls="deck-card-search-suggestions" aria-expanded="false" autocomplete="off">
-            <div id="deck-card-search-suggestions" class="card-search-suggestions" role="listbox" hidden></div>
+          <div class="deck-search-patron-row">
+            <div class="deck-card-search-field">
+              <span class="deck-card-search-label">Add card to this deck</span>
+              <input id="deck-card-search" type="search" placeholder="Search by card name…" aria-label="Search cards in this deck by name" aria-controls="deck-card-search-suggestions" aria-expanded="false" autocomplete="off">
+              <div id="deck-card-search-suggestions" class="card-search-suggestions" role="listbox" hidden></div>
+            </div>
+            <label class="deck-patron-field">Patron<select name="patron_name" form="deck-form"></select></label>
           </div>
         </div>
       </div>
@@ -234,7 +237,6 @@
           <p id="deck-patron-edit-hint" class="deck-preview-edit-hint" hidden>Click a card area to edit that element.</p>
           <div class="card-preview-actions deck-preview-actions"><button id="patron-add-to-deck" class="add-to-deck-button action-add-save" type="button" aria-label="Add to Deck" title="Add to Deck" disabled hidden>Add to Deck</button><button id="patron-download-png" class="download-png-button" type="button" aria-label="Download PNG" title="Download PNG" disabled>Download PNG</button><button id="patron-delete-card" class="delete-card-button danger-button action-delete" type="button" aria-label="Delete Card" title="Delete Card" disabled hidden>Delete Card</button></div>
         </section>
-        <section id="deck-summary" class="deck-summary" aria-label="Deck card summary"></section>
       </div>
     </section>
   </main>
