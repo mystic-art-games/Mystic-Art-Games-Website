@@ -248,10 +248,10 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
   for (const line of fitted.lines) {
     let x = 95;
     const baseColor = ctx.fillStyle;
-    for (const part of line.split(/(Credo:|Coredo:|Dusk:|\b\d+\b|Symbiosis|Flow|Verdant|Radiance)/g)) {
+    for (const part of line.split(/(Credo:|Coredo:|\b\d+\b|Symbiosis|Flow|Verdant|Radiance)/g)) {
       if (!part) continue;
       ctx.fillStyle = terrainColors[part] || baseColor;
-      const isLabel = /^(Dusk:|\d+)$/.test(part);
+      const isLabel = /^\d+$/.test(part);
       ctx.font = `${credoItalic ? 'italic ' : ''}${isLabel ? 700 : 500} ${fitted.size}px ${rulesFont}`;
       ctx.fillText(part, x, y);
       x += ctx.measureText(part).width;
