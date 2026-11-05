@@ -505,7 +505,7 @@ body.dark-mode .profile-save-status.error { color: #ef9187; }
 #profile-new-deck { background: #265847; color: white; border-color: #265847; }
 #profile-new-deck:hover:not(:disabled) { background: #1d4939; }
 .card-filters { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: .75rem .45rem; margin-top: .65rem; }
-#cards-view > .sidebar > .card-filters { width: min(100%, 460px); margin-top: .65rem; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+#cards-view > .sidebar > .card-filters { width: min(100%, 650px); margin-top: .65rem; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
 .deck-card-filters-row { display: grid; grid-template-columns: minmax(0, 1fr); align-items: end; gap: .65rem; width: 100%; align-self: stretch; margin-top: .65rem; }
 .deck-card-filters-row .card-filters { grid-column: 1 / -1; min-width: 0; margin-top: 0; }
 .card-search-field, .deck-card-search-field { position: relative; min-width: 0; }
@@ -554,12 +554,9 @@ body.dark-mode .card-search-suggestions .card-search-option:hover, body.dark-mod
 .filter-icon-tile[data-value="Radiance"] { --tile-color: #b88425; }
 .filter-icon-tile[data-value="none"] { --tile-color: #707986; }
 .card-filters select { display: flex; align-items: center; justify-content: space-between; gap: .4rem; width: 100%; margin-top: 0; padding: .45rem .4rem; font-size: .82rem; }
-@media (min-width: 520px) {
-  #cards-view > .sidebar > .card-filters { grid-template-columns: minmax(0, 1fr) max-content; }
-  #card-filter-type { grid-column: 1 / -1; }
-  #cards-view .card-filter-selects { grid-column: 1; }
-  #card-filter-terrain { grid-column: 2; }
-  #cards-view .card-filters .filter-author-field { display: flex; grid-column: auto; flex-direction: column; align-items: stretch; gap: .2rem; }
+@media (min-width: 960px) {
+  #cards-view > .sidebar > .card-filters { grid-template-columns: max-content max-content minmax(237px, 1fr); }
+  #cards-view .card-filter-selects { grid-column: auto; }
 }
 @media (min-width: 600px) {
   .deck-card-filters-row .card-filters { grid-template-columns: max-content max-content minmax(240px, 270px); width: min(100%, 600px); }

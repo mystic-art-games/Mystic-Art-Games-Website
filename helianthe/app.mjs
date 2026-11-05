@@ -1231,7 +1231,7 @@ function renderDeckCards() {
   list.replaceChildren();
   if (!state.deck) { renderDeckSummary(); return; }
   const types = selectedFilterValues('deck-card-filter-type');
-  const testingStatus = $('#deck-card-filter-status').value;
+  const statusFilter = $('#deck-card-filter-status').value;
   const author = $('#deck-card-filter-author').value;
   const terrains = selectedFilterValues('deck-card-filter-terrain');
   const mine = Boolean(state.user && (state.deck.owner_id === state.user.id || state.isAdmin));
@@ -1239,7 +1239,7 @@ function renderDeckCards() {
     const copies = state.deckCards.find(item => item.card_id === card.id)?.copies || 0;
     if (!copies) continue;
     if (types.size && !types.has(card.card_type)) continue;
-    if (testingStatus && (card.testing_status === 'ready' ? 'ready' : 'draft') !== testingStatus) continue;
+    if (statusFilter && (card.testing_status === 'ready' ? 'ready' : 'draft') !== statusFilter) continue;
     if (author && !authorNames(card.author_ids, card.owner_id).includes(author)) continue;
     if (!matchesCardTerrainFilter(card, terrains)) continue;
     const row = document.createElement('div'); row.className = `card-list-item deck-card-row${state.deckPreviewCard?.id === card.id ? ' selected' : ''}`;
