@@ -54,7 +54,7 @@ function Draw-Entity($graphics, [string]$name, [int]$x, [int]$y) {
     $image.Dispose()
 }
 
-$canvas = [Drawing.Bitmap]::new(1850, 1850, [Drawing.Imaging.PixelFormat]::Format32bppArgb)
+$canvas = [Drawing.Bitmap]::new(1950, 1920, [Drawing.Imaging.PixelFormat]::Format32bppArgb)
 $graphics = [Drawing.Graphics]::FromImage($canvas)
 $graphics.Clear([Drawing.Color]::Transparent)
 $graphics.SmoothingMode = [Drawing.Drawing2D.SmoothingMode]::AntiAlias
@@ -62,24 +62,22 @@ $graphics.InterpolationMode = [Drawing.Drawing2D.InterpolationMode]::HighQuality
 $graphics.PixelOffsetMode = [Drawing.Drawing2D.PixelOffsetMode]::HighQuality
 
 $left = 70
-$stepX = 420
+$stepX = 445
 $top = 48
-$stepY = 610
+$stepY = 640
 $terrain = @(
     @('Symbiosis', 2, 0), @('Verdant', 3, 0),
     @('Radiance', 0, 1), @('Flow', 1, 1), @('Symbiosis', 2, 1), @('Verdant', 3, 1),
     @('Radiance', 2, 2)
 )
 foreach ($card in $terrain) {
-    $terrainX = $left + $stepX * $card[1]
-    if ($card[2] -eq 1 -and $card[1] -ge 1) { $terrainX -= 35 }
-    Draw-Terrain $graphics $card[0] $terrainX ($top + $stepY * $card[2])
+    Draw-Terrain $graphics $card[0] ($left + $stepX * $card[1]) ($top + $stepY * $card[2])
 }
 
 # These are actual Entity PNG exports from Card Editor, on matching Terrain.
-Draw-Entity $graphics 'Confluence' ($left + $stepX + 28) ($top + $stepY + 46)
-Draw-Entity $graphics 'Fungal-Rainwood' ($left + 2 * $stepX + 28) ($top + $stepY + 46)
-Draw-Entity $graphics 'Bramble-Briar' ($left + 3 * $stepX + 28) ($top + $stepY + 46)
+Draw-Entity $graphics 'Confluence' ($left + $stepX + 65) ($top + $stepY + 46)
+Draw-Entity $graphics 'Fungal-Rainwood' ($left + 2 * $stepX + 65) ($top + $stepY + 46)
+Draw-Entity $graphics 'Bramble-Briar' ($left + 3 * $stepX + 65) ($top + $stepY + 46)
 
 $canvas.Save($output, [Drawing.Imaging.ImageFormat]::Png)
 $graphics.Dispose()
