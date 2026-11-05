@@ -16,7 +16,7 @@ const api = createCommunityApi(client);
 const ADMIN_EMAIL = 'dominik.zielinski3@gmail.com';
 let authMode = 'sign-in';
 let profileSaveStatusTimer = null;
-const state = { user: null, isAdmin: false, cards: [], decks: [], profiles: [], card: null, deck: null, profile: null, deckCards: [], deckPreviewCard: null, deckPreviewSerial: 0, artworkUrl: null, artworkLoading: false, artworkError: '', artworkSerial: 0, renderSerial: 0, authVersion: 0, realtimeChannel: null, cardFormDirty: false };
+const state = { user: null, isAdmin: false, cards: [], decks: [], profiles: [], card: null, deck: null, profile: null, deckCards: [], deckPreviewCard: null, deckPreviewSerial: 0, deckPatronSerial: 0, artworkUrl: null, artworkLoading: false, artworkError: '', artworkSerial: 0, renderSerial: 0, authVersion: 0, realtimeChannel: null, cardFormDirty: false };
 let addToDeckCard = null;
 let recentDeckCardAddition = null;
 const ARTWORK_UPLOAD_LIMIT = 100 * 1024;
@@ -1184,12 +1184,27 @@ function openDeckCardPreview() {
   if (!window.matchMedia('(max-width: 850px)').matches) return;
   $('#decks-view').classList.add('mobile-card-preview-open');
   document.body.classList.add('mobile-card-preview-visible');
+  placeDeckPreviewEditHint();
 }
 
 function closeDeckCardPreview() {
   $('#decks-view')?.classList.remove('mobile-card-preview-open');
   document.body.classList.remove('mobile-card-preview-visible');
+  placeDeckPreviewEditHint();
 }
+
+function placeDeckPreviewEditHint() {
+  const hint = $('#deck-preview-edit-hint');
+  if (!window.matchMedia('(max-width: 850px)').matches) $('.deck-card-layout').append(hint);
+  else if ($('#decks-view').classList.contains('mobile-card-preview-open')) $('.deck-card-preview-shell .deck-preview-actions').before(hint);
+  else $('.deck-patron-preview-shell .deck-preview-actions').before(hint);
+}
+
+function updateDeckPreviewEditHint() {
+  $('#deck-preview-edit-hint').hidden = !state.deck || !state.user || (!state.deckPreviewCard && !patronCardByName(patronByName(state.deck.patron_name)?.name));
+}
+
+window.addEventListener('resize', placeDeckPreviewEditHint);
 
 function renderDeckList() {
   const list = $('#deck-list');
@@ -1520,7 +1535,7 @@ async function renderDeckPatron(patron, { clearPrevious = false } = {}) {
   updateAddToDeckButtons(null);
   const serial = ++state.deckPatronSerial;
   shell.className = `deck-patron-preview-shell patron-faction-${(patron?.faction || 'none').toLowerCase().replaceAll(/[^a-z]+/g, '-')}${patron ? '' : ' is-empty'}`;
-  $('#deck-patron-edit-hint').hidden = !patron || !state.user;
+  updateDeckPreviewEditHint();
   canvas.tabIndex = -1;
   canvas.setAttribute('aria-disabled', 'true');
   canvas.style.pointerEvents = patron ? 'none' : '';
@@ -1572,9 +1587,7 @@ async function showDeckCardPreview(card) {
   const keepExistingPreview = Boolean(card && previousCard && canvas.style.visibility !== 'hidden');
   updateAddToDeckButtons(card);
   shell.classList.toggle('is-empty', !card);
-  const editHint = $('#deck-preview-edit-hint');
-  editHint.textContent = card ? 'Click a card area to edit that element.' : 'No card selected.';
-  editHint.hidden = !state.deck || (Boolean(card) && !state.user);
+  updateDeckPreviewEditHint();
   canvas.tabIndex = -1;
   canvas.setAttribute('aria-disabled', 'true');
   canvas.style.pointerEvents = card ? 'none' : '';
@@ -1937,8 +1950,7 @@ function updateAuthenticatedControls() {
     $(`#${id}`).hidden = !signedIn;
   }
   $('#card-edit-hint').hidden = !signedIn;
-  $('#deck-preview-edit-hint').hidden = !state.deck || (Boolean(state.deckPreviewCard) && !signedIn);
-  $('#deck-patron-edit-hint').hidden = !signedIn || !patronByName(state.deck?.patron_name);
+  updateDeckPreviewEditHint();
   updateTestingStatusButton('#card-test-status', state.card);
   updateTestingStatusButton('#deck-card-test-status', state.deckPreviewCard, true);
   updateTestingStatusButton('#deck-patron-test-status', patronCardByName(patronByName(state.deck?.patron_name)?.name), true);
