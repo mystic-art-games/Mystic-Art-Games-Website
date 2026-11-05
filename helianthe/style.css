@@ -2025,6 +2025,8 @@ body.dark-mode #card-field-modal .card-field-dialog {
 .guide-glossary dd { margin: .15rem 0 0; }
 .faction-card { min-width: 0; padding: 1.1rem 1.2rem; }
 .faction-card h3 { border-top: 1px solid rgba(78, 112, 90, .22); padding-top: .75rem; }
+.faction-traits { margin: .5rem 0 .85rem; padding-left: 1.25rem; color: #405b4d; line-height: 1.5; }
+.faction-traits li + li { margin-top: .35rem; }
 .faction-terrain { color: #87612b; font-size: .76rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
 .faction-card .faction-note { margin-top: 1rem; font-size: .85rem; font-style: italic; }
 .faction-footer { margin: 1.2rem 0 .5rem; text-align: center; }
@@ -2041,6 +2043,7 @@ body.dark-mode .guide-section p,
 body.dark-mode .guide-section li,
 body.dark-mode .guide-section dd,
 body.dark-mode .faction-card p,
+body.dark-mode .faction-traits,
 body.dark-mode .faction-footer { color: #d1dfd0; }
 body.dark-mode .guide-pair > div,
 body.dark-mode .faction-card { border-color: rgba(168, 201, 173, .27); background: rgba(15, 53, 38, .32); }
