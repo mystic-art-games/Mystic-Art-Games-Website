@@ -778,9 +778,16 @@ body.dark-mode .deck-preview-edit-hint { color: #fff; }
 .mobile-editor-close { display: none; }
 .card-preview-shell .card-terrain-aura { width: min(100%, 280px); }
 .card-terrain-aura { position: relative; flex: 0 0 auto; isolation: isolate; }
+.card-terrain-aura::before { content: ''; position: absolute; z-index: 0; inset: 0; border-radius: 3%; background: var(--terrain-card-art) center / cover no-repeat; box-shadow: 0 8px 20px rgba(10, 35, 27, .24); transform: translate(-5%, -5%); pointer-events: none; }
+.card-terrain-aura:not([data-terrain="Symbiosis"]):not([data-terrain="Flow"]):not([data-terrain="Verdant"]):not([data-terrain="Radiance"])::before { display: none; }
+.card-terrain-aura[data-terrain="Symbiosis"] { --terrain-card-art: url('./assets/Terrain_Symbiosis_Full_Art.png'); }
+.card-terrain-aura[data-terrain="Flow"] { --terrain-card-art: url('./assets/Terrain_Flow_Full_Art.png'); }
+.card-terrain-aura[data-terrain="Verdant"] { --terrain-card-art: url('./assets/Terrain_Verdant_Full_Art.png'); }
+.card-terrain-aura[data-terrain="Radiance"] { --terrain-card-art: url('./assets/Terrain_Radiance_Full_Art.png'); }
+.card-terrain-aura::after { content: ''; position: absolute; z-index: -1; inset: -6%; border-radius: 10%; background: radial-gradient(ellipse, rgba(22, 48, 37, .28) 35%, rgba(22, 48, 37, .12) 64%, transparent 76%); filter: blur(14px); pointer-events: none; }
 #decks-view .is-empty .card-terrain-aura { display: none; }
 .card-terrain-aura > canvas { position: relative; z-index: 1; display: block; width: 100% !important; height: auto; aspect-ratio: 5 / 7; }
-#card-canvas, #deck-card-canvas, #deck-patron-canvas, #patron-card-canvas { border-radius: 0; box-shadow: none; filter: drop-shadow(0 4px 7px rgba(10, 35, 27, .12)); background: transparent; }
+#card-canvas, #deck-card-canvas, #deck-patron-canvas, #patron-card-canvas { border-radius: 0; box-shadow: none; filter: drop-shadow(0 6px 10px rgba(10, 35, 27, .24)); background: transparent; }
 body.dark-mode :is(#card-canvas, #deck-card-canvas, #deck-patron-canvas, #patron-card-canvas) { filter: drop-shadow(0 5px 8px rgba(0, 18, 12, .28)); }
 #card-canvas { cursor: pointer; }
 #card-edit-hint { font-family: Nunito, Arial, sans-serif; }
