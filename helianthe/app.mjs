@@ -646,12 +646,47 @@ function cardTestingStatusLabel(status) {
   return status === 'ready' ? 'Ready' : 'Draft';
 }
 
+const pendingStatusUpdates = new Set();
+
 function updateTestingStatusButton(selector, card, hideWhenEmpty = false) {
   const button = $(selector);
-  button.hidden = hideWhenEmpty && !card;
-  button.textContent = `Status: ${cardTestingStatusLabel(card?.testing_status)}`;
-  button.dataset.status = card?.testing_status === 'ready' ? 'ready' : 'draft';
-  button.disabled = !card || !canEditCard(card);
+  const ready = card?.testing_status === 'ready';
+  button.parentElement.hidden = hideWhenEmpty && !card;
+  button.querySelector('.card-status-state').textContent = ready ? 'Ready' : 'Draft';
+  button.setAttribute('aria-label', `Status: ${ready ? 'Ready' : 'Draft'}`);
+  button.setAttribute('aria-pressed', String(ready));
+  button.dataset.status = ready ? 'ready' : 'draft';
+  button.disabled = !card || !canEditCard(card) || pendingStatusUpdates.has(card.id);
+}
+
+async function toggleCardTestingStatus(card) {
+  if (!card || pendingStatusUpdates.has(card.id) || !requireCardEdit(card)) return;
+  const nextStatus = card.testing_status === 'ready' ? 'draft' : 'ready';
+  pendingStatusUpdates.add(card.id);
+  for (const selector of ['#card-test-status', '#deck-card-test-status', '#deck-patron-test-status']) {
+    const shownCard = selector === '#card-test-status' ? state.card : selector === '#deck-card-test-status' ? state.deckPreviewCard : patronCardByName(patronByName(state.deck?.patron_name)?.name);
+    if (shownCard?.id === card.id) $(selector).disabled = true;
+  }
+  try {
+    if (card.patron) {
+      const overrides = JSON.parse(localStorage.getItem(PATRON_CARD_OVERRIDES_KEY) || '{}');
+      overrides[card.id] = { ...(overrides[card.id] || {}), testing_status: nextStatus };
+      localStorage.setItem(PATRON_CARD_OVERRIDES_KEY, JSON.stringify(overrides));
+    } else await api.saveCardStatus(state.user.id, card.id, nextStatus);
+    for (const item of [...state.cards, ...patronCards, state.card, state.deckPreviewCard]) {
+      if (item?.id === card.id) item.testing_status = nextStatus;
+    }
+    if (state.card?.id === card.id) $('#card-form').elements.testing_status.value = nextStatus;
+    renderCardList();
+    renderDeckCards();
+    status(`Status set to ${cardTestingStatusLabel(nextStatus)}.`);
+  } catch (cause) { status(cause.message, true); }
+  finally {
+    pendingStatusUpdates.delete(card.id);
+    updateTestingStatusButton('#card-test-status', state.card);
+    updateTestingStatusButton('#deck-card-test-status', state.deckPreviewCard, true);
+    updateTestingStatusButton('#deck-patron-test-status', patronCardByName(patronByName(state.deck?.patron_name)?.name), true);
+  }
 }
 
 function selectCardFromList(card) {
@@ -2112,16 +2147,14 @@ $('#new-card').addEventListener('click', async () => {
 $('#close-mobile-editor').addEventListener('click', closeMobileEditor);
 $('#card-canvas').tabIndex = 0;
 $('#card-canvas').addEventListener('click', event => openCardField(cardFieldAt(event)));
-$('#card-test-status').addEventListener('click', () => openCardField('status'));
+$('#card-test-status').addEventListener('click', () => { void toggleCardTestingStatus(state.card); });
 for (const [buttonId, getCard] of [
   ['deck-card-test-status', () => state.deckPreviewCard],
   ['deck-patron-test-status', () => patronCardByName(patronByName(state.deck?.patron_name)?.name)],
 ]) {
   $(`#${buttonId}`).addEventListener('click', () => {
     const card = getCard();
-    if (!requireCardEdit(card)) return;
-    selectCard(card);
-    openCardField('status');
+    void toggleCardTestingStatus(card);
   });
 }
 $('#card-canvas').addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openCardField('type'); } });

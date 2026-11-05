@@ -197,6 +197,15 @@ export function createCommunityApi(client) {
       return normalizeCardTerrain(rows[0]);
     },
 
+    async saveCardStatus(userId, cardId, testingStatus) {
+      if (!userId || !cardId) throw new Error('Select your own card.');
+      if (!TESTING_STATUSES.has(testingStatus)) throw new Error('Choose Draft or Ready.');
+      const response = await client.from('cards').update({ testing_status: testingStatus, updated_at: new Date().toISOString() }).eq('id', cardId).select();
+      const rows = result(response);
+      if (!rows?.length) throw new Error('Only a card author or designated administrator can edit this card.');
+      return normalizeCardTerrain(rows[0]);
+    },
+
     async deleteCard(userId, cardId, isAdmin = false) {
       if (!userId || !cardId) throw new Error('Select a card first.');
       let query = client.from('cards').delete().eq('id', cardId);
