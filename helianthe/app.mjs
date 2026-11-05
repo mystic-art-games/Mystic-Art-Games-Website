@@ -1206,13 +1206,17 @@ function renderDeckCards() {
     const row = document.createElement('div'); row.className = `card-list-item deck-card-row${state.deckPreviewCard?.id === card.id ? ' selected' : ''}`;
     row.dataset.cardId = card.id;
     row.setAttribute('role', 'button');
-    row.setAttribute('aria-label', `${card.terrain || 'Neutral'} ${card.card_type}: ${card.title}`);
+    row.setAttribute('aria-label', `${card.terrain || 'Neutral'} ${card.card_type}: ${card.title}, ${cardTestingStatusLabel(card.testing_status)}`);
     row.tabIndex = 0;
     row.addEventListener('click', () => selectDeckCardFromList(card));
     row.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); selectDeckCardFromList(card); } });
     row.append(cardListIcons(card));
     const label = document.createElement('span'); label.className = `card-list-title ${terrainClass(card.terrain)}`; label.textContent = card.title;
     row.append(label);
+    const testingStatus = document.createElement('span');
+    testingStatus.className = 'card-testing-status';
+    testingStatus.textContent = card.testing_status === 'ready' ? 'Ready' : 'Draft';
+    row.append(testingStatus);
     if (mine) {
       const controls = document.createElement('span');
       controls.className = 'deck-copy-controls';
