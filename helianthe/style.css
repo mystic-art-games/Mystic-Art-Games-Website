@@ -845,9 +845,11 @@ body.dark-mode .card-list-item .card-testing-status { border-color: #7b8580; bac
 body.dark-mode .card-test-status-button[data-status="ready"],
 body.dark-mode .card-list-item .card-testing-status.ready { border-color: #58a677; background: #216d46; color: #fff; }
 body.dark-mode .card-test-status-button[data-status="ready"]:hover:not(:disabled) { background: #34895c; color: #fff; }
-#decks-view .card-status-control { flex: 0 0 auto; margin: .1rem auto 0; }
+#decks-view .card-preview-actions .card-status-control { flex: 0 0 auto; }
 #download-png { align-self: center; }
-.card-preview-actions { display: flex; justify-content: center; gap: .6rem; margin-top: .65rem; }
+.card-preview-actions { display: flex; align-items: flex-end; justify-content: center; flex-wrap: wrap; gap: .6rem; margin-top: .65rem; }
+.card-preview-actions .card-status-control { margin: 0; }
+#cards-view .card-preview-actions { gap: .25rem; }
 .card-preview-actions > button { height: 2.35rem; min-height: 0; display: inline-flex; align-items: center; justify-content: center; }
 .download-png-button {
   width: 2.35rem;
