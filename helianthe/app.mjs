@@ -1,7 +1,7 @@
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.mjs';
 import { createCommunityApi, resolveLegacyCardAuthors } from './community-api.mjs';
 import { renderCard, downloadCardPNG, preloadCardAssets } from './card-renderer.mjs?v=entity-terrain-1';
-import { PATRONS } from './patrons.mjs';
+import { PATRONS } from './patrons.mjs?v=faction-map-1';
 
 document.title = ['127.0.0.1', 'localhost', '::1'].includes(window.location.hostname)
   ? 'Helianthe — Local Preview'
