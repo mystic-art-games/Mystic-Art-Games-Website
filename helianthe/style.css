@@ -174,7 +174,7 @@ body.dark-mode .about-section p, body.dark-mode .about-section li { color: #d1df
 #decks-view:not(.deck-detail-open) > .decks-sidebar { width: min(100%, 1100px); justify-self: center; }
 #decks-view:not(.deck-detail-open) > .decks-sidebar .panel-head { justify-content: flex-start; }
 #decks-view:not(.deck-detail-open) > .decks-sidebar #new-deck { margin-left: .75rem; }
-#cards-view .cards-toolbar { grid-column: 1; display: flex; align-items: center; gap: .5rem; min-width: 0; padding: 0 .8rem; }
+#cards-view .cards-toolbar { grid-column: 1; display: flex; align-items: center; gap: 1.45rem; min-width: 0; padding: 0 .8rem; }
 #cards-view .cards-toolbar .panel-head { flex: 0 0 auto; justify-content: flex-start; }
 #cards-view .cards-toolbar .panel-head h1 { margin: 0; line-height: 1.2; }
 #cards-view .cards-toolbar #new-card { margin-left: .75rem; }
