@@ -930,7 +930,7 @@ body.dark-mode #decks-view .deck-card-row.selected { background: #285944 !import
 .deck-copy-count { flex: 0 0 1rem; text-align: center; font-size: .9rem; }
 .deck-card-row strong { grid-column: 4; text-align: center; }
 @media (min-width: 851px) {
-  .about-lead { font-size: 1.3rem; white-space: nowrap; }
+  .about-lead { max-width: 700px; margin-inline: auto; font-size: 1.3rem; white-space: normal; }
   html, body { height: 100%; overflow: hidden; }
   .workspace, .patrons-workspace { height: calc(100vh - 116px); min-height: 0; overflow: hidden; }
   #about-view.about-workspace { height: calc(100vh - 84px); min-height: 0; overflow: hidden; }
