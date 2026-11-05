@@ -561,7 +561,7 @@ function button(label, action, className = '') {
   return element;
 }
 
-const TAB_NAMES = ['cards', 'decks', 'profiles', 'about'];
+const TAB_NAMES = ['about', 'rules', 'factions', 'cards', 'decks', 'profiles'];
 
 function requestedTab() {
   const name = window.location.hash.slice(1).toLowerCase();
@@ -2071,6 +2071,15 @@ $('#close-auth-dialog').addEventListener('click', hideSignIn);
 $('#browse-without-account').addEventListener('click', loadPublicWorkspace);
 
 for (const tab of $('#tabs').querySelectorAll('button[data-tab]')) tab.addEventListener('click', () => showTab(tab.dataset.tab));
+for (const button of document.querySelectorAll('[data-open-tab]')) {
+  button.addEventListener('click', () => showTab(button.dataset.openTab));
+}
+for (const button of document.querySelectorAll('[data-scroll-target]')) {
+  button.addEventListener('click', () => {
+    const target = document.getElementById(button.dataset.scrollTarget);
+    target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+}
 window.addEventListener('hashchange', () => showTab(requestedTab(), { updateUrl: false }));
 $('#mobile-menu-toggle').addEventListener('click', () => {
   const menu = $('#tabs');
