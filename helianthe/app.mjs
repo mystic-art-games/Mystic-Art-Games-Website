@@ -646,6 +646,14 @@ function cardTestingStatusLabel(status) {
   return status === 'ready' ? 'Ready for testing' : 'Draft';
 }
 
+function updateTestingStatusButton(selector, card, hideWhenEmpty = false) {
+  const button = $(selector);
+  button.hidden = hideWhenEmpty && !card;
+  button.textContent = `Test status: ${cardTestingStatusLabel(card?.testing_status)}`;
+  button.dataset.status = card?.testing_status === 'ready' ? 'ready' : 'draft';
+  button.disabled = !card || !canEditCard(card);
+}
+
 function selectCardFromList(card) {
   if (state.card === card) {
     $('#cards-view').classList.add('mobile-editor-open');
@@ -953,17 +961,22 @@ function renderPreview() {
 }
 
 let cardFieldArtworkFile = null;
+let cardFieldReturnFocus = null;
 
 function closeCardField() {
   $('#card-field-modal').hidden = true;
   $('#card-field-content').replaceChildren();
   $('#card-field-status').hidden = true;
   cardFieldArtworkFile = null;
-  $('#card-canvas').focus({ preventScroll: true });
+  const focusTarget = cardFieldReturnFocus?.isConnected && cardFieldReturnFocus.getClientRects().length
+    ? cardFieldReturnFocus : $('#card-canvas');
+  cardFieldReturnFocus = null;
+  focusTarget.focus({ preventScroll: true });
 }
 
 function openCardField(field) {
   if (!requireCardEdit(state.card)) return;
+  cardFieldReturnFocus = document.activeElement;
   const form = $('#card-form');
   const sources = {
     title: form.elements.title.closest('label'),
@@ -1057,10 +1070,7 @@ function selectCard(card, { openMobile = false } = {}) {
   form.elements.terrain.value = card?.terrain || (card?.card_type === 'Event' ? '' : 'Symbiosis');
   form.elements.testing_status.value = card?.testing_status === 'ready' ? 'ready' : 'draft';
   form.elements.effect.value = card?.effect || '';
-  const testingStatusButton = $('#card-test-status');
-  testingStatusButton.textContent = `Test status: ${cardTestingStatusLabel(card?.testing_status)}`;
-  testingStatusButton.dataset.status = card?.testing_status === 'ready' ? 'ready' : 'draft';
-  testingStatusButton.disabled = !card || !canEditCard(card);
+  updateTestingStatusButton('#card-test-status', card);
   renderAuthorOptions($('#card-author-options'), card?.author_ids || (card?.owner_id ? [card.owner_id] : [state.user?.id].filter(Boolean)));
   $('#card-heading').textContent = card?.title || 'New card';
   $('#card-edit-hint').hidden = !state.user;
@@ -1405,6 +1415,8 @@ async function renderDeckPatron(patron, { clearPrevious = false } = {}) {
   const canvas = $('#deck-patron-canvas');
   const downloadButton = $('#patron-download-png');
   const deleteButton = $('#patron-delete-card');
+  const patronCard = patron ? patronCardByName(patron.name) : null;
+  updateTestingStatusButton('#deck-patron-test-status', patronCard, true);
   const keepExistingPreview = Boolean(patron && !clearPrevious && !shell.classList.contains('is-empty') && canvas.style.visibility !== 'hidden');
   updateAddToDeckButtons(null);
   const serial = ++state.deckPatronSerial;
@@ -1420,7 +1432,6 @@ async function renderDeckPatron(patron, { clearPrevious = false } = {}) {
   deleteButton.classList.toggle('is-rendering', Boolean(keepExistingPreview && (!deleteButton.disabled || deleteButton.classList.contains('is-rendering'))));
   deleteButton.disabled = true;
   if (!patron) return;
-  const patronCard = patronCardByName(patron.name);
   if (!patronCard) return;
   let artworkUrl = '';
   if (patronCard.artwork_id) {
@@ -1458,6 +1469,7 @@ async function showDeckCardPreview(card) {
   const canvas = $('#deck-card-canvas');
   const downloadButton = $('#deck-download-png');
   const deleteButton = $('#deck-delete-card');
+  updateTestingStatusButton('#deck-card-test-status', card, true);
   const keepExistingPreview = Boolean(card && previousCard && canvas.style.visibility !== 'hidden');
   updateAddToDeckButtons(card);
   shell.classList.toggle('is-empty', !card);
@@ -1827,6 +1839,9 @@ function updateAuthenticatedControls() {
   $('#card-edit-hint').hidden = !signedIn;
   $('#deck-preview-edit-hint').hidden = !state.deck || (Boolean(state.deckPreviewCard) && !signedIn);
   $('#deck-patron-edit-hint').hidden = !signedIn || !patronByName(state.deck?.patron_name);
+  updateTestingStatusButton('#card-test-status', state.card);
+  updateTestingStatusButton('#deck-card-test-status', state.deckPreviewCard, true);
+  updateTestingStatusButton('#deck-patron-test-status', patronCardByName(patronByName(state.deck?.patron_name)?.name), true);
 }
 
 async function loadWorkspace() {
@@ -2090,6 +2105,17 @@ $('#close-mobile-editor').addEventListener('click', closeMobileEditor);
 $('#card-canvas').tabIndex = 0;
 $('#card-canvas').addEventListener('click', event => openCardField(cardFieldAt(event)));
 $('#card-test-status').addEventListener('click', () => openCardField('status'));
+for (const [buttonId, getCard] of [
+  ['deck-card-test-status', () => state.deckPreviewCard],
+  ['deck-patron-test-status', () => patronCardByName(patronByName(state.deck?.patron_name)?.name)],
+]) {
+  $(`#${buttonId}`).addEventListener('click', () => {
+    const card = getCard();
+    if (!requireCardEdit(card)) return;
+    selectCard(card);
+    openCardField('status');
+  });
+}
 $('#card-canvas').addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openCardField('type'); } });
 function editDeckPreviewAt(event, card) {
   if (!requireCardEdit(card)) return;
