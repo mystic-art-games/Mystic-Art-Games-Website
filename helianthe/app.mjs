@@ -1,6 +1,6 @@
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.mjs';
 import { createCommunityApi, resolveLegacyCardAuthors } from './community-api.mjs';
-import { renderCard, downloadCardPNG, preloadCardArtwork, preloadCardAssets } from './card-renderer.mjs?v=paper-edge-5';
+import { renderCard, downloadCardPNG, preloadCardArtwork, preloadCardAssets } from './card-renderer.mjs?v=entity-terrain-1';
 import { PATRONS } from './patrons.mjs';
 
 document.title = ['127.0.0.1', 'localhost', '::1'].includes(window.location.hostname)
