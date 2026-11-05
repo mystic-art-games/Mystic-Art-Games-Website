@@ -129,7 +129,6 @@ textarea { resize: vertical; }
 .about-content::-webkit-scrollbar { display: none; }
 .about-panel .panel-head { display: none; }
 .about-panel .about-section { border: 0; background: transparent; }
-.about-kicker { color: #a7782c; font-size: .8rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
 .about-intro { max-width: 820px; margin: 1.6rem auto 2rem; text-align: center; }
 .about-intro p { line-height: 1.65; }
 .about-lead { color: #265847; font-size: 1.25rem; font-weight: 700; }
