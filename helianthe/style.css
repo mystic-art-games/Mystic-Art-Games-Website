@@ -778,7 +778,7 @@ body.dark-mode .deck-preview-edit-hint { color: #fff; }
 .mobile-editor-close { display: none; }
 .card-preview-shell .card-terrain-aura { width: min(100%, 280px); }
 .card-terrain-aura { position: relative; flex: 0 0 auto; isolation: isolate; }
-.card-terrain-aura::before { content: ''; position: absolute; z-index: 0; inset: 0; border-radius: 3%; background: var(--terrain-card-art) center / cover no-repeat; box-shadow: 0 8px 20px rgba(10, 35, 27, .24); transform: translate(-5%, -5%); pointer-events: none; }
+.card-terrain-aura::before { content: ''; position: absolute; z-index: 0; inset: 0; border-radius: 3%; background: var(--terrain-card-art) center / cover no-repeat; box-shadow: 0 8px 20px rgba(10, 35, 27, .24); transform: translate(-10%, -5%); pointer-events: none; }
 .card-terrain-aura:not([data-terrain="Symbiosis"]):not([data-terrain="Flow"]):not([data-terrain="Verdant"]):not([data-terrain="Radiance"])::before { display: none; }
 .card-terrain-aura[data-terrain="Symbiosis"] { --terrain-card-art: url('./assets/Terrain_Symbiosis_Full_Art.png'); }
 .card-terrain-aura[data-terrain="Flow"] { --terrain-card-art: url('./assets/Terrain_Flow_Full_Art.png'); }
