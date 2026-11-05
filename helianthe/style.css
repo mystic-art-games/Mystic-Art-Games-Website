@@ -1965,6 +1965,7 @@ body.dark-mode #card-field-modal .card-field-dialog {
 /* Public guide pages share the About frame and scroll surface. */
 .about-intro h1,
 .guide-intro h1 { margin: .15rem 0 .55rem; color: #265847; font: 700 clamp(2rem, 4vw, 3.1rem) Alegreya, Georgia, serif; }
+.about-intro h1 { font-family: Nunito, Arial, sans-serif; font-weight: 800; }
 .about-intro .about-lead { margin-bottom: .45rem; }
 .info-actions { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: 1.25rem; }
 .info-actions button,
