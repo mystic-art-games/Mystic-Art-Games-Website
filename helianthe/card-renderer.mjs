@@ -4,6 +4,7 @@ const ASSETS = new URL('./assets/', import.meta.url);
 const DEFAULT_ARTWORK = asset('Poseidons_Chosen_One_Comic.png?v=3');
 const DEFAULT_ARTWORK_SCALE = 0.88;
 const imageCache = new Map();
+const ARTWORK_IMAGE_CACHE_LIMIT = 24;
 const artworkWindows = new WeakMap();
 const iconBounds = new WeakMap();
 // Centers of the enclosed paper circles in each 1024 × 1536 frame PNG.
@@ -33,6 +34,7 @@ const factionSymbols = {
 };
 const cardFont = 'Alegreya';
 const rulesFont = 'Nunito, Segoe UI, Arial, sans-serif';
+let fontsPromise;
 
 function asset(name) { return new URL(name, ASSETS).href; }
 
@@ -44,9 +46,18 @@ function loadImage(url) {
     image.onerror = () => resolve(null);
     image.src = url;
   });
-  if (url.startsWith('blob:')) return load();
-  if (!imageCache.has(url)) imageCache.set(url, load());
-  return imageCache.get(url);
+  const cached = imageCache.get(url);
+  if (cached) {
+    if (url.startsWith('blob:')) { imageCache.delete(url); imageCache.set(url, cached); }
+    return cached;
+  }
+  const pending = load();
+  imageCache.set(url, pending);
+  if (url.startsWith('blob:')) {
+    const artworkKeys = [...imageCache.keys()].filter(key => key.startsWith('blob:'));
+    if (artworkKeys.length > ARTWORK_IMAGE_CACHE_LIMIT) imageCache.delete(artworkKeys[0]);
+  }
+  return pending;
 }
 
 function visibleIconCenter(icon) {
@@ -132,12 +143,29 @@ function drawArtwork(ctx, frame, art, scale = 1) {
   ctx.drawImage(layer, 0, 0, 750, 1050);
 }
 
-async function fontsReady() {
-  await Promise.all([
+function fontsReady() {
+  return fontsPromise ||= Promise.all([
     document.fonts.load(`700 36px ${cardFont}`),
     document.fonts.load('500 28px Nunito'),
     document.fonts.load('700 28px Nunito'),
     document.fonts.load('italic 500 26px Nunito'),
+  ]);
+}
+
+export function preloadCardArtwork(url) { return loadImage(url); }
+
+export function preloadCardAssets() {
+  const frames = ['Flow_CardFrame.png', 'Radiance_CardFrame_v2.png', 'Verdant_CardFrame.png', 'Symbiosis_CardFrame.png', 'Nomads_CardFrame_v2.png'];
+  const terrains = ['Flow', 'Radiance', 'Verdant', 'Symbiosis', 'Nomads'];
+  const symbols = terrains.flatMap(terrain => ['Entity', 'Event', 'Patron'].map(type =>
+    `Type_${type}_${terrain}.png?v=${terrain === 'Verdant' || terrain === 'Symbiosis' ? 3 : 2}`));
+  const factions = [...Object.values(factionSymbols), 'Faction_Nomads_Cairn.png'];
+  return Promise.allSettled([
+    ...frames.map(name => loadImage(asset(`${name}?v=2`))),
+    ...symbols.map(name => loadImage(asset(name))),
+    ...factions.map(name => loadImage(asset(name))),
+    loadImage(DEFAULT_ARTWORK),
+    fontsReady(),
   ]);
 }
 
@@ -153,7 +181,7 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
   const symbolName = `Type_${symbolType}_${terrain || 'Nomads'}.png`;
   const symbolVersion = terrain === 'Verdant' || terrain === 'Symbiosis' ? 3 : 2;
   const [frame, art, symbol, factionSymbol] = await Promise.all([
-    loadImage(asset(`${frameName}?v=2`)), loadImage(artworkUrl || DEFAULT_ARTWORK), loadImage(asset(`${symbolName}?v=${symbolVersion}`)),
+    loadImage(asset(`${frameName}?v=2`)), options.skipArtwork ? Promise.resolve(null) : loadImage(artworkUrl || DEFAULT_ARTWORK), loadImage(asset(`${symbolName}?v=${symbolVersion}`)),
     loadImage(asset(terrain ? factionSymbols[terrain] : 'Faction_Nomads_Cairn.png')), fontsReady().catch(() => null),
   ]);
   if (!shouldDraw()) return { cancelled: true };

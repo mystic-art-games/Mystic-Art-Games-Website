@@ -1,6 +1,6 @@
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.mjs';
 import { createCommunityApi, resolveLegacyCardAuthors } from './community-api.mjs';
-import { renderCard, downloadCardPNG } from './card-renderer.mjs?v=paper-edge-4';
+import { renderCard, downloadCardPNG, preloadCardArtwork, preloadCardAssets } from './card-renderer.mjs?v=paper-edge-5';
 import { PATRONS } from './patrons.mjs';
 
 document.title = ['127.0.0.1', 'localhost', '::1'].includes(window.location.hostname)
@@ -562,6 +562,7 @@ function button(label, action, className = '') {
 }
 
 const TAB_NAMES = ['about', 'rules', 'factions', 'cards', 'decks', 'profiles'];
+let cardAssetsPreloadStarted = false;
 
 function requestedTab() {
   const name = window.location.hash.slice(1).toLowerCase();
@@ -578,6 +579,13 @@ function showTab(name, { updateUrl = true } = {}) {
     $(`#${tab}-view`).hidden = tab !== name;
     $(`[data-tab="${tab}"]`).classList.toggle('active', tab === name);
   }
+  if (name === 'cards') {
+    if (!cardAssetsPreloadStarted) {
+      cardAssetsPreloadStarted = true;
+      setTimeout(() => { void preloadCardAssets(); }, 0);
+    }
+    queueCardArtworkPrefetch();
+  } else ++artworkPrefetchGeneration;
   if (updateUrl && window.location.hash !== `#${name}`) window.history.replaceState(null, '', `#${name}`);
 }
 
@@ -698,6 +706,21 @@ function selectCardFromList(card) {
   selectCard(card, { openMobile: true });
 }
 
+function syncSelectedCardRow(cardId) {
+  const list = $('#card-list');
+  list.querySelector('.card-list-item.selected')?.classList.remove('selected');
+  if (cardId != null) [...list.children].find(row => row.dataset.cardId === String(cardId))?.classList.add('selected');
+}
+
+const cardArtworkObserver = new IntersectionObserver(entries => {
+  for (const entry of entries) {
+    if (!entry.isIntersecting) continue;
+    const card = [...state.cards, ...patronCards].find(item => String(item.id) === entry.target.dataset.cardId);
+    warmCardArtwork(card);
+    cardArtworkObserver.unobserve(entry.target);
+  }
+}, { root: $('#card-list'), rootMargin: '120px 0px' });
+
 function renderCardList() {
   const query = $('#card-search').value.trim().toLocaleLowerCase();
   const types = selectedFilterValues('card-filter-type');
@@ -705,6 +728,7 @@ function renderCardList() {
   const author = $('#card-filter-author').value;
   const terrains = selectedFilterValues('card-filter-terrain');
   const list = $('#card-list');
+  cardArtworkObserver.disconnect();
   list.replaceChildren();
   const allCards = [...state.cards, ...patronCards];
   renderCollectionSummary(allCards);
@@ -717,6 +741,8 @@ function renderCardList() {
     return matchesSearch && matchesType && matchesStatus && matchesAuthor && matchesTerrain;
   })) {
     const row = button('', () => selectCardFromList(card), `card-list-item${state.card?.id === card.id ? ' selected' : ''}`);
+    row.addEventListener('pointerenter', () => warmCardArtwork(card));
+    row.addEventListener('focus', () => warmCardArtwork(card));
     row.dataset.cardId = card.id;
     row.setAttribute('aria-label', `${card.terrain || 'Neutral'} ${card.card_type}: ${card.title}, ${cardTestingStatusLabel(card.testing_status)}`);
     const title = document.createElement('span');
@@ -734,6 +760,7 @@ function renderCardList() {
     else meta.append(authorDisplayElement(card.author_ids, card.owner_id));
     row.append(meta);
     list.append(row);
+    if (card.artwork_id) cardArtworkObserver.observe(row);
   }
   if (!list.childElementCount) list.textContent = 'No cards found.';
 }
@@ -924,6 +951,32 @@ function releaseArtwork() {
 
 const cardArtworkUrlCache = new Map();
 const cardArtworkRequests = new Map();
+let artworkPrefetchGeneration = 0;
+let artworkPrefetchTimer = null;
+
+function warmCardArtwork(card) {
+  if (!card?.artwork_id) return;
+  void getCardArtworkUrl(card.artwork_id).then(preloadCardArtwork).catch(() => {});
+}
+
+function queueCardArtworkPrefetch() {
+  const generation = ++artworkPrefetchGeneration;
+  clearTimeout(artworkPrefetchTimer);
+  if ($('#cards-view').hidden || !state.cards.length) return;
+  artworkPrefetchTimer = setTimeout(() => {
+    const ids = [...new Set([...state.cards, ...patronCards]
+      .sort((a, b) => a.title.localeCompare(b.title)).map(card => card.artwork_id).filter(Boolean))];
+    let next = 0;
+    const worker = async () => {
+      while (generation === artworkPrefetchGeneration && next < ids.length) {
+        const id = ids[next++];
+        try { await getCardArtworkUrl(id); }
+        catch { /* A failed prefetch must not prevent selecting another card. */ }
+      }
+    };
+    for (let i = 0; i < Math.min(4, ids.length); i++) void worker();
+  }, 0);
+}
 
 function getCardArtworkUrl(artworkId) {
   if (cardArtworkUrlCache.has(artworkId)) return Promise.resolve(cardArtworkUrlCache.get(artworkId));
@@ -955,6 +1008,7 @@ async function showArtwork(card) {
     renderPreview();
     return;
   }
+  renderPreview();
   try {
     const artworkUrl = await getCardArtworkUrl(card.artwork_id);
     if (serial !== state.artworkSerial) return;
@@ -969,9 +1023,9 @@ async function showArtwork(card) {
 }
 
 function renderPreview() {
-  if (state.artworkLoading) return;
   const form = $('#card-form');
   const serial = ++state.renderSerial;
+  const skipArtwork = state.artworkLoading || Boolean(state.artworkError);
   const card = {
     title: form.elements.title.value,
     card_type: form.elements.card_type.value,
@@ -982,12 +1036,12 @@ function renderPreview() {
   const downloadButton = $('#download-png');
   downloadButton.classList.toggle('is-rendering', !downloadButton.disabled || downloadButton.classList.contains('is-rendering'));
   downloadButton.disabled = true;
-  void renderCard($('#card-canvas'), card, state.artworkUrl || '', () => serial === state.renderSerial)
+  void renderCard($('#card-canvas'), card, state.artworkUrl || '', () => serial === state.renderSerial, { skipArtwork })
     .then(result => {
       if (serial !== state.renderSerial || result.cancelled) return;
-      $('#preview-note').textContent = state.artworkError || (result.clipped ? 'Text is too long — shorten the effect before exporting.' : '');
+      $('#preview-note').textContent = state.artworkLoading ? 'Loading artwork…' : state.artworkError || (result.clipped ? 'Text is too long — shorten the effect before exporting.' : '');
       downloadButton.classList.remove('is-rendering');
-      downloadButton.disabled = result.clipped || Boolean(state.artworkError);
+      downloadButton.disabled = skipArtwork || result.clipped;
       $('#delete-card').disabled = !state.card || !state.user || (!state.card.patron && state.card.owner_id !== state.user.id && !state.isAdmin);
     })
     .catch(cause => {
@@ -1114,7 +1168,7 @@ function selectCard(card, { openMobile = false } = {}) {
   setCardFormEditable(canEditCard(card));
   syncTerrain();
   void showArtwork(card);
-  renderCardList();
+  syncSelectedCardRow(card?.id);
   if (openMobile) {
     $('#cards-view').classList.add('mobile-editor-open');
     document.body.classList.add('mobile-editor-visible');
@@ -1783,6 +1837,7 @@ async function reloadCollections() {
   refreshCardAuthorFilter();
   updateAddToDeckButtons(state.card || state.deckPreviewCard);
   renderCardList(); renderDeckList(); renderDeckCards(); renderProfileList();
+  if (!$('#cards-view').hidden) queueCardArtworkPrefetch();
   if (state.profile) selectProfile(state.profiles.find(profile => profile.id === state.profile.id) || null);
 }
 
