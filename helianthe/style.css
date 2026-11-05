@@ -1964,7 +1964,7 @@ body.dark-mode #card-field-modal .card-field-dialog {
 
 /* Public guide pages share the About frame and scroll surface. */
 .about-intro h1,
-.guide-intro h1 { margin: .15rem 0 .55rem; color: #265847; font: 700 clamp(2rem, 4vw, 3.1rem) Alegreya, Georgia, serif; }
+.guide-intro h1 { margin: .15rem 0 .55rem; color: #265847; font: 700 clamp(2rem, 4vw, 3.1rem) Nunito, Arial, sans-serif; }
 .about-intro h1 { font-family: Nunito, Arial, sans-serif; font-weight: 800; }
 .about-intro .about-lead { margin-bottom: .45rem; }
 .info-actions { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: 1.25rem; }
@@ -1978,7 +1978,7 @@ body.dark-mode #card-field-modal .card-field-dialog {
 .guide-index button:hover:not(:disabled) { background: #c3e2c6; }
 .guide-section { padding: 1.15rem .15rem 1.3rem; border-top: 1px solid rgba(78, 112, 90, .28); scroll-margin-top: 1rem; }
 .guide-section h2,
-.faction-card h2 { margin: 0 0 .55rem; color: #265847; font: 700 1.65rem Alegreya, Georgia, serif; }
+.faction-card h2 { margin: 0 0 .55rem; color: #265847; font: 700 1.65rem Nunito, Arial, sans-serif; }
 .guide-section h3,
 .faction-card h3 { margin: .85rem 0 .25rem; color: #265847; font-size: 1.03rem; }
 .guide-section p,
