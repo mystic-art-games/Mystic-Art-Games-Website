@@ -142,7 +142,7 @@
         <label class="filter-author-field"><span>Author</span><select id="card-filter-author"><option value="">All Authors</option></select></label>
       </div>
       <div class="card-table-shell">
-        <div class="list-table-head card-list-head" aria-hidden="true"><span></span><span>Card name</span><span>Author</span></div>
+        <div class="list-table-head card-list-head" aria-hidden="true"><span></span><span>Card name</span><span>Test status</span><span>Author</span></div>
         <div id="card-list" class="item-list" role="list"></div>
       </div>
     </aside>
@@ -153,6 +153,7 @@
           <label class="card-direct-edit-field">Title<input name="title" required maxlength="200"></label>
           <div class="two-cols card-direct-edit-field"><label>Type<select name="card_type"><option>Entity</option><option>Event</option><option>Patron</option></select></label><label>Terrain<select name="terrain"><option value="">Nomads</option><option>Symbiosis</option><option>Flow</option><option>Verdant</option><option>Radiance</option></select></label></div>
           <label class="card-direct-edit-field">Effect<textarea name="effect" rows="5" maxlength="6000"></textarea></label>
+          <label class="card-direct-edit-field">Test status<select name="testing_status"><option value="draft">Draft</option><option value="ready">Ready for testing</option></select></label>
         <fieldset class="author-picker card-direct-edit-field"><legend>Authors</legend><div id="card-author-options"></div></fieldset>
           <label class="card-direct-edit-field"><input id="card-artwork" type="file" accept="image/png,image/jpeg,image/webp"></label>
           <p class="hint">Artwork is automatically compressed to 100 KB before upload. Source files can be up to 20 MB.</p>
@@ -162,6 +163,7 @@
           <div class="card-terrain-aura"><canvas id="card-canvas" width="1500" height="2100" aria-label="Card preview"></canvas></div>
           <p id="preview-note" role="status"></p>
           <p id="card-edit-hint" hidden>Click a card area to edit that element.</p>
+          <button id="card-test-status" class="card-test-status-button" type="button" disabled>Test status: Draft</button>
           <div class="card-preview-actions">
             <button id="add-to-deck" class="add-to-deck-button action-add-save" type="button" aria-label="Add to Deck" title="Add to Deck" disabled>Add to Deck</button>
             <button id="download-png" class="download-png-button" type="button" aria-label="Download PNG" title="Download PNG" disabled>Download PNG</button>

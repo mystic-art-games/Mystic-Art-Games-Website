@@ -30,6 +30,7 @@ let patronCards = PATRONS.map(patron => ({
   title: patron.name,
   card_type: 'Patron',
   terrain: PATRON_TERRAIN[patron.faction],
+  testing_status: 'draft',
   effect: [`Credo: “${patron.credo}”`, `Scoring: ${patron.scoring}`, patron.ability ? `Ability: ${patron.ability}` : ''].filter(Boolean).join('\n\n'),
   author: 'El Delfin',
   author_ids: [],
@@ -641,6 +642,10 @@ function matchesCardTerrainFilter(card, terrains) {
   return !terrains.size || terrains.has(card.terrain || 'none');
 }
 
+function cardTestingStatusLabel(status) {
+  return status === 'ready' ? 'Ready for testing' : 'Draft';
+}
+
 function selectCardFromList(card) {
   if (state.card === card) {
     $('#cards-view').classList.add('mobile-editor-open');
@@ -668,11 +673,15 @@ function renderCardList() {
   })) {
     const row = button('', () => selectCardFromList(card), `card-list-item${state.card?.id === card.id ? ' selected' : ''}`);
     row.dataset.cardId = card.id;
-    row.setAttribute('aria-label', `${card.terrain || 'Neutral'} ${card.card_type}: ${card.title}`);
+    row.setAttribute('aria-label', `${card.terrain || 'Neutral'} ${card.card_type}: ${card.title}, ${cardTestingStatusLabel(card.testing_status)}`);
     const title = document.createElement('span');
     title.className = `card-list-title ${terrainClass(card.terrain)}`;
     title.textContent = card.title;
     row.append(cardListIcons(card), title);
+    const testingStatus = document.createElement('span');
+    testingStatus.className = `card-testing-status ${card.testing_status === 'ready' ? 'ready' : 'draft'}`;
+    testingStatus.textContent = card.testing_status === 'ready' ? 'Ready' : 'Draft';
+    row.append(testingStatus);
     const meta = document.createElement('small');
     meta.className = 'card-list-owner';
     if (card.patron && card.author_ids?.length) meta.append(authorDisplayElement(card.author_ids));
@@ -960,11 +969,12 @@ function openCardField(field) {
     title: form.elements.title.closest('label'),
     type: form.elements.card_type.closest('label'),
     terrain: form.elements.terrain.closest('label'),
+    status: form.elements.testing_status.closest('label'),
     artwork: $('#card-artwork').closest('label'),
     effect: form.elements.effect.closest('label'),
     authors: $('#card-author-options').closest('fieldset'),
   };
-  const titles = { title: 'Edit title', type: 'Edit card type', terrain: 'Edit Terrain', artwork: 'Choose artwork', effect: 'Edit effect', authors: 'Edit Author' };
+  const titles = { title: 'Edit title', type: 'Edit card type', terrain: 'Edit Terrain', status: 'Edit test status', artwork: 'Choose artwork', effect: 'Edit effect', authors: 'Edit Author' };
   const source = sources[field];
   if (!source) return;
   cardFieldArtworkFile = null;
@@ -1045,7 +1055,12 @@ function selectCard(card, { openMobile = false } = {}) {
   form.elements.title.value = card?.title || '';
   form.elements.card_type.value = card?.card_type || 'Entity';
   form.elements.terrain.value = card?.terrain || (card?.card_type === 'Event' ? '' : 'Symbiosis');
+  form.elements.testing_status.value = card?.testing_status === 'ready' ? 'ready' : 'draft';
   form.elements.effect.value = card?.effect || '';
+  const testingStatusButton = $('#card-test-status');
+  testingStatusButton.textContent = `Test status: ${cardTestingStatusLabel(card?.testing_status)}`;
+  testingStatusButton.dataset.status = card?.testing_status === 'ready' ? 'ready' : 'draft';
+  testingStatusButton.disabled = !card || !canEditCard(card);
   renderAuthorOptions($('#card-author-options'), card?.author_ids || (card?.owner_id ? [card.owner_id] : [state.user?.id].filter(Boolean)));
   $('#card-heading').textContent = card?.title || 'New card';
   $('#card-edit-hint').hidden = !state.user;
@@ -2057,7 +2072,7 @@ $('#new-card').addEventListener('click', async () => {
     let title = 'New Card';
     for (let suffix = 2; names.has(title.toLocaleLowerCase()); suffix++) title = `New Card ${suffix}`;
     const created = await api.createCard(state.user.id, {
-      title, card_type: 'Entity', terrain: 'Symbiosis', effect: '',
+      title, card_type: 'Entity', terrain: 'Symbiosis', testing_status: 'draft', effect: '',
       author: authorNames([state.user.id], state.user.id).join(', '), author_ids: [state.user.id],
     });
     await reloadCollections();
@@ -2074,6 +2089,7 @@ $('#new-card').addEventListener('click', async () => {
 $('#close-mobile-editor').addEventListener('click', closeMobileEditor);
 $('#card-canvas').tabIndex = 0;
 $('#card-canvas').addEventListener('click', event => openCardField(cardFieldAt(event)));
+$('#card-test-status').addEventListener('click', () => openCardField('status'));
 $('#card-canvas').addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openCardField('type'); } });
 function editDeckPreviewAt(event, card) {
   if (!requireCardEdit(card)) return;
@@ -2276,7 +2292,7 @@ async function saveCardForm() {
     const values = Object.fromEntries(new FormData(form));
     if (modalOpen) {
       for (const field of modalContent.querySelectorAll('[name]')) {
-        if (['title', 'card_type', 'terrain', 'effect'].includes(field.name)) values[field.name] = field.value;
+        if (['title', 'card_type', 'terrain', 'effect', 'testing_status'].includes(field.name)) values[field.name] = field.value;
       }
     }
     if (['Entity', 'Patron'].includes(values.card_type) && !values.terrain) values.terrain = 'Symbiosis';
@@ -2290,7 +2306,7 @@ async function saveCardForm() {
     if (state.card?.patron) {
       const authorIds = values.author_ids;
       const artwork = file ? await api.uploadArtwork(file) : null;
-      const updates = { title: values.title, terrain: values.terrain, effect: values.effect, author_ids: authorIds, author: authorNames(authorIds).join(', ') || 'El Delfin', artwork_id: artwork?.id || previousArtworkId };
+      const updates = { title: values.title, terrain: values.terrain, testing_status: values.testing_status, effect: values.effect, author_ids: authorIds, author: authorNames(authorIds).join(', ') || 'El Delfin', artwork_id: artwork?.id || previousArtworkId };
       try {
         const overrides = JSON.parse(localStorage.getItem(PATRON_CARD_OVERRIDES_KEY) || '{}');
         overrides[state.card.id] = updates;

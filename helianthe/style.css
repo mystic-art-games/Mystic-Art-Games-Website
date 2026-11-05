@@ -596,7 +596,7 @@ body.dark-mode .card-filters select option:checked { background: #285944; }
 .item-list button.selected { background: #dceadd; border-color: #6f9c80; }
 .item-list small { display: block; color: #6b796d; font-size: .76rem; }
 .list-table-head { display: grid; align-items: center; gap: .55rem; margin: .8rem .8rem -.35rem; color: #5a6e64; font-size: .75rem; font-weight: 800; }
-.card-list-head { grid-template-columns: 3.5rem minmax(0, 1fr) minmax(5.5rem, auto); }
+.card-list-head { grid-template-columns: 3.5rem minmax(0, 1fr) 6.2rem minmax(5.5rem, auto); }
 .card-list-head { margin-bottom: .15rem; }
 .card-list-head span:last-child, .deck-list-head span:last-child { text-align: right; }
 .deck-list-head span:last-child { text-align: left; }
@@ -605,7 +605,7 @@ body.dark-mode .card-filters select option:checked { background: #285944; }
 .deck-list-head { grid-template-columns: minmax(0, 1fr) 7rem; }
 .deck-list-head { margin-bottom: .15rem; }
 .deck-list-head span:last-child { justify-self: start; }
-.card-list-item { display: grid; grid-template-columns: 3.5rem minmax(0, 1fr) minmax(5.5rem, auto); column-gap: .55rem; align-items: center; }
+.card-list-item { display: grid; grid-template-columns: 3.5rem minmax(0, 1fr) 6.2rem minmax(5.5rem, auto); column-gap: .55rem; align-items: center; }
 .card-list-icons { grid-column: 1; display: flex; align-items: center; gap: .22rem; }
 .card-faction-icon, .card-kind-icon { display: block; flex: 0 0 1.6rem; width: 1.6rem; height: 1.6rem; }
 .card-faction-icon { background-position: center; background-size: contain; background-repeat: no-repeat; }
@@ -634,7 +634,9 @@ body.dark-mode .card-filters select option:checked { background: #285944; }
 .card-list-item .event-type-icon { background: var(--event-icon-color); -webkit-mask: url('./assets/Event.png') center / contain no-repeat; mask: url('./assets/Event.png') center / contain no-repeat; }
 .card-list-item .radiance-entity-type-icon { background: var(--event-icon-color); -webkit-mask: url('./assets/Entity_Radiance.png') center / contain no-repeat; mask: url('./assets/Entity_Radiance.png') center / contain no-repeat; }
 .card-list-item .card-list-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 800; }
-.card-list-item .card-list-owner { grid-column: 3; grid-row: 1; display: flex; justify-content: flex-end; min-width: 0; overflow: hidden; text-align: right; }
+.card-list-item .card-testing-status { grid-column: 3; grid-row: 1; justify-self: start; border-radius: 999px; padding: .2rem .5rem; background: #eee8d8; color: #675737; font-size: .68rem; font-weight: 800; white-space: nowrap; }
+.card-list-item .card-testing-status.ready { background: #d8eddc; color: #28593c; }
+.card-list-item .card-list-owner { grid-column: 4; grid-row: 1; display: flex; justify-content: flex-end; min-width: 0; overflow: hidden; text-align: right; }
 #cards-view #card-list { gap: 0; margin-top: .55rem; }
 #cards-view > .cards-sidebar { display: flex; flex-direction: column; min-height: 0; }
 #cards-view .card-table-shell { display: flex; flex: 1 1 auto; flex-direction: column; min-height: 0; overflow: hidden; }
@@ -654,6 +656,10 @@ body.dark-mode .card-filters select option:checked { background: #285944; }
 #cards-view #card-list .card-list-title { font-size: .9rem; }
 #cards-view .card-list-head span:last-child { text-align: left; }
 #cards-view #card-list .card-list-owner { justify-content: flex-start; font-size: .7rem; text-align: left; }
+@media (max-width: 600px) {
+  #cards-view .card-list-head, #cards-view #card-list .card-list-item { grid-template-columns: 3.5rem minmax(0, 1fr) 6.2rem; }
+  #cards-view .card-list-head span:last-child, #cards-view #card-list .card-list-owner { display: none; }
+}
 .deck-list-item { display: grid; grid-template-columns: 1fr; gap: .35rem; align-items: stretch; }
 .deck-tile-cover { display: block; aspect-ratio: 16 / 9; overflow: hidden; border-radius: 10px; background: #d9e5d7; }
 .deck-tile-cover img { display: block; width: 100%; height: 100%; object-fit: cover; }
@@ -799,6 +805,11 @@ body.dark-mode .card-field-dialog { border-color: #416853; background: #173f32; 
 #preview-note { min-height: 1.5rem; margin: .2rem 0; color: #a04034; text-align: center; }
 #card-edit-hint { max-width: 24rem; margin: .35rem auto 0; color: #68756d; font-size: .95rem; line-height: 1.35; text-align: center; }
 body.dark-mode #card-edit-hint { color: #fff; }
+.card-test-status-button { display: block; margin: .35rem auto 0; border-radius: 999px; border: 1px solid #c2b692; padding: .35rem .8rem; background: #eee8d8; color: #675737; font-size: .78rem; font-weight: 800; }
+.card-test-status-button[data-status="ready"] { border-color: #8dbb95; background: #d8eddc; color: #28593c; }
+.card-test-status-button:disabled { cursor: default; opacity: 1; }
+body.dark-mode .card-test-status-button, body.dark-mode #cards-view #card-list .card-testing-status { border-color: #7b765f; background: #4a4638; color: #f0e1bc; }
+body.dark-mode .card-test-status-button[data-status="ready"], body.dark-mode #cards-view #card-list .card-testing-status.ready { border-color: #78a68a; background: #29543d; color: #dcf3df; }
 #download-png { align-self: center; }
 .card-preview-actions { display: flex; justify-content: center; gap: .6rem; margin-top: .65rem; }
 .card-preview-actions > button { height: 2.35rem; min-height: 0; display: inline-flex; align-items: center; justify-content: center; }
