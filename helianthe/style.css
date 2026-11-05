@@ -2097,3 +2097,29 @@ body.dark-mode button.action-delete {
 }
 body:not(.dark-mode) button.action-delete:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.06); box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .82), 0 5px 12px rgba(125, 48, 40, .28) !important; }
 body.dark-mode button.action-delete:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.12); box-shadow: inset 1px 1px 0 rgba(255, 232, 227, .34), 0 6px 16px rgba(40, 10, 8, .38) !important; }
+
+/* Rules and Factions use the same glass shell as the other workspace views. */
+.guide-workspace.about-workspace { width: calc(100% - 2rem); max-width: 1100px; height: calc(100vh - 116px); margin: 1rem auto; }
+.guide-workspace.about-workspace > .guide-panel {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  aspect-ratio: auto;
+  border: 1px solid rgba(55, 91, 78, .46);
+  border-radius: 22px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, .9), rgba(224, 234, 229, .66) 46%, rgba(202, 219, 211, .42)) !important;
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 1), inset -1px -1px 0 rgba(97, 135, 120, .26);
+}
+.guide-workspace > .guide-panel .about-scroll-wrap { inset: 1rem; }
+.guide-workspace .about-content { background: transparent; border-radius: 0; }
+body.dark-mode .guide-workspace.about-workspace > .guide-panel {
+  border-color: #416853 !important;
+  background: linear-gradient(145deg, #153f34, #246047 62%, #34735a) !important;
+  box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .28), 0 8px 24px rgba(0, 18, 12, .28) !important;
+}
+body.dark-mode .guide-workspace .about-content { background: transparent; }
+@media (max-width: 850px) {
+  .guide-workspace.about-workspace { flex: 1 1 auto; min-height: 0; height: auto; }
+  .guide-workspace > .guide-panel .about-scroll-wrap { inset: .75rem; }
+  .guide-workspace .art-scroll-rail { display: flex !important; }
+}
