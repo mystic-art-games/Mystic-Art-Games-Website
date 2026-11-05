@@ -666,6 +666,7 @@ function selectCardFromList(card) {
 function renderCardList() {
   const query = $('#card-search').value.trim().toLocaleLowerCase();
   const types = selectedFilterValues('card-filter-type');
+  const testingStatus = $('#card-filter-status').value;
   const author = $('#card-filter-author').value;
   const terrains = selectedFilterValues('card-filter-terrain');
   const list = $('#card-list');
@@ -675,9 +676,10 @@ function renderCardList() {
   for (const card of allCards.sort((a, b) => a.title.localeCompare(b.title)).filter(item => {
     const matchesSearch = item.title.toLocaleLowerCase().includes(query);
     const matchesType = !types.size || types.has(item.card_type);
+    const matchesStatus = !testingStatus || (item.testing_status === 'ready' ? 'ready' : 'draft') === testingStatus;
     const matchesAuthor = !author || (item.patron ? (authorNames(item.author_ids).includes(author) || (!item.author_ids?.length && item.author === author)) : authorNames(item.author_ids, item.owner_id).includes(author));
     const matchesTerrain = matchesCardTerrainFilter(item, terrains);
-    return matchesSearch && matchesType && matchesAuthor && matchesTerrain;
+    return matchesSearch && matchesType && matchesStatus && matchesAuthor && matchesTerrain;
   })) {
     const row = button('', () => selectCardFromList(card), `card-list-item${state.card?.id === card.id ? ' selected' : ''}`);
     row.dataset.cardId = card.id;
@@ -2049,6 +2051,7 @@ document.addEventListener('click', event => {
 $('#card-search').addEventListener('input', renderCardList);
 initializeFilterTiles('card-filter-type', ['Entity', 'Event', 'Patron'], 'type', renderCardList);
 initializeFilterTiles('card-filter-terrain', ['Symbiosis', 'Flow', 'Verdant', 'Radiance', 'none'], 'terrain', renderCardList);
+$('#card-filter-status').addEventListener('change', renderCardList);
 $('#card-filter-author').addEventListener('change', renderCardList);
 document.addEventListener('keydown', event => {
   if (event.defaultPrevented || (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') || $('#cards-view').hidden) return;
@@ -2097,6 +2100,7 @@ $('#new-card').addEventListener('click', async () => {
     await reloadCollections();
     $('#card-search').value = '';
     clearFilterTiles('card-filter-type');
+    $('#card-filter-status').value = '';
     $('#card-filter-author').value = '';
     clearFilterTiles('card-filter-terrain');
     selectCard(state.cards.find(card => card.id === created.id) || created);
@@ -2377,6 +2381,7 @@ async function saveCardForm() {
     if (isNewCard) {
       $('#card-search').value = '';
       clearFilterTiles('card-filter-type');
+      $('#card-filter-status').value = '';
       $('#card-filter-author').value = '';
       clearFilterTiles('card-filter-terrain');
     }
