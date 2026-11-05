@@ -815,13 +815,14 @@ body.dark-mode .card-field-dialog { border-color: #416853; background: #173f32; 
 body.dark-mode #card-edit-hint { color: #fff; }
 .card-test-status-button { display: block; margin: .35rem auto 0; border-radius: 999px; border: 1px solid #adb5b1; padding: .35rem .8rem; background: #e2e5e3; color: #39433e; font-size: .78rem; font-weight: 800; }
 .card-test-status-button[data-status="ready"] { border-color: #124b30; background: #17613d; color: #fff; }
+.card-test-status-button[data-status="ready"]:hover:not(:disabled) { background: #287b50; color: #fff; }
 .card-test-status-button[hidden] { display: none; }
 .card-test-status-button:disabled { cursor: default; opacity: 1; }
 body.dark-mode .card-test-status-button { border-color: #7b8580; background: #4b5751; color: #edf0ee; }
 body.dark-mode .card-list-item .card-testing-status { border-color: #7b8580; background: #4b5751; color: #edf0ee; }
 body.dark-mode .card-test-status-button[data-status="ready"],
 body.dark-mode .card-list-item .card-testing-status.ready { border-color: #58a677; background: #216d46; color: #fff; }
-body.dark-mode .card-test-status-button[data-status="ready"]:hover:not(:disabled) { background: #287b50; }
+body.dark-mode .card-test-status-button[data-status="ready"]:hover:not(:disabled) { background: #34895c; color: #fff; }
 #decks-view .card-test-status-button { flex: 0 0 auto; margin: .1rem auto 0; }
 #download-png { align-self: center; }
 .card-preview-actions { display: flex; justify-content: center; gap: .6rem; margin-top: .65rem; }
