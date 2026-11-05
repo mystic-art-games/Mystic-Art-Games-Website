@@ -2139,6 +2139,28 @@ body.dark-mode .guide-workspace.about-workspace > .guide-panel {
   box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .28), 0 8px 24px rgba(0, 18, 12, .28) !important;
 }
 body.dark-mode .guide-workspace .about-content { background: transparent; }
+
+/* About navigation actions match the Log out button in both themes. */
+body:not(.dark-mode) #about-view .info-actions button,
+body:not(.dark-mode) #about-view .info-actions button:hover:not(:disabled) {
+  border-color: transparent;
+  background: linear-gradient(145deg, rgba(255, 255, 255, .99) 0%, rgba(240, 246, 242, .84) 46%, rgba(225, 236, 229, .64) 100%);
+  color: #15241d;
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .58), 0 2px 8px rgba(34, 98, 49, .2);
+  font-weight: 400;
+  transition: transform .15s ease, filter .15s ease, box-shadow .15s ease;
+}
+body:not(.dark-mode) #about-view .info-actions button:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.06); box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .7), 0 5px 12px rgba(34, 98, 49, .28); }
+body.dark-mode #about-view .info-actions button,
+body.dark-mode #about-view .info-actions button:hover:not(:disabled) {
+  border-color: #416853;
+  background: linear-gradient(145deg, rgba(220, 244, 226, .4) 0%, rgba(91, 143, 111, .32) 46%, rgba(28, 70, 52, .44) 100%);
+  color: #15241d;
+  box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .28), 0 8px 24px rgba(0, 18, 12, .28);
+  font-weight: 400;
+  transition: transform .15s ease, filter .15s ease, box-shadow .15s ease;
+}
+body.dark-mode #about-view .info-actions button:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.12); box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .34), 0 6px 16px rgba(0, 18, 12, .38); }
 @media (max-width: 850px) {
   .guide-workspace.about-workspace { flex: 1 1 auto; min-height: 0; height: auto; }
   .guide-workspace > .guide-panel .about-scroll-wrap { inset: .75rem; }
