@@ -687,7 +687,7 @@ function renderCardList() {
     title.textContent = card.title;
     row.append(cardListIcons(card), title);
     const testingStatus = document.createElement('span');
-    testingStatus.className = 'card-testing-status';
+    testingStatus.className = `card-testing-status${card.testing_status === 'ready' ? ' ready' : ''}`;
     testingStatus.textContent = card.testing_status === 'ready' ? 'Ready' : 'Draft';
     row.append(testingStatus);
     const meta = document.createElement('small');
@@ -1214,7 +1214,7 @@ function renderDeckCards() {
     const label = document.createElement('span'); label.className = `card-list-title ${terrainClass(card.terrain)}`; label.textContent = card.title;
     row.append(label);
     const testingStatus = document.createElement('span');
-    testingStatus.className = 'card-testing-status';
+    testingStatus.className = `card-testing-status${card.testing_status === 'ready' ? ' ready' : ''}`;
     testingStatus.textContent = card.testing_status === 'ready' ? 'Ready' : 'Draft';
     row.append(testingStatus);
     if (mine) {

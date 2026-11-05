@@ -600,6 +600,7 @@ body.dark-mode .card-filters select option:checked { background: #285944; }
 .card-list-head { grid-template-columns: 3.5rem minmax(0, 1fr) 6.2rem minmax(5.5rem, auto); }
 .card-list-head { margin: .8rem .3rem .15rem; }
 .card-list-head span:nth-child(3) { text-align: center; }
+#cards-view .card-list-head, #cards-view #card-list .card-list-item { grid-template-columns: 3.5rem minmax(0, 1fr) 5.7rem 7rem; }
 .card-list-head span:last-child, .deck-list-head span:last-child { text-align: right; }
 .deck-list-head span:last-child { text-align: left; }
 .deck-card-list-head { grid-template-columns: 3.5rem minmax(0, 1fr) 6.2rem 6.4rem; margin: .8rem calc(24px + 2.5rem + .3rem) .3rem .3rem; min-height: 1.15rem; line-height: 1.15; }
@@ -637,6 +638,7 @@ body.dark-mode .card-filters select option:checked { background: #285944; }
 .card-list-item .radiance-entity-type-icon { background: var(--event-icon-color); -webkit-mask: url('./assets/Entity_Radiance.png') center / contain no-repeat; mask: url('./assets/Entity_Radiance.png') center / contain no-repeat; }
 .card-list-item .card-list-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 800; }
 .card-list-item .card-testing-status { grid-column: 3; grid-row: 1; justify-self: center; border: 1px solid #adb5b1; border-radius: 999px; padding: .2rem .5rem; background: #e2e5e3; color: #39433e; font-size: .68rem; font-weight: 800; white-space: nowrap; }
+.card-list-item .card-testing-status.ready { border-color: #78a587; background: #d8eddc; color: #28593c; }
 .card-list-item .card-list-owner { grid-column: 4; grid-row: 1; display: flex; justify-content: flex-end; min-width: 0; overflow: hidden; text-align: right; }
 #cards-view #card-list { gap: 0; margin-top: .55rem; }
 #cards-view > .cards-sidebar { display: flex; flex-direction: column; min-height: 0; }
@@ -810,10 +812,13 @@ body.dark-mode .card-field-dialog { border-color: #416853; background: #173f32; 
 #card-edit-hint { max-width: 24rem; margin: .35rem auto 0; color: #68756d; font-size: .95rem; line-height: 1.35; text-align: center; }
 body.dark-mode #card-edit-hint { color: #fff; }
 .card-test-status-button { display: block; margin: .35rem auto 0; border-radius: 999px; border: 1px solid #adb5b1; padding: .35rem .8rem; background: #e2e5e3; color: #39433e; font-size: .78rem; font-weight: 800; }
+.card-test-status-button[data-status="ready"] { border-color: #78a587; background: #d8eddc; color: #28593c; }
 .card-test-status-button[hidden] { display: none; }
 .card-test-status-button:disabled { cursor: default; opacity: 1; }
 body.dark-mode .card-test-status-button { border-color: #7b8580; background: #4b5751; color: #edf0ee; }
 body.dark-mode .card-list-item .card-testing-status { border-color: #7b8580; background: #4b5751; color: #edf0ee; }
+body.dark-mode .card-test-status-button[data-status="ready"],
+body.dark-mode .card-list-item .card-testing-status.ready { border-color: #76a889; background: #29543d; color: #dcf3df; }
 #decks-view .card-test-status-button { flex: 0 0 auto; margin: .1rem auto 0; }
 #download-png { align-self: center; }
 .card-preview-actions { display: flex; justify-content: center; gap: .6rem; margin-top: .65rem; }
