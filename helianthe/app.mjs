@@ -649,7 +649,7 @@ function cardTestingStatusLabel(status) {
 function updateTestingStatusButton(selector, card, hideWhenEmpty = false) {
   const button = $(selector);
   button.hidden = hideWhenEmpty && !card;
-  button.textContent = `Test status: ${cardTestingStatusLabel(card?.testing_status)}`;
+  button.textContent = `Status: ${cardTestingStatusLabel(card?.testing_status)}`;
   button.dataset.status = card?.testing_status === 'ready' ? 'ready' : 'draft';
   button.disabled = !card || !canEditCard(card);
 }
@@ -687,7 +687,7 @@ function renderCardList() {
     title.textContent = card.title;
     row.append(cardListIcons(card), title);
     const testingStatus = document.createElement('span');
-    testingStatus.className = `card-testing-status ${card.testing_status === 'ready' ? 'ready' : 'draft'}`;
+    testingStatus.className = 'card-testing-status';
     testingStatus.textContent = card.testing_status === 'ready' ? 'Ready' : 'Draft';
     row.append(testingStatus);
     const meta = document.createElement('small');
@@ -987,7 +987,7 @@ function openCardField(field) {
     effect: form.elements.effect.closest('label'),
     authors: $('#card-author-options').closest('fieldset'),
   };
-  const titles = { title: 'Edit title', type: 'Edit card type', terrain: 'Edit Terrain', status: 'Edit test status', artwork: 'Choose artwork', effect: 'Edit effect', authors: 'Edit Author' };
+  const titles = { title: 'Edit title', type: 'Edit card type', terrain: 'Edit Terrain', status: 'Status', artwork: 'Choose artwork', effect: 'Edit effect', authors: 'Edit Author' };
   const source = sources[field];
   if (!source) return;
   cardFieldArtworkFile = null;
