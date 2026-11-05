@@ -87,7 +87,7 @@ export function cardInput(form) {
   if (!CARD_TYPES.has(card_type)) throw new Error('Choose Entity, Event, or Patron.');
   if ((card_type === 'Entity' || card_type === 'Patron') && !terrain) throw new Error(`Choose a Terrain for the ${card_type}.`);
   if (terrain && !TERRAINS.has(terrain)) throw new Error('Unknown Terrain.');
-  if (!TESTING_STATUSES.has(testing_status)) throw new Error('Choose Draft or Ready for testing.');
+  if (!TESTING_STATUSES.has(testing_status)) throw new Error('Choose Draft or Ready.');
   return {
     title, card_type, terrain, testing_status,
     effect: text(form.effect, 6000),

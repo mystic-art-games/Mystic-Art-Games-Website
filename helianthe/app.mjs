@@ -643,7 +643,7 @@ function matchesCardTerrainFilter(card, terrains) {
 }
 
 function cardTestingStatusLabel(status) {
-  return status === 'ready' ? 'Ready for testing' : 'Draft';
+  return status === 'ready' ? 'Ready' : 'Draft';
 }
 
 function updateTestingStatusButton(selector, card, hideWhenEmpty = false) {
