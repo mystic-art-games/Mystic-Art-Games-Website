@@ -16,7 +16,7 @@ const api = createCommunityApi(client);
 const ADMIN_EMAIL = 'dominik.zielinski3@gmail.com';
 let authMode = 'sign-in';
 let profileSaveStatusTimer = null;
-const state = { user: null, isAdmin: false, cards: [], decks: [], profiles: [], card: null, deck: null, profile: null, deckCards: [], deckPreviewCard: null, deckPreviewSerial: 0, deckPatronSerial: 0, artworkUrl: null, artworkLoading: false, artworkSerial: 0, renderSerial: 0, authVersion: 0, realtimeChannel: null, cardFormDirty: false };
+const state = { user: null, isAdmin: false, cards: [], decks: [], profiles: [], card: null, deck: null, profile: null, deckCards: [], deckPreviewCard: null, deckPreviewSerial: 0, artworkUrl: null, artworkLoading: false, artworkError: '', artworkSerial: 0, renderSerial: 0, authVersion: 0, realtimeChannel: null, cardFormDirty: false };
 let addToDeckCard = null;
 let recentDeckCardAddition = null;
 const ARTWORK_UPLOAD_LIMIT = 100 * 1024;
@@ -885,15 +885,10 @@ function getCardArtworkUrl(artworkId) {
   return cardArtworkRequests.get(artworkId);
 }
 
-function preloadCardArtwork(cards = []) {
-  for (const card of cards) {
-    if (card?.artwork_id) void getCardArtworkUrl(card.artwork_id).catch(() => {});
-  }
-}
-
 async function showArtwork(card) {
   const serial = ++state.artworkSerial;
   releaseArtwork();
+  state.artworkError = '';
   state.artworkLoading = Boolean(card?.artwork_id);
   if (!card?.artwork_id) {
     renderPreview();
@@ -910,7 +905,10 @@ async function showArtwork(card) {
     const artworkUrl = await getCardArtworkUrl(card.artwork_id);
     if (serial !== state.artworkSerial) return;
     state.artworkUrl = artworkUrl;
-  } catch { /* Keep the card preview usable when artwork is unavailable. */ }
+  } catch {
+    if (serial !== state.artworkSerial) return;
+    state.artworkError = 'Artwork could not be loaded. The image storage may be temporarily unavailable.';
+  }
   if (serial !== state.artworkSerial) return;
   state.artworkLoading = false;
   renderPreview();
@@ -933,9 +931,9 @@ function renderPreview() {
   void renderCard($('#card-canvas'), card, state.artworkUrl || '', () => serial === state.renderSerial)
     .then(result => {
       if (serial !== state.renderSerial || result.cancelled) return;
-      $('#preview-note').textContent = result.clipped ? 'Text is too long — shorten the effect before exporting.' : '';
+      $('#preview-note').textContent = state.artworkError || (result.clipped ? 'Text is too long — shorten the effect before exporting.' : '');
       downloadButton.classList.remove('is-rendering');
-      downloadButton.disabled = result.clipped;
+      downloadButton.disabled = result.clipped || Boolean(state.artworkError);
       $('#delete-card').disabled = !state.card || !state.user || (!state.card.patron && state.card.owner_id !== state.user.id && !state.isAdmin);
     })
     .catch(cause => {
@@ -1708,7 +1706,6 @@ function selectProfile(profile) {
 async function reloadCollections() {
   [state.cards, state.decks, state.profiles] = await Promise.all([api.listCards(), api.listDecks(), api.listProfiles()]);
   state.cards = resolveLegacyCardAuthors(state.cards, state.profiles);
-  preloadCardArtwork([...state.cards, ...patronCards]);
   refreshDeckPatronOptions();
   const savedPatrons = savedDeckPatrons();
   state.decks = state.decks.map(deck => deck.patron_name || !savedPatrons[deck.id] ? deck : { ...deck, patron_name: savedPatrons[deck.id] });
@@ -2125,6 +2122,7 @@ $('#card-artwork').addEventListener('change', event => {
   if (!file) return;
   state.cardFormDirty = true;
   ++state.artworkSerial; releaseArtwork();
+  state.artworkError = '';
   state.artworkLoading = false;
   state.artworkUrl = URL.createObjectURL(file);
   renderPreview();
@@ -2303,6 +2301,7 @@ async function saveCardForm() {
       }
       Object.assign(state.card, updates);
       card = state.card;
+      if (artwork) cardArtworkUrlCache.set(artwork.id, URL.createObjectURL(file));
       if (artwork && previousArtworkId && previousArtworkId !== artwork.id) {
         try { await api.deleteArtwork(previousArtworkId); }
         catch (cause) { cleanupWarning = cause.message; console.error('Old artwork cleanup failed', cause); }
@@ -2321,6 +2320,7 @@ async function saveCardForm() {
         throw cause;
       }
       persistedCard = card;
+      cardArtworkUrlCache.set(artwork.id, URL.createObjectURL(file));
       if (previousArtworkId && previousArtworkId !== artwork.id) {
         try { await api.deleteArtwork(previousArtworkId); }
         catch (cause) { cleanupWarning = cause.message; console.error('Old artwork cleanup failed', cause); }
