@@ -2098,6 +2098,18 @@ body.dark-mode button.action-delete {
 body:not(.dark-mode) button.action-delete:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.06); box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .82), 0 5px 12px rgba(125, 48, 40, .28) !important; }
 body.dark-mode button.action-delete:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.12); box-shadow: inset 1px 1px 0 rgba(255, 232, 227, .34), 0 6px 16px rgba(40, 10, 8, .38) !important; }
 
+/* Faction cards use the existing faction marks and a restrained glass tint. */
+#factions-view .faction-card { border-color: rgba(var(--faction-color), .3); background: linear-gradient(145deg, rgba(var(--faction-color), .17), rgba(255, 255, 255, .48) 72%); backdrop-filter: blur(8px); }
+#factions-view .faction-verdant { --faction-color: 70, 151, 88; }
+#factions-view .faction-brightworks { --faction-color: 222, 161, 51; }
+#factions-view .faction-flowbound { --faction-color: 62, 146, 194; }
+#factions-view .faction-dreamwardens { --faction-color: 151, 93, 188; }
+.faction-card-head { display: flex; align-items: center; gap: .85rem; min-height: 3.6rem; margin-bottom: .55rem; }
+.faction-card-head > div { min-width: 0; }
+.faction-card-head h2 { margin: .1rem 0 0; }
+.faction-logo { display: block; flex: 0 0 auto; width: 3.5rem; height: 3.5rem; object-fit: contain; }
+body.dark-mode #factions-view .faction-card { border-color: rgba(var(--faction-color), .42); background: linear-gradient(145deg, rgba(var(--faction-color), .22), rgba(15, 53, 38, .48) 74%); }
+
 @media (min-width: 851px) and (max-height: 700px) {
   #decks-view:not(.deck-detail-open) #deck-list { gap: .5rem; }
   #decks-view:not(.deck-detail-open) .deck-gallery-section h2 { margin-bottom: .35rem; }
