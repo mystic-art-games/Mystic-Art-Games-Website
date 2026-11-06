@@ -13,9 +13,9 @@
   <link rel="apple-touch-icon" href="../images/helianthe-logo.png?v=helianthe-logo-1">
   <link rel="manifest" href="./manifest.webmanifest">
   <title>Helianthe</title>
-  <link rel="stylesheet" href="./style.css?v=helianthe-ui-186">
+  <link rel="stylesheet" href="./style.css?v=helianthe-ui-187">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script type="module" src="./app.mjs?v=helianthe-ui-106"></script>
+  <script type="module" src="./app.mjs?v=helianthe-ui-107"></script>
 </head>
 <body>
   <header class="masthead">
@@ -148,6 +148,7 @@
           <label class="filter-status-field"><span>Status</span><select id="card-filter-status"><option value="">All Statuses</option><option value="draft">Draft</option><option value="ready">Ready</option></select></label>
           <label class="filter-author-field"><span>Author</span><select id="card-filter-author"><option value="">All Authors</option></select></label>
         </div>
+        <div id="card-filter-tags" class="tag-filter-group" role="group" aria-label="Filter by tags"><span class="filter-icon-label">Tags</span><div class="tag-filter-options"></div></div>
       </div>
       <div class="card-table-shell">
         <div class="list-table-head card-list-head" aria-hidden="true"><span></span><span>Card name</span><span>Status</span><span>Author</span></div>
@@ -162,6 +163,7 @@
           <div class="two-cols card-direct-edit-field"><label>Type<select name="card_type"><option>Entity</option><option>Event</option><option>Patron</option></select></label><label>Terrain<select name="terrain"><option value="">Nomads</option><option>Symbiosis</option><option>Flow</option><option>Verdant</option><option>Radiance</option></select></label></div>
           <label class="card-direct-edit-field">Effect<textarea name="effect" rows="5" maxlength="6000"></textarea></label>
           <label class="card-direct-edit-field">Status<select name="testing_status"><option value="draft">Draft</option><option value="ready">Ready</option></select></label>
+          <label class="card-direct-edit-field">Tags<input name="tags" maxlength="400" placeholder="cantrip, removal"></label>
         <fieldset class="author-picker card-direct-edit-field"><legend>Authors</legend><div id="card-author-options"></div></fieldset>
           <label class="card-direct-edit-field"><input id="card-artwork" type="file" accept="image/png,image/jpeg,image/webp"></label>
           <p class="hint">Artwork is automatically compressed to 100 KB before upload. Source files can be up to 20 MB.</p>
@@ -177,6 +179,7 @@
             <button id="delete-card" class="delete-card-button danger-button action-delete" type="button" aria-label="Delete Card" title="Delete Card" disabled hidden>Delete Card</button>
           </div>
           <p id="card-edit-hint" hidden>Click a card area to edit that element.</p>
+          <div class="card-tag-section"><div class="card-tag-heading"><span>Tags</span><button id="edit-card-tags" type="button">Edit tags</button></div><div id="card-tags" class="card-tags" aria-label="Card tags"></div></div>
         </section>
       </div>
     </section>
@@ -204,6 +207,7 @@
             <label class="filter-status-field"><span>Status</span><select id="deck-card-filter-status"><option value="">All Statuses</option><option value="draft">Draft</option><option value="ready">Ready</option></select></label>
             <label class="filter-author-field"><span>Author</span><select id="deck-card-filter-author"><option value="">All Authors</option></select></label>
           </div>
+          <div id="deck-card-filter-tags" class="tag-filter-group" role="group" aria-label="Filter deck cards by tags"><span class="filter-icon-label">Tags</span><div class="tag-filter-options"></div></div>
           <div class="deck-search-patron-row">
             <div class="deck-card-search-field">
               <span class="deck-card-search-label">Add card to this deck</span>

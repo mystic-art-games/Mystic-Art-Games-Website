@@ -634,6 +634,58 @@ function clearFilterTiles(groupId) {
   for (const tile of $(`#${groupId}`).querySelectorAll('.filter-icon-tile')) tile.setAttribute('aria-pressed', 'false');
 }
 
+function cardTags(card) {
+  return Array.isArray(card?.tags) ? card.tags : [];
+}
+
+function selectedTagFilters(groupId) {
+  return new Set([...$(`#${groupId}`).querySelectorAll('.tag-filter-option[aria-pressed="true"]')].map(button => button.dataset.tag));
+}
+
+function clearTagFilters(groupId) {
+  for (const button of $(`#${groupId}`).querySelectorAll('.tag-filter-option')) button.setAttribute('aria-pressed', 'false');
+}
+
+function renderTagFilters(groupId, cards, render) {
+  const options = $(`#${groupId} .tag-filter-options`);
+  const selected = selectedTagFilters(groupId);
+  const tags = [...new Set(cards.flatMap(cardTags))].sort((a, b) => a.localeCompare(b));
+  options.replaceChildren();
+  if (!tags.length) {
+    const empty = document.createElement('span');
+    empty.className = 'tag-filter-empty';
+    empty.textContent = 'No tags yet';
+    options.append(empty);
+    return;
+  }
+  for (const tag of tags) {
+    const tile = button(tag, () => {
+      tile.setAttribute('aria-pressed', String(tile.getAttribute('aria-pressed') !== 'true'));
+      render();
+    }, 'tag-filter-option');
+    tile.dataset.tag = tag;
+    tile.setAttribute('aria-pressed', String(selected.has(tag)));
+    options.append(tile);
+  }
+}
+
+function matchesCardTags(card, selected) {
+  return [...selected].every(tag => cardTags(card).includes(tag));
+}
+
+function renderCardTags(card) {
+  const tags = $('#card-tags');
+  tags.replaceChildren();
+  if (!cardTags(card).length) tags.textContent = 'No tags';
+  else for (const tag of cardTags(card)) {
+    const chip = document.createElement('span');
+    chip.className = 'card-tag';
+    chip.textContent = tag;
+    tags.append(chip);
+  }
+  $('#edit-card-tags').disabled = !card || !canEditCard(card);
+}
+
 function matchesCardTerrainFilter(card, terrains) {
   return !terrains.size || terrains.has(card.terrain || 'none');
 }
@@ -709,6 +761,8 @@ function renderCardList() {
   const list = $('#card-list');
   list.replaceChildren();
   const allCards = [...state.cards, ...patronCards];
+  renderTagFilters('card-filter-tags', allCards, renderCardList);
+  const selectedTags = selectedTagFilters('card-filter-tags');
   renderCollectionSummary(allCards);
   for (const card of allCards.sort((a, b) => a.title.localeCompare(b.title)).filter(item => {
     const matchesSearch = item.title.toLocaleLowerCase().includes(query);
@@ -716,7 +770,7 @@ function renderCardList() {
     const matchesStatus = !testingStatus || (item.testing_status === 'ready' ? 'ready' : 'draft') === testingStatus;
     const matchesAuthor = !author || (item.patron ? (authorNames(item.author_ids).includes(author) || (!item.author_ids?.length && item.author === author)) : authorNames(item.author_ids, item.owner_id).includes(author));
     const matchesTerrain = matchesCardTerrainFilter(item, terrains);
-    return matchesSearch && matchesType && matchesStatus && matchesAuthor && matchesTerrain;
+    return matchesSearch && matchesType && matchesStatus && matchesAuthor && matchesTerrain && matchesCardTags(item, selectedTags);
   })) {
     const row = button('', () => selectCardFromList(card), `card-list-item${state.card?.id === card.id ? ' selected' : ''}`);
     row.dataset.cardId = card.id;
@@ -1029,9 +1083,10 @@ function openCardField(field) {
     status: form.elements.testing_status.closest('label'),
     artwork: $('#card-artwork').closest('label'),
     effect: form.elements.effect.closest('label'),
+    tags: form.elements.tags.closest('label'),
     authors: $('#card-author-options').closest('fieldset'),
   };
-  const titles = { title: 'Edit title', type: 'Edit card type', terrain: 'Edit Terrain', status: 'Status', artwork: 'Choose artwork', effect: 'Edit effect', authors: 'Edit Author' };
+  const titles = { title: 'Edit title', type: 'Edit card type', terrain: 'Edit Terrain', status: 'Status', artwork: 'Choose artwork', effect: 'Edit effect', tags: 'Edit tags', authors: 'Edit Author' };
   const source = sources[field];
   if (!source) return;
   cardFieldArtworkFile = null;
@@ -1052,6 +1107,12 @@ function openCardField(field) {
     const hint = document.createElement('p');
     hint.className = 'form-hint';
     hint.textContent = 'Artwork is automatically compressed to 100 KB before upload. Source files can be up to 20 MB.';
+    content.append(hint);
+  }
+  if (field === 'tags') {
+    const hint = document.createElement('p');
+    hint.className = 'form-hint';
+    hint.textContent = 'Separate tags with commas. A card can have up to 12 tags, such as cantrip, removal, or card draw.';
     content.append(hint);
   }
   $('#card-field-title').textContent = titles[field];
@@ -1114,6 +1175,8 @@ function selectCard(card, { openMobile = false } = {}) {
   form.elements.terrain.value = card?.terrain || (card?.card_type === 'Event' ? '' : 'Symbiosis');
   form.elements.testing_status.value = card?.testing_status === 'ready' ? 'ready' : 'draft';
   form.elements.effect.value = card?.effect || '';
+  form.elements.tags.value = cardTags(card).join(', ');
+  renderCardTags(card);
   updateTestingStatusButton('#card-test-status', card);
   renderAuthorOptions($('#card-author-options'), card?.author_ids || (card?.owner_id ? [card.owner_id] : [state.user?.id].filter(Boolean)));
   $('#card-heading').textContent = card?.title || 'New card';
@@ -1254,6 +1317,9 @@ function renderDeckCards() {
   const statusFilter = $('#deck-card-filter-status').value;
   const author = $('#deck-card-filter-author').value;
   const terrains = selectedFilterValues('deck-card-filter-terrain');
+  const deckCards = state.cards.filter(card => state.deckCards.some(item => item.card_id === card.id && item.copies > 0));
+  renderTagFilters('deck-card-filter-tags', deckCards, renderDeckCards);
+  const selectedTags = selectedTagFilters('deck-card-filter-tags');
   const mine = Boolean(state.user && (state.deck.owner_id === state.user.id || state.isAdmin));
   for (const card of state.cards) {
     const copies = state.deckCards.find(item => item.card_id === card.id)?.copies || 0;
@@ -1262,6 +1328,7 @@ function renderDeckCards() {
     if (statusFilter && (card.testing_status === 'ready' ? 'ready' : 'draft') !== statusFilter) continue;
     if (author && !authorNames(card.author_ids, card.owner_id).includes(author)) continue;
     if (!matchesCardTerrainFilter(card, terrains)) continue;
+    if (!matchesCardTags(card, selectedTags)) continue;
     const row = document.createElement('div'); row.className = `card-list-item deck-card-row${state.deckPreviewCard?.id === card.id ? ' selected' : ''}`;
     row.dataset.cardId = card.id;
     row.setAttribute('role', 'button');
@@ -1344,6 +1411,7 @@ function scrollToDeckCardRow(cardId) {
     if (!row) {
       clearFilterTiles('deck-card-filter-type');
       clearFilterTiles('deck-card-filter-terrain');
+      clearTagFilters('deck-card-filter-tags');
       $('#deck-card-filter-status').value = '';
       $('#deck-card-filter-author').value = '';
       renderDeckCards();
@@ -2149,6 +2217,7 @@ document.addEventListener('keydown', event => {
 });
 initializeFilterTiles('deck-card-filter-type', ['Entity', 'Event'], 'type', renderDeckCards);
 initializeFilterTiles('deck-card-filter-terrain', ['Symbiosis', 'Flow', 'Verdant', 'Radiance', 'none'], 'terrain', renderDeckCards);
+$('#edit-card-tags').addEventListener('click', () => openCardField('tags'));
 $('#deck-card-filter-status').addEventListener('change', renderDeckCards);
 $('#deck-card-filter-author').addEventListener('change', renderDeckCards);
 $('#new-card').addEventListener('click', async () => {
@@ -2169,6 +2238,7 @@ $('#new-card').addEventListener('click', async () => {
     $('#card-filter-status').value = '';
     $('#card-filter-author').value = '';
     clearFilterTiles('card-filter-terrain');
+    clearTagFilters('card-filter-tags');
     selectCard(state.cards.find(card => card.id === created.id) || created);
     scrollToCardRow(created.id);
     status('Card created. Select it to edit.');
@@ -2390,7 +2460,7 @@ async function saveCardForm() {
     const values = Object.fromEntries(new FormData(form));
     if (modalOpen) {
       for (const field of modalContent.querySelectorAll('[name]')) {
-        if (['title', 'card_type', 'terrain', 'effect', 'testing_status'].includes(field.name)) values[field.name] = field.value;
+        if (['title', 'card_type', 'terrain', 'effect', 'testing_status', 'tags'].includes(field.name)) values[field.name] = field.value;
       }
     }
     if (['Entity', 'Patron'].includes(values.card_type) && !values.terrain) values.terrain = 'Symbiosis';
@@ -2404,7 +2474,9 @@ async function saveCardForm() {
     if (state.card?.patron) {
       const authorIds = values.author_ids;
       const artwork = file ? await api.uploadArtwork(file) : null;
-      const updates = { title: values.title, terrain: values.terrain, testing_status: values.testing_status, effect: values.effect, author_ids: authorIds, author: authorNames(authorIds).join(', ') || 'El Delfin', artwork_id: artwork?.id || previousArtworkId };
+      const tags = [...new Set(values.tags.split(',').map(tag => tag.trim().toLocaleLowerCase()).filter(Boolean))];
+      if (tags.length > 12 || tags.some(tag => tag.length > 32 || !/^[\p{L}\p{N}][\p{L}\p{N} -]*$/u.test(tag))) throw new Error('Use up to 12 tags of 32 characters each (letters, numbers, spaces, or hyphens).');
+      const updates = { title: values.title, terrain: values.terrain, testing_status: values.testing_status, effect: values.effect, tags, author_ids: authorIds, author: authorNames(authorIds).join(', ') || 'El Delfin', artwork_id: artwork?.id || previousArtworkId };
       try {
         const overrides = JSON.parse(localStorage.getItem(PATRON_CARD_OVERRIDES_KEY) || '{}');
         overrides[state.card.id] = updates;
@@ -2448,6 +2520,7 @@ async function saveCardForm() {
       $('#card-filter-status').value = '';
       $('#card-filter-author').value = '';
       clearFilterTiles('card-filter-terrain');
+      clearTagFilters('card-filter-tags');
     }
     if (modalOpen) closeCardField();
     const savedCard = state.cards.find(item => item.id === card.id) || patronCards.find(item => item.id === card.id) || card;
