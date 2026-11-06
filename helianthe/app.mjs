@@ -17,7 +17,7 @@ const api = createCommunityApi(client);
 const ADMIN_EMAIL = 'dominik.zielinski3@gmail.com';
 let authMode = 'sign-in';
 let profileSaveStatusTimer = null;
-const state = { user: null, isAdmin: false, cards: [], decks: [], profiles: [], card: null, deck: null, profile: null, deckCards: [], deckPreviewCard: null, deckPreviewSerial: 0, deckPatronSerial: 0, artworkUrl: null, artworkLoading: false, artworkError: '', artworkSerial: 0, renderSerial: 0, authVersion: 0, realtimeChannel: null, cardFormDirty: false };
+const state = { user: null, isAdmin: false, cards: [], decks: [], profiles: [], card: null, deck: null, profile: null, deckCards: [], deckPreviewCard: null, deckPreviewSerial: 0, deckPatronSerial: 0, artworkUrl: null, artworkLoading: false, artworkError: '', artworkSerial: 0, renderSerial: 0, authVersion: 0, realtimeChannel: null, cardFormDirty: false, cardAuthorEdited: false };
 let addToDeckCard = null;
 let recentDeckCardAddition = null;
 const ARTWORK_UPLOAD_LIMIT = 100 * 1024;
@@ -394,7 +394,7 @@ async function showFavoriteCardPreview(card, event) {
   const serial = ++favoritePreviewSerial;
   positionFavoriteCardPreview(event.clientX, event.clientY);
   preview.hidden = false;
-  const previewCard = { ...card, author: authorNames(card.author_ids, card.owner_id).join(', ') };
+  const previewCard = { ...card, author: cardAuthorText(card) };
   await renderCard(canvas, previewCard, '', () => serial === favoritePreviewSerial).catch(() => {});
   if (serial !== favoritePreviewSerial || !card.artwork_id) return;
   try {
@@ -494,8 +494,36 @@ function authorNames(ids, fallbackId) {
   return profileIds.map(id => ownerName(id)).filter(Boolean);
 }
 
-function renderAuthorOptions(container, selectedIds) {
+function cardAuthorNames(card) {
+  if (card.author) return card.author.split(',').map(name => name.trim()).filter(Boolean);
+  const names = authorNames(card.author_ids);
+  if (names.length) return names;
+  return authorNames([], card.owner_id);
+}
+
+function cardAuthorText(card) {
+  return cardAuthorNames(card).join(', ');
+}
+
+function initialCardAuthorIds(card) {
+  if (!card) return [state.user?.id].filter(Boolean);
+  if (card.author) {
+    const names = cardAuthorNames(card);
+    const ids = names.map(name => state.profiles.find(profile => (profile.display_name || '').trim().toLocaleLowerCase() === name.toLocaleLowerCase())?.id);
+    return ids.every(Boolean) ? ids : [];
+  }
+  if (card.author_ids?.length) return card.author_ids;
+  return [card.owner_id].filter(Boolean);
+}
+
+function renderAuthorOptions(container, selectedIds, originalAuthor = '') {
   container.replaceChildren();
+  if (originalAuthor && !selectedIds.length) {
+    const current = document.createElement('p');
+    current.className = 'form-hint';
+    current.textContent = `Current author: ${originalAuthor}`;
+    container.append(current);
+  }
   for (const profile of state.profiles) {
     const label = document.createElement('label');
     label.className = 'author-option';
@@ -590,9 +618,9 @@ function closeMobileMenu() {
 
 function refreshCardAuthorFilter() {
   const authors = [...new Set([
-    ...patronCards.flatMap(card => authorNames(card.author_ids).length ? authorNames(card.author_ids) : [card.author]),
+    ...patronCards.flatMap(cardAuthorNames),
     ...state.profiles.map(profile => profile.display_name || ownerName(profile.id)),
-    ...state.cards.flatMap(card => authorNames(card.author_ids, card.owner_id)),
+    ...state.cards.flatMap(cardAuthorNames),
   ].filter(Boolean))].sort((a, b) => a.localeCompare(b));
   for (const select of [$('#card-filter-author'), $('#deck-card-filter-author')]) {
     const current = select.value;
@@ -770,7 +798,7 @@ function renderCardList() {
     const matchesSearch = item.title.toLocaleLowerCase().includes(query);
     const matchesType = !types.size || types.has(item.card_type);
     const matchesStatus = !testingStatus || (item.testing_status === 'ready' ? 'ready' : 'draft') === testingStatus;
-    const matchesAuthor = !author || (item.patron ? (authorNames(item.author_ids).includes(author) || (!item.author_ids?.length && item.author === author)) : authorNames(item.author_ids, item.owner_id).includes(author));
+    const matchesAuthor = !author || cardAuthorNames(item).includes(author);
     const matchesTerrain = matchesCardTerrainFilter(item, terrains);
     return matchesSearch && matchesType && matchesStatus && matchesAuthor && matchesTerrain && matchesCardTags(item, selectedTags);
   })) {
@@ -792,9 +820,9 @@ function renderCardList() {
     row.append(testingStatus);
     const meta = document.createElement('small');
     meta.className = 'card-list-owner';
-    if (card.patron && card.author_ids?.length) meta.append(authorDisplayElement(card.author_ids));
-    else if (card.patron) meta.textContent = card.author;
-    else meta.append(authorDisplayElement(card.author_ids, card.owner_id));
+    const authorIds = initialCardAuthorIds(card);
+    if (authorIds.length) meta.append(authorDisplayElement(authorIds));
+    else meta.textContent = cardAuthorText(card);
     row.append(meta);
     list.append(row);
   }
@@ -1040,7 +1068,7 @@ function renderPreview() {
     card_type: form.elements.card_type.value,
     terrain: form.elements.terrain.value,
     effect: form.elements.effect.value,
-    author: state.card?.patron ? authorNames(selectedAuthorIds($('#card-author-options'))).join(', ') || state.card.author : authorNames(selectedAuthorIds($('#card-author-options')), state.user?.id).join(', '),
+    author: state.card && !state.cardAuthorEdited ? cardAuthorText(state.card) : authorNames(selectedAuthorIds($('#card-author-options'))).join(', '),
   };
   const downloadButton = $('#download-png');
   downloadButton.classList.toggle('is-rendering', !downloadButton.disabled || downloadButton.classList.contains('is-rendering'));
@@ -1100,8 +1128,11 @@ function openCardField(field) {
     const label = document.createElement('label');
     label.textContent = 'Author';
     const select = document.createElement('select');
+    if (state.card?.author && !selectedAuthorIds($('#card-author-options')).length) {
+      select.append(new Option(`Keep current author: ${state.card.author}`, ''));
+    }
     for (const profile of state.profiles) select.append(new Option(profile.display_name || ownerName(profile.id), profile.id));
-    select.value = selectedAuthorIds($('#card-author-options'))[0] || source.querySelector('input[type="checkbox"]')?.value || '';
+    select.value = selectedAuthorIds($('#card-author-options'))[0] || '';
     label.append(select);
     content.append(label);
   }
@@ -1191,6 +1222,7 @@ function selectCard(card, { openMobile = false } = {}) {
   state.card = card;
   updateAddToDeckButtons(card);
   state.cardFormDirty = false;
+  state.cardAuthorEdited = false;
   const form = $('#card-form');
   form.reset();
   form.elements.title.value = card?.title || '';
@@ -1201,7 +1233,7 @@ function selectCard(card, { openMobile = false } = {}) {
   form.elements.tags.value = cardTags(card).join(', ');
   renderCardTags(card);
   updateTestingStatusButton('#card-test-status', card);
-  renderAuthorOptions($('#card-author-options'), card?.author_ids || (card?.owner_id ? [card.owner_id] : [state.user?.id].filter(Boolean)));
+  renderAuthorOptions($('#card-author-options'), initialCardAuthorIds(card), card?.author);
   $('#card-heading').textContent = card?.title || 'New card';
   $('#card-edit-hint').hidden = !state.user;
   setCardFormEditable(canEditCard(card));
@@ -1349,7 +1381,7 @@ function renderDeckCards() {
     if (!copies) continue;
     if (types.size && !types.has(card.card_type)) continue;
     if (statusFilter && (card.testing_status === 'ready' ? 'ready' : 'draft') !== statusFilter) continue;
-    if (author && !authorNames(card.author_ids, card.owner_id).includes(author)) continue;
+    if (author && !cardAuthorNames(card).includes(author)) continue;
     if (!matchesCardTerrainFilter(card, terrains)) continue;
     if (!matchesCardTags(card, selectedTags)) continue;
     const row = document.createElement('div'); row.className = `card-list-item deck-card-row${state.deckPreviewCard?.id === card.id ? ' selected' : ''}`;
@@ -1645,7 +1677,7 @@ async function showDeckCardPreview(card) {
     return;
   }
   openDeckCardPreview();
-  const previewCard = { ...card, author: authorNames(card.author_ids, card.owner_id).join(', ') };
+  const previewCard = { ...card, author: cardAuthorText(card) };
   let artworkUrl = '';
   if (card.artwork_id) {
     try { artworkUrl = await getArtworkUrl(card.artwork_id); }
@@ -1920,7 +1952,7 @@ function startRealtimeSync() {
     const selectedDeckAuthor = $('#deck-author-select').value;
     try {
       await reloadCollections();
-      renderAuthorOptions($('#card-author-options'), selectedCardAuthors);
+      renderAuthorOptions($('#card-author-options'), selectedCardAuthors, state.card?.author);
       renderDeckAuthorSelect(selectedDeckAuthor);
       const cardEditable = canEditCard(state.card);
       const deckEditable = Boolean(state.user && (!state.deck || canEditDeck(state.deck)));
@@ -2322,7 +2354,11 @@ $('#card-field-cancel').addEventListener('click', closeCardField);
 $('#card-field-modal .card-field-backdrop').addEventListener('click', closeCardField);
 document.addEventListener('keydown', event => { if (event.key === 'Escape' && !$('#card-field-modal').hidden) { event.stopPropagation(); closeCardField(); } });
 $('#close-deck-card-preview').addEventListener('click', closeDeckCardPreview);
-$('#card-form').addEventListener('input', () => { state.cardFormDirty = true; renderPreview(); });
+$('#card-form').addEventListener('input', event => {
+  state.cardFormDirty = true;
+  if (event.target.closest('#card-author-options')) state.cardAuthorEdited = true;
+  renderPreview();
+});
 $('#card-form').elements.card_type.addEventListener('change', () => { syncTerrain(); renderPreview(); });
 $('#card-artwork').addEventListener('change', event => {
   const file = event.target.files?.[0];
@@ -2491,8 +2527,13 @@ async function saveCardForm() {
     if (state.card?.legacy_tags && JSON.stringify(values.tags) === JSON.stringify(cardTags(state.card))) values.tags = [];
     if (['Entity', 'Patron'].includes(values.card_type) && !values.terrain) values.terrain = 'Symbiosis';
     const modalAuthor = modalOpen ? modalContent.querySelector('select:not([name])') : null;
-    values.author_ids = modalAuthor ? [modalAuthor.value].filter(Boolean) : selectedAuthorIds($('#card-author-options'));
-    values.author = authorNames(values.author_ids, state.user?.id).join(', ');
+    const selectedAuthors = selectedAuthorIds($('#card-author-options'));
+    const modalAuthorChanged = Boolean(modalAuthor && modalAuthor.value !== (selectedAuthors[0] || ''));
+    const authorEdited = state.cardAuthorEdited || modalAuthorChanged;
+    values.author_ids = authorEdited
+      ? (modalAuthorChanged ? [modalAuthor.value].filter(Boolean) : selectedAuthors)
+      : (state.card?.author_ids || selectedAuthors);
+    values.author = authorEdited ? authorNames(values.author_ids).join(', ') : (state.card?.author ?? authorNames(values.author_ids).join(', '));
     const sourceFile = cardFieldArtworkFile || $('#card-artwork').files?.[0];
     const file = sourceFile ? await compressedArtwork(sourceFile) : null;
     const previousArtworkId = state.card?.artwork_id || null;
@@ -2500,7 +2541,7 @@ async function saveCardForm() {
     if (state.card?.patron) {
       const authorIds = values.author_ids;
       const artwork = file ? await api.uploadArtwork(file) : null;
-      const updates = { title: values.title, terrain: values.terrain, testing_status: values.testing_status, effect: values.effect, tags: values.tags, author_ids: authorIds, author: authorNames(authorIds).join(', ') || 'El Delfin', artwork_id: artwork?.id || previousArtworkId };
+      const updates = { title: values.title, terrain: values.terrain, testing_status: values.testing_status, effect: values.effect, tags: values.tags, author_ids: authorIds, author: values.author, artwork_id: artwork?.id || previousArtworkId };
       try {
         const overrides = JSON.parse(localStorage.getItem(PATRON_CARD_OVERRIDES_KEY) || '{}');
         overrides[state.card.id] = updates;
