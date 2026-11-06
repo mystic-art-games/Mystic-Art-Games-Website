@@ -1,4 +1,5 @@
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.mjs';
+import { normalizeCardTags, seedTagsForCard } from './card-tags.mjs';
 
 const TERRAINS = new Set(['Symbiosis', 'Flow', 'Verdant', 'Radiance']);
 const CARD_TYPES = new Set(['Entity', 'Event', 'Patron']);
@@ -92,11 +93,7 @@ export function cardInput(form) {
   if ((card_type === 'Entity' || card_type === 'Patron') && !terrain) throw new Error(`Choose a Terrain for the ${card_type}.`);
   if (terrain && !TERRAINS.has(terrain)) throw new Error('Unknown Terrain.');
   if (!TESTING_STATUSES.has(testing_status)) throw new Error('Choose Draft or Ready.');
-  const tags = [...new Set((Array.isArray(form.tags) ? form.tags : String(form.tags || '').split(','))
-    .map(tag => String(tag).trim().toLocaleLowerCase()).filter(Boolean))];
-  if (tags.length > 12 || tags.some(tag => tag.length > 32 || !/^[\p{L}\p{N}][\p{L}\p{N} -]*$/u.test(tag))) {
-    throw new Error('Use up to 12 tags of 32 characters each (letters, numbers, spaces, or hyphens).');
-  }
+  const tags = normalizeCardTags(form.tags);
   return {
     title, card_type, terrain, testing_status, tags,
     effect: text(form.effect, 6000),
@@ -174,7 +171,12 @@ export function createCommunityApi(client) {
       const columns = ['id', 'owner_id', 'source_path', 'title', 'polish_name', 'card_type', 'terrain', 'effect', 'author', 'author_ids', 'artwork_id', 'legacy_image_ref', 'testing_status', 'tags', 'updated_at'];
       for (let attempt = 0; attempt < 4; attempt++) {
         const response = await client.from('cards').select(columns.join(',')).order('title', { ascending: true });
-        if (!response.error) return result(response).map(card => normalizeCardTerrain({ tags: [], testing_status: 'draft', author_ids: [], ...card, legacy_author_ids: !columns.includes('author_ids') }));
+        if (!response.error) return result(response).map(card => normalizeCardTerrain({
+          tags: columns.includes('tags') ? card.tags : seedTagsForCard(card.title),
+          testing_status: 'draft', author_ids: [], ...card,
+          legacy_author_ids: !columns.includes('author_ids'),
+          legacy_tags: !columns.includes('tags'),
+        }));
         const missing = ['tags', 'testing_status', 'author_ids'].find(column => columns.includes(column) && new RegExp(`\\b${column}\\b`, 'i').test(response.error.message || ''));
         if (!missing) throw new Error(response.error.message || 'Could not load cards.');
         columns.splice(columns.indexOf(missing), 1);

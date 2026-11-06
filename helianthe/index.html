@@ -13,9 +13,9 @@
   <link rel="apple-touch-icon" href="../images/helianthe-logo.png?v=helianthe-logo-1">
   <link rel="manifest" href="./manifest.webmanifest">
   <title>Helianthe</title>
-  <link rel="stylesheet" href="./style.css?v=helianthe-ui-187">
+  <link rel="stylesheet" href="./style.css?v=helianthe-ui-188">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script type="module" src="./app.mjs?v=helianthe-ui-107"></script>
+  <script type="module" src="./app.mjs?v=helianthe-ui-108"></script>
 </head>
 <body>
   <header class="masthead">
@@ -163,7 +163,7 @@
           <div class="two-cols card-direct-edit-field"><label>Type<select name="card_type"><option>Entity</option><option>Event</option><option>Patron</option></select></label><label>Terrain<select name="terrain"><option value="">Nomads</option><option>Symbiosis</option><option>Flow</option><option>Verdant</option><option>Radiance</option></select></label></div>
           <label class="card-direct-edit-field">Effect<textarea name="effect" rows="5" maxlength="6000"></textarea></label>
           <label class="card-direct-edit-field">Status<select name="testing_status"><option value="draft">Draft</option><option value="ready">Ready</option></select></label>
-          <label class="card-direct-edit-field">Tags<input name="tags" maxlength="400" placeholder="cantrip, removal"></label>
+          <label class="card-direct-edit-field">Tags<input name="tags" type="hidden"></label>
         <fieldset class="author-picker card-direct-edit-field"><legend>Authors</legend><div id="card-author-options"></div></fieldset>
           <label class="card-direct-edit-field"><input id="card-artwork" type="file" accept="image/png,image/jpeg,image/webp"></label>
           <p class="hint">Artwork is automatically compressed to 100 KB before upload. Source files can be up to 20 MB.</p>

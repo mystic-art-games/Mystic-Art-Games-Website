@@ -2,6 +2,7 @@ import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.mjs';
 import { createCommunityApi, resolveLegacyCardAuthors } from './community-api.mjs';
 import { renderCard, downloadCardPNG } from './card-renderer.mjs?v=entity-terrain-2';
 import { PATRONS } from './patrons.mjs?v=faction-map-1';
+import { CARD_TAGS, normalizeCardTags, seedTagsForCard, tagLabel } from './card-tags.mjs';
 
 document.title = ['127.0.0.1', 'localhost', '::1'].includes(window.location.hostname)
   ? 'Helianthe — Local Preview'
@@ -34,6 +35,7 @@ let patronCards = PATRONS.map(patron => ({
   effect: [`Credo: “${patron.credo}”`, `Scoring: ${patron.scoring}`, patron.ability ? `Ability: ${patron.ability}` : ''].filter(Boolean).join('\n\n'),
   author: 'El Delfin',
   author_ids: [],
+  tags: seedTagsForCard(patron.name),
   patron,
 }));
 try {
@@ -649,7 +651,7 @@ function clearTagFilters(groupId) {
 function renderTagFilters(groupId, cards, render) {
   const options = $(`#${groupId} .tag-filter-options`);
   const selected = selectedTagFilters(groupId);
-  const tags = [...new Set(cards.flatMap(cardTags))].sort((a, b) => a.localeCompare(b));
+  const tags = [...new Set(cards.flatMap(cardTags))].sort((a, b) => tagLabel(a).localeCompare(tagLabel(b)));
   options.replaceChildren();
   if (!tags.length) {
     const empty = document.createElement('span');
@@ -659,7 +661,7 @@ function renderTagFilters(groupId, cards, render) {
     return;
   }
   for (const tag of tags) {
-    const tile = button(tag, () => {
+    const tile = button(tagLabel(tag), () => {
       tile.setAttribute('aria-pressed', String(tile.getAttribute('aria-pressed') !== 'true'));
       render();
     }, 'tag-filter-option');
@@ -680,7 +682,7 @@ function renderCardTags(card) {
   else for (const tag of cardTags(card)) {
     const chip = document.createElement('span');
     chip.className = 'card-tag';
-    chip.textContent = tag;
+    chip.textContent = tagLabel(tag);
     tags.append(chip);
   }
   $('#edit-card-tags').disabled = !card || !canEditCard(card);
@@ -1110,14 +1112,35 @@ function openCardField(field) {
     content.append(hint);
   }
   if (field === 'tags') {
+    const fieldset = document.createElement('fieldset');
+    fieldset.className = 'tag-picker';
+    const legend = document.createElement('legend');
+    legend.textContent = 'Choose tags';
+    fieldset.append(legend);
+    const selected = new Set(form.elements.tags.value.split(',').map(tag => tag.trim()).filter(Boolean));
+    for (const [id, label, description] of CARD_TAGS) {
+      const option = document.createElement('label');
+      option.className = 'tag-picker-option';
+      option.title = description;
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.name = 'card-tag';
+      checkbox.value = id;
+      checkbox.checked = selected.has(id);
+      const text = document.createElement('span');
+      text.textContent = label;
+      option.append(checkbox, text);
+      fieldset.append(option);
+    }
+    content.replaceChildren(fieldset);
     const hint = document.createElement('p');
     hint.className = 'form-hint';
-    hint.textContent = 'Separate tags with commas. A card can have up to 12 tags, such as cantrip, removal, or card draw.';
+    hint.textContent = 'Choose up to 12 tags. Tags describe card effects and do not change game rules.';
     content.append(hint);
   }
   $('#card-field-title').textContent = titles[field];
   const copies = content.querySelectorAll('input, select, textarea');
-  for (const [index, original] of (field === 'authors' ? [] : [...source.querySelectorAll('input, select, textarea')]).entries()) {
+  for (const [index, original] of (['authors', 'tags'].includes(field) ? [] : [...source.querySelectorAll('input, select, textarea')]).entries()) {
     const copy = copies[index];
     if (!copy) continue;
     if (copy.type === 'checkbox') copy.checked = original.checked;
@@ -2460,9 +2483,12 @@ async function saveCardForm() {
     const values = Object.fromEntries(new FormData(form));
     if (modalOpen) {
       for (const field of modalContent.querySelectorAll('[name]')) {
-        if (['title', 'card_type', 'terrain', 'effect', 'testing_status', 'tags'].includes(field.name)) values[field.name] = field.value;
+        if (['title', 'card_type', 'terrain', 'effect', 'testing_status'].includes(field.name)) values[field.name] = field.value;
       }
+      if (modalContent.querySelector('.tag-picker')) values.tags = [...modalContent.querySelectorAll('input[name="card-tag"]:checked')].map(field => field.value);
     }
+    values.tags = normalizeCardTags(values.tags);
+    if (state.card?.legacy_tags && JSON.stringify(values.tags) === JSON.stringify(cardTags(state.card))) values.tags = [];
     if (['Entity', 'Patron'].includes(values.card_type) && !values.terrain) values.terrain = 'Symbiosis';
     const modalAuthor = modalOpen ? modalContent.querySelector('select:not([name])') : null;
     values.author_ids = modalAuthor ? [modalAuthor.value].filter(Boolean) : selectedAuthorIds($('#card-author-options'));
@@ -2474,9 +2500,7 @@ async function saveCardForm() {
     if (state.card?.patron) {
       const authorIds = values.author_ids;
       const artwork = file ? await api.uploadArtwork(file) : null;
-      const tags = [...new Set(values.tags.split(',').map(tag => tag.trim().toLocaleLowerCase()).filter(Boolean))];
-      if (tags.length > 12 || tags.some(tag => tag.length > 32 || !/^[\p{L}\p{N}][\p{L}\p{N} -]*$/u.test(tag))) throw new Error('Use up to 12 tags of 32 characters each (letters, numbers, spaces, or hyphens).');
-      const updates = { title: values.title, terrain: values.terrain, testing_status: values.testing_status, effect: values.effect, tags, author_ids: authorIds, author: authorNames(authorIds).join(', ') || 'El Delfin', artwork_id: artwork?.id || previousArtworkId };
+      const updates = { title: values.title, terrain: values.terrain, testing_status: values.testing_status, effect: values.effect, tags: values.tags, author_ids: authorIds, author: authorNames(authorIds).join(', ') || 'El Delfin', artwork_id: artwork?.id || previousArtworkId };
       try {
         const overrides = JSON.parse(localStorage.getItem(PATRON_CARD_OVERRIDES_KEY) || '{}');
         overrides[state.card.id] = updates;

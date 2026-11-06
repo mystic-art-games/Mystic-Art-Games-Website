@@ -816,6 +816,13 @@ body.dark-mode :is(#card-canvas, #deck-card-canvas, #deck-patron-canvas, #patron
 .card-field-dialog #card-field-content .two-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
 .card-field-dialog #card-field-content textarea { min-height: 8rem; }
 .card-field-dialog #card-field-content fieldset { min-width: 0; }
+.card-field-dialog .tag-picker { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .45rem; max-height: min(50dvh, 340px); overflow-y: auto; margin: 0; padding: .6rem; border: 1px solid #a4b6a5; border-radius: 10px; }
+.card-field-dialog .tag-picker legend { padding: 0 .3rem; font-size: .85rem; font-weight: 800; }
+.tag-picker-option { display: flex; align-items: center; gap: .45rem; min-height: 2rem; margin: 0; padding: .25rem .4rem; border: 1px solid #c9d7c6; border-radius: 8px; background: #f3f8ee; font-size: .77rem; font-weight: 700; cursor: pointer; }
+.tag-picker-option:has(input:checked) { border-color: #34755a; background: #d7e8d4; }
+.tag-picker-option input { flex: 0 0 auto; width: 1rem; height: 1rem; margin: 0; accent-color: #34755a; }
+body.dark-mode .tag-picker-option { border-color: #5a7b68; background: #173f32; color: #e5eee0; }
+body.dark-mode .tag-picker-option:has(input:checked) { border-color: #b9dc8c; background: #376c52; }
 .card-field-dialog #card-field-content .form-hint { margin-top: 1rem; }
 .card-field-dialog #card-field-content select,
 .card-field-dialog #card-field-content select::picker(select) { appearance: base-select; }
