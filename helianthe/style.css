@@ -2023,7 +2023,8 @@ body.dark-mode #card-field-modal .card-field-dialog {
 .guide-glossary div { padding-bottom: .55rem; border-bottom: 1px solid rgba(78, 112, 90, .2); }
 .guide-glossary dt { color: #265847; font-weight: 800; }
 .guide-glossary dd { margin: .15rem 0 0; }
-.faction-card { min-width: 0; padding: 1.1rem 1.2rem; }
+.faction-card { display: grid; grid-row: span 5; grid-template-rows: subgrid; row-gap: 0; min-width: 0; padding: 1.1rem 1.2rem; }
+.faction-card > p:first-of-type { align-self: start; }
 .faction-card h3 { border-top: 1px solid rgba(78, 112, 90, .22); padding-top: .75rem; }
 .faction-traits { margin: .5rem 0 .85rem; padding-left: 1.25rem; color: #405b4d; line-height: 1.5; }
 .faction-traits li + li { margin-top: .35rem; }
