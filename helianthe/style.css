@@ -2171,6 +2171,15 @@ body.dark-mode .guide-workspace.about-workspace > .guide-panel {
 }
 body.dark-mode .guide-workspace .about-content { background: transparent; }
 
+@media (min-width: 1100px) {
+  #factions-view.guide-workspace.about-workspace { max-width: 1500px; }
+  #factions-view .faction-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .8rem; }
+  #factions-view .faction-card { padding: .95rem; }
+  #factions-view .faction-card-head { gap: .6rem; }
+  #factions-view .faction-logo { width: 2.8rem; height: 2.8rem; flex-basis: 2.8rem; }
+  #factions-view .faction-card h2 { font-size: 1.4rem; }
+}
+
 /* About navigation actions match the Log out button in both themes. */
 body:not(.dark-mode) #about-view .info-actions button,
 body:not(.dark-mode) #about-view .info-actions button:hover:not(:disabled) {
