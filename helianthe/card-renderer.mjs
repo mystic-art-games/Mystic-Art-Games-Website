@@ -152,23 +152,6 @@ function fontsReady() {
   ]);
 }
 
-export function preloadCardArtwork(url) { return loadImage(url); }
-
-export function preloadCardAssets() {
-  const frames = ['Flow_CardFrame.png', 'Radiance_CardFrame_v2.png', 'Verdant_CardFrame.png', 'Symbiosis_CardFrame.png', 'Nomads_CardFrame_v2.png'];
-  const terrains = ['Flow', 'Radiance', 'Verdant', 'Symbiosis', 'Nomads'];
-  const symbols = terrains.flatMap(terrain => ['Entity', 'Event', 'Patron'].map(type =>
-    `Type_${type}_${terrain}.png?v=${terrain === 'Verdant' || terrain === 'Symbiosis' ? 3 : 2}`));
-  const factions = [...Object.values(factionSymbols), 'Faction_Nomads_Cairn.png'];
-  return Promise.allSettled([
-    ...frames.map(name => loadImage(asset(`${name}?v=2`))),
-    ...symbols.map(name => loadImage(asset(name))),
-    ...factions.map(name => loadImage(asset(name))),
-    loadImage(DEFAULT_ARTWORK),
-    fontsReady(),
-  ]);
-}
-
 export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () => true, options = {}) {
   const type = card.card_type || card.type || 'Entity';
   const terrain = Object.hasOwn(terrainColors, card.terrain) ? card.terrain : null;

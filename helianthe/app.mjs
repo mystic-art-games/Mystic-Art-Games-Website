@@ -1,6 +1,6 @@
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.mjs';
 import { createCommunityApi, resolveLegacyCardAuthors } from './community-api.mjs';
-import { renderCard, downloadCardPNG, preloadCardAssets } from './card-renderer.mjs?v=entity-terrain-1';
+import { renderCard, downloadCardPNG } from './card-renderer.mjs?v=entity-terrain-2';
 import { PATRONS } from './patrons.mjs?v=faction-map-1';
 
 document.title = ['127.0.0.1', 'localhost', '::1'].includes(window.location.hostname)
@@ -559,8 +559,6 @@ function button(label, action, className = '') {
 }
 
 const TAB_NAMES = ['about', 'rules', 'factions', 'cards', 'decks', 'profiles'];
-let cardAssetsPreloadStarted = false;
-
 function requestedTab() {
   const name = window.location.hash.slice(1).toLowerCase();
   if (name === 'patrons') return 'cards';
@@ -575,12 +573,6 @@ function showTab(name, { updateUrl = true } = {}) {
   for (const tab of TAB_NAMES) {
     $(`#${tab}-view`).hidden = tab !== name;
     $(`[data-tab="${tab}"]`).classList.toggle('active', tab === name);
-  }
-  if (name === 'cards') {
-    if (!cardAssetsPreloadStarted) {
-      cardAssetsPreloadStarted = true;
-      setTimeout(() => { void preloadCardAssets(); }, 0);
-    }
   }
   if (updateUrl && window.location.hash !== `#${name}`) window.history.replaceState(null, '', `#${name}`);
 }
@@ -729,6 +721,11 @@ function renderCardList() {
     const row = button('', () => selectCardFromList(card), `card-list-item${state.card?.id === card.id ? ' selected' : ''}`);
     row.dataset.cardId = card.id;
     row.setAttribute('aria-label', `${card.terrain || 'Neutral'} ${card.card_type}: ${card.title}, ${cardTestingStatusLabel(card.testing_status)}`);
+    if (card.artwork_id) {
+      const preloadArtwork = () => { void getArtworkUrl(card.artwork_id).catch(() => {}); };
+      row.addEventListener('pointerenter', preloadArtwork, { once: true });
+      row.addEventListener('focus', preloadArtwork, { once: true });
+    }
     const title = document.createElement('span');
     title.className = `card-list-title ${terrainClass(card.terrain)}`;
     title.textContent = card.title;
