@@ -161,10 +161,9 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
   const frameName = terrain === 'Radiance' ? 'Radiance_CardFrame_v2.png'
     : terrain ? `${terrain}_CardFrame.png` : 'Nomads_CardFrame_v2.png';
   const symbolType = type === 'Patron' ? 'Patron' : type === 'Event' ? 'Event' : 'Entity';
-  const symbolName = `Type_${symbolType}_${terrain || 'Nomads'}.png`;
-  const symbolVersion = terrain === 'Verdant' || terrain === 'Symbiosis' ? 3 : 2;
+  const symbolName = `Type_${symbolType}_${terrain || 'Nomads'}_Arcane.png`;
   const [frame, art, symbol, factionSymbol] = await Promise.all([
-    loadImage(asset(`${frameName}?v=2`)), options.skipArtwork ? Promise.resolve(null) : loadImage(artworkUrl || DEFAULT_ARTWORK), loadImage(asset(`${symbolName}?v=${symbolVersion}`)),
+    loadImage(asset(`${frameName}?v=2`)), options.skipArtwork ? Promise.resolve(null) : loadImage(artworkUrl || DEFAULT_ARTWORK), loadImage(asset(symbolName)),
     loadImage(asset(terrain ? factionSymbols[terrain] : 'Faction_Nomads_Cairn.png')), fontsReady().catch(() => null),
   ]);
   if (!shouldDraw()) return { cancelled: true };

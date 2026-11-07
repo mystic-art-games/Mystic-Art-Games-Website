@@ -2,7 +2,7 @@ $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Drawing
 
 $assets = Join-Path $PSScriptRoot '..\assets'
-$types = [ordered]@{ Entity = 'Type_Entity_Simple.png'; Event = 'Type_Event_Scroll_v2.png'; Patron = 'Type_Patron_Simple.png' }
+$types = [ordered]@{ Entity = 'Type_Entity_Arcane.png'; Event = 'Type_Event_Arcane.png'; Patron = 'Type_Patron_Arcane.png' }
 $factions = [ordered]@{ Symbiosis = 'Faction_Symbiosis.png'; Flow = 'Faction_Flow.png'; Verdant = 'Faction_Verdant.png'; Radiance = 'Faction_Radiance.png'; Nomads = 'Faction_Nomads_Cairn.png' }
 
 function Get-FactionPalette([string]$path) {
@@ -117,7 +117,7 @@ foreach ($type in $types.Keys) {
   try {
     foreach ($faction in $factions.Keys) {
       $lighten = if ($faction -in 'Verdant', 'Symbiosis') { 0.14 } else { 0 }
-      Write-TypeIcon $source $palettes[$faction] (Join-Path $assets "Type_${type}_${faction}.png") $lighten
+      Write-TypeIcon $source $palettes[$faction] (Join-Path $assets "Type_${type}_${faction}_Arcane.png") $lighten
     }
   }
   finally { $source.Image.Dispose() }
