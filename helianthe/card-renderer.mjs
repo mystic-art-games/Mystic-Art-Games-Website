@@ -155,9 +155,6 @@ function fontsReady() {
 export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () => true, options = {}) {
   const type = card.card_type || card.type || 'Entity';
   const terrain = Object.hasOwn(terrainColors, card.terrain) ? card.terrain : null;
-  if (canvas.parentElement?.classList.contains('card-terrain-aura')) {
-    canvas.parentElement.dataset.terrain = type === 'Entity' ? terrain || '' : '';
-  }
   const frameName = terrain === 'Radiance' ? 'Radiance_CardFrame_v2.png'
     : terrain ? `${terrain}_CardFrame.png` : 'Nomads_CardFrame_v2.png';
   const symbolType = type === 'Patron' ? 'Patron' : type === 'Event' ? 'Event' : 'Entity';

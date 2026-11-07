@@ -1,6 +1,6 @@
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.mjs';
 import { createCommunityApi, resolveLegacyCardAuthors } from './community-api.mjs?v=tags-3';
-import { renderCard, downloadCardPNG } from './card-renderer.mjs?v=entity-terrain-2';
+import { renderCard, downloadCardPNG } from './card-renderer.mjs?v=entity-terrain-3';
 import { zipFiles } from './zip.mjs';
 import { PATRONS } from './patrons.mjs?v=faction-map-1';
 import { CARD_TAGS, normalizeCardTags, seedTagsForCard, tagLabel } from './card-tags.mjs?v=tags-3';
@@ -1636,7 +1636,6 @@ async function renderDeckPatron(patron, { clearPrevious = false } = {}) {
   canvas.setAttribute('aria-disabled', 'true');
   canvas.style.pointerEvents = patron ? 'none' : '';
   canvas.style.visibility = patron && !keepExistingPreview ? 'hidden' : '';
-  if (!keepExistingPreview) canvas.parentElement.dataset.terrain = '';
   downloadButton.classList.toggle('is-rendering', Boolean(keepExistingPreview && (!downloadButton.disabled || downloadButton.classList.contains('is-rendering'))));
   downloadButton.disabled = true;
   deleteButton.classList.toggle('is-rendering', Boolean(keepExistingPreview && (!deleteButton.disabled || deleteButton.classList.contains('is-rendering'))));
@@ -1649,10 +1648,7 @@ async function renderDeckPatron(patron, { clearPrevious = false } = {}) {
     catch { /* Keep the default illustration if the custom one is unavailable. */ }
   }
   if (serial !== state.deckPatronSerial) return;
-  const stagedAura = document.createElement('div');
-  stagedAura.className = 'card-terrain-aura';
   const stagedCanvas = document.createElement('canvas');
-  stagedAura.append(stagedCanvas);
   const result = await renderCard(stagedCanvas, patronCard, artworkUrl, () => serial === state.deckPatronSerial).catch(() => null);
   if (serial !== state.deckPatronSerial) return;
   downloadButton.classList.remove('is-rendering');
@@ -1661,7 +1657,6 @@ async function renderDeckPatron(patron, { clearPrevious = false } = {}) {
   canvas.width = stagedCanvas.width;
   canvas.height = stagedCanvas.height;
   canvas.getContext('2d').drawImage(stagedCanvas, 0, 0);
-  canvas.parentElement.dataset.terrain = stagedAura.dataset.terrain;
   canvas.setAttribute('aria-label', stagedCanvas.getAttribute('aria-label'));
   canvas.style.visibility = '';
   canvas.style.pointerEvents = '';
@@ -1688,7 +1683,6 @@ async function showDeckCardPreview(card) {
   canvas.setAttribute('aria-disabled', 'true');
   canvas.style.pointerEvents = card ? 'none' : '';
   canvas.style.visibility = card && !keepExistingPreview ? 'hidden' : '';
-  if (!card) canvas.parentElement.dataset.terrain = '';
   downloadButton.classList.toggle('is-rendering', Boolean(keepExistingPreview && (!downloadButton.disabled || downloadButton.classList.contains('is-rendering'))));
   downloadButton.disabled = true;
   deleteButton.classList.toggle('is-rendering', Boolean(keepExistingPreview && (!deleteButton.disabled || deleteButton.classList.contains('is-rendering'))));
@@ -1706,10 +1700,7 @@ async function showDeckCardPreview(card) {
     catch { /* Keep the deck preview usable when artwork is unavailable. */ }
   }
   if (serial !== state.deckPreviewSerial) return;
-  const stagedAura = document.createElement('div');
-  stagedAura.className = 'card-terrain-aura';
   const stagedCanvas = document.createElement('canvas');
-  stagedAura.append(stagedCanvas);
   const result = await renderCard(stagedCanvas, previewCard, artworkUrl, () => serial === state.deckPreviewSerial).catch(() => null);
   if (serial !== state.deckPreviewSerial) return;
   downloadButton.classList.remove('is-rendering');
@@ -1718,7 +1709,6 @@ async function showDeckCardPreview(card) {
   canvas.width = stagedCanvas.width;
   canvas.height = stagedCanvas.height;
   canvas.getContext('2d').drawImage(stagedCanvas, 0, 0);
-  canvas.parentElement.dataset.terrain = stagedAura.dataset.terrain;
   canvas.setAttribute('aria-label', stagedCanvas.getAttribute('aria-label'));
   canvas.style.visibility = '';
   canvas.style.pointerEvents = '';
