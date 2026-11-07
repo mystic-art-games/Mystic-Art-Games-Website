@@ -2577,7 +2577,7 @@ async function saveCardForm() {
       }
       Object.assign(state.card, updates);
       card = state.card;
-      if (artwork) cardArtworkUrlCache.set(artwork.id, URL.createObjectURL(file));
+      if (artwork) artworkUrlCache.set(artwork.id, URL.createObjectURL(file));
       if (artwork && previousArtworkId && previousArtworkId !== artwork.id) {
         try { await api.deleteArtwork(previousArtworkId); }
         catch (cause) { cleanupWarning = cause.message; console.error('Old artwork cleanup failed', cause); }
@@ -2596,7 +2596,7 @@ async function saveCardForm() {
         throw cause;
       }
       persistedCard = card;
-      cardArtworkUrlCache.set(artwork.id, URL.createObjectURL(file));
+      artworkUrlCache.set(artwork.id, URL.createObjectURL(file));
       if (previousArtworkId && previousArtworkId !== artwork.id) {
         try { await api.deleteArtwork(previousArtworkId); }
         catch (cause) { cleanupWarning = cause.message; console.error('Old artwork cleanup failed', cause); }
