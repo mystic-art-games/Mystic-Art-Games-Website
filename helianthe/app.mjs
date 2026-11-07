@@ -1,9 +1,9 @@
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.mjs';
-import { createCommunityApi, resolveLegacyCardAuthors } from './community-api.mjs';
+import { createCommunityApi, resolveLegacyCardAuthors } from './community-api.mjs?v=tags-3';
 import { renderCard, downloadCardPNG } from './card-renderer.mjs?v=entity-terrain-2';
 import { zipFiles } from './zip.mjs';
 import { PATRONS } from './patrons.mjs?v=faction-map-1';
-import { CARD_TAGS, normalizeCardTags, seedTagsForCard, tagLabel } from './card-tags.mjs';
+import { CARD_TAGS, normalizeCardTags, seedTagsForCard, tagLabel } from './card-tags.mjs?v=tags-3';
 
 document.title = ['127.0.0.1', 'localhost', '::1'].includes(window.location.hostname)
   ? 'Helianthe — Local Preview'
