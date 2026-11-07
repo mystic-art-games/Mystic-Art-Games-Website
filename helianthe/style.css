@@ -195,13 +195,13 @@ body.dark-mode .deck-gallery-empty { color: #a8bcae; }
 body.dark-mode #decks-view:not(.deck-detail-open) #deck-list .deck-list-item { border-color: rgba(226, 246, 235, .38); background: linear-gradient(145deg, rgba(185, 220, 200, .24), rgba(65, 111, 88, .2)); box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .26), 0 5px 16px rgba(0, 18, 12, .28); }
 body.dark-mode #decks-view:not(.deck-detail-open) #deck-list .deck-list-item:hover:not(:disabled) { background: linear-gradient(145deg, rgba(185, 220, 200, .34), rgba(65, 111, 88, .28)); }
 #decks-view:not(.deck-detail-open) .deck-table-shell { overflow: visible; }
-.back-to-decks { display: none; align-items: center; gap: .3rem; width: max-content; }
+.back-to-decks { display: none; align-items: center; gap: .3rem; width: max-content; font-family: Nunito, Arial, sans-serif; }
 #decks-view.deck-detail-open { grid-template-columns: minmax(0, 1fr); }
 #decks-view.deck-detail-open > .decks-sidebar { display: none; }
 #decks-view.deck-detail-open > .editor-panel { width: min(100%, 1100px); justify-self: center; }
 #decks-view.deck-detail-open > .editor-panel { position: relative; }
 #decks-view.deck-detail-open .back-to-decks { display: inline-flex; }
-#decks-view.deck-detail-open .deck-detail-toolbar { position: relative; display: grid; grid-template-columns: 96px minmax(0, max-content) minmax(0, 1fr) 300px; align-items: center; gap: .8rem; min-width: 0; padding-top: 1.8rem; }
+#decks-view.deck-detail-open .deck-detail-toolbar { position: relative; display: grid; grid-template-columns: 96px minmax(0, max-content) minmax(0, 1fr) 300px; align-items: center; gap: .8rem; min-width: 0; padding-top: 1.15rem; }
 #decks-view.deck-detail-open .deck-detail-toolbar .actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .4rem; width: 300px; justify-self: end; margin: 0; white-space: nowrap; }
 #decks-view.deck-detail-open .deck-detail-toolbar .actions > button { width: 100%; margin: 0; }
 #decks-view.deck-detail-open .deck-detail-toolbar #back-to-decks { position: absolute; top: -.35rem; left: -.35rem; width: auto; padding: .15rem .25rem; border: 0; background: transparent; box-shadow: none; font-size: .8rem; line-height: 1.2; }
