@@ -13,9 +13,9 @@
   <link rel="apple-touch-icon" href="../images/helianthe-logo.png?v=helianthe-logo-1">
   <link rel="manifest" href="./manifest.webmanifest">
   <title>Helianthe</title>
-  <link rel="stylesheet" href="./style.css?v=helianthe-ui-188">
+  <link rel="stylesheet" href="./style.css?v=helianthe-ui-189">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script type="module" src="./app.mjs?v=helianthe-ui-108"></script>
+  <script type="module" src="./app.mjs?v=helianthe-ui-109"></script>
 </head>
 <body>
   <header class="masthead">
@@ -194,10 +194,11 @@
     </aside>
     <section class="panel editor-panel">
       <div class="deck-detail-toolbar">
+          <button id="back-to-decks" class="back-to-decks" type="button"><span aria-hidden="true">←</span> Back</button>
           <span class="deck-detail-cover"><img id="deck-detail-cover-image" src="./assets/site-background.jpg" alt=""></span>
           <div class="deck-detail-title-group"><h2 id="deck-detail-name"></h2><div id="deck-detail-author" class="deck-detail-author"></div></div>
           <section id="deck-summary" class="deck-summary" aria-label="Deck card summary"></section>
-          <div class="actions"><button id="edit-deck" type="button" hidden>Edit Deck</button><button id="back-to-decks" class="back-to-decks" type="button"><span aria-hidden="true">←</span> Back to Decks</button><button id="duplicate-deck" type="button" hidden>Duplicate Deck</button><button id="delete-deck" class="danger-button action-delete" type="button" hidden>Delete Deck</button></div>
+          <div class="actions"><button id="edit-deck" type="button" hidden>Edit Deck</button><button id="duplicate-deck" type="button" hidden>Duplicate Deck</button><button id="download-all-cards" type="button" disabled>Download All Cards</button><button id="delete-deck" class="danger-button action-delete" type="button" hidden>Delete Deck</button><p id="deck-download-status" role="status" hidden></p></div>
       </div>
       <div class="deck-card-filters-row">
         <div class="card-filters" aria-label="Filter cards in this deck">

@@ -1,6 +1,7 @@
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.mjs';
 import { createCommunityApi, resolveLegacyCardAuthors } from './community-api.mjs';
 import { renderCard, downloadCardPNG } from './card-renderer.mjs?v=entity-terrain-2';
+import { zipFiles } from './zip.mjs';
 import { PATRONS } from './patrons.mjs?v=faction-map-1';
 import { CARD_TAGS, normalizeCardTags, seedTagsForCard, tagLabel } from './card-tags.mjs';
 
@@ -1597,6 +1598,11 @@ function renderDeckSummary() {
   const summary = $('#deck-summary');
   summary.replaceChildren();
   summary.hidden = !state.deck;
+  const download = $('#download-all-cards');
+  download.disabled = download.dataset.exporting === 'true' || !state.deck || !(
+    state.deckCards.some(entry => entry.copies > 0)
+    || patronCardByName(patronByName(state.deck?.patron_name)?.name)
+  );
   if (!state.deck) return;
 
   const typeCounts = { 'All Cards': 0, Entity: 0, Event: 0 };
@@ -1724,6 +1730,8 @@ async function showDeckCardPreview(card) {
 
 async function selectDeck(deck) {
   state.deck = deck;
+  $('#deck-download-status').hidden = true;
+  $('#deck-download-status').textContent = '';
   closeDeckEdit();
   state.deckCards = [];
   $('#decks-view').classList.toggle('deck-detail-open', Boolean(deck));
@@ -2640,6 +2648,59 @@ $('#new-deck').addEventListener('click', () => {
   if (requireAccount()) void createNewDeck().catch(cause => status(cause.message, true));
 });
 $('#back-to-decks').addEventListener('click', () => { void selectDeck(null); });
+$('#download-all-cards').addEventListener('click', async () => {
+  const deck = state.deck;
+  if (!deck) return;
+  const cards = state.deckCards.flatMap(entry => {
+    const card = state.cards.find(item => item.id === entry.card_id);
+    return card && entry.copies > 0 ? [{ card, copies: Number(entry.copies) }] : [];
+  });
+  const patron = patronCardByName(patronByName(deck.patron_name)?.name);
+  const total = cards.reduce((count, entry) => count + entry.copies, patron ? 1 : 0);
+  if (!total) return;
+  const button = $('#download-all-cards');
+  const message = $('#deck-download-status');
+  const stopLoading = setButtonLoading(button, 'Preparing…');
+  button.dataset.exporting = 'true';
+  message.hidden = false;
+  try {
+    const files = [];
+    let rendered = 0;
+    for (const { card, copies } of [...(patron ? [{ card: patron, copies: 1 }] : []), ...cards]) {
+      message.textContent = `Rendering ${++rendered} of ${cards.length + (patron ? 1 : 0)} card designs…`;
+      const canvas = document.createElement('canvas');
+      let artworkUrl = '';
+      if (card.artwork_id) {
+        try { artworkUrl = await getArtworkUrl(card.artwork_id); }
+        catch { /* Match the single-card preview's default artwork fallback. */ }
+      }
+      const result = await renderCard(canvas, { ...card, author: cardAuthorText(card) }, artworkUrl);
+      if (result.clipped) throw new Error(`${card.title} has text that does not fit on the card.`);
+      const blob = await new Promise((resolve, reject) => canvas.toBlob(value => value ? resolve(value) : reject(new Error(`Could not generate PNG for ${card.title}.`)), 'image/png'));
+      for (let copy = 1; copy <= copies; copy++) {
+        const title = String(card.title || 'Card').replace(/[<>:"/\\|?*\x00-\x1f]/g, '_').replace(/[. ]+$/g, '') || 'Card';
+        files.push({ name: `${String(files.length + 1).padStart(2, '0')} - ${title}${copies > 1 ? ` - ${copy}` : ''}.png`, blob });
+      }
+    }
+    message.textContent = `Packing ${total} PNG files…`;
+    const archive = await zipFiles(files);
+    const name = String(deck.name || 'Deck').replace(/[<>:"/\\|?*\x00-\x1f]/g, '_').replace(/[. ]+$/g, '') || 'Deck';
+    const url = URL.createObjectURL(archive);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Helianthe - ${name}.zip`;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+    message.textContent = `Downloaded ${total} card PNG files.`;
+  } catch (cause) {
+    message.textContent = cause.message || 'Could not download this deck.';
+    status(message.textContent, true);
+  } finally {
+    delete button.dataset.exporting;
+    stopLoading();
+    renderDeckSummary();
+  }
+});
 $('#edit-deck').addEventListener('click', openDeckEdit);
 $('#deck-edit-backdrop').addEventListener('click', closeDeckEdit);
 $('#close-deck-edit').addEventListener('click', closeDeckEdit);
