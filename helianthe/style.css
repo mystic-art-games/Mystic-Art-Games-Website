@@ -952,6 +952,8 @@ body.dark-mode .card-test-status-button[data-status="ready"]:hover:not(:disabled
 .deck-card-row:hover { background: #eef3e8; }
 .deck-card-row.selected { background: #b6dcb9; border-bottom-color: #91bd98; }
 .deck-card-row.selected:hover { background: #acd6b1; }
+#cards-view #card-list .card-list-item.selected:focus-visible,
+#decks-view #deck-cards .deck-card-row.selected:focus-visible { outline: none; }
 body:not(.dark-mode) #decks-view .deck-card-row.selected { background: #b6dcb9 !important; border-bottom-color: transparent !important; box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .58), 0 2px 8px rgba(34, 98, 49, .2) !important; }
 body.dark-mode .deck-card-row { border-bottom-color: #355947; background: transparent; }
 body.dark-mode .deck-card-row:hover { background: #204b3b; }
