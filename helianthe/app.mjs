@@ -1,6 +1,6 @@
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.mjs';
 import { createCommunityApi, resolveLegacyCardAuthors } from './community-api.mjs?v=tags-3';
-import { renderCard, downloadCardPNG } from './card-renderer.mjs?v=entity-terrain-3';
+import { renderCard, downloadCardPNG } from './card-renderer.mjs?v=patron-labels-1';
 import { zipFiles } from './zip.mjs';
 import { PATRONS } from './patrons.mjs?v=faction-map-1';
 import { CARD_TAGS, normalizeCardTags, seedTagsForCard, tagLabel } from './card-tags.mjs?v=tags-3';
