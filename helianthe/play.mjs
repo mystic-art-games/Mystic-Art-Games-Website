@@ -24,7 +24,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     <div id="play-message" role="status" aria-live="polite" hidden><span id="play-message-text"></span><button id="play-message-close" type="button" aria-label="Dismiss message">×</button></div>
     <section id="play-signin" class="play-surface" hidden><h2>Your seat is waiting</h2><p>Sign in to create a table or join one from the list.</p><button id="play-signin-button" type="button">Sign in to play</button></section>
     <div id="play-lobby" class="play-lobby" hidden>
-      <section class="play-surface play-create-panel"><div><span class="play-eyebrow">BUILD A TABLE</span><h2>Create a table</h2></div><button id="play-create" class="action-add-save" type="button">Build a table</button></section>
+      <section class="play-surface play-create-panel"><div><span class="play-eyebrow">BUILD A TABLE</span><button id="play-create" class="action-add-save" type="button">Build a table</button></div></section>
       <section class="play-surface play-recent"><div class="play-table-heading"><h2>All tables</h2></div><p id="play-no-rooms">Loading tables…</p><div id="play-room-list"></div></section>
     </div>
     <section id="play-session" hidden>

@@ -11,7 +11,7 @@
 .play-surface { min-width: 0; padding: 1.25rem; border: 1px solid #aec4b7; border-radius: 16px; background: rgba(255,255,255,.58); }
 .play-surface h2 { font-size: 1.3rem; margin: .2rem 0 .6rem; }
 .play-surface p { line-height: 1.5; }
-.play-create-panel { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.play-create-panel .play-eyebrow { margin-bottom: .5rem; }
 #play-signin button { margin-top: .8rem; }
 .play-recent { grid-column: 1/-1; }
 .play-table-entry { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 0; border-top: 1px solid #aec4b7; }
@@ -76,6 +76,6 @@ body.dark-mode #play-message { color: #163737; }
   .play-player { display: grid; grid-template-columns: 36px minmax(0,1fr); }
   .play-player > .play-pill { grid-column: 2; justify-self: start; }
   .play-recent { grid-column: auto; }
-  .play-create-panel, .play-table-entry { align-items: stretch; flex-direction: column; }
+  .play-table-entry { align-items: stretch; flex-direction: column; }
   .play-room-bar { align-items: start; flex-direction: column; }
 }
