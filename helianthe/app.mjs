@@ -3,6 +3,7 @@ import { createCommunityApi, resolveLegacyCardAuthors } from './community-api.mj
 import { renderCard, downloadCardPNG } from './card-renderer.mjs?v=entity-terrain-2';
 import { PATRONS } from './patrons.mjs?v=faction-map-1';
 import { CARD_TAGS, normalizeCardTags, seedTagsForCard, tagLabel } from './card-tags.mjs';
+import { createPlayView } from './play.mjs?v=play-1';
 
 document.title = ['127.0.0.1', 'localhost', '::1'].includes(window.location.hostname)
   ? 'Helianthe — Local Preview'
@@ -18,6 +19,7 @@ const ADMIN_EMAIL = 'dominik.zielinski3@gmail.com';
 let authMode = 'sign-in';
 let profileSaveStatusTimer = null;
 const state = { user: null, isAdmin: false, cards: [], decks: [], profiles: [], card: null, deck: null, profile: null, deckCards: [], deckPreviewCard: null, deckPreviewSerial: 0, deckPatronSerial: 0, artworkUrl: null, artworkLoading: false, artworkError: '', artworkSerial: 0, renderSerial: 0, authVersion: 0, realtimeChannel: null, cardFormDirty: false, cardAuthorEdited: false };
+const play = createPlayView({ client, getUser: () => state.user, getDecks: () => state.decks, getCards: () => state.cards, getProfiles: () => state.profiles, requireSignIn: showSignIn });
 let addToDeckCard = null;
 let recentDeckCardAddition = null;
 const ARTWORK_UPLOAD_LIMIT = 100 * 1024;
@@ -588,9 +590,9 @@ function button(label, action, className = '') {
   return element;
 }
 
-const TAB_NAMES = ['about', 'rules', 'factions', 'cards', 'decks', 'profiles'];
+const TAB_NAMES = ['about', 'rules', 'factions', 'cards', 'decks', 'play', 'profiles'];
 function requestedTab() {
-  const name = window.location.hash.slice(1).toLowerCase();
+  const name = window.location.hash.slice(1).toLowerCase() || (new URL(location.href).searchParams.has('room') ? 'play' : 'about');
   if (name === 'patrons') return 'cards';
   return TAB_NAMES.includes(name) ? name : 'about';
 }
@@ -605,6 +607,7 @@ function showTab(name, { updateUrl = true } = {}) {
     $(`[data-tab="${tab}"]`).classList.toggle('active', tab === name);
   }
   if (updateUrl && window.location.hash !== `#${name}`) window.history.replaceState(null, '', `#${name}`);
+  play.setVisible(name === 'play');
 }
 
 function closeMobileMenu() {
@@ -1935,6 +1938,7 @@ function selectProfile(profile) {
 async function reloadCollections() {
   [state.cards, state.decks, state.profiles] = await Promise.all([api.listCards(), api.listDecks(), api.listProfiles()]);
   state.cards = resolveLegacyCardAuthors(state.cards, state.profiles);
+  play.refreshCollections();
   refreshDeckPatronOptions();
   const savedPatrons = savedDeckPatrons();
   state.decks = state.decks.map(deck => deck.patron_name || !savedPatrons[deck.id] ? deck : { ...deck, patron_name: savedPatrons[deck.id] });
@@ -2034,6 +2038,7 @@ async function applyPendingAvatar(user, profile) {
 }
 
 function updateAuthenticatedControls() {
+  void play.refreshIdentity();
   const signedIn = Boolean(state.user);
   for (const id of ['new-card', 'new-deck', 'duplicate-deck', 'edit-deck', 'delete-deck', 'delete-card', 'deck-delete-card', 'patron-delete-card']) {
     $(`#${id}`).hidden = !signedIn;
