@@ -208,7 +208,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
       else { const deckName = document.createElement('span'); deckName.textContent = deck?.name || 'No deck selected'; details.append(deckName); }
       row.append(avatar, details);
       const state = room.status === 'closed' ? 'Closed' : !online ? 'Away' : room[`${seat}_ready`] ? 'Ready' : '';
-      if (id && state) {
+      if (id && state && !(id === userId && state === 'Ready')) {
         const status = document.createElement('span'); status.className = `play-pill${state === 'Ready' ? ' is-live' : ''}`;
         status.textContent = state;
         row.append(status);
@@ -218,8 +218,11 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     $('players').replaceChildren(...rows);
     const mine = room.host_id === userId ? 'host' : 'guest';
     $('deck').value = room[`${mine}_deck_id`] || '';
-    $('ready').textContent = room[`${mine}_ready`] ? 'Not ready' : 'Ready';
-    $('ready').setAttribute('aria-pressed', String(room[`${mine}_ready`]));
+    const isReady = room[`${mine}_ready`];
+    $('ready').textContent = isReady ? 'Not ready' : 'Ready';
+    $('ready').classList.toggle('action-add-save', !isReady);
+    $('ready').classList.toggle('action-delete', isReady);
+    $('ready').setAttribute('aria-pressed', String(isReady));
     $('room-status').textContent = room.status === 'closed' ? 'Table closed' : room.status === 'active' ? 'Both players are ready.' : room.guest_id ? 'Choose your decks and get ready.' : '';
     controls();
     if (room.status === 'closed') $('leave').disabled = false;
