@@ -79,6 +79,8 @@ body.dark-mode #play-message { color: #163737; }
   .play-heading { align-items: start; }
   .play-heading > .play-pill { margin-top: .4rem; font-size: .65rem; }
   .play-lobby, .play-players, .play-table-layout { grid-template-columns: 1fr; }
+  .play-player { display: grid; grid-template-columns: 36px minmax(0,1fr); }
+  .play-player > .play-pill { grid-column: 2; justify-self: start; }
   .play-recent { grid-column: auto; }
   .play-setup { flex-wrap: wrap; }
   .play-setup > span { flex-basis: 100%; }
