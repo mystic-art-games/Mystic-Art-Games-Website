@@ -633,6 +633,8 @@ function showTab(name, { updateUrl = true } = {}) {
     tab.setAttribute('aria-selected', String(active));
     tab.tabIndex = active ? 0 : -1;
   }
+  $('.about-content').scrollTop = 0;
+  window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   if (updateUrl && window.location.hash !== `#${name}`) window.history.replaceState(null, '', `#${name}`);
   play.setVisible(name === 'play');
 }
