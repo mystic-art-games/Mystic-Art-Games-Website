@@ -24,7 +24,10 @@
 #play-message { padding: .8rem 1rem; border: 1px solid #98b49e; border-radius: 10px; overflow-wrap: anywhere; background: #edf5e9; }
 #play-message.error { border-color: #b76b53; color: #813f2e; background: #fff1e8; }
 .play-room-bar { margin: 0 0 1rem; }
-#play-back { display: inline-flex; width: 147px; margin: 0 0 1rem; font-size: .9rem; }
+#play-session { position: relative; padding-top: 1.15rem; }
+#play-back { position: absolute; top: -.35rem; left: -.35rem; display: inline-flex; width: auto; margin: 0; padding: .15rem .25rem; border: 0; background: transparent; box-shadow: none; font-size: .8rem; line-height: 1.2; }
+#play-back:hover:not(:disabled) { background: transparent; box-shadow: none; text-decoration: underline; }
+body.dark-mode #play-back { color: #e5eee0; }
 #play-room-code { display: block; font-size: 1.4rem; letter-spacing: .14em; }
 .play-room-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
 .play-player { display: flex; align-items: center; gap: .75rem; min-width: 0; padding: 1rem; border: 1px solid #aec4b7; border-radius: 14px; background: rgba(255,255,255,.5); }
@@ -66,5 +69,4 @@ body.dark-mode #play-message { color: #163737; }
   .play-setup { flex-wrap: wrap; }
   .play-setup > span { flex-basis: 100%; }
   .play-room-bar { align-items: start; flex-direction: column; }
-  #play-back { min-height: 2.6rem; padding-inline: .2rem; font-size: .76rem; line-height: 1.15; }
 }

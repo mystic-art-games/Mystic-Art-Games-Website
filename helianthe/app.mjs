@@ -1,8 +1,9 @@
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.mjs';
-import { createCommunityApi, resolveLegacyCardAuthors } from './community-api.mjs';
-import { renderCard, downloadCardPNG } from './card-renderer.mjs?v=entity-terrain-2';
+import { createCommunityApi, resolveLegacyCardAuthors } from './community-api.mjs?v=tags-3';
+import { renderCard, downloadCardPNG } from './card-renderer.mjs?v=patron-labels-1';
+import { zipFiles } from './zip.mjs';
 import { PATRONS, FACTION_VISIONS, PATRON_RULES_REVISION, updatePatronVision } from './patrons.mjs?v=faction-visions-2';
-import { CARD_TAGS, normalizeCardTags, seedTagsForCard, tagLabel } from './card-tags.mjs';
+import { CARD_TAGS, normalizeCardTags, seedTagsForCard, tagLabel } from './card-tags.mjs?v=tags-3';
 import { createPlayView } from './play.mjs?v=play-7';
 
 document.title = ['127.0.0.1', 'localhost', '::1'].includes(window.location.hostname)
@@ -1626,6 +1627,11 @@ function renderDeckSummary() {
   const summary = $('#deck-summary');
   summary.replaceChildren();
   summary.hidden = !state.deck;
+  const download = $('#download-all-cards');
+  download.disabled = download.dataset.exporting === 'true' || !state.deck || !(
+    state.deckCards.some(entry => entry.copies > 0)
+    || patronCardByName(patronByName(state.deck?.patron_name)?.name)
+  );
   if (!state.deck) return;
 
   const typeCounts = { 'All Cards': 0, Entity: 0, Event: 0 };
@@ -1659,7 +1665,6 @@ async function renderDeckPatron(patron, { clearPrevious = false } = {}) {
   canvas.setAttribute('aria-disabled', 'true');
   canvas.style.pointerEvents = patron ? 'none' : '';
   canvas.style.visibility = patron && !keepExistingPreview ? 'hidden' : '';
-  if (!keepExistingPreview) canvas.parentElement.dataset.terrain = '';
   downloadButton.classList.toggle('is-rendering', Boolean(keepExistingPreview && (!downloadButton.disabled || downloadButton.classList.contains('is-rendering'))));
   downloadButton.disabled = true;
   deleteButton.classList.toggle('is-rendering', Boolean(keepExistingPreview && (!deleteButton.disabled || deleteButton.classList.contains('is-rendering'))));
@@ -1672,10 +1677,7 @@ async function renderDeckPatron(patron, { clearPrevious = false } = {}) {
     catch { /* Keep the default illustration if the custom one is unavailable. */ }
   }
   if (serial !== state.deckPatronSerial) return;
-  const stagedAura = document.createElement('div');
-  stagedAura.className = 'card-terrain-aura';
   const stagedCanvas = document.createElement('canvas');
-  stagedAura.append(stagedCanvas);
   const result = await renderCard(stagedCanvas, patronCard, artworkUrl, () => serial === state.deckPatronSerial).catch(() => null);
   if (serial !== state.deckPatronSerial) return;
   downloadButton.classList.remove('is-rendering');
@@ -1684,7 +1686,6 @@ async function renderDeckPatron(patron, { clearPrevious = false } = {}) {
   canvas.width = stagedCanvas.width;
   canvas.height = stagedCanvas.height;
   canvas.getContext('2d').drawImage(stagedCanvas, 0, 0);
-  canvas.parentElement.dataset.terrain = stagedAura.dataset.terrain;
   canvas.setAttribute('aria-label', stagedCanvas.getAttribute('aria-label'));
   canvas.style.visibility = '';
   canvas.style.pointerEvents = '';
@@ -1711,7 +1712,6 @@ async function showDeckCardPreview(card) {
   canvas.setAttribute('aria-disabled', 'true');
   canvas.style.pointerEvents = card ? 'none' : '';
   canvas.style.visibility = card && !keepExistingPreview ? 'hidden' : '';
-  if (!card) canvas.parentElement.dataset.terrain = '';
   downloadButton.classList.toggle('is-rendering', Boolean(keepExistingPreview && (!downloadButton.disabled || downloadButton.classList.contains('is-rendering'))));
   downloadButton.disabled = true;
   deleteButton.classList.toggle('is-rendering', Boolean(keepExistingPreview && (!deleteButton.disabled || deleteButton.classList.contains('is-rendering'))));
@@ -1729,10 +1729,7 @@ async function showDeckCardPreview(card) {
     catch { /* Keep the deck preview usable when artwork is unavailable. */ }
   }
   if (serial !== state.deckPreviewSerial) return;
-  const stagedAura = document.createElement('div');
-  stagedAura.className = 'card-terrain-aura';
   const stagedCanvas = document.createElement('canvas');
-  stagedAura.append(stagedCanvas);
   const result = await renderCard(stagedCanvas, previewCard, artworkUrl, () => serial === state.deckPreviewSerial).catch(() => null);
   if (serial !== state.deckPreviewSerial) return;
   downloadButton.classList.remove('is-rendering');
@@ -1741,7 +1738,6 @@ async function showDeckCardPreview(card) {
   canvas.width = stagedCanvas.width;
   canvas.height = stagedCanvas.height;
   canvas.getContext('2d').drawImage(stagedCanvas, 0, 0);
-  canvas.parentElement.dataset.terrain = stagedAura.dataset.terrain;
   canvas.setAttribute('aria-label', stagedCanvas.getAttribute('aria-label'));
   canvas.style.visibility = '';
   canvas.style.pointerEvents = '';
@@ -1753,6 +1749,8 @@ async function showDeckCardPreview(card) {
 
 async function selectDeck(deck) {
   state.deck = deck;
+  $('#deck-download-status').hidden = true;
+  $('#deck-download-status').textContent = '';
   closeDeckEdit();
   state.deckCards = [];
   $('#decks-view').classList.toggle('deck-detail-open', Boolean(deck));
@@ -2685,6 +2683,59 @@ $('#new-deck').addEventListener('click', () => {
   if (requireAccount()) void createNewDeck().catch(cause => status(cause.message, true));
 });
 $('#back-to-decks').addEventListener('click', () => { void selectDeck(null); });
+$('#download-all-cards').addEventListener('click', async () => {
+  const deck = state.deck;
+  if (!deck) return;
+  const cards = state.deckCards.flatMap(entry => {
+    const card = state.cards.find(item => item.id === entry.card_id);
+    return card && entry.copies > 0 ? [{ card, copies: Number(entry.copies) }] : [];
+  });
+  const patron = patronCardByName(patronByName(deck.patron_name)?.name);
+  const total = cards.reduce((count, entry) => count + entry.copies, patron ? 1 : 0);
+  if (!total) return;
+  const button = $('#download-all-cards');
+  const message = $('#deck-download-status');
+  const stopLoading = setButtonLoading(button, 'Preparing…');
+  button.dataset.exporting = 'true';
+  message.hidden = false;
+  try {
+    const files = [];
+    let rendered = 0;
+    for (const { card, copies } of [...(patron ? [{ card: patron, copies: 1 }] : []), ...cards]) {
+      message.textContent = `Rendering ${++rendered} of ${cards.length + (patron ? 1 : 0)} card designs…`;
+      const canvas = document.createElement('canvas');
+      let artworkUrl = '';
+      if (card.artwork_id) {
+        try { artworkUrl = await getArtworkUrl(card.artwork_id); }
+        catch { /* Match the single-card preview's default artwork fallback. */ }
+      }
+      const result = await renderCard(canvas, { ...card, author: cardAuthorText(card) }, artworkUrl);
+      if (result.clipped) throw new Error(`${card.title} has text that does not fit on the card.`);
+      const blob = await new Promise((resolve, reject) => canvas.toBlob(value => value ? resolve(value) : reject(new Error(`Could not generate PNG for ${card.title}.`)), 'image/png'));
+      for (let copy = 1; copy <= copies; copy++) {
+        const title = String(card.title || 'Card').replace(/[<>:"/\\|?*\x00-\x1f]/g, '_').replace(/[. ]+$/g, '') || 'Card';
+        files.push({ name: `${String(files.length + 1).padStart(2, '0')} - ${title}${copies > 1 ? ` - ${copy}` : ''}.png`, blob });
+      }
+    }
+    message.textContent = `Packing ${total} PNG files…`;
+    const archive = await zipFiles(files);
+    const name = String(deck.name || 'Deck').replace(/[<>:"/\\|?*\x00-\x1f]/g, '_').replace(/[. ]+$/g, '') || 'Deck';
+    const url = URL.createObjectURL(archive);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Helianthe - ${name}.zip`;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+    message.textContent = `Downloaded ${total} card PNG files.`;
+  } catch (cause) {
+    message.textContent = cause.message || 'Could not download this deck.';
+    status(message.textContent, true);
+  } finally {
+    delete button.dataset.exporting;
+    stopLoading();
+    renderDeckSummary();
+  }
+});
 $('#edit-deck').addEventListener('click', openDeckEdit);
 $('#deck-edit-backdrop').addEventListener('click', closeDeckEdit);
 $('#close-deck-edit').addEventListener('click', closeDeckEdit);

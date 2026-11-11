@@ -155,9 +155,6 @@ function fontsReady() {
 export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () => true, options = {}) {
   const type = card.card_type || card.type || 'Entity';
   const terrain = Object.hasOwn(terrainColors, card.terrain) ? card.terrain : null;
-  if (canvas.parentElement?.classList.contains('card-terrain-aura')) {
-    canvas.parentElement.dataset.terrain = type === 'Entity' ? terrain || '' : '';
-  }
   const frameName = terrain === 'Radiance' ? 'Radiance_CardFrame_v2.png'
     : terrain ? `${terrain}_CardFrame.png` : 'Nomads_CardFrame_v2.png';
   const symbolType = type === 'Patron' ? 'Patron' : type === 'Event' ? 'Event' : 'Entity';
@@ -258,11 +255,12 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
   for (const line of fitted.lines) {
     let x = 95;
     const baseColor = ctx.fillStyle;
-    for (const part of line.split(/(Credo:|Coredo:|\b\d+\b|Symbiosis|Flow|Verdant|Radiance)/g)) {
+    for (const part of line.split(/(Vision:|Credo:|Coredo:|\b\d+\b|Symbiosis|Flow|Verdant|Radiance)/g)) {
       if (!part) continue;
       ctx.fillStyle = terrainColors[part] || baseColor;
-      const isLabel = /^\d+$/.test(part);
-      ctx.font = `${credoItalic ? 'italic ' : ''}${isLabel ? 700 : 500} ${fitted.size}px ${rulesFont}`;
+      const isTextLabel = /^(Vision:|Credo:|Coredo:)$/.test(part);
+      const isLabel = isTextLabel || /^\d+$/.test(part);
+      ctx.font = `${credoItalic && !isTextLabel ? 'italic ' : ''}${isLabel ? 700 : 500} ${fitted.size}px ${rulesFont}`;
       ctx.fillText(part, x, y);
       x += ctx.measureText(part).width;
       if (/^(Credo:|Coredo:)$/.test(part)) credoItalic = true;

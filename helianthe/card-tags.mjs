@@ -30,26 +30,26 @@ export function normalizeCardTags(input) {
   return tags;
 }
 
-// Reviewed against the current Card Editor effects on 2026-11-06.
-// Cards with blank, obsolete, or only placement-restriction text have no seed tag.
+// Reviewed against the current Card Editor effects on 2026-11-07.
+// A blank effect has no tag. These seeds are used while the cards table lacks a tags column.
 const TITLES_BY_TAG = {
-  'cantrip': ['Breachside Repairs', 'Grid Stabilization', 'Landshift', 'Restoration Nursery', 'Seed Convoy', 'Verdant Vineroots'],
-  'card-draw': ['Breachside Repairs', 'Expansive Ivy', 'Feel the Power', 'Festival of New Canopies', 'Garden of Shared Roots', 'Grid Stabilization', 'Landshift', 'Mirrorpool Shrine', 'Mossveil Settlement', 'Natural Habitat', 'Path of Radiance', 'Radiantide', 'Restoration Nursery', 'Seed Caravan', 'Seed Convoy', 'Seedbank Pavilion', 'Solar Commons', 'Symbiotic Accord', 'Terrace Keepers', 'The High Seas', 'Tideglass Lagoon', 'Verdant Vineroots', 'Wood Wide Web', 'Myrr, The Rootweaver', 'Solen, Architect of Dawn'],
-  'card-selection': ['Depthcloak', 'Festival of New Canopies', 'Seed Caravan', 'Seedbank Pavilion', 'Myrr, The Rootweaver'],
-  'removal': ['Compost Front', 'Lilac Overgrowth', 'Raincatcher Terraces', 'Skyfire', 'Solar Bombardment', 'Verdant Faultline'],
-  'terrain-creation': ['Dreamwell Courtyard', 'Garden of Shared Roots', 'Green Reclamation', 'Greenway Advance', 'Habitat Loom', 'Land Gift', 'Lumen Workshop District', 'Migration of Wind-Sails', 'Mirrorpool Shrine', 'Moss-Covered Viaduct', 'Seed Caravan', 'Seedlight Grove', 'Sludge Bath', 'Spreading Ivy'],
-  'transformation': ['Bubble Switch', 'Grid Reconfiguration', 'Rootline Breach', 'Sporebound Relay', 'Stewards’ Repair Protocols', 'Waterish Doppelganger'],
-  'fertilize': ['Expansive Ivy', 'Fertile Rain', 'Hypervine', 'Land Gift', 'Orchard Warden', 'Seed Convoy', 'Through Fire Reborn', 'Verdant Vineroots'],
-  'crisis': ['Controlled Overload', 'Glassroad Station', 'Helianthus Nursery', 'Sludge Bath', 'Solar Bombardment', 'Solar Converter'],
-  'restoration': ['Green Reclamation', 'Grid Stabilization', 'Reclamation Pulse', 'Restoration Nursery', 'Rootline Breach', 'Suncoil Fields', 'Symbiotic Accord'],
-  'protection': ['Glade Surveyor', 'Heart of Aurelia', 'Helianthus Nursery', "Lil' Liss, The Green Renegade", 'Liquid Protection', 'Moss Bastion', 'Radiant Lock', 'Radiant Protector', 'Solar Converter', 'Static Insulation', 'Undying Mycelium Network'],
-  'lumens': ['Battery Orchard', 'Beacon Grid', 'Breachside Repairs', 'Controlled Overload', 'Efficient Grid', 'Electrostatic Spread', 'Feel the Power', 'Heart of Aurelia', 'Impulse Transmittion', "Lil' Liss Bandito", 'Path of Radiance', 'Solar Converter', 'Sunwire Avenue', 'Sunwire Spire', 'Solen, Architect of Dawn'],
+  'cantrip': ['Breachside Repairs', 'Grid Stabilization', 'Landshift', 'Reclamation Pulse', 'Seed Convoy', 'Terrestrial Reorientation', 'Verdant Vineroots'],
+  'card-draw': ['Breachside Repairs', 'Expansive Ivy', 'Feel the Power', 'Festival of New Canopies', 'Garden of Shared Roots', 'Grid Stabilization', 'Kupala Night', 'Landshift', 'Mirrorpool Shrine', 'Mossveil Settlement', 'Natural Habitat', 'Path of Radiance', 'Reclamation Pulse', 'River Pact Crossing', 'Seed Convoy', 'Solar Commons', 'Terrace Keepers', 'Terrestrial Reorientation', 'The High Seas', 'Verdant Vineroots', 'Wood Wide Web'],
+  'card-selection': ['Drownsomnia', 'Festival of New Canopies'],
+  'removal': ['Bramble Briar', 'Compost Front', 'Dematerialize', 'Fertile Rain', 'Fungal Rainwood', 'Glade Surveyor', 'Helianthus Nursery', 'Lilac Overgrowth', 'Memories of Atlantis', 'Reclamation Pulse', 'Regrow', 'Skyfire', 'Sludge Bath', 'Solar Bombardment', 'Through Fire Reborn'],
+  'terrain-creation': ['Dreamwell Courtyard', 'Equatorial Forests', 'Garden of Shared Roots', 'Land Gift', 'Lumen Workshop District', 'Spreading Ivy', 'Tropical Rainfall'],
+  'transformation': ['Bubble Switch', 'Green Reclamation', 'Symbiotic Accord', 'Waterish Doppelganger'],
+  'fertilize': ['Expansive Ivy', 'Fertile Rain', 'Greenway Advance', 'Hypervine', 'Land Gift', 'Orchard Warden', 'Seed Convoy', 'Through Fire Reborn', 'Verdant Vineroots'],
+  'crisis': ['Solar Bombardment', 'Solar Converter'],
+  'restoration': [],
+  'protection': ['Controlled Overload', 'Depthcloak', 'Glade Surveyor', 'Grid Stabilization', 'Heart of Aurelia', 'Helianthus Nursery', 'Liquid Protection', 'Memories of Atlantis', 'Moss Bastion', 'Radiant Lock', 'Radiant Protector', 'Reclamation Pulse', 'Solar Converter', 'Static Insulation', 'Tideglass Lagoon', 'Undying Mycelium Network', 'Verdant Faultline'],
+  'lumens': ['Battery Orchard', 'Beacon Grid', 'Breachside Repairs', 'Controlled Overload', 'Efficient Grid', 'Electrostatic Spread', 'Feel the Power', 'Grid Stabilization', 'Heart of Aurelia', 'Heliotic Discharge', 'Impulse Transmittion', "Lil' Liss Bandito", 'Path of Radiance', 'Solar Converter', 'Sunwire Avenue', 'Sunwire Spire', 'Solen, Architect of Dawn'],
   'recall': ['Bramble Briar', 'Memories of Atlantis', "Poseidon's Chosen One", 'Regrow', 'Rematerialize', 'Spark of Invention', 'Sunken Archive'],
-  'relocation': ['Bubble Swap', 'Bubble Switch', 'Drownsomnia', 'Helianthus Nursery', 'Hyphae', 'Hyphal Reorientation', 'Impulse Transmittion', 'Landshift', 'Lanternhollow', "Lil' Liss Bandito", 'Wave of Change'],
-  'entangle': ['Chrystofoles, The Rootwright', 'Fungal Rainwood', 'Garden of Shared Roots', 'Hyphal Reorientation', 'Kupala Night', 'Lanternhollow', 'Shared Canal Gathering'],
-  'extra-play': ['Confluence', 'Depthcloak'],
-  'lockdown': ["Eldervine's Vigil"],
-  'scoring': ["Nautilus's Thought"],
+  'relocation': ['Bubble Swap', 'Bubble Switch', 'Glade Surveyor', 'Grid Reconfiguration', 'Helianthus Nursery', 'Hyphal Reorientation', 'Impulse Transmittion', 'Landshift', "Lil' Liss Bandito", 'March of Marshrooms', 'Migration of Wind-Sails', 'Sludge Bath', 'Terrestrial Reorientation', 'Wave of Change'],
+  'entangle': ['Chrystofoles, The Rootwright', 'Fungal Rainwood', 'Garden of Shared Roots', 'Hyphae', 'Hyphal Reorientation', 'Kupala Night', 'Lanternhollow', 'March of Marshrooms', 'Myrr, The Rootweaver', 'Shared Canal Gathering', 'Sporebound Relay', 'Terrestrial Reorientation'],
+  'extra-play': ['Confluence'],
+  'lockdown': ['Drownsomnia', "Eldervine's Vigil"],
+  'scoring': ['Depthcloak', "Nautilus's Thought"],
 };
 
 export const CARD_TAG_SEED = Object.freeze(Object.entries(TITLES_BY_TAG).reduce((cards, [tag, titles]) => {

@@ -1,5 +1,5 @@
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.mjs';
-import { normalizeCardTags, seedTagsForCard } from './card-tags.mjs';
+import { normalizeCardTags, seedTagsForCard } from './card-tags.mjs?v=tags-3';
 
 const TERRAINS = new Set(['Symbiosis', 'Flow', 'Verdant', 'Radiance']);
 const CARD_TYPES = new Set(['Entity', 'Event', 'Patron']);
