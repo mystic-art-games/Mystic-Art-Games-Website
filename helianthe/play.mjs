@@ -24,7 +24,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     <div id="play-message" role="status" aria-live="polite" hidden><span id="play-message-text"></span><button id="play-message-close" type="button" aria-label="Dismiss message">×</button></div>
     <section id="play-signin" class="play-surface" hidden><h2>Your seat is waiting</h2><p>Sign in to create a table or join one from the list.</p><button id="play-signin-button" type="button">Sign in to play</button></section>
     <div id="play-lobby" class="play-lobby" hidden>
-      <section class="play-surface play-create-panel"><div><span class="play-eyebrow">HOST A SESSION</span><h2>Create a table</h2></div><button id="play-create" class="action-add-save" type="button">Create table</button></section>
+      <section class="play-surface play-create-panel"><div><span class="play-eyebrow">BUILD A TABLE</span><h2>Create a table</h2></div><button id="play-create" class="action-add-save" type="button">Build a table</button></section>
       <section class="play-surface play-recent"><div class="play-table-heading"><h2>All tables</h2></div><p id="play-no-rooms">Loading tables…</p><div id="play-room-list"></div></section>
     </div>
     <section id="play-session" hidden>
@@ -97,7 +97,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     if (expected !== epoch || serial !== listSerial || room) return;
     if (error) { $('no-rooms').textContent = 'Tables could not be loaded. Retrying automatically…'; $('no-rooms').hidden = false; message(friendly(error), true); return; }
     $('no-rooms').hidden = Boolean(data.length);
-    $('no-rooms').textContent = 'No tables yet. Create the first one.';
+    $('no-rooms').textContent = 'People are doing things right now. Nobody is playing cards.';
     const signature = JSON.stringify(data);
     if (signature === tableListSignature) return;
     tableListSignature = signature;
@@ -114,7 +114,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
       details.append(title, summary, countdown);
       const b = document.createElement('button'); b.type = 'button';
       const full = !entry.is_participant && entry.player_count >= 2;
-      b.textContent = entry.is_participant ? 'Return to table' : full ? 'Full' : 'Join table';
+      b.textContent = entry.is_participant ? 'Your chair missed you.' : full ? 'Full' : 'Join table';
       b.dataset.full = String(full); b.disabled = busy || full;
       b.setAttribute('aria-label', `${b.textContent} ${entry.code}`);
       b.addEventListener('click', () => run(async () => {
@@ -135,7 +135,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     if (!data) { await disconnect(); room = null; remember(null); render(); await listTables(); return; }
     room = data; render();
     if (room.status === 'closed') {
-      const notice = room.activated_at ? 'The table closed.' : 'The table closed because both players did not get ready within 60 seconds.';
+      const notice = room.activated_at ? 'The table closed.' : 'The players spent 60 seconds twiddling their thumbs, so the table folded itself.';
       await disconnect(); room = null; remember(null); render(); await listTables(); message(notice);
     }
   }
@@ -202,7 +202,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
       if (!id) { avatar.className = 'user-avatar play-avatar'; avatar.textContent = '?'; }
       avatar.setAttribute('aria-hidden', 'true');
       const details = document.createElement('div'); details.className = 'play-player-details';
-      const name = document.createElement('strong'); name.textContent = id ? `${profile?.display_name || 'Player'}${id === userId ? ' · You' : ''}` : 'Waiting for a player';
+      const name = document.createElement('strong'); name.textContent = id ? `${profile?.display_name || 'Player'}${id === userId ? ' · You' : ''}` : 'Waiting for someone to bring a chair.';
       details.append(name);
       if (id === userId) {
         const controls = document.createElement('div'); controls.className = 'play-player-controls';
@@ -226,7 +226,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     $('ready').classList.toggle('action-add-save', !isReady);
     $('ready').classList.toggle('action-delete', isReady);
     $('ready').setAttribute('aria-pressed', String(isReady));
-    $('room-status').textContent = room.status === 'closed' ? 'Table closed' : room.status === 'active' ? 'Both players are ready.' : room.guest_id ? 'Choose your decks and get ready.' : '';
+    $('room-status').textContent = room.status === 'closed' ? 'Table closed' : room.status === 'active' ? 'Both players are ready for a duel to the death.' : room.guest_id ? "Pick your decks. The table won't play itself." : '';
     controls();
     if (room.status === 'closed') $('leave').disabled = false;
   }
