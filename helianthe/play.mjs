@@ -19,8 +19,8 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
   let lobbyTimer = null, listSerial = 0, tableListSignature = '';
   let busy = false, epoch = 0, fetchSerial = 0, live = false, lastHeartbeat = 0, expiryPending = false;
   root.innerHTML = `
-    <div class="play-heading"><div><span class="play-eyebrow">PLAY · THE SHARED WORLD</span><h1>Lobby</h1><p>Meet another player at the same table.</p></div></div>
-    <p id="play-message" role="status" aria-live="polite" hidden></p>
+    <div class="play-heading"><h1>Lobby</h1></div>
+    <div id="play-message" role="status" aria-live="polite" hidden><span id="play-message-text"></span><button id="play-message-close" type="button" aria-label="Dismiss message">×</button></div>
     <section id="play-signin" class="play-surface" hidden><h2>Your seat is waiting</h2><p>Sign in to create a table or join one from the list.</p><button id="play-signin-button" type="button">Sign in to play</button></section>
     <div id="play-lobby" class="play-lobby" hidden>
       <section class="play-surface play-create-panel"><div><span class="play-eyebrow">HOST A SESSION</span><h2>Create a table</h2></div><button id="play-create" type="button">Create table</button></section>
@@ -36,10 +36,11 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     </section>`;
   const deckField = $('deck-field');
   function message(text = '', error = false) {
-    $('message').textContent = text;
+    $('message-text').textContent = text;
     $('message').hidden = !text;
     $('message').classList.toggle('error', error);
   }
+  $('message-close').addEventListener('click', () => message());
   function storageKey() { return `helianthe-play-room:${userId}`; }
   function remember(id) { try { if (id) localStorage.setItem(storageKey(), id); else localStorage.removeItem(storageKey()); } catch {} }
   function savedRoom() { try { return localStorage.getItem(storageKey()); } catch { return null; } }
