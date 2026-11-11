@@ -3,7 +3,7 @@ import { createCommunityApi, resolveLegacyCardAuthors } from './community-api.mj
 import { renderCard, downloadCardPNG } from './card-renderer.mjs?v=entity-terrain-2';
 import { PATRONS, FACTION_VISIONS, PATRON_RULES_REVISION, updatePatronVision } from './patrons.mjs?v=faction-visions-2';
 import { CARD_TAGS, normalizeCardTags, seedTagsForCard, tagLabel } from './card-tags.mjs';
-import { createPlayView } from './play.mjs?v=play-4';
+import { createPlayView } from './play.mjs?v=play-5';
 
 document.title = ['127.0.0.1', 'localhost', '::1'].includes(window.location.hostname)
   ? 'Helianthe — Local Preview'
@@ -19,7 +19,7 @@ const ADMIN_EMAIL = 'dominik.zielinski3@gmail.com';
 let authMode = 'sign-in';
 let profileSaveStatusTimer = null;
 const state = { user: null, isAdmin: false, cards: [], decks: [], profiles: [], card: null, deck: null, profile: null, deckCards: [], deckPreviewCard: null, deckPreviewSerial: 0, deckPatronSerial: 0, artworkUrl: null, artworkLoading: false, artworkError: '', artworkSerial: 0, renderSerial: 0, authVersion: 0, realtimeChannel: null, cardFormDirty: false, cardAuthorEdited: false };
-const play = createPlayView({ client, getUser: () => state.user, getDecks: () => state.decks, getCards: () => state.cards, getProfiles: () => state.profiles, requireSignIn: showSignIn });
+const play = createPlayView({ client, getUser: () => state.user, getDecks: () => state.decks, getCards: () => state.cards, getProfiles: () => state.profiles, makeAvatar: avatarElement, requireSignIn: showSignIn });
 let addToDeckCard = null;
 let recentDeckCardAddition = null;
 const ARTWORK_UPLOAD_LIMIT = 100 * 1024;

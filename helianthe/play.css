@@ -1,6 +1,7 @@
 .play-workspace { width: calc(100% - 2rem); max-width: 1100px; margin: 1.25rem auto 3rem; padding: 1.5rem; border: 1px solid rgba(55,91,78,.4); border-radius: 22px; background: linear-gradient(145deg,rgba(255,255,255,.95),rgba(224,234,229,.88)); box-shadow: inset 1px 1px 0 #fff; }
 .play-heading, .play-room-bar, .play-table-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
 .play-heading { margin-bottom: 1.5rem; }
+.play-workspace.is-at-table .play-heading { display: none; }
 .play-heading h1 { margin: .2rem 0; font-size: 2.4rem; font-weight: 800; }
 .play-heading p { margin: .25rem 0 0; }
 .play-eyebrow { display: block; color: #577268; font-size: .68rem; letter-spacing: .14em; font-weight: 800; }
@@ -23,16 +24,17 @@
 #play-message { padding: .8rem 1rem; border: 1px solid #98b49e; border-radius: 10px; overflow-wrap: anywhere; background: #edf5e9; }
 #play-message.error { border-color: #b76b53; color: #813f2e; background: #fff1e8; }
 .play-room-bar { margin: 0 0 1rem; }
+#play-back { display: inline-flex; margin: 0 0 1rem; }
 #play-room-code { display: block; font-size: 1.4rem; letter-spacing: .14em; }
 .play-room-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
 .play-player { display: flex; align-items: center; gap: .75rem; min-width: 0; padding: 1rem; border: 1px solid #aec4b7; border-radius: 14px; background: rgba(255,255,255,.5); }
-.play-player > div { min-width: 0; flex: 1; }
+.play-player > .play-player-details { min-width: 0; flex: 1; }
 .play-player strong { display: block; overflow-wrap: anywhere; }
-.play-player div > span { display: block; font-size: .8rem; margin-top: .25rem; }
-.play-avatar { display: grid; flex: 0 0 36px; height: 36px; place-items: center; border-radius: 50%; background: #315e48; color: #fff8e8; font-weight: 800; }
+.play-player-details > span { display: block; font-size: .8rem; margin-top: .25rem; }
+.play-workspace .play-avatar { width: 36px; height: 36px; font-size: .85rem; }
+.play-deck-field { display: block; max-width: 310px; margin-top: .45rem; font-size: .8rem; font-weight: 700; }
+.play-deck-field select { display: block; width: 100%; margin-top: .25rem; }
 .play-setup { display: flex; align-items: end; gap: .75rem; margin: 1rem 0; }
-.play-setup label { flex: 1; max-width: 310px; font-weight: 700; }
-.play-setup select { margin-top: .3rem; }
 .play-setup > span { flex: 1; align-self: center; font-size: .85rem; }
 .play-table-layout { display: grid; grid-template-columns: minmax(0,1fr) 240px; gap: 1rem; }
 .play-table-panel { padding: 1rem; }
@@ -84,7 +86,6 @@ body.dark-mode #play-message { color: #163737; }
 @media (max-width: 850px) {
   .play-workspace { width: calc(100% - 1rem); margin: .5rem auto 2rem; padding: 1rem; }
   .play-heading { align-items: start; }
-  .play-heading > .play-pill { margin-top: .4rem; font-size: .65rem; }
   .play-lobby, .play-players, .play-table-layout { grid-template-columns: 1fr; }
   .play-player { display: grid; grid-template-columns: 36px minmax(0,1fr); }
   .play-player > .play-pill { grid-column: 2; justify-self: start; }

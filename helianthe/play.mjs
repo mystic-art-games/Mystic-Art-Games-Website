@@ -5,7 +5,7 @@ export function playerOnline(timestamp, now = Date.now()) {
   return Boolean(timestamp && now - Date.parse(timestamp) < 45000);
 }
 
-export function createPlayView({ client, getUser, getDecks, getCards, getProfiles, requireSignIn }) {
+export function createPlayView({ client, getUser, getDecks, getCards, getProfiles, makeAvatar, requireSignIn }) {
   const root = document.querySelector('#play-view');
   const $ = id => root.querySelector(`#play-${id}`);
   let userId = null, room = null, channel = null, timer = null, visible = false;
@@ -13,7 +13,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   let busy = false, epoch = 0, fetchSerial = 0, boardRevision = -1, live = false;
   let selected = { x: 0, y: 0 }, origin = { x: -3, y: -2 }, lastHeartbeat = 0;
   root.innerHTML = `
-    <div class="play-heading"><div><span class="play-eyebrow">THE SHARED WORLD</span><h1>Play</h1><p>Meet another player at the same table.</p></div><span id="play-connection" class="play-pill" hidden></span></div>
+    <div class="play-heading"><div><span class="play-eyebrow">THE SHARED WORLD</span><h1>Play</h1><p>Meet another player at the same table.</p></div></div>
     <p id="play-message" role="status" aria-live="polite" hidden></p>
     <section id="play-signin" class="play-surface" hidden><h2>Your seat is waiting</h2><p>Sign in to create a table or join one from the list.</p><button id="play-signin-button" type="button">Sign in to play</button></section>
     <div id="play-lobby" class="play-lobby" hidden>
@@ -21,9 +21,11 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       <section class="play-surface play-recent"><div class="play-table-heading"><h2>All tables</h2><button id="play-refresh" type="button">Refresh</button></div><p id="play-no-rooms">Loading tables…</p><div id="play-room-list"></div></section>
     </div>
     <section id="play-session" hidden>
+      <button id="play-back" class="back-to-decks" type="button"><span aria-hidden="true">←</span> Back</button>
       <div class="play-room-bar"><div><span class="play-eyebrow">TABLE</span><strong id="play-room-code"></strong></div><div class="play-room-actions"><button id="play-leave" type="button">Leave table</button></div></div>
       <div id="play-players" class="play-players"></div>
-      <div class="play-setup play-surface"><label for="play-deck">Your deck<select id="play-deck"><option value="">Choose a deck</option></select></label><button id="play-ready" type="button">Ready</button><span id="play-room-status" role="status"></span></div>
+      <label id="play-deck-field" class="play-deck-field" for="play-deck">Your deck<select id="play-deck"><option value="">No deck selected</option></select></label>
+      <div class="play-setup play-surface"><button id="play-ready" type="button">Ready</button><span id="play-room-status" role="status"></span></div>
       <div class="play-table-layout"><section class="play-surface play-table-panel" aria-label="Shared table">
         <div class="play-table-heading"><h2>Shared table</h2><span id="play-save-status" class="play-pill">Saved</span></div>
         <p class="play-table-hint">Select a space to create Terrain or update a Node. Both players can edit the table.</p>
@@ -39,6 +41,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       </aside></div>
       <p class="play-scope">Choose decks and edit Terrain, Entities and markers together. Drawing cards and private hands are coming next. Resolve card effects together.</p>
     </section>`;
+  const deckField = $('deck-field');
   function message(text = '', error = false) {
     $('message').textContent = text;
     $('message').hidden = !text;
@@ -71,6 +74,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     $('refresh').disabled = busy;
     for (const b of $('room-list').querySelectorAll('button')) b.disabled = busy || b.dataset.full === 'true';
     for (const id of ['deck', 'ready', 'set-terrain']) $(id).disabled = !canAct();
+    $('back').disabled = busy || !room;
     $('leave').disabled = busy || !room;
     $('node-controls').disabled = !canAct() || !room?.board?.[`${selected.x},${selected.y}`];
   }
@@ -140,7 +144,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         lastHeartbeat = Date.now();
       }
       await refreshRoom();
-    } catch (error) { if (expected === epoch) { live = false; renderConnection(); message('Connection interrupted. Reconnecting to your saved table…', true); } }
+    } catch (error) { if (expected === epoch) { live = false; message('Connection interrupted. Reconnecting to your saved table…', true); } }
   }
   async function enter(id) {
     await disconnect();
@@ -155,7 +159,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         if (expected === epoch) void refreshRoom().catch(error => message(friendly(error), true));
       }).subscribe(status => {
         if (expected !== epoch) return;
-        live = status === 'SUBSCRIBED'; renderConnection();
+        live = status === 'SUBSCRIBED';
         if (live) void refreshRoom().catch(error => message(friendly(error), true));
       });
     timer = setInterval(() => void heartbeat(), 10000);
@@ -167,14 +171,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     await rpc('play_room_action', { p_room_id: room.id, p_action: name, p_payload: payload });
     if (expected === epoch) { message(); await refreshRoom(); }
   }
-  function renderConnection() {
-    $('connection').hidden = !room;
-    $('connection').textContent = !room ? '' : room.status === 'closed' ? 'Table closed' : live ? 'Live connection' : 'Connecting…';
-    $('connection').classList.toggle('is-live', Boolean(room && live));
-  }
   function refreshCollections() {
     const value = room ? (room.host_id === userId ? room.host_deck_id : room.guest_deck_id) : $('deck').value;
-    $('deck').innerHTML = '<option value="">Choose a deck</option>' + getDecks().map(d => `<option value="${escape(d.id)}">${escape(d.name)}</option>`).join('');
+    $('deck').innerHTML = '<option value="">No deck selected</option>' + getDecks().map(d => `<option value="${escape(d.id)}">${escape(d.name)}</option>`).join('');
     $('deck').value = value || '';
     const entity = $('entity').value;
     $('entity').innerHTML = '<option value="">No Entity</option>' + getCards().filter(c => c.card_type === 'Entity').map(c => `<option value="${escape(c.id)}">${escape(c.title)}</option>`).join('');
@@ -182,19 +181,36 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   function render() {
     syncLobbyRefresh();
+    root.classList.toggle('is-at-table', Boolean(userId && room));
     $('signin').hidden = Boolean(userId);
     $('lobby').hidden = !userId || Boolean(room);
     $('session').hidden = !userId || !room;
-    renderConnection();
     if (!room) { controls(); return; }
     $('room-code').textContent = room.code;
     $('leave').textContent = room.status === 'closed' ? 'Back to lobby' : room.host_id === userId ? 'Close table' : 'Leave table';
-    const profile = id => getProfiles().find(p => p.id === id)?.display_name || 'Player';
-    $('players').innerHTML = ['host', 'guest'].map(seat => {
+    $('leave').classList.toggle('action-delete', room.status !== 'closed' && room.host_id === userId);
+    const rows = ['host', 'guest'].map(seat => {
       const id = room[`${seat}_id`], online = playerOnline(room[`${seat}_seen_at`]);
       const deck = getDecks().find(d => d.id === room[`${seat}_deck_id`]);
-      return `<div class="play-player"><span class="play-avatar" aria-hidden="true">${id ? escape(profile(id).slice(0, 1).toUpperCase()) : '+'}</span><div><strong>${id ? escape(profile(id)) + (id === userId ? ' · You' : '') : 'Waiting for a player'}</strong><span>${id ? escape(deck?.name || 'No deck selected') : 'Players can join from All tables.'}</span></div><span class="play-pill ${online ? 'is-live' : ''}">${!id ? 'Open seat' : room.status === 'closed' ? 'Closed' : online ? room[`${seat}_ready`] ? 'Ready' : 'Online' : 'Away'}</span></div>`;
-    }).join('');
+      const profile = getProfiles().find(p => p.id === id);
+      const row = document.createElement('div'); row.className = 'play-player';
+      const avatar = id ? makeAvatar(profile || { display_name: 'Player' }, 'play-avatar') : document.createElement('span');
+      if (!id) { avatar.className = 'user-avatar play-avatar'; avatar.textContent = '?'; }
+      avatar.setAttribute('aria-hidden', 'true');
+      const details = document.createElement('div'); details.className = 'play-player-details';
+      const name = document.createElement('strong'); name.textContent = id ? `${profile?.display_name || 'Player'}${id === userId ? ' · You' : ''}` : 'Waiting for a player';
+      details.append(name);
+      if (id === userId) details.append(deckField);
+      else { const deckName = document.createElement('span'); deckName.textContent = deck?.name || 'No deck selected'; details.append(deckName); }
+      row.append(avatar, details);
+      if (id) {
+        const status = document.createElement('span'); status.className = `play-pill${online ? ' is-live' : ''}`;
+        status.textContent = room.status === 'closed' ? 'Closed' : online ? room[`${seat}_ready`] ? 'Ready' : 'Online' : 'Away';
+        row.append(status);
+      }
+      return row;
+    });
+    $('players').replaceChildren(...rows);
     const mine = room.host_id === userId ? 'host' : 'guest';
     $('deck').value = room[`${mine}_deck_id`] || '';
     $('ready').textContent = room[`${mine}_ready`] ? 'Not ready' : 'Ready';
@@ -239,6 +255,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   $('signin-button').addEventListener('click', requireSignIn);
   $('create').addEventListener('click', () => run(async () => { const id = await rpc('play_create_room'); await enter(id); }));
   $('refresh').addEventListener('click', () => run(listTables));
+  $('back').addEventListener('click', () => run(async () => {
+    await disconnect(); room = null; remember(null); render(); await listTables();
+  }));
   $('leave').addEventListener('click', () => run(async () => {
     if (room.status !== 'closed') await action('leave');
     await disconnect(); room = null; remember(null); render(); message(); await listTables();
