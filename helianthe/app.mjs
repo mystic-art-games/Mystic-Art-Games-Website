@@ -688,7 +688,21 @@ function renderIdeas() {
     const body = document.createElement('p');
     body.className = 'idea-note-body';
     body.textContent = idea.body;
-    card.append(marker, number, title, body, ideaAuthor(idea));
+    card.append(marker, number, title, body);
+    if (idea.body.length > 75 || idea.body.split('\n').length > 3) {
+      const toggle = document.createElement('button');
+      toggle.type = 'button';
+      toggle.className = 'idea-note-toggle';
+      toggle.textContent = 'Read more';
+      toggle.setAttribute('aria-expanded', 'false');
+      toggle.addEventListener('click', () => {
+        const expanded = card.classList.toggle('idea-note-expanded');
+        toggle.textContent = expanded ? 'Show less' : 'Read more';
+        toggle.setAttribute('aria-expanded', String(expanded));
+      });
+      card.append(toggle);
+    }
+    card.append(ideaAuthor(idea));
     list.append(card);
   }
   $('#idea-form').hidden = !state.user;
