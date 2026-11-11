@@ -52,6 +52,9 @@ body.dark-mode .theme-state { margin-left: 0; }
 .auth-modal-close:hover:not(:disabled) { background: #e0ebda; }
 .auth-error { margin: 1rem 0 -.5rem; color: #a23d35; font-size: .9rem; font-weight: 700; }
 .auth-error.success { color: #2f6b4c; }
+.auth-text-button { margin-top: .75rem; padding: 0; border: 0; background: transparent; box-shadow: none; color: #265847; text-decoration: underline; }
+.auth-text-button:hover:not(:disabled) { background: transparent; box-shadow: none; }
+body.dark-mode .auth-text-button { color: #c8dfb8; }
 .auth-modal-card :is(input, select)[aria-invalid] { border-color: #a23d35; outline: 2px solid #a23d3533; }
 body.auth-modal-open { overflow: hidden; }
 form label { display: block; margin: .65rem 0; font-weight: 700; }

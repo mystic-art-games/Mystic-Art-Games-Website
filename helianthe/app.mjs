@@ -18,6 +18,7 @@ const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_K
 const api = createCommunityApi(client);
 const ADMIN_EMAIL = 'dominik.zielinski3@gmail.com';
 let authMode = 'sign-in';
+let recoveryPending = false, authReady = false;
 let profileSaveStatusTimer = null;
 const state = { user: null, isAdmin: false, cards: [], decks: [], profiles: [], card: null, deck: null, profile: null, deckCards: [], deckPreviewCard: null, deckPreviewSerial: 0, deckPatronSerial: 0, artworkUrl: null, artworkLoading: false, artworkError: '', artworkSerial: 0, renderSerial: 0, authVersion: 0, realtimeChannel: null, cardFormDirty: false, cardAuthorEdited: false };
 const play = createPlayView({ client, getUser: () => state.user, getDecks: () => state.decks, getProfiles: () => state.profiles, makeAvatar: avatarElement, requireSignIn: showSignIn });
@@ -1002,17 +1003,27 @@ function signUpErrorMessage(error) {
 function setAuthMode(mode) {
   authMode = mode;
   const signingUp = mode === 'sign-up';
+  const requestingReset = mode === 'reset-request';
+  const settingPassword = mode === 'new-password';
   const form = $('#auth-modal-form');
-  $('#auth-modal-title').textContent = signingUp ? 'Create your Helianthe account' : 'Sign in to Helianthe';
-  $('#auth-modal-description').textContent = signingUp
-    ? 'Create your profile and choose the card that represents you best.'
-    : 'Sign in to create cards and build your own decks.';
+  $('#auth-modal-title').textContent = signingUp ? 'Create your Helianthe account' : requestingReset ? 'Reset your password' : settingPassword ? 'Choose a new password' : 'Sign in to Helianthe';
+  $('#auth-modal-description').textContent = signingUp ? 'Create your profile and choose the card that represents you best.'
+    : requestingReset ? 'Enter your email address and we will send you a recovery link.'
+    : settingPassword ? 'Enter and confirm your new password.' : 'Sign in to create cards and build your own decks.';
   $('#sign-up-fields').hidden = !signingUp;
+  form.elements.email.closest('label').hidden = settingPassword;
+  form.elements.password.closest('label').hidden = requestingReset;
+  form.elements.email.required = !settingPassword;
+  form.elements.password.required = !requestingReset;
+  $('#auth-confirm-password-field').hidden = !settingPassword;
+  form.elements.confirm_password.required = settingPassword;
   form.elements.display_name.required = signingUp;
   form.elements.favorite_card_id.required = signingUp;
-  form.elements.password.autocomplete = signingUp ? 'new-password' : 'current-password';
-  $('#auth-submit').textContent = signingUp ? 'Create account' : 'Sign in';
-  $('#auth-mode-toggle').textContent = signingUp ? 'Back to sign in' : 'Create account';
+  form.elements.password.autocomplete = signingUp || settingPassword ? 'new-password' : 'current-password';
+  $('#auth-submit').textContent = signingUp ? 'Create account' : requestingReset ? 'Send recovery link' : settingPassword ? 'Save new password' : 'Sign in';
+  $('#auth-mode-toggle').textContent = signingUp || requestingReset ? 'Back to sign in' : 'Create account';
+  $('#auth-mode-toggle').hidden = settingPassword;
+  $('#auth-forgot').hidden = mode !== 'sign-in';
   if (signingUp) populateFavoriteCards(form.elements.favorite_card_id, form.elements.favorite_card_id.value);
   showAuthMessage('');
 }
@@ -1021,6 +1032,21 @@ function showSignUp() {
   if ($('#auth-modal').hidden) showSignIn();
   setAuthMode('sign-up');
   $('#auth-modal-form').elements.email.focus();
+}
+
+function showResetRequest() {
+  if ($('#auth-modal').hidden) showSignIn();
+  setAuthMode('reset-request');
+  $('#auth-modal-form').elements.email.focus();
+}
+
+function showNewPassword() {
+  $('#auth-modal').hidden = false;
+  setAuthMode('new-password');
+  document.body.classList.add('auth-modal-open');
+  $('#auth-modal-form').elements.password.value = '';
+  $('#auth-modal-form').elements.confirm_password.value = '';
+  $('#auth-modal-form').elements.password.focus();
 }
 
 function hideSignIn() {
@@ -2176,6 +2202,38 @@ async function submitAuthForm(event) {
   }
 }
 
+async function submitPasswordRecovery(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const button = form.querySelector('button[type="submit"]');
+  if (authMode === 'reset-request') {
+    const email = form.elements.email.value.trim();
+    if (!email || !form.elements.email.checkValidity()) return showAuthMessage('Enter a valid email address.', true);
+    const stopLoading = setButtonLoading(button, 'Sending…');
+    try {
+      const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo: 'https://mysticart.games/helianthe/' });
+      showAuthMessage(error ? `Could not send the recovery link: ${error.message}` : 'If this account exists, a recovery link has been sent to that email address.', Boolean(error));
+    } catch (cause) { showAuthMessage('Could not send the recovery link. Try again.', true); }
+    finally { stopLoading(); }
+    return;
+  }
+  const password = form.elements.password.value;
+  if (password.length < 6) return showAuthMessage('Use a password with at least 6 characters.', true);
+  if (password !== form.elements.confirm_password.value) return showAuthMessage('The passwords do not match.', true);
+  const stopLoading = setButtonLoading(button, 'Saving…');
+  try {
+    const { error } = await client.auth.updateUser({ password });
+    if (error) return showAuthMessage(`Could not update the password: ${error.message}`, true);
+    recoveryPending = false;
+    form.elements.password.value = '';
+    form.elements.confirm_password.value = '';
+    hideSignIn();
+    await loadWorkspace();
+    status('Password updated. You are signed in.');
+  } catch (cause) { showAuthMessage('Could not update the password. Try the recovery link again.', true); }
+  finally { stopLoading(); }
+}
+
 function setButtonLoading(button, label) {
   const originalLabel = button.textContent;
   button.disabled = true;
@@ -2191,7 +2249,7 @@ function setButtonLoading(button, label) {
 }
 
 $('#auth-form').addEventListener('submit', submitAuthForm);
-$('#auth-modal-form').addEventListener('submit', event => authMode === 'sign-up' ? submitSignUp(event) : submitAuthForm(event));
+$('#auth-modal-form').addEventListener('submit', event => authMode === 'sign-up' ? submitSignUp(event) : authMode === 'sign-in' ? submitAuthForm(event) : submitPasswordRecovery(event));
 for (const field of $('#auth-modal-form').querySelectorAll('input, select, textarea')) {
   const clearError = () => { field.removeAttribute('aria-invalid'); showAuthMessage(''); };
   field.addEventListener('input', clearError);
@@ -2241,7 +2299,9 @@ async function submitSignUp(event) {
 }
 
 $('#sign-up').addEventListener('click', showSignUp);
-$('#auth-mode-toggle').addEventListener('click', () => authMode === 'sign-up' ? setAuthMode('sign-in') : showSignUp());
+$('#auth-page-forgot').addEventListener('click', showResetRequest);
+$('#auth-forgot').addEventListener('click', showResetRequest);
+$('#auth-mode-toggle').addEventListener('click', () => authMode === 'sign-up' || authMode === 'reset-request' ? setAuthMode('sign-in') : showSignUp());
 
 $('#sign-out').addEventListener('click', async () => {
   const { error } = await client.auth.signOut();
@@ -2945,8 +3005,14 @@ initArtDecoScrollbars();
 
 client.auth.onAuthStateChange((event, session) => {
   if (event === 'SIGNED_OUT') void loadPublicWorkspace();
+  if (event === 'PASSWORD_RECOVERY') {
+    recoveryPending = true;
+    if (authReady) showNewPassword();
+  }
 });
 const { data: { session }, error } = await client.auth.getSession();
 if (error) status(error.message, true);
 else if (session) await loadWorkspace();
 else await loadPublicWorkspace();
+authReady = true;
+if (recoveryPending) showNewPassword();

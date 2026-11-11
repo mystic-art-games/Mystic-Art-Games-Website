@@ -13,10 +13,10 @@
   <link rel="apple-touch-icon" href="../images/helianthe-logo.png?v=helianthe-logo-1">
   <link rel="manifest" href="./manifest.webmanifest">
   <title>Helianthe</title>
-  <link rel="stylesheet" href="./style.css?v=helianthe-ui-193">
+  <link rel="stylesheet" href="./style.css?v=helianthe-ui-194">
   <link rel="stylesheet" href="./play.css?v=play-9">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script type="module" src="./app.mjs?v=helianthe-ui-121"></script>
+  <script type="module" src="./app.mjs?v=helianthe-ui-122"></script>
 </head>
 <body>
   <header class="masthead">
@@ -55,7 +55,7 @@
     <form id="auth-form">
       <label>Email<input name="email" type="email" autocomplete="email" required></label>
       <label>Password<input name="password" type="password" autocomplete="current-password" required minlength="6"></label>
-      <div class="actions"><button type="submit">Sign in</button><button id="sign-up" type="button">Create account</button></div>
+      <div class="actions"><button type="submit">Sign in</button><button id="sign-up" type="button">Create account</button></div><button id="auth-page-forgot" class="auth-text-button" type="button">Forgot password?</button>
     </form>
     <p class="hint">After creating an account, confirm your email address. The link opens the site with your new session.</p>
     <button id="browse-without-account" type="button">Continue browsing without an account</button>
@@ -69,6 +69,7 @@
       <form id="auth-modal-form" novalidate>
         <label>Email<input name="email" type="email" autocomplete="email" required></label>
         <label>Password<input name="password" type="password" autocomplete="current-password" required minlength="6"></label>
+        <label id="auth-confirm-password-field" hidden>Confirm new password<input name="confirm_password" type="password" autocomplete="new-password" minlength="6"></label>
         <div id="sign-up-fields" hidden>
           <label>Display name<input name="display_name" autocomplete="nickname" minlength="2" maxlength="60"></label>
           <label>Bio<textarea name="bio" rows="3" maxlength="500"></textarea></label>
@@ -78,6 +79,7 @@
         </div>
         <p id="auth-error-message" class="auth-error" role="alert" hidden></p>
           <div class="actions"><button id="auth-submit" type="submit">Sign in</button><button id="auth-mode-toggle" type="button">Create Account</button></div>
+        <button id="auth-forgot" class="auth-text-button" type="button">Forgot password?</button>
       </form>
       <p class="hint">After creating an account, confirm your email address. The link opens the site with your new session.</p>
     </section>
