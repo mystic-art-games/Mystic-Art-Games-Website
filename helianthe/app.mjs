@@ -11,6 +11,7 @@ document.title = ['127.0.0.1', 'localhost', '::1'].includes(window.location.host
   : 'Helianthe';
 
 const $ = selector => document.querySelector(selector);
+const arrivedFromPasswordRecovery = new URLSearchParams(window.location.hash.slice(1)).get('type') === 'recovery';
 if (!window.supabase?.createClient) throw new Error('The Supabase client could not be loaded.');
 const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
@@ -18,7 +19,7 @@ const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_K
 const api = createCommunityApi(client);
 const ADMIN_EMAIL = 'dominik.zielinski3@gmail.com';
 let authMode = 'sign-in';
-let recoveryPending = false, authReady = false;
+let recoveryPending = arrivedFromPasswordRecovery, authReady = false;
 let profileSaveStatusTimer = null;
 const state = { user: null, isAdmin: false, cards: [], decks: [], profiles: [], card: null, deck: null, profile: null, deckCards: [], deckPreviewCard: null, deckPreviewSerial: 0, deckPatronSerial: 0, artworkUrl: null, artworkLoading: false, artworkError: '', artworkSerial: 0, renderSerial: 0, authVersion: 0, realtimeChannel: null, cardFormDirty: false, cardAuthorEdited: false };
 const play = createPlayView({ client, getUser: () => state.user, getDecks: () => state.decks, getProfiles: () => state.profiles, makeAvatar: avatarElement, requireSignIn: showSignIn });
@@ -3015,4 +3016,4 @@ if (error) status(error.message, true);
 else if (session) await loadWorkspace();
 else await loadPublicWorkspace();
 authReady = true;
-if (recoveryPending) showNewPassword();
+if (recoveryPending && session) showNewPassword();
