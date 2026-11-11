@@ -3,7 +3,7 @@ import { createCommunityApi, resolveLegacyCardAuthors } from './community-api.mj
 import { renderCard, downloadCardPNG } from './card-renderer.mjs?v=entity-terrain-2';
 import { PATRONS, FACTION_VISIONS, PATRON_RULES_REVISION, updatePatronVision } from './patrons.mjs?v=faction-visions-2';
 import { CARD_TAGS, normalizeCardTags, seedTagsForCard, tagLabel } from './card-tags.mjs';
-import { createPlayView } from './play.mjs?v=play-6';
+import { createPlayView } from './play.mjs?v=play-7';
 
 document.title = ['127.0.0.1', 'localhost', '::1'].includes(window.location.hostname)
   ? 'Helianthe — Local Preview'

@@ -183,9 +183,10 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
       if (id === userId) details.append(deckField);
       else { const deckName = document.createElement('span'); deckName.textContent = deck?.name || 'No deck selected'; details.append(deckName); }
       row.append(avatar, details);
-      if (id) {
-        const status = document.createElement('span'); status.className = `play-pill${online ? ' is-live' : ''}`;
-        status.textContent = room.status === 'closed' ? 'Closed' : online ? room[`${seat}_ready`] ? 'Ready' : 'Online' : 'Away';
+      const state = room.status === 'closed' ? 'Closed' : !online ? 'Away' : room[`${seat}_ready`] ? 'Ready' : '';
+      if (id && state) {
+        const status = document.createElement('span'); status.className = `play-pill${state === 'Ready' ? ' is-live' : ''}`;
+        status.textContent = state;
         row.append(status);
       }
       return row;
