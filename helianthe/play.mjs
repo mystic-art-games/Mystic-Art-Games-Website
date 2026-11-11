@@ -20,10 +20,10 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     </div>
     <section id="play-session" hidden>
       <button id="play-back" class="back-to-decks" type="button"><span aria-hidden="true">←</span> Back</button>
-      <div class="play-room-bar"><div><span class="play-eyebrow">TABLE</span><strong id="play-room-code"></strong></div><div class="play-room-actions"><button id="play-leave" type="button">Leave table</button></div></div>
+      <div class="play-room-bar"><div class="play-room-identity"><span class="play-eyebrow">TABLE</span><div class="play-room-name-line"><strong id="play-room-name"></strong><button id="play-edit-name" type="button">Edit name</button></div><form id="play-name-form" hidden><input id="play-name-input" aria-label="Table name" maxlength="60" required><button type="submit">Save</button><button id="play-cancel-name" type="button">Cancel</button></form><span class="play-room-code-line">Code: <strong id="play-room-code"></strong></span></div><div class="play-room-actions"><button id="play-leave" type="button">Leave table</button></div></div>
       <div id="play-players" class="play-players"></div>
       <label id="play-deck-field" class="play-deck-field" for="play-deck">Your deck<select id="play-deck"><option value="">No deck selected</option></select></label>
-      <div class="play-setup play-surface"><button id="play-ready" type="button">Ready</button><span id="play-room-status" role="status"></span></div>
+      <p id="play-room-status" role="status"></p>
     </section>`;
   const deckField = $('deck-field');
   function message(text = '', error = false) {
@@ -58,6 +58,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     $('refresh').disabled = busy;
     for (const b of $('room-list').querySelectorAll('button')) b.disabled = busy || b.dataset.full === 'true';
     for (const id of ['deck', 'ready']) $(id).disabled = !canAct();
+    $('edit-name').disabled = !canAct() || room?.host_id !== userId;
     $('back').disabled = busy || !room;
     $('leave').disabled = busy || !room;
   }
@@ -91,7 +92,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     for (const entry of data) {
       const row = document.createElement('div'); row.className = 'play-table-entry';
       const details = document.createElement('div');
-      const title = document.createElement('strong'); title.textContent = `Table ${entry.code}`;
+      const title = document.createElement('strong'); title.textContent = entry.name || `Table ${entry.code}`;
       const summary = document.createElement('span'); summary.textContent = `${entry.host_name} · ${entry.player_count} / 2 players`;
       details.append(title, summary);
       const b = document.createElement('button'); b.type = 'button';
@@ -167,6 +168,8 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     $('session').hidden = !userId || !room;
     if (!room) { controls(); return; }
     $('room-code').textContent = room.code;
+    $('room-name').textContent = room.name || `Table ${room.code}`;
+    $('edit-name').hidden = room.host_id !== userId || room.status === 'closed';
     $('leave').textContent = room.status === 'closed' ? 'Back to lobby' : room.host_id === userId ? 'Close table' : 'Leave table';
     $('leave').classList.toggle('action-delete', room.status !== 'closed' && room.host_id === userId);
     const rows = ['host', 'guest'].map(seat => {
@@ -180,7 +183,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
       const details = document.createElement('div'); details.className = 'play-player-details';
       const name = document.createElement('strong'); name.textContent = id ? `${profile?.display_name || 'Player'}${id === userId ? ' · You' : ''}` : 'Waiting for a player';
       details.append(name);
-      if (id === userId) details.append(deckField);
+      if (id === userId) details.append(deckField, $('ready'));
       else { const deckName = document.createElement('span'); deckName.textContent = deck?.name || 'No deck selected'; details.append(deckName); }
       row.append(avatar, details);
       const state = room.status === 'closed' ? 'Closed' : !online ? 'Away' : room[`${seat}_ready`] ? 'Ready' : '';
@@ -213,6 +216,23 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
   }));
   $('deck').addEventListener('change', () => run(() => action('deck', { deck_id: $('deck').value })));
   $('ready').addEventListener('click', () => run(() => action('ready')));
+  $('edit-name').addEventListener('click', () => {
+    $('name-input').value = room.name || `Table ${room.code}`;
+    $('name-form').hidden = false;
+    $('name-input').focus();
+    $('name-input').select();
+  });
+  $('cancel-name').addEventListener('click', () => { $('name-form').hidden = true; });
+  $('name-form').addEventListener('submit', event => {
+    event.preventDefault();
+    const name = $('name-input').value.trim();
+    if (!name || !canAct()) return;
+    void run(async () => {
+      await rpc('play_rename_table', { p_room_id: room.id, p_name: name });
+      $('name-form').hidden = true;
+      await refreshRoom();
+    });
+  });
   async function refreshIdentity() {
     const next = getUser()?.id || null;
     if (next === userId) return;
