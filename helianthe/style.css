@@ -143,12 +143,16 @@ textarea { resize: vertical; }
 .about-section h3:first-of-type { margin-top: .2rem; }
 .vision-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 43%); align-items: start; gap: 1.25rem; }
 .vision-board-figure { min-width: 0; width: 100%; max-width: 460px; margin: .15rem auto; }
-.vision-board-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: clamp(2px, .35vw, 5px); width: 100%; padding: 3px; border-radius: 10px; background: #244c3b; box-shadow: 0 14px 30px #102c2440; }
+.vision-board-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: clamp(6px, .9vw, 12px); width: 100%; padding: 0; background: transparent; }
 .vision-board-cell { position: relative; min-width: 0; }
 .vision-board-cell:has(.vision-entity) { z-index: 2; }
-.vision-terrain { display: block; width: 100%; aspect-ratio: 5 / 7; object-fit: cover; border: 2px solid #173e2e; border-radius: 5px; box-sizing: border-box; }
-.vision-entity { position: absolute; top: 24%; left: 12%; display: block; width: 105%; height: auto; transform: rotate(-5deg); filter: drop-shadow(3px 5px 4px #0d201d88); }
-.vision-board-cell:nth-child(5n + 1) .vision-entity { transform: rotate(5deg); }
+.vision-board-verdant { --vision-frame: #315c37; }
+.vision-board-flow { --vision-frame: #226b86; }
+.vision-board-symbiosis { --vision-frame: #79519a; }
+.vision-board-radiance { --vision-frame: #b57a1c; }
+.vision-terrain { display: block; width: 100%; aspect-ratio: 5 / 7; object-fit: cover; border: 2px solid var(--vision-frame); border-radius: 5px; box-shadow: 0 4px 10px #102c2438; }
+.vision-entity { position: absolute; top: 8%; left: 8%; display: block; width: 84%; height: auto; transform: rotate(-1deg); filter: drop-shadow(2px 3px 3px #0d201d88); }
+.vision-board-cell:nth-child(3n) .vision-entity { transform: rotate(1deg); }
 .vision-board-figure figcaption { margin: .8rem .3rem 0; color: #486755; font-size: .78rem; font-weight: 800; line-height: 1.35; text-align: center; }
 body.dark-mode .vision-board-figure figcaption { color: #d3e6d1; }
 .vision-copy { min-width: 0; }
