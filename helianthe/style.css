@@ -2045,7 +2045,7 @@ body.dark-mode #card-field-modal .card-field-dialog {
 .guide-glossary div { padding-bottom: .55rem; border-bottom: 1px solid rgba(78, 112, 90, .2); }
 .guide-glossary dt { color: #265847; font-weight: 800; }
 .guide-glossary dd { margin: .15rem 0 0; }
-.faction-card { display: grid; grid-row: span 5; grid-template-rows: subgrid; row-gap: 0; min-width: 0; padding: 1.1rem 1.2rem; }
+.faction-card { display: grid; grid-row: span 7; grid-template-rows: subgrid; row-gap: 0; min-width: 0; padding: 1.1rem 1.2rem; }
 .faction-card > p:first-of-type { align-self: start; }
 .faction-card h3 { border-top: 1px solid rgba(78, 112, 90, .22); padding-top: .75rem; }
 .faction-traits { margin: .5rem 0 .85rem; padding-left: 1.25rem; color: #405b4d; line-height: 1.5; }
@@ -2250,6 +2250,8 @@ body.dark-mode #about-view .info-actions button:hover:not(:disabled) { transform
 .about-subtabs button:hover { background: rgba(255, 255, 255, .5); }
 .about-subtabs button[aria-selected="true"] { background: #265847; color: #fff8e8; box-shadow: 0 2px 7px #153f3420; }
 .about-subtabs button:focus-visible { outline: 2px solid #b17d2e; outline-offset: 2px; }
+.faction-vision { margin: .5rem 0 .8rem; font-weight: 700; }
+.guide-glossary .glossary-wide { grid-column: 1 / -1; }
 #about-section > .about-workspace { flex: 1 1 auto; width: 100%; max-width: none; min-height: 0; height: auto; margin: 0; }
 #about-section .about-panel { width: 100%; max-width: none; height: 100%; aspect-ratio: auto; border: 0 !important; border-radius: 0; background: transparent !important; box-shadow: none !important; }
 #about-section .about-scroll-wrap { inset: 1rem; }
@@ -2269,4 +2271,7 @@ body.dark-mode .about-subtabs button[aria-selected="true"] { background: #dbeadb
   #about-section .about-scroll-wrap { inset: .75rem; }
   #about-section .about-content { padding: .3rem .5rem .8rem .2rem; }
   #about-section .art-scroll-rail { display: flex !important; }
+}
+@media (max-width: 400px) {
+  .about-subtabs button { font-size: .8rem; padding: .55rem .2rem; }
 }

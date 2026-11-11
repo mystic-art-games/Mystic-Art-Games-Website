@@ -1,7 +1,7 @@
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.mjs';
 import { createCommunityApi, resolveLegacyCardAuthors } from './community-api.mjs';
 import { renderCard, downloadCardPNG } from './card-renderer.mjs?v=entity-terrain-2';
-import { PATRONS } from './patrons.mjs?v=faction-map-1';
+import { PATRONS, FACTION_VISIONS, PATRON_RULES_REVISION, updatePatronVision } from './patrons.mjs?v=faction-visions-2';
 import { CARD_TAGS, normalizeCardTags, seedTagsForCard, tagLabel } from './card-tags.mjs';
 import { createPlayView } from './play.mjs?v=play-4';
 
@@ -34,7 +34,7 @@ let patronCards = PATRONS.map(patron => ({
   card_type: 'Patron',
   terrain: PATRON_TERRAIN[patron.faction],
   testing_status: 'draft',
-  effect: [`Credo: “${patron.credo}”`, `Scoring: ${patron.scoring}`, patron.ability ? `Ability: ${patron.ability}` : ''].filter(Boolean).join('\n\n'),
+  effect: [`Credo: “${patron.credo}”`, `Vision: ${patron.scoring}`, patron.ability ? `Ability: ${patron.ability}` : ''].filter(Boolean).join('\n\n'),
   author: 'El Delfin',
   author_ids: [],
   tags: seedTagsForCard(patron.name),
@@ -42,8 +42,19 @@ let patronCards = PATRONS.map(patron => ({
 }));
 try {
   const overrides = JSON.parse(localStorage.getItem(PATRON_CARD_OVERRIDES_KEY) || '{}');
-  for (const card of patronCards) Object.assign(card, overrides[card.id] || {});
+  let updated = false;
+  for (const card of patronCards) {
+    const override = overrides[card.id];
+    if (override && override.rules_revision !== PATRON_RULES_REVISION) {
+      override.effect = updatePatronVision(override.effect || card.effect, card.patron);
+      override.rules_revision = PATRON_RULES_REVISION;
+      updated = true;
+    }
+    Object.assign(card, override || {});
+  }
+  if (updated) localStorage.setItem(PATRON_CARD_OVERRIDES_KEY, JSON.stringify(overrides));
 } catch {}
+for (const text of document.querySelectorAll('[data-faction-vision]')) text.textContent = FACTION_VISIONS[text.dataset.factionVision];
 try {
   const deletedPatrons = new Set(JSON.parse(localStorage.getItem(DELETED_PATRON_CARDS_KEY) || '[]'));
   patronCards = patronCards.filter(card => !deletedPatrons.has(card.id));
@@ -590,11 +601,12 @@ function button(label, action, className = '') {
   return element;
 }
 
-const TAB_NAMES = ['about', 'rules', 'factions', 'cards', 'decks', 'play', 'profiles'];
-const ABOUT_TAB_NAMES = ['about', 'rules', 'factions'];
+const TAB_NAMES = ['about', 'rules', 'factions', 'glossary', 'cards', 'decks', 'play', 'profiles'];
+const ABOUT_TAB_NAMES = ['about', 'rules', 'factions', 'glossary'];
 function requestedTab() {
   const name = window.location.hash.slice(1).toLowerCase() || (new URL(location.href).searchParams.has('room') ? 'play' : 'about');
   if (name === 'patrons') return 'cards';
+  if (name === 'rules-glossary') return 'glossary';
   return TAB_NAMES.includes(name) ? name : 'about';
 }
 
@@ -2251,9 +2263,10 @@ for (const tab of document.querySelectorAll('[data-about-tab]')) {
   tab.addEventListener('click', () => showTab(tab.dataset.aboutTab));
   tab.addEventListener('keydown', event => {
     const index = ABOUT_TAB_NAMES.indexOf(tab.dataset.aboutTab);
-    const next = event.key === 'ArrowRight' ? (index + 1) % 3
-      : event.key === 'ArrowLeft' ? (index + 2) % 3
-      : event.key === 'Home' ? 0 : event.key === 'End' ? 2 : null;
+    const count = ABOUT_TAB_NAMES.length;
+    const next = event.key === 'ArrowRight' ? (index + 1) % count
+      : event.key === 'ArrowLeft' ? (index + count - 1) % count
+      : event.key === 'Home' ? 0 : event.key === 'End' ? count - 1 : null;
     if (next === null) return;
     event.preventDefault();
     showTab(ABOUT_TAB_NAMES[next]);
@@ -2598,7 +2611,7 @@ async function saveCardForm() {
     if (state.card?.patron) {
       const authorIds = values.author_ids;
       const artwork = file ? await api.uploadArtwork(file) : null;
-      const updates = { title: values.title, terrain: values.terrain, testing_status: values.testing_status, effect: values.effect, tags: values.tags, author_ids: authorIds, author: values.author, artwork_id: artwork?.id || previousArtworkId };
+      const updates = { title: values.title, terrain: values.terrain, testing_status: values.testing_status, effect: values.effect, tags: values.tags, author_ids: authorIds, author: values.author, artwork_id: artwork?.id || previousArtworkId, rules_revision: PATRON_RULES_REVISION };
       try {
         const overrides = JSON.parse(localStorage.getItem(PATRON_CARD_OVERRIDES_KEY) || '{}');
         overrides[state.card.id] = updates;
