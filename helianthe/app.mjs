@@ -4,7 +4,7 @@ import { renderCard, downloadCardPNG } from './card-renderer.mjs?v=patron-labels
 import { CardSheetPDF } from './card-sheet-pdf.mjs';
 import { PATRONS, FACTION_VISIONS, PATRON_RULES_REVISION, updatePatronVision } from './patrons.mjs?v=faction-visions-2';
 import { CARD_TAGS, normalizeCardTags, seedTagsForCard, tagLabel } from './card-tags.mjs?v=tags-3';
-import { createPlayView } from './play.mjs?v=play-21';
+import { createPlayView } from './play.mjs?v=play-22';
 
 document.title = ['127.0.0.1', 'localhost', '::1'].includes(window.location.hostname)
   ? 'Helianthe — Local Preview'
