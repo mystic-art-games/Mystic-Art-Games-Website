@@ -1,17 +1,15 @@
-const TERRAINS = ['Symbiosis', 'Flow', 'Verdant', 'Radiance'];
 const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
 export function playerOnline(timestamp, now = Date.now()) {
   return Boolean(timestamp && now - Date.parse(timestamp) < 45000);
 }
 
-export function createPlayView({ client, getUser, getDecks, getCards, getProfiles, makeAvatar, requireSignIn }) {
+export function createPlayView({ client, getUser, getDecks, getProfiles, makeAvatar, requireSignIn }) {
   const root = document.querySelector('#play-view');
   const $ = id => root.querySelector(`#play-${id}`);
   let userId = null, room = null, channel = null, timer = null, visible = false;
   let lobbyTimer = null, listSerial = 0, tableListSignature = '';
-  let busy = false, epoch = 0, fetchSerial = 0, boardRevision = -1, live = false;
-  let selected = { x: 0, y: 0 }, origin = { x: -3, y: -2 }, lastHeartbeat = 0;
+  let busy = false, epoch = 0, fetchSerial = 0, live = false, lastHeartbeat = 0;
   root.innerHTML = `
     <div class="play-heading"><div><span class="play-eyebrow">THE SHARED WORLD</span><h1>Play</h1><p>Meet another player at the same table.</p></div></div>
     <p id="play-message" role="status" aria-live="polite" hidden></p>
@@ -26,20 +24,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       <div id="play-players" class="play-players"></div>
       <label id="play-deck-field" class="play-deck-field" for="play-deck">Your deck<select id="play-deck"><option value="">No deck selected</option></select></label>
       <div class="play-setup play-surface"><button id="play-ready" type="button">Ready</button><span id="play-room-status" role="status"></span></div>
-      <div class="play-table-layout"><section class="play-surface play-table-panel" aria-label="Shared table">
-        <div class="play-table-heading"><h2>Shared table</h2><span id="play-save-status" class="play-pill">Saved</span></div>
-        <p class="play-table-hint">Select a space to create Terrain or update a Node. Both players can edit the table.</p>
-        <div id="play-board" class="play-board" aria-label="Terrain layout"></div>
-        <div class="play-pan" aria-label="Move table view"><button type="button" data-pan="left" aria-label="View left">←</button><button type="button" data-pan="up" aria-label="View up">↑</button><button type="button" data-pan="home">Center</button><button type="button" data-pan="down" aria-label="View down">↓</button><button type="button" data-pan="right" aria-label="View right">→</button></div>
-      </section><aside class="play-surface play-node-panel"><h2 id="play-node-title">Node · 0, 0</h2>
-        <label for="play-terrain">Terrain<select id="play-terrain">${TERRAINS.map(t => `<option>${t}</option>`).join('')}</select></label><button id="play-set-terrain" type="button">Create Terrain</button>
-        <fieldset id="play-node-controls"><legend>On this Node</legend><label for="play-entity">Entity<select id="play-entity"><option value="">No Entity</option></select></label><button id="play-set-entity" type="button">Place Entity</button>
-        <div class="play-node-actions"><button id="play-crisis" type="button" aria-pressed="false">Crisis</button><button id="play-protect" type="button" aria-pressed="false">Protection</button></div>
-        <div class="play-lumens"><span id="play-lumen-count">Lumens: 0 / 2</span><button id="play-lumen-minus" type="button" aria-label="Remove one Lumen">−</button><button id="play-lumen-plus" type="button" aria-label="Add one Lumen">+</button></div>
-        <button id="play-remove" type="button">Remove Node</button></fieldset>
-        <div id="play-entity-detail" class="play-entity-detail" hidden></div>
-      </aside></div>
-      <p class="play-scope">Choose decks and edit Terrain, Entities and markers together. Drawing cards and private hands are coming next. Resolve card effects together.</p>
     </section>`;
   const deckField = $('deck-field');
   function message(text = '', error = false) {
@@ -73,10 +57,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     $('create').disabled = busy;
     $('refresh').disabled = busy;
     for (const b of $('room-list').querySelectorAll('button')) b.disabled = busy || b.dataset.full === 'true';
-    for (const id of ['deck', 'ready', 'set-terrain']) $(id).disabled = !canAct();
+    for (const id of ['deck', 'ready']) $(id).disabled = !canAct();
     $('back').disabled = busy || !room;
     $('leave').disabled = busy || !room;
-    $('node-controls').disabled = !canAct() || !room?.board?.[`${selected.x},${selected.y}`];
   }
   async function run(task) {
     if (busy) return;
@@ -153,7 +136,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (expected !== epoch) return;
     if (error) throw error;
     if (!data || data.status === 'closed') { remember(null); throw new Error('Table not found or closed.'); }
-    room = data; boardRevision = -1; lastHeartbeat = 0; remember(id); render();
+    room = data; lastHeartbeat = 0; remember(id); render();
     channel = client.channel(`play-room:${id}`)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'play_rooms', filter: `id=eq.${id}` }, () => {
         if (expected === epoch) void refreshRoom().catch(error => message(friendly(error), true));
@@ -175,9 +158,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const value = room ? (room.host_id === userId ? room.host_deck_id : room.guest_deck_id) : $('deck').value;
     $('deck').innerHTML = '<option value="">No deck selected</option>' + getDecks().map(d => `<option value="${escape(d.id)}">${escape(d.name)}</option>`).join('');
     $('deck').value = value || '';
-    const entity = $('entity').value;
-    $('entity').innerHTML = '<option value="">No Entity</option>' + getCards().filter(c => c.card_type === 'Entity').map(c => `<option value="${escape(c.id)}">${escape(c.title)}</option>`).join('');
-    $('entity').value = entity;
   }
   function render() {
     syncLobbyRefresh();
@@ -216,40 +196,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     $('ready').textContent = room[`${mine}_ready`] ? 'Not ready' : 'Ready';
     $('ready').setAttribute('aria-pressed', String(room[`${mine}_ready`]));
     $('room-status').textContent = room.status === 'closed' ? 'Table closed' : room.status === 'active' ? 'Both players are ready.' : !room.guest_id ? 'Waiting for the second player.' : 'Choose your decks and get ready.';
-    if (room.revision !== boardRevision) { boardRevision = room.revision; renderBoard(); renderNode(); }
-    $('save-status').textContent = `Saved · ${room.revision}`;
     controls();
     if (room.status === 'closed') $('leave').disabled = false;
-  }
-  function renderBoard() {
-    if (!room) return;
-    $('board').replaceChildren();
-    for (let y = origin.y; y < origin.y + 5; y++) for (let x = origin.x; x < origin.x + 7; x++) {
-      const n = room.board[`${x},${y}`];
-      const b = document.createElement('button'); b.type = 'button';
-      b.className = `play-cell ${n ? `play-terrain-${n.terrain.toLowerCase()}` : 'is-empty'}${selected.x === x && selected.y === y ? ' is-selected' : ''}`;
-      b.setAttribute('aria-label', `${n?.terrain || 'Empty space'} at ${x}, ${y}${n?.entity ? `, ${n.entity.title}` : ''}`);
-      b.setAttribute('aria-pressed', String(selected.x === x && selected.y === y));
-      b.innerHTML = n ? `<span class="play-cell-terrain">${escape(n.terrain)}</span><strong>${escape(n.entity?.title || '')}</strong><span class="play-cell-markers">${n.crisis ? 'Crisis' : n.protected ? 'Protected' : ''}${n.lumens ? ` ☀ ${n.lumens}` : ''}</span>` : '<span aria-hidden="true">+</span>';
-      b.addEventListener('click', () => { selected = { x, y }; renderBoard(); renderNode(); controls(); });
-      $('board').append(b);
-    }
-  }
-  function renderNode() {
-    if (!room) return;
-    const n = room.board[`${selected.x},${selected.y}`];
-    $('node-title').textContent = `Node · ${selected.x}, ${selected.y}`;
-    $('terrain').value = n?.terrain || 'Symbiosis';
-    $('set-terrain').textContent = n ? 'Transform Terrain' : 'Create Terrain';
-    $('entity').value = n?.entity?.id || '';
-    $('set-entity').textContent = n?.entity ? 'Update Entity' : 'Place Entity';
-    $('crisis').setAttribute('aria-pressed', String(Boolean(n?.crisis)));
-    $('protect').setAttribute('aria-pressed', String(Boolean(n?.protected)));
-    $('lumen-count').textContent = `Lumens: ${n?.lumens || 0} / 2`;
-    $('lumen-minus').disabled = n?.terrain !== 'Radiance' || !n.lumens;
-    $('lumen-plus').disabled = n?.terrain !== 'Radiance' || n.lumens >= 2;
-    $('entity-detail').hidden = !n?.entity;
-    $('entity-detail').innerHTML = n?.entity ? `<strong>${escape(n.entity.title)}</strong><p>${escape(n.entity.effect)}</p>` : '';
   }
 
   $('signin-button').addEventListener('click', requireSignIn);
@@ -264,18 +212,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }));
   $('deck').addEventListener('change', () => run(() => action('deck', { deck_id: $('deck').value })));
   $('ready').addEventListener('click', () => run(() => action('ready')));
-  for (const name of ['terrain', 'entity', 'crisis', 'protect', 'lumen-minus', 'lumen-plus', 'remove']) {
-    const target = name === 'terrain' || name === 'entity' ? `set-${name}` : name;
-    $(target).addEventListener('click', () => run(() => action(name.startsWith('lumen') ? 'lumen' : name, {
-      ...selected, terrain: $('terrain').value, card_id: $('entity').value, delta: name === 'lumen-minus' ? -1 : 1,
-    })));
-  }
-  for (const b of root.querySelectorAll('[data-pan]')) b.addEventListener('click', () => {
-    const d = b.dataset.pan;
-    if (d === 'home') origin = { x: -3, y: -2 };
-    else { origin.x = Math.max(-30, Math.min(24, origin.x + (d === 'left' ? -2 : d === 'right' ? 2 : 0))); origin.y = Math.max(-30, Math.min(26, origin.y + (d === 'up' ? -2 : d === 'down' ? 2 : 0))); }
-    renderBoard();
-  });
   async function refreshIdentity() {
     const next = getUser()?.id || null;
     if (next === userId) return;
