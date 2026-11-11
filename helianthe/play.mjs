@@ -1,4 +1,5 @@
 const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+const defaultTableName = hostName => `${Array.from(String(hostName ?? '').trim() || 'Player').slice(0, 54).join('')} table`;
 
 export function playerOnline(timestamp, now = Date.now()) {
   return Boolean(timestamp && now - Date.parse(timestamp) < 45000);
@@ -101,7 +102,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     for (const entry of data) {
       const row = document.createElement('div'); row.className = 'play-table-entry';
       const details = document.createElement('div');
-      const title = document.createElement('strong'); title.textContent = entry.name || `Table ${entry.code}`;
+      const title = document.createElement('strong'); title.textContent = entry.name || defaultTableName(entry.host_name);
       const summary = document.createElement('span'); summary.textContent = `${entry.host_name} · ${entry.player_count} / 2 players`;
       const countdown = document.createElement('span'); countdown.className = 'play-ready-countdown';
       countdown.dataset.createdAt = entry.created_at;
@@ -184,7 +185,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     $('session').hidden = !userId || !room;
     if (!room) { controls(); return; }
     $('room-code').textContent = room.code;
-    $('room-name').textContent = room.name || `Table ${room.code}`;
+    $('room-name').textContent = room.name || defaultTableName(getProfiles().find(p => p.id === room.host_id)?.display_name);
     $('ready-countdown').textContent = room.status === 'closed' ? '' : readyCountdown(room.created_at, room.activated_at);
     $('edit-name').hidden = room.host_id !== userId || room.status === 'closed';
     $('leave').textContent = room.host_id === userId ? 'Close table' : 'Leave table';
@@ -239,7 +240,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
   $('deck').addEventListener('change', () => run(() => action('deck', { deck_id: $('deck').value })));
   $('ready').addEventListener('click', () => run(() => action('ready')));
   $('edit-name').addEventListener('click', () => {
-    $('name-input').value = room.name || `Table ${room.code}`;
+    $('name-input').value = $('room-name').textContent;
     $('name-form').hidden = false;
     $('name-input').focus();
     $('name-input').select();
