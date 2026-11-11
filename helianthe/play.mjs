@@ -24,7 +24,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     <section id="play-signin" class="play-surface" hidden><h2>Your seat is waiting</h2><p>Sign in to create a table or join one from the list.</p><button id="play-signin-button" type="button">Sign in to play</button></section>
     <div id="play-lobby" class="play-lobby" hidden>
       <section class="play-surface play-create-panel"><div><span class="play-eyebrow">HOST A SESSION</span><h2>Create a table</h2></div><button id="play-create" type="button">Create table</button></section>
-      <section class="play-surface play-recent"><div class="play-table-heading"><h2>All tables</h2><button id="play-refresh" type="button">Refresh</button></div><p id="play-no-rooms">Loading tables…</p><div id="play-room-list"></div></section>
+      <section class="play-surface play-recent"><div class="play-table-heading"><h2>All tables</h2></div><p id="play-no-rooms">Loading tables…</p><div id="play-room-list"></div></section>
     </div>
     <section id="play-session" hidden>
       <button id="play-back" class="back-to-decks" type="button"><span aria-hidden="true">←</span> Back to Lobby</button>
@@ -65,7 +65,6 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
   function canAct() { return Boolean(room && userId && room.status !== 'closed' && !busy); }
   function controls() {
     $('create').disabled = busy;
-    $('refresh').disabled = busy;
     for (const b of $('room-list').querySelectorAll('button')) b.disabled = busy || b.dataset.full === 'true';
     for (const id of ['deck', 'ready']) $(id).disabled = !canAct();
     $('edit-name').disabled = !canAct() || room?.host_id !== userId;
@@ -92,7 +91,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     const expected = epoch, serial = ++listSerial;
     const { data, error } = await client.rpc('play_list_tables');
     if (expected !== epoch || serial !== listSerial || room) return;
-    if (error) { $('no-rooms').textContent = 'Tables could not be loaded. Try Refresh.'; $('no-rooms').hidden = false; message(friendly(error), true); return; }
+    if (error) { $('no-rooms').textContent = 'Tables could not be loaded. Retrying automatically…'; $('no-rooms').hidden = false; message(friendly(error), true); return; }
     $('no-rooms').hidden = Boolean(data.length);
     $('no-rooms').textContent = 'No tables yet. Create the first one.';
     const signature = JSON.stringify(data);
@@ -230,7 +229,6 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
 
   $('signin-button').addEventListener('click', requireSignIn);
   $('create').addEventListener('click', () => run(async () => { const id = await rpc('play_create_room'); await enter(id); }));
-  $('refresh').addEventListener('click', () => run(listTables));
   $('back').addEventListener('click', () => run(async () => {
     await disconnect(); room = null; remember(null); render(); await listTables();
   }));
