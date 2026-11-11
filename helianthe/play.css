@@ -6,13 +6,20 @@
 .play-eyebrow { display: block; color: #577268; font-size: .68rem; letter-spacing: .14em; font-weight: 800; }
 .play-pill { display: inline-block; flex: 0 0 auto; border: 1px solid #a4b6a5; border-radius: 999px; padding: .3rem .65rem; font-size: .75rem; white-space: nowrap; }
 .play-pill.is-live { border-color: #52986d; background: #e2f2e3; color: #20543a; }
-.play-lobby, .play-players { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 1rem; }
+.play-lobby { display: grid; grid-template-columns: minmax(0,1fr); gap: 1rem; }
+.play-players { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 1rem; }
 .play-surface { min-width: 0; padding: 1.25rem; border: 1px solid #aec4b7; border-radius: 16px; background: rgba(255,255,255,.58); }
 .play-surface h2 { font-size: 1.3rem; margin: .2rem 0 .6rem; }
 .play-surface p { line-height: 1.5; }
-.play-lobby button, #play-signin button { margin-top: .8rem; }
+.play-create-panel { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+#play-signin button { margin-top: .8rem; }
 .play-recent { grid-column: 1/-1; }
-.play-room-entry { margin-right: .6rem; }
+.play-table-entry { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 0; border-top: 1px solid #aec4b7; }
+.play-table-entry:first-child { margin-top: .8rem; }
+.play-table-entry > div { min-width: 0; }
+.play-table-entry strong, .play-table-entry span { display: block; overflow-wrap: anywhere; }
+.play-table-entry span { margin-top: .25rem; font-size: .85rem; }
+.play-table-entry button { flex: 0 0 auto; }
 #play-message { padding: .8rem 1rem; border: 1px solid #98b49e; border-radius: 10px; overflow-wrap: anywhere; background: #edf5e9; }
 #play-message.error { border-color: #b76b53; color: #813f2e; background: #fff1e8; }
 .play-room-bar { margin: 0 0 1rem; }
@@ -82,6 +89,7 @@ body.dark-mode #play-message { color: #163737; }
   .play-player { display: grid; grid-template-columns: 36px minmax(0,1fr); }
   .play-player > .play-pill { grid-column: 2; justify-self: start; }
   .play-recent { grid-column: auto; }
+  .play-create-panel, .play-table-entry { align-items: stretch; flex-direction: column; }
   .play-setup { flex-wrap: wrap; }
   .play-setup > span { flex-basis: 100%; }
   .play-room-bar { align-items: start; flex-direction: column; }
