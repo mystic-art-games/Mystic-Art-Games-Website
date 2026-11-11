@@ -43,6 +43,15 @@ let patronCards = PATRONS.map(patron => ({
   tags: seedTagsForCard(patron.name),
   patron,
 }));
+const terrainCards = ['Radiance', 'Verdant', 'Flow', 'Symbiosis'].map(terrain => ({
+  id: `terrain:${terrain.toLowerCase()}`,
+  title: terrain,
+  card_type: 'Terrain',
+  terrain,
+  fullArtTerrain: true,
+  fullArtUrl: new URL(`./assets/Terrain_${terrain}_Full_Art.png`, import.meta.url).href,
+  tags: [],
+}));
 try {
   const overrides = JSON.parse(localStorage.getItem(PATRON_CARD_OVERRIDES_KEY) || '{}');
   let updated = false;
@@ -583,6 +592,14 @@ function terrainClass(terrain) {
 function cardListIcons(card) {
   const icons = document.createElement('span');
   icons.className = 'card-list-icons';
+  if (card.fullArtTerrain) {
+    const thumbnail = document.createElement('img');
+    thumbnail.className = 'terrain-art-thumbnail';
+    thumbnail.src = card.fullArtUrl;
+    thumbnail.alt = '';
+    icons.append(thumbnail);
+    return icons;
+  }
   const faction = document.createElement('span');
   faction.className = `card-faction-icon ${terrainClass(card.terrain)}`;
   faction.title = card.terrain || 'No Terrain';
@@ -824,21 +841,21 @@ function renderCardList() {
   const terrains = selectedFilterValues('card-filter-terrain');
   const list = $('#card-list');
   list.replaceChildren();
-  const allCards = [...state.cards, ...patronCards];
+  const allCards = [...state.cards, ...patronCards, ...terrainCards];
   renderTagFilters('card-filter-tags', allCards, renderCardList);
   const selectedTags = selectedTagFilters('card-filter-tags');
   renderCollectionSummary(allCards);
   for (const card of allCards.sort((a, b) => a.title.localeCompare(b.title)).filter(item => {
     const matchesSearch = item.title.toLocaleLowerCase().includes(query);
     const matchesType = !types.size || types.has(item.card_type);
-    const matchesStatus = !testingStatus || (item.testing_status === 'ready' ? 'ready' : 'draft') === testingStatus;
+    const matchesStatus = !testingStatus || (!item.fullArtTerrain && (item.testing_status === 'ready' ? 'ready' : 'draft') === testingStatus);
     const matchesAuthor = !author || cardAuthorNames(item).includes(author);
     const matchesTerrain = matchesCardTerrainFilter(item, terrains);
     return matchesSearch && matchesType && matchesStatus && matchesAuthor && matchesTerrain && matchesCardTags(item, selectedTags);
   })) {
     const row = button('', () => selectCardFromList(card), `card-list-item${state.card?.id === card.id ? ' selected' : ''}`);
     row.dataset.cardId = card.id;
-    row.setAttribute('aria-label', `${card.terrain || 'Neutral'} ${card.card_type}: ${card.title}, ${cardTestingStatusLabel(card.testing_status)}`);
+    row.setAttribute('aria-label', card.fullArtTerrain ? `${card.title} Terrain full art` : `${card.terrain || 'Neutral'} ${card.card_type}: ${card.title}, ${cardTestingStatusLabel(card.testing_status)}`);
     if (card.artwork_id) {
       const preloadArtwork = () => { void getArtworkUrl(card.artwork_id).catch(() => {}); };
       row.addEventListener('pointerenter', preloadArtwork, { once: true });
@@ -850,7 +867,8 @@ function renderCardList() {
     row.append(cardListIcons(card), title);
     const testingStatus = document.createElement('span');
     testingStatus.className = `card-testing-status${card.testing_status === 'ready' ? ' ready' : ''}`;
-    testingStatus.textContent = card.testing_status === 'ready' ? 'Ready' : 'Draft';
+    testingStatus.textContent = card.fullArtTerrain ? '' : card.testing_status === 'ready' ? 'Ready' : 'Draft';
+    testingStatus.hidden = Boolean(card.fullArtTerrain);
     row.append(testingStatus);
     const meta = document.createElement('small');
     meta.className = 'card-list-owner';
@@ -881,7 +899,7 @@ function navigateCardList(direction) {
   const nextIndex = currentIndex < 0 ? (direction > 0 ? 0 : rows.length - 1) : currentIndex + direction;
   const nextRow = rows[nextIndex];
   if (!nextRow) return;
-  const card = [...state.cards, ...patronCards].find(item => String(item.id) === nextRow.dataset.cardId);
+  const card = [...state.cards, ...patronCards, ...terrainCards].find(item => String(item.id) === nextRow.dataset.cardId);
   if (!card) return;
   const focusList = list.contains(document.activeElement);
   selectCardFromList(card);
@@ -894,6 +912,7 @@ function setCardFormEditable(canEdit) {
 }
 
 function canEditCard(card) {
+  if (card?.fullArtTerrain) return false;
   if (!state.user) return false;
   if (!card) return true;
   return state.isAdmin || card.author_ids?.includes(state.user.id);
@@ -919,16 +938,16 @@ function canEditDeck(deck) {
 }
 
 function updateAddToDeckButtons(card) {
-  const isPatron = Boolean(card?.patron);
-  const disabled = !state.user || !card || isPatron || !state.decks.some(deck => state.isAdmin || deck.owner_id === state.user.id);
+  const isNonDeckCard = Boolean(card?.patron || card?.fullArtTerrain);
+  const disabled = !state.user || !card || isNonDeckCard || !state.decks.some(deck => state.isAdmin || deck.owner_id === state.user.id);
   for (const id of ['add-to-deck', 'deck-add-to-deck', 'patron-add-to-deck']) {
-    $(`#${id}`).hidden = id !== 'add-to-deck' || isPatron;
+    $(`#${id}`).hidden = id !== 'add-to-deck' || isNonDeckCard;
     $(`#${id}`).disabled = disabled;
   }
 }
 
 function openAddToDeckModal(card) {
-  if (!card || card.patron || !requireAccount()) return;
+  if (!card || card.patron || card.fullArtTerrain || !requireAccount()) return;
   const decks = state.decks.filter(deck => state.isAdmin || deck.owner_id === state.user.id);
   if (!decks.length) return status('Create a deck before adding cards.', true);
   addToDeckCard = card;
@@ -1121,6 +1140,26 @@ async function showArtwork(card) {
 function renderPreview() {
   const form = $('#card-form');
   const serial = ++state.renderSerial;
+  if (state.card?.fullArtTerrain) {
+    const canvas = $('#card-canvas');
+    const downloadButton = $('#download-png');
+    downloadButton.disabled = true;
+    $('#preview-note').textContent = '';
+    const image = new Image();
+    image.onload = () => {
+      if (serial !== state.renderSerial) return;
+      const context = canvas.getContext('2d');
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+      downloadButton.disabled = false;
+    };
+    image.onerror = () => {
+      if (serial !== state.renderSerial) return;
+      $('#preview-note').textContent = 'Terrain artwork could not be loaded.';
+    };
+    image.src = state.card.fullArtUrl;
+    return;
+  }
   const skipArtwork = state.artworkLoading || Boolean(state.artworkError);
   const card = {
     title: form.elements.title.value,
@@ -1162,6 +1201,7 @@ function closeCardField() {
 }
 
 function openCardField(field) {
+  if (state.card?.fullArtTerrain) return;
   if (!requireCardEdit(state.card)) return;
   cardFieldReturnFocus = document.activeElement;
   const form = $('#card-form');
@@ -1279,6 +1319,12 @@ function selectCard(card, { openMobile = false } = {}) {
   releaseArtwork();
   $('#download-png').disabled = true;
   state.card = card;
+  const terrainPreview = Boolean(card?.fullArtTerrain);
+  $('#cards-view').classList.toggle('is-terrain-preview', terrainPreview);
+  $('#card-canvas').tabIndex = terrainPreview ? -1 : 0;
+  $('#card-canvas').setAttribute('aria-label', terrainPreview ? `${card.title} Terrain full art` : 'Card preview');
+  $('#delete-card').hidden = terrainPreview || !state.user;
+  $('#delete-card').disabled = terrainPreview;
   updateAddToDeckButtons(card);
   state.cardFormDirty = false;
   state.cardAuthorEdited = false;
@@ -1294,7 +1340,7 @@ function selectCard(card, { openMobile = false } = {}) {
   updateTestingStatusButton('#card-test-status', card);
   renderAuthorOptions($('#card-author-options'), initialCardAuthorIds(card), card?.author);
   $('#card-heading').textContent = card?.title || 'New card';
-  $('#card-edit-hint').hidden = !state.user;
+  $('#card-edit-hint').hidden = !state.user || terrainPreview;
   setCardFormEditable(canEditCard(card));
   syncTerrain();
   void showArtwork(card);
@@ -1642,7 +1688,7 @@ function summaryGroup(entries, colorized = false) {
 }
 
 function renderCollectionSummary(cards) {
-  const typeCounts = { 'All Cards': cards.length, Entity: 0, Event: 0, Patron: 0 };
+  const typeCounts = { 'All Cards': cards.length, Entity: 0, Event: 0, Patron: 0, Terrain: 0 };
   const terrainCounts = { Symbiosis: 0, Flow: 0, Verdant: 0, Radiance: 0, Nomads: 0 };
   for (const card of cards) {
     if (Object.hasOwn(typeCounts, card.card_type)) typeCounts[card.card_type]++;
@@ -2096,7 +2142,8 @@ function updateAuthenticatedControls() {
   for (const id of ['new-card', 'new-deck', 'duplicate-deck', 'edit-deck', 'delete-deck', 'delete-card', 'deck-delete-card', 'patron-delete-card']) {
     $(`#${id}`).hidden = !signedIn;
   }
-  $('#card-edit-hint').hidden = !signedIn;
+  $('#card-edit-hint').hidden = !signedIn || Boolean(state.card?.fullArtTerrain);
+  $('#delete-card').hidden = !signedIn || Boolean(state.card?.fullArtTerrain);
   updateDeckPreviewEditHint();
   updateTestingStatusButton('#card-test-status', state.card);
   updateTestingStatusButton('#deck-card-test-status', state.deckPreviewCard, true);
@@ -2361,7 +2408,7 @@ document.addEventListener('click', event => {
   if (!event.target.closest('.header-controls')) closeMobileMenu();
 });
 $('#card-search').addEventListener('input', renderCardList);
-initializeFilterTiles('card-filter-type', ['Entity', 'Event', 'Patron'], 'type', renderCardList);
+initializeFilterTiles('card-filter-type', ['Entity', 'Event', 'Patron', 'Terrain'], 'type', renderCardList);
 initializeFilterTiles('card-filter-terrain', ['Symbiosis', 'Flow', 'Verdant', 'Radiance', 'none'], 'terrain', renderCardList);
 $('#card-filter-status').addEventListener('change', renderCardList);
 $('#card-filter-author').addEventListener('change', renderCardList);

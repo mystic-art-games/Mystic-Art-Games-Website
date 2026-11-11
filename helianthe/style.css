@@ -578,6 +578,7 @@ body.dark-mode .tag-filter-empty { color: #bfd1be; }
 .filter-icon-tile[data-kind="type"][data-value="Entity"] { --tile-color: #547e63; }
 .filter-icon-tile[data-kind="type"][data-value="Event"] { --tile-color: #a7743c; }
 .filter-icon-tile[data-kind="type"][data-value="Patron"] { --tile-color: #785d8e; }
+.filter-icon-tile[data-kind="type"][data-value="Terrain"] { --tile-color: #518176; }
 .filter-icon-tile[data-value="Symbiosis"] { --tile-color: #784997; }
 .filter-icon-tile[data-value="Flow"] { --tile-color: #35758e; }
 .filter-icon-tile[data-value="Verdant"] { --tile-color: #488057; }
@@ -652,6 +653,8 @@ body.dark-mode .card-filters select option:checked { background: #285944; }
 .card-faction-icon.terrain-radiance { background-image: url('./assets/Faction_Radiance.png'); }
 .card-faction-icon.terrain-event { background-image: url('./assets/Faction_Nomads_Cairn.png'); }
 .card-kind-icon { background-position: center; background-size: contain; background-repeat: no-repeat; }
+.card-kind-icon.kind-terrain { box-sizing: border-box; width: 1.25rem; height: 1.6rem; border: 2px solid #4d7569; border-radius: 2px; background: linear-gradient(135deg, #93ad83, #5b849c 55%, #d8b46d); }
+.terrain-art-thumbnail { display: block; width: 1.18rem; height: 1.65rem; object-fit: cover; }
 .card-kind-icon.kind-entity.terrain-symbiosis { background-image: url('./assets/Type_Entity_Symbiosis_Arcane.png'); }
 .card-kind-icon.kind-entity.terrain-flow { background-image: url('./assets/Type_Entity_Flow_Arcane.png'); }
 .card-kind-icon.kind-entity.terrain-verdant { background-image: url('./assets/Type_Entity_Verdant_Arcane.png'); }
@@ -800,6 +803,8 @@ body.dark-mode .card-tag-section { border-color: rgba(185, 220, 140, .3); backgr
 #card-canvas, #deck-card-canvas, #deck-patron-canvas, #patron-card-canvas { border-radius: 0; box-shadow: none; filter: drop-shadow(0 6px 10px rgba(10, 35, 27, .24)); background: transparent; }
 body.dark-mode :is(#card-canvas, #deck-card-canvas, #deck-patron-canvas, #patron-card-canvas) { filter: drop-shadow(0 5px 8px rgba(0, 18, 12, .28)); }
 #card-canvas { cursor: pointer; }
+#cards-view.is-terrain-preview #card-canvas { cursor: default; }
+#cards-view.is-terrain-preview :is(#card-form, .card-status-control, .card-tag-section, #card-edit-hint) { display: none !important; }
 #card-edit-hint { font-family: Nunito, Arial, sans-serif; }
 #card-form > .card-direct-edit-field { display: none; }
 .card-field-modal { position: fixed; z-index: 70; inset: 0; display: grid; place-items: center; padding: 1rem; }
