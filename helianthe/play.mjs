@@ -4,12 +4,18 @@ export function playerOnline(timestamp, now = Date.now()) {
   return Boolean(timestamp && now - Date.parse(timestamp) < 45000);
 }
 
+export function readyCountdown(createdAt, activatedAt, now = Date.now()) {
+  if (activatedAt) return '';
+  const remaining = Math.max(0, Math.ceil((Date.parse(createdAt) + 60000 - now) / 1000));
+  return `Ready in ${String(Math.floor(remaining / 60)).padStart(2, '0')}:${String(remaining % 60).padStart(2, '0')}`;
+}
+
 export function createPlayView({ client, getUser, getDecks, getProfiles, makeAvatar, requireSignIn }) {
   const root = document.querySelector('#play-view');
   const $ = id => root.querySelector(`#play-${id}`);
   let userId = null, room = null, channel = null, timer = null, visible = false;
   let lobbyTimer = null, listSerial = 0, tableListSignature = '';
-  let busy = false, epoch = 0, fetchSerial = 0, live = false, lastHeartbeat = 0;
+  let busy = false, epoch = 0, fetchSerial = 0, live = false, lastHeartbeat = 0, expiryPending = false;
   root.innerHTML = `
     <div class="play-heading"><div><span class="play-eyebrow">THE SHARED WORLD</span><h1>Play</h1><p>Meet another player at the same table.</p></div></div>
     <p id="play-message" role="status" aria-live="polite" hidden></p>
@@ -23,7 +29,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
       <div class="play-room-bar"><div class="play-room-identity"><span class="play-eyebrow">TABLE</span><div class="play-room-name-line"><strong id="play-room-name"></strong><button id="play-edit-name" type="button">Edit name</button></div><form id="play-name-form" hidden><input id="play-name-input" aria-label="Table name" maxlength="60" required><button type="submit">Save</button><button id="play-cancel-name" type="button">Cancel</button></form><span class="play-room-code-line">Code: <strong id="play-room-code"></strong></span></div><div class="play-room-actions"><button id="play-leave" type="button">Leave table</button></div></div>
       <div id="play-players" class="play-players"></div>
       <label id="play-deck-field" class="play-deck-field" for="play-deck">Your deck<select id="play-deck"><option value="">No deck selected</option></select></label>
-      <p id="play-room-status" role="status"></p>
+      <p id="play-ready-countdown" class="play-ready-countdown"></p><p id="play-room-status" role="status"></p>
     </section>`;
   const deckField = $('deck-field');
   function message(text = '', error = false) {
@@ -94,7 +100,11 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
       const details = document.createElement('div');
       const title = document.createElement('strong'); title.textContent = entry.name || `Table ${entry.code}`;
       const summary = document.createElement('span'); summary.textContent = `${entry.host_name} · ${entry.player_count} / 2 players`;
-      details.append(title, summary);
+      const countdown = document.createElement('span'); countdown.className = 'play-ready-countdown';
+      countdown.dataset.createdAt = entry.created_at;
+      countdown.dataset.activatedAt = entry.activated_at || '';
+      countdown.textContent = readyCountdown(entry.created_at, entry.activated_at);
+      details.append(title, summary, countdown);
       const b = document.createElement('button'); b.type = 'button';
       const full = !entry.is_participant && entry.player_count >= 2;
       b.textContent = entry.is_participant ? 'Return to table' : full ? 'Full' : 'Join table';
@@ -117,7 +127,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     if (error) throw error;
     if (!data) { await disconnect(); room = null; remember(null); render(); await listTables(); return; }
     room = data; render();
-    if (room.status === 'closed') { remember(null); await disconnect(); message('The host closed this table. Return to the lobby to create or join another table.'); }
+    if (room.status === 'closed') { remember(null); await disconnect(); message(room.activated_at ? 'The host closed this table. Return to the lobby to create or join another table.' : 'The table closed because both players did not get ready within 60 seconds.'); }
   }
   async function heartbeat() {
     if (!visible || document.hidden || !room || room.status === 'closed' || busy) return;
@@ -169,6 +179,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     if (!room) { controls(); return; }
     $('room-code').textContent = room.code;
     $('room-name').textContent = room.name || `Table ${room.code}`;
+    $('ready-countdown').textContent = room.status === 'closed' ? '' : readyCountdown(room.created_at, room.activated_at);
     $('edit-name').hidden = room.host_id !== userId || room.status === 'closed';
     $('leave').textContent = room.status === 'closed' ? 'Back to lobby' : room.host_id === userId ? 'Close table' : 'Leave table';
     $('leave').classList.toggle('action-delete', room.status !== 'closed' && room.host_id === userId);
@@ -233,6 +244,20 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
       await refreshRoom();
     });
   });
+  setInterval(() => {
+    if (!visible || document.hidden || !userId) return;
+    for (const countdown of $('room-list').querySelectorAll('.play-ready-countdown')) {
+      countdown.textContent = readyCountdown(countdown.dataset.createdAt, countdown.dataset.activatedAt);
+    }
+    if (room && room.status !== 'closed') $('ready-countdown').textContent = readyCountdown(room.created_at, room.activated_at);
+    const deadlineReached = room
+      ? room.status !== 'closed' && !room.activated_at && Date.now() >= Date.parse(room.created_at) + 60000
+      : [...$('room-list').querySelectorAll('.play-ready-countdown')].some(el => el.textContent === 'Ready in 00:00');
+    if (!deadlineReached || expiryPending || busy) return;
+    expiryPending = true;
+    void rpc('play_expire_tables').then(() => room ? refreshRoom() : listTables())
+      .catch(error => message(friendly(error), true)).finally(() => { expiryPending = false; });
+  }, 1000);
   async function refreshIdentity() {
     const next = getUser()?.id || null;
     if (next === userId) return;

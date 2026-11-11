@@ -46,6 +46,9 @@ body.dark-mode #play-back { color: #e5eee0; }
 .play-deck-field select { display: block; width: 100%; margin-top: .25rem; }
 #play-ready { display: block; margin-top: .65rem; }
 #play-room-status { margin: 1rem 0 0; font-size: .85rem; }
+.play-ready-countdown { color: #a14e2a; font-size: .85rem; font-weight: 800; }
+#play-ready-countdown { margin: 1rem 0 0; }
+#play-ready-countdown:empty, .play-table-entry .play-ready-countdown:empty { display: none; }
 #play-ready[aria-pressed=true] { background: #315e48; color: #fff8e8; }
 body.dark-mode .play-workspace { background: linear-gradient(145deg,#153f34,#246047); color: #f0f5e8; border-color: #416853; box-shadow: inset 1px 1px 0 #ffffff30; }
 body.dark-mode .play-workspace .play-surface, body.dark-mode .play-player { background: #12372c90; border-color: #527460; }
