@@ -13,7 +13,7 @@ document.title = ['127.0.0.1', 'localhost', '::1'].includes(window.location.host
 const $ = selector => document.querySelector(selector);
 if (!window.supabase?.createClient) throw new Error('The Supabase client could not be loaded.');
 const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false },
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
 });
 const api = createCommunityApi(client);
 const ADMIN_EMAIL = 'dominik.zielinski3@gmail.com';
@@ -2164,7 +2164,9 @@ async function submitAuthForm(event) {
   try {
     const { error } = await client.auth.signInWithPassword({ email: form.elements.email.value.trim(), password: form.elements.password.value });
     if (error) {
-      const message = 'No account was found for this email address, or the password is incorrect.';
+      const message = error.code === 'email_not_confirmed'
+        ? 'Confirm your email address using the link we sent you, then try signing in again.'
+        : 'No account was found for this email address, or the password is incorrect.';
       showAuthMessage(message, true);
     } else await loadWorkspace();
   } catch (cause) {

@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="./style.css?v=helianthe-ui-193">
   <link rel="stylesheet" href="./play.css?v=play-9">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script type="module" src="./app.mjs?v=helianthe-ui-120"></script>
+  <script type="module" src="./app.mjs?v=helianthe-ui-121"></script>
 </head>
 <body>
   <header class="masthead">
@@ -57,7 +57,7 @@
       <label>Password<input name="password" type="password" autocomplete="current-password" required minlength="6"></label>
       <div class="actions"><button type="submit">Sign in</button><button id="sign-up" type="button">Create account</button></div>
     </form>
-    <p class="hint">After creating an account, confirm your email address before signing in.</p>
+    <p class="hint">After creating an account, confirm your email address. The link opens the site with your new session.</p>
     <button id="browse-without-account" type="button">Continue browsing without an account</button>
   </main>
 
@@ -79,7 +79,7 @@
         <p id="auth-error-message" class="auth-error" role="alert" hidden></p>
           <div class="actions"><button id="auth-submit" type="submit">Sign in</button><button id="auth-mode-toggle" type="button">Create Account</button></div>
       </form>
-      <p class="hint">After creating an account, confirm your email address before signing in.</p>
+      <p class="hint">After creating an account, confirm your email address. The link opens the site with your new session.</p>
     </section>
   </div>
 
