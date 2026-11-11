@@ -13,10 +13,10 @@
   <link rel="apple-touch-icon" href="../images/helianthe-logo.png?v=helianthe-logo-1">
   <link rel="manifest" href="./manifest.webmanifest">
   <title>Helianthe</title>
-  <link rel="stylesheet" href="./style.css?v=helianthe-ui-188">
-  <link rel="stylesheet" href="./play.css?v=play-2">
+  <link rel="stylesheet" href="./style.css?v=helianthe-ui-189">
+  <link rel="stylesheet" href="./play.css?v=play-3">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script type="module" src="./app.mjs?v=helianthe-ui-109"></script>
+  <script type="module" src="./app.mjs?v=helianthe-ui-110"></script>
 </head>
 <body>
   <header class="masthead">
@@ -28,8 +28,6 @@
       <div id="mobile-menu-panel" class="mobile-menu-panel">
         <nav id="tabs" hidden aria-label="Site sections">
           <button type="button" data-tab="about" class="active">About</button>
-          <button type="button" data-tab="rules">Rules</button>
-          <button type="button" data-tab="factions">Factions</button>
           <button type="button" data-tab="cards">Cards</button>
           <button type="button" data-tab="decks">Decks</button>
           <button type="button" data-tab="play">Play</button>
@@ -278,7 +276,13 @@
     </section>
   </main>
 
-  <main id="about-view" class="about-workspace" hidden>
+  <main id="about-section" class="about-hub" hidden>
+    <div class="about-subtabs" role="tablist" aria-label="About Helianthe sections">
+      <button id="about-overview-tab" type="button" role="tab" data-about-tab="about" aria-controls="about-view" aria-selected="true">Overview</button>
+      <button id="about-rules-tab" type="button" role="tab" data-about-tab="rules" aria-controls="rules-view" aria-selected="false" tabindex="-1">Rules</button>
+      <button id="about-factions-tab" type="button" role="tab" data-about-tab="factions" aria-controls="factions-view" aria-selected="false" tabindex="-1">Factions</button>
+    </div>
+  <section id="about-view" class="about-workspace" role="tabpanel" aria-labelledby="about-overview-tab" hidden>
     <section class="panel about-panel">
       <div class="art-scroll-wrap about-scroll-wrap">
         <div class="about-content">
@@ -294,8 +298,8 @@
         <div class="art-scroll-rail" aria-hidden="true"><button class="art-scroll-thumb" type="button" tabindex="-1"></button></div>
       </div>
     </section>
-  </main>
-  <main id="rules-view" class="about-workspace guide-workspace" hidden>
+  </section>
+  <section id="rules-view" class="about-workspace guide-workspace" role="tabpanel" aria-labelledby="about-rules-tab" hidden>
     <section class="panel about-panel guide-panel">
       <div class="art-scroll-wrap about-scroll-wrap">
         <div class="about-content">
@@ -318,8 +322,8 @@
         <div class="art-scroll-rail" aria-hidden="true"><button class="art-scroll-thumb" type="button" tabindex="-1"></button></div>
       </div>
     </section>
-  </main>
-  <main id="factions-view" class="about-workspace guide-workspace" hidden>
+  </section>
+  <section id="factions-view" class="about-workspace guide-workspace" role="tabpanel" aria-labelledby="about-factions-tab" hidden>
     <section class="panel about-panel guide-panel">
       <div class="art-scroll-wrap about-scroll-wrap">
         <div class="about-content">
@@ -335,6 +339,7 @@
         <div class="art-scroll-rail" aria-hidden="true"><button class="art-scroll-thumb" type="button" tabindex="-1"></button></div>
       </div>
     </section>
+  </section>
   </main>
   <div id="card-field-modal" class="card-field-modal" role="dialog" aria-modal="true" aria-labelledby="card-field-title" hidden>
     <div class="card-field-backdrop" data-close-card-field></div>

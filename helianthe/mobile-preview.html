@@ -26,7 +26,7 @@
     const phone = document.querySelector('.phone');
     const screen = phone.querySelector('iframe');
     const dimensions = document.querySelector('#dimensions');
-    const tabs = new Set(['cards', 'decks', 'play', 'profiles', 'patrons', 'about']);
+    const tabs = new Set(['cards', 'decks', 'play', 'profiles', 'patrons', 'about', 'rules', 'factions']);
     const getTabHash = hash => tabs.has(hash.slice(1).toLowerCase()) ? `#${hash.slice(1).toLowerCase()}` : '';
     const initialHash = getTabHash(window.location.hash);
     if (initialHash) screen.src = `./${initialHash}`;

@@ -591,6 +591,7 @@ function button(label, action, className = '') {
 }
 
 const TAB_NAMES = ['about', 'rules', 'factions', 'cards', 'decks', 'play', 'profiles'];
+const ABOUT_TAB_NAMES = ['about', 'rules', 'factions'];
 function requestedTab() {
   const name = window.location.hash.slice(1).toLowerCase() || (new URL(location.href).searchParams.has('room') ? 'play' : 'about');
   if (name === 'patrons') return 'cards';
@@ -604,7 +605,20 @@ function showTab(name, { updateUrl = true } = {}) {
   if (name !== 'decks') closeDeckCardPreview();
   for (const tab of TAB_NAMES) {
     $(`#${tab}-view`).hidden = tab !== name;
-    $(`[data-tab="${tab}"]`).classList.toggle('active', tab === name);
+  }
+  const inAbout = ABOUT_TAB_NAMES.includes(name);
+  $('#about-section').hidden = !inAbout;
+  const primaryTab = inAbout ? 'about' : name;
+  for (const tab of $('#tabs').querySelectorAll('[data-tab]')) {
+    const active = tab.dataset.tab === primaryTab;
+    tab.classList.toggle('active', active);
+    if (active) tab.setAttribute('aria-current', 'page');
+    else tab.removeAttribute('aria-current');
+  }
+  for (const tab of document.querySelectorAll('[data-about-tab]')) {
+    const active = tab.dataset.aboutTab === name;
+    tab.setAttribute('aria-selected', String(active));
+    tab.tabIndex = active ? 0 : -1;
   }
   if (updateUrl && window.location.hash !== `#${name}`) window.history.replaceState(null, '', `#${name}`);
   play.setVisible(name === 'play');
@@ -2233,6 +2247,19 @@ $('#close-auth-dialog').addEventListener('click', hideSignIn);
 $('#browse-without-account').addEventListener('click', loadPublicWorkspace);
 
 for (const tab of $('#tabs').querySelectorAll('button[data-tab]')) tab.addEventListener('click', () => showTab(tab.dataset.tab));
+for (const tab of document.querySelectorAll('[data-about-tab]')) {
+  tab.addEventListener('click', () => showTab(tab.dataset.aboutTab));
+  tab.addEventListener('keydown', event => {
+    const index = ABOUT_TAB_NAMES.indexOf(tab.dataset.aboutTab);
+    const next = event.key === 'ArrowRight' ? (index + 1) % 3
+      : event.key === 'ArrowLeft' ? (index + 2) % 3
+      : event.key === 'Home' ? 0 : event.key === 'End' ? 2 : null;
+    if (next === null) return;
+    event.preventDefault();
+    showTab(ABOUT_TAB_NAMES[next]);
+    $(`[data-about-tab="${ABOUT_TAB_NAMES[next]}"]`).focus();
+  });
+}
 for (const button of document.querySelectorAll('[data-open-tab]')) {
   button.addEventListener('click', () => showTab(button.dataset.openTab));
 }
