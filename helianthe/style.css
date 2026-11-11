@@ -145,6 +145,15 @@ textarea { resize: vertical; }
 .vision-board-link { display: block; min-width: 0; border-radius: 12px; }
 .vision-board-link:focus-visible { outline: 2px solid #265847; outline-offset: 4px; }
 .vision-copy { min-width: 0; }
+.vision-copy .about-faction { font-weight: 800; }
+.vision-copy .about-faction-verdant { color: #488057; }
+.vision-copy .about-faction-brightworks { color: #a87318; }
+.vision-copy .about-faction-flowbound { color: #35758e; }
+.vision-copy .about-faction-dreamwardens { color: #784997; }
+body.dark-mode .vision-copy .about-faction-verdant { color: #80d991; }
+body.dark-mode .vision-copy .about-faction-brightworks { color: #f2c96b; }
+body.dark-mode .vision-copy .about-faction-flowbound { color: #75c4ed; }
+body.dark-mode .vision-copy .about-faction-dreamwardens { color: #cf9ef5; }
 .vision-board-image { display: block; width: 100%; max-height: 360px; object-fit: contain; }
 .about-rules { grid-column: 1 / -1; }
 .about-principles { grid-column: 1 / -1; }
