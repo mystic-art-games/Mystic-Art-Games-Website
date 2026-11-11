@@ -19,7 +19,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
   let lobbyTimer = null, listSerial = 0, tableListSignature = '';
   let busy = false, epoch = 0, fetchSerial = 0, live = false, lastHeartbeat = 0, expiryPending = false;
   root.innerHTML = `
-    <div class="play-heading"><div><span class="play-eyebrow">THE SHARED WORLD</span><h1>Play</h1><p>Meet another player at the same table.</p></div></div>
+    <div class="play-heading"><div><span class="play-eyebrow">PLAY · THE SHARED WORLD</span><h1>Lobby</h1><p>Meet another player at the same table.</p></div></div>
     <p id="play-message" role="status" aria-live="polite" hidden></p>
     <section id="play-signin" class="play-surface" hidden><h2>Your seat is waiting</h2><p>Sign in to create a table or join one from the list.</p><button id="play-signin-button" type="button">Sign in to play</button></section>
     <div id="play-lobby" class="play-lobby" hidden>
@@ -27,11 +27,11 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
       <section class="play-surface play-recent"><div class="play-table-heading"><h2>All tables</h2><button id="play-refresh" type="button">Refresh</button></div><p id="play-no-rooms">Loading tables…</p><div id="play-room-list"></div></section>
     </div>
     <section id="play-session" hidden>
-      <button id="play-back" class="back-to-decks" type="button"><span aria-hidden="true">←</span> Back</button>
+      <button id="play-back" class="back-to-decks" type="button"><span aria-hidden="true">←</span> Back to Lobby</button>
       <div class="play-room-bar"><div class="play-room-identity"><span class="play-eyebrow">TABLE</span><div class="play-room-name-line"><strong id="play-room-name"></strong><button id="play-edit-name" type="button">Edit name</button></div><form id="play-name-form" hidden><input id="play-name-input" aria-label="Table name" maxlength="60" required><button type="submit">Save</button><button id="play-cancel-name" type="button">Cancel</button></form><span class="play-room-code-line">Code: <strong id="play-room-code"></strong></span></div><div class="play-room-actions"><button id="play-leave" type="button">Leave table</button></div></div>
       <div id="play-players" class="play-players"></div>
       <label id="play-deck-field" class="play-deck-field" for="play-deck">Your deck<select id="play-deck"><option value="">No deck selected</option></select></label>
-      <button id="play-ready" type="button">Ready</button>
+      <button id="play-ready" class="action-add-save" type="button">Ready</button>
       <p id="play-ready-countdown" class="play-ready-countdown"></p><p id="play-room-status" role="status"></p>
     </section>`;
   const deckField = $('deck-field');
@@ -130,7 +130,10 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     if (error) throw error;
     if (!data) { await disconnect(); room = null; remember(null); render(); await listTables(); return; }
     room = data; render();
-    if (room.status === 'closed') { remember(null); await disconnect(); message(room.activated_at ? 'The host closed this table. Return to the lobby to create or join another table.' : 'The table closed because both players did not get ready within 60 seconds.'); }
+    if (room.status === 'closed') {
+      const notice = room.activated_at ? 'The table closed.' : 'The table closed because both players did not get ready within 60 seconds.';
+      await disconnect(); room = null; remember(null); render(); await listTables(); message(notice);
+    }
   }
   async function heartbeat() {
     if (!visible || document.hidden || !room || room.status === 'closed' || busy) return;
@@ -184,7 +187,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     $('room-name').textContent = room.name || `Table ${room.code}`;
     $('ready-countdown').textContent = room.status === 'closed' ? '' : readyCountdown(room.created_at, room.activated_at);
     $('edit-name').hidden = room.host_id !== userId || room.status === 'closed';
-    $('leave').textContent = room.status === 'closed' ? 'Back to lobby' : room.host_id === userId ? 'Close table' : 'Leave table';
+    $('leave').textContent = room.host_id === userId ? 'Close table' : 'Leave table';
     $('leave').classList.toggle('action-delete', room.status !== 'closed' && room.host_id === userId);
     const rows = ['host', 'guest'].map(seat => {
       const id = room[`${seat}_id`], online = playerOnline(room[`${seat}_seen_at`]);
@@ -197,7 +200,10 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
       const details = document.createElement('div'); details.className = 'play-player-details';
       const name = document.createElement('strong'); name.textContent = id ? `${profile?.display_name || 'Player'}${id === userId ? ' · You' : ''}` : 'Waiting for a player';
       details.append(name);
-      if (id === userId) details.append(deckField, $('ready'));
+      if (id === userId) {
+        const controls = document.createElement('div'); controls.className = 'play-player-controls';
+        controls.append(deckField, $('ready')); details.append(controls);
+      }
       else { const deckName = document.createElement('span'); deckName.textContent = deck?.name || 'No deck selected'; details.append(deckName); }
       row.append(avatar, details);
       const state = room.status === 'closed' ? 'Closed' : !online ? 'Away' : room[`${seat}_ready`] ? 'Ready' : '';
@@ -213,7 +219,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     $('deck').value = room[`${mine}_deck_id`] || '';
     $('ready').textContent = room[`${mine}_ready`] ? 'Not ready' : 'Ready';
     $('ready').setAttribute('aria-pressed', String(room[`${mine}_ready`]));
-    $('room-status').textContent = room.status === 'closed' ? 'Table closed' : room.status === 'active' ? 'Both players are ready.' : !room.guest_id ? 'Waiting for the second player.' : 'Choose your decks and get ready.';
+    $('room-status').textContent = room.status === 'closed' ? 'Table closed' : room.status === 'active' ? 'Both players are ready.' : room.guest_id ? 'Choose your decks and get ready.' : '';
     controls();
     if (room.status === 'closed') $('leave').disabled = false;
   }
@@ -243,6 +249,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     if (!name || !canAct()) return;
     void run(async () => {
       await rpc('play_rename_table', { p_room_id: room.id, p_name: name });
+      $('room-name').textContent = name;
       $('name-form').hidden = true;
       await refreshRoom();
     });
