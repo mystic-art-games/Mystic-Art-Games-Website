@@ -141,9 +141,16 @@ textarea { resize: vertical; }
 .about-section h2 { margin: 0 0 .55rem; color: #265847; font-size: 1.2rem; }
 .about-section h3 { margin: 1rem 0 .35rem; color: #265847; font-size: 1.2rem; }
 .about-section h3:first-of-type { margin-top: .2rem; }
-.vision-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 36%); align-items: start; gap: 1.25rem; }
-.vision-board-link { display: block; min-width: 0; border-radius: 12px; }
-.vision-board-link:focus-visible { outline: 2px solid #265847; outline-offset: 4px; }
+.vision-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 43%); align-items: start; gap: 1.25rem; }
+.vision-board-figure { min-width: 0; width: 100%; max-width: 460px; margin: .15rem auto; }
+.vision-board-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: clamp(2px, .35vw, 5px); width: 100%; padding: 3px; border-radius: 10px; background: #244c3b; box-shadow: 0 14px 30px #102c2440; }
+.vision-board-cell { position: relative; min-width: 0; }
+.vision-board-cell:has(.vision-entity) { z-index: 2; }
+.vision-terrain { display: block; width: 100%; aspect-ratio: 5 / 7; object-fit: cover; border: 2px solid #173e2e; border-radius: 5px; box-sizing: border-box; }
+.vision-entity { position: absolute; top: 24%; left: 12%; display: block; width: 105%; height: auto; transform: rotate(-5deg); filter: drop-shadow(3px 5px 4px #0d201d88); }
+.vision-board-cell:nth-child(5n + 1) .vision-entity { transform: rotate(5deg); }
+.vision-board-figure figcaption { margin: .8rem .3rem 0; color: #486755; font-size: .78rem; font-weight: 800; line-height: 1.35; text-align: center; }
+body.dark-mode .vision-board-figure figcaption { color: #d3e6d1; }
 .vision-copy { min-width: 0; }
 .vision-copy .about-faction { font-weight: 800; }
 .vision-copy .about-faction-verdant { color: #488057; }
@@ -154,7 +161,6 @@ body.dark-mode .vision-copy .about-faction-verdant { color: #80d991; }
 body.dark-mode .vision-copy .about-faction-brightworks { color: #f2c96b; }
 body.dark-mode .vision-copy .about-faction-flowbound { color: #75c4ed; }
 body.dark-mode .vision-copy .about-faction-dreamwardens { color: #cf9ef5; }
-.vision-board-image { display: block; width: 100%; max-height: 360px; object-fit: contain; }
 .about-rules { grid-column: 1 / -1; }
 .about-principles { grid-column: 1 / -1; }
 .rules-layout { display: grid; grid-template-columns: minmax(180px, 28%) minmax(0, 1fr); align-items: start; gap: 1.4rem; }
@@ -411,11 +417,11 @@ body.dark-mode .patron-detail-panel::-webkit-scrollbar-thumb {
     box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 1), inset -1px -1px 0 rgba(97, 135, 120, .26);
     padding: .8rem;
   }
-  #about-view .about-principles { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 36%); column-gap: 1.25rem; align-items: start; }
+  #about-view .about-principles { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 43%); column-gap: 1.25rem; align-items: start; }
   #about-view .about-principles > h2 { grid-column: 1 / -1; }
   #about-view .about-principles .vision-layout { display: contents; }
   #about-view .about-principles .vision-copy { grid-column: 1; }
-  #about-view .about-principles .vision-board-link { grid-column: 2; grid-row: 2 / span 3; }
+  #about-view .about-principles .vision-board-figure { grid-column: 2; grid-row: 2 / span 3; }
   #about-view > .about-panel .about-scroll-wrap { inset: .8rem; }
   #cards-view > .editor-panel {
     display: flex;
@@ -1176,7 +1182,7 @@ body.dark-mode .masthead nav.mobile-menu-open button.active {
   .about-section p, .about-section li { text-align: justify; }
   .about-rules { padding-top: .35rem; }
   .vision-layout { grid-template-columns: 1fr; }
-  .vision-board-image { max-height: 280px; }
+  .vision-board-figure { max-width: 420px; }
   .rules-layout { grid-template-columns: 1fr; }
   .terrain-reference { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; height: auto; min-height: 0; aspect-ratio: 1.24 / 1; padding-top: 0; background-size: 100% auto; background-position: center; }
   .about-intro { margin: 0 auto; }
