@@ -17,4 +17,5 @@ test('ready deadline counts down from table creation and stops after activation'
   assert.equal(readyCountdown(created, null, now + 59000), 'Ready in 00:01');
   assert.equal(readyCountdown(created, null, now + 60000), 'Ready in 00:00');
   assert.equal(readyCountdown(created, '2026-11-11T12:00:30Z', now + 60000), '');
+  assert.equal(readyCountdown(undefined, null, now), '');
 });

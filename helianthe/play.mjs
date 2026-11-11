@@ -6,7 +6,9 @@ export function playerOnline(timestamp, now = Date.now()) {
 
 export function readyCountdown(createdAt, activatedAt, now = Date.now()) {
   if (activatedAt) return '';
-  const remaining = Math.max(0, Math.ceil((Date.parse(createdAt) + 60000 - now) / 1000));
+  const created = Date.parse(createdAt);
+  if (!Number.isFinite(created)) return '';
+  const remaining = Math.max(0, Math.ceil((created + 60000 - now) / 1000));
   return `Ready in ${String(Math.floor(remaining / 60)).padStart(2, '0')}:${String(remaining % 60).padStart(2, '0')}`;
 }
 
