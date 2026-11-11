@@ -47,6 +47,9 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
   function savedRoom() { try { return localStorage.getItem(storageKey()); } catch { return null; } }
   function friendly(error) {
     if (['PGRST202', 'PGRST205', '42P01', '42883'].includes(error.code)) return 'Play is not available yet. Please try again later.';
+    if (error.message?.includes('You already have an open table.') || error.message?.includes('Close an existing room before creating another one.')) {
+      return 'You already have an open table. Close it before creating another.';
+    }
     return (error.message || 'The table could not be updated. Try again.')
       .replace(/\bRooms\b/g, 'Tables').replace(/\bRoom\b/g, 'Table')
       .replace(/\brooms\b/g, 'tables').replace(/\broom\b/g, 'table');
