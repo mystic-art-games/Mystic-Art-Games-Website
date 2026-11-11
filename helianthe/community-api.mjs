@@ -159,6 +159,19 @@ export function createCommunityApi(client) {
       }
     },
 
+    async listIdeas() {
+      return result(await client.from('ideas').select('id,author_id,author_name,title,body,created_at').order('created_at', { ascending: true }));
+    },
+
+    async createIdea(userId, values) {
+      if (!userId) throw new Error('Sign in to post an idea.');
+      const title = text(values.title, 120);
+      const body = text(values.body, 1500);
+      if (title.length < 3 || body.length < 3) throw new Error('Add a title and a short description.');
+      const author_name = text(values.author_name, 60) || 'Player';
+      return result(await client.from('ideas').insert({ author_id: userId, author_name, title, body }).select('id,author_id,author_name,title,body,created_at').single());
+    },
+
     async saveProfile(userId, values) {
       if (!userId) throw new Error('Sign in first.');
       const displayName = text(values.display_name, 60);

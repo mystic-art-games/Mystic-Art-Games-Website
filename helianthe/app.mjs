@@ -21,7 +21,7 @@ const ADMIN_EMAIL = 'dominik.zielinski3@gmail.com';
 let authMode = 'sign-in';
 let recoveryPending = arrivedFromPasswordRecovery, authReady = false;
 let profileSaveStatusTimer = null;
-const state = { user: null, isAdmin: false, cards: [], decks: [], profiles: [], card: null, deck: null, profile: null, deckCards: [], deckPreviewCard: null, deckPreviewSerial: 0, deckPatronSerial: 0, artworkUrl: null, artworkLoading: false, artworkError: '', artworkSerial: 0, renderSerial: 0, authVersion: 0, realtimeChannel: null, cardFormDirty: false, cardAuthorEdited: false };
+const state = { user: null, isAdmin: false, cards: [], decks: [], profiles: [], ideas: [], card: null, deck: null, profile: null, deckCards: [], deckPreviewCard: null, deckPreviewSerial: 0, deckPatronSerial: 0, artworkUrl: null, artworkLoading: false, artworkError: '', artworkSerial: 0, renderSerial: 0, authVersion: 0, realtimeChannel: null, cardFormDirty: false, cardAuthorEdited: false };
 const play = createPlayView({ client, getUser: () => state.user, getDecks: () => state.decks, getProfiles: () => state.profiles, makeAvatar: avatarElement, requireSignIn: showSignIn });
 let addToDeckCard = null;
 let recentDeckCardAddition = null;
@@ -621,8 +621,8 @@ function button(label, action, className = '') {
   return element;
 }
 
-const TAB_NAMES = ['about', 'rules', 'factions', 'glossary', 'cards', 'decks', 'play', 'profiles'];
-const ABOUT_TAB_NAMES = ['about', 'rules', 'factions', 'glossary'];
+const TAB_NAMES = ['about', 'rules', 'factions', 'glossary', 'ideas', 'cards', 'decks', 'play', 'profiles'];
+const ABOUT_TAB_NAMES = ['about', 'rules', 'factions', 'glossary', 'ideas'];
 function requestedTab() {
   const name = window.location.hash.slice(1).toLowerCase() || (new URL(location.href).searchParams.has('room') ? 'play' : 'about');
   if (name === 'patrons') return 'cards';
@@ -656,6 +656,61 @@ function showTab(name, { updateUrl = true } = {}) {
   window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   if (updateUrl && window.location.hash !== `#${name}`) window.history.replaceState(null, '', `#${name}`);
   play.setVisible(name === 'play');
+  if (name === 'ideas') void loadIdeas();
+}
+
+function ideaAuthor(idea) {
+  const profile = profileById(idea.author_id);
+  const author = document.createElement('span');
+  author.className = 'idea-author';
+  author.append(avatarElement(profile || { display_name: idea.author_name }, 'idea-avatar'));
+  const name = document.createElement('span');
+  name.textContent = profile?.display_name || idea.author_name || 'Player';
+  author.append(name);
+  return author;
+}
+
+function renderIdeas() {
+  const list = $('#ideas-list');
+  list.replaceChildren();
+  $('#ideas-count').textContent = `${state.ideas.length} ${state.ideas.length === 1 ? 'idea' : 'ideas'}`;
+  for (const [index, idea] of state.ideas.entries()) {
+    const card = document.createElement('article');
+    card.className = `idea-note idea-note-${index % 4}`;
+    const marker = document.createElement('span');
+    marker.className = 'idea-note-pin';
+    marker.setAttribute('aria-hidden', 'true');
+    const number = document.createElement('span');
+    number.className = 'idea-note-number';
+    number.textContent = `IDEA ${String(index + 1).padStart(2, '0')}`;
+    const title = document.createElement('h2');
+    title.textContent = idea.title;
+    const body = document.createElement('p');
+    body.className = 'idea-note-body';
+    body.textContent = idea.body;
+    card.append(marker, number, title, body, ideaAuthor(idea));
+    list.append(card);
+  }
+  $('#idea-form').hidden = !state.user;
+  $('#idea-signin-prompt').hidden = Boolean(state.user);
+  const author = $('#idea-form-author');
+  author.replaceChildren();
+  if (state.user) author.append(ideaAuthor({ author_id: state.user.id, author_name: ownerName(state.user.id) }));
+}
+
+async function loadIdeas() {
+  const list = $('#ideas-list');
+  list.textContent = 'Loading ideas…';
+  try {
+    state.ideas = await api.listIdeas();
+    renderIdeas();
+  } catch (cause) {
+    list.textContent = 'Ideas could not be loaded. Please try again later.';
+    $('#ideas-count').textContent = '';
+    $('#idea-form').hidden = true;
+    $('#idea-signin-prompt').hidden = true;
+    console.error('Could not load ideas:', cause);
+  }
 }
 
 function closeMobileMenu() {
@@ -2104,6 +2159,7 @@ function startRealtimeSync() {
     .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, refreshProfiles)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'decks' }, refreshDecks)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'deck_cards' }, refreshDecks)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'ideas' }, () => { if (!$('#ideas-view').hidden) void loadIdeas(); })
     .subscribe();
 }
 
@@ -2383,6 +2439,31 @@ for (const tab of document.querySelectorAll('[data-about-tab]')) {
     $(`[data-about-tab="${ABOUT_TAB_NAMES[next]}"]`).focus();
   });
 }
+$('#idea-signin').addEventListener('click', showSignIn);
+$('#idea-form').addEventListener('submit', async event => {
+  event.preventDefault();
+  if (!requireAccount()) return;
+  const form = event.currentTarget;
+  const message = $('#idea-form-message');
+  message.hidden = true;
+  const stopLoading = setButtonLoading(form.querySelector('button[type="submit"]'), 'Posting…');
+  try {
+    await api.createIdea(state.user.id, {
+      title: form.elements.title.value,
+      body: form.elements.body.value,
+      author_name: profileById(state.user.id)?.display_name || 'Player',
+    });
+    form.reset();
+    await loadIdeas();
+    message.textContent = 'Your idea is on the board.';
+    message.classList.remove('error');
+    message.hidden = false;
+  } catch (cause) {
+    message.textContent = cause.message || 'Could not post your idea.';
+    message.classList.add('error');
+    message.hidden = false;
+  } finally { stopLoading(); }
+});
 for (const button of document.querySelectorAll('[data-open-tab]')) {
   button.addEventListener('click', () => showTab(button.dataset.openTab));
 }
