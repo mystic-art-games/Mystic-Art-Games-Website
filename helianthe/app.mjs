@@ -1,5 +1,5 @@
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.mjs';
-import { createCommunityApi, resolveLegacyCardAuthors } from './community-api.mjs?v=tags-3';
+import { createCommunityApi, resolveLegacyCardAuthors } from './community-api.mjs?v=ideas-1';
 import { renderCard, downloadCardPNG } from './card-renderer.mjs?v=patron-labels-1';
 import { CardSheetPDF } from './card-sheet-pdf.mjs';
 import { PATRONS, FACTION_VISIONS, PATRON_RULES_REVISION, updatePatronVision } from './patrons.mjs?v=faction-visions-2';
