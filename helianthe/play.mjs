@@ -33,9 +33,11 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
       <div id="play-players" class="play-players"></div>
       <label id="play-deck-field" class="play-deck-field" for="play-deck">Your deck<select id="play-deck"><option value="">No deck selected</option></select></label>
       <button id="play-ready" class="action-add-save" type="button">Ready</button>
+      <div id="play-controls-parking" hidden></div>
       <p id="play-ready-countdown" class="play-ready-countdown"></p><p id="play-room-status" role="status"></p>
     </section>`;
   const deckField = $('deck-field');
+  const readyButton = $('ready');
   function message(text = '', error = false) {
     $('message-text').textContent = text;
     $('message').hidden = !text;
@@ -47,6 +49,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
   function savedRoom() { try { return localStorage.getItem(storageKey()); } catch { return null; } }
   function friendly(error) {
     if (['PGRST202', 'PGRST205', '42P01', '42883'].includes(error.code)) return 'Play is not available yet. Please try again later.';
+    if (error instanceof TypeError) return 'Something went wrong while showing the table. Return to the Lobby and try again.';
     if (error.message?.includes('You already have an open table.') || error.message?.includes('Close an existing room before creating another one.')) {
       return 'You already have an open table. Close it before creating another.';
     }
@@ -66,7 +69,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     const previous = channel; channel = null; live = false;
     if (previous) await client.removeChannel(previous);
   }
-  function canAct() { return Boolean(room && userId && room.status !== 'closed' && !busy); }
+  function canAct() { return Boolean(room && userId && (room.host_id === userId || room.guest_id === userId) && room.status !== 'closed' && !busy); }
   function controls() {
     $('create').disabled = busy;
     for (const b of $('room-list').querySelectorAll('button')) b.disabled = busy || b.dataset.full === 'true';
@@ -140,7 +143,11 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     const { data, error } = await client.from('play_rooms').select('*').eq('id', id).maybeSingle();
     if (expected !== epoch || serial !== fetchSerial || room?.id !== id) return;
     if (error) throw error;
-    if (!data) { await disconnect(); room = null; remember(null); render(); await listTables(); return; }
+    if (!data || (data.host_id !== userId && data.guest_id !== userId)) {
+      await disconnect(); room = null; remember(null); render(); await listTables();
+      if (data) message('Your seat at this table is no longer available.');
+      return;
+    }
     room = data; render();
     if (room.status === 'closed') {
       const notice = room.activated_at ? 'The table was smashed.' : 'The players spent 60 seconds twiddling their thumbs, so the table folded itself.';
@@ -165,6 +172,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     if (expected !== epoch) return;
     if (error) throw error;
     if (!data || data.status === 'closed') { remember(null); throw new Error('Table not found or closed.'); }
+    if (data.host_id !== userId && data.guest_id !== userId) { remember(null); throw new Error('Your seat at this table is no longer available.'); }
     room = data; lastHeartbeat = 0; remember(id); render();
     channel = client.channel(`play-room:${id}`)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'play_rooms', filter: `id=eq.${id}` }, () => {
@@ -201,6 +209,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     $('edit-name').hidden = room.host_id !== userId || room.status === 'closed';
     $('leave').textContent = room.host_id === userId ? 'Close table' : 'Leave table';
     $('leave').classList.toggle('action-delete', room.status !== 'closed' && room.host_id === userId);
+    let hasSeat = false;
     const rows = ['host', 'guest'].map(seat => {
       const id = room[`${seat}_id`], online = playerOnline(room[`${seat}_seen_at`]);
       const deck = getDecks().find(d => d.id === room[`${seat}_deck_id`]);
@@ -213,8 +222,9 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
       const name = document.createElement('strong'); name.textContent = id ? `${profile?.display_name || 'Player'}${id === userId ? ' · You' : ''}` : 'Waiting for someone to bring a chair.';
       details.append(name);
       if (id === userId) {
+        hasSeat = true;
         const controls = document.createElement('div'); controls.className = 'play-player-controls';
-        controls.append(deckField, $('ready')); details.append(controls);
+        controls.append(deckField, readyButton); details.append(controls);
       }
       else { const deckName = document.createElement('span'); deckName.textContent = deck?.name || 'No deck selected'; details.append(deckName); }
       row.append(avatar, details);
@@ -226,6 +236,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
       }
       return row;
     });
+    if (!hasSeat) $('controls-parking').append(deckField, readyButton);
     $('players').replaceChildren(...rows);
     const mine = room.host_id === userId ? 'host' : 'guest';
     $('deck').value = room[`${mine}_deck_id`] || '';
