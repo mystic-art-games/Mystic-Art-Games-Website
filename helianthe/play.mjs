@@ -143,7 +143,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     if (!data) { await disconnect(); room = null; remember(null); render(); await listTables(); return; }
     room = data; render();
     if (room.status === 'closed') {
-      const notice = room.activated_at ? 'The table closed.' : 'The players spent 60 seconds twiddling their thumbs, so the table folded itself.';
+      const notice = room.activated_at ? 'The table was smashed.' : 'The players spent 60 seconds twiddling their thumbs, so the table folded itself.';
       await disconnect(); room = null; remember(null); render(); await listTables(); message(notice);
     }
   }
