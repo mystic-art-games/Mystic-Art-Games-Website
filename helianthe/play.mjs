@@ -32,13 +32,12 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     <section id="play-game" hidden>
       <div class="play-game-toolbar"><button id="play-game-back" class="back-to-decks" type="button"><span aria-hidden="true">←</span> Back to Lobby</button><strong id="play-game-name"></strong><div class="play-game-actions"><details class="play-table-menu"><summary class="play-menu-toggle" aria-label="Table actions" title="Table actions"></summary><div class="play-table-menu-panel"><button id="play-game-leave" class="action-delete" type="button">Smash Table</button></div></details></div></div>
       <section id="play-game-opponent" class="play-surface play-game-seat" aria-label="Opponent's area">
-        <div class="play-game-seat-heading"><strong id="play-game-opponent-name"></strong><div class="play-game-opponent-deck"><div id="play-game-opponent-patron-slot" class="play-game-patron-slot" role="img" aria-label="Opponent's Patron"><canvas id="play-game-opponent-patron" hidden></canvas><span id="play-game-opponent-patron-fallback" class="play-game-patron-fallback">Patron</span></div><div class="play-game-deck"><div class="play-deck-stack" aria-hidden="true"></div><div><span class="play-eyebrow">HORIZON</span><span id="play-game-opponent-deck-name"></span></div></div></div></div>
+        <div class="play-game-seat-heading"><strong id="play-game-opponent-name"></strong><div class="play-game-opponent-deck"><div id="play-game-opponent-patron-slot" class="play-game-patron-slot" role="img" aria-label="Opponent's Patron"><canvas id="play-game-opponent-patron" hidden></canvas><span id="play-game-opponent-patron-fallback" class="play-game-patron-fallback" aria-hidden="true"></span></div><div class="play-game-deck"><div class="play-deck-stack" aria-hidden="true"></div><div><span class="play-eyebrow">HORIZON</span><span id="play-game-opponent-deck-name"></span></div></div></div></div>
         <div id="play-game-opponent-hand" class="play-game-opponent-hand" role="group" aria-label="Opponent's five face-down cards" hidden><span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span></div>
       </section>
-      <div class="play-game-board-wrap"><h2>The World</h2><div id="play-game-board" class="play-game-board" role="group" aria-label="Shared 19-hex Terrain board"></div><div class="play-game-zones" aria-label="Your card zones"><div class="play-game-zone play-game-zone-patron"><div id="play-game-self-patron-slot" class="play-game-patron-slot" role="img" aria-label="Your Patron"><canvas id="play-game-self-patron" hidden></canvas><span id="play-game-self-patron-fallback" class="play-game-patron-fallback">Patron</span></div><span class="play-game-zone-label">PATRON</span></div><div class="play-game-zone play-game-zone-archive"><div class="play-game-archive-card"><span id="play-game-archive-top">Empty</span></div><span class="play-game-zone-label">ARCHIVE <span id="play-game-archive-count"></span></span></div><div class="play-game-zone play-game-zone-horizon"><div class="play-deck-stack" role="img" aria-label="Your Horizon, draw deck"></div><span class="play-game-zone-label">HORIZON <span id="play-game-horizon-count"></span></span></div></div></div>
+      <div class="play-game-board-wrap"><h2>The World</h2><div class="play-game-table"><div class="play-game-zone play-game-zone-patron"><div id="play-game-self-patron-slot" class="play-game-patron-slot" role="img" aria-label="Your Patron"><canvas id="play-game-self-patron" hidden></canvas><span id="play-game-self-patron-fallback" class="play-game-patron-fallback" aria-hidden="true"></span></div></div><div id="play-game-board" class="play-game-board" role="group" aria-label="Shared 19-hex Terrain board"></div><div class="play-game-zones-right" aria-label="Your card zones"><div class="play-game-zone play-game-zone-archive"><div class="play-game-archive-card"><span id="play-game-archive-top">Empty</span></div><span class="play-game-zone-label">ARCHIVE <span id="play-game-archive-count"></span></span></div><div class="play-game-zone play-game-zone-horizon"><div class="play-deck-stack" role="img" aria-label="Your Horizon, draw deck"></div><span class="play-game-zone-label">HORIZON <span id="play-game-horizon-count"></span></span></div></div></div></div>
       <section id="play-game-self" class="play-surface play-game-seat" aria-label="Your area">
-        <div class="play-game-seat-heading"><strong id="play-game-self-name"></strong><div class="play-game-deck"><div><span class="play-eyebrow">YOUR DECK</span><span id="play-game-self-deck-name"></span></div></div></div>
-        <div class="play-game-hand-heading"><h2>Your hand</h2><span id="play-game-counts"></span></div>
+        <div class="play-game-seat-heading"><strong id="play-game-self-name"></strong><span id="play-game-counts"></span></div>
         <p id="play-game-loading" role="status">Preparing the opening hands…</p>
         <div id="play-game-hand" class="play-game-hand"></div>
         <p id="play-game-card-detail" class="play-game-card-detail" hidden></p>
@@ -119,13 +118,11 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     const profile = getProfiles().find(person => person.id === id);
     const deck = getDecks().find(item => item.id === deckId);
     $(`game-${seat}-name`).textContent = `${profile?.display_name || 'Player'}${own ? ' · You' : ''}`;
-    $(`game-${seat}-deck-name`).textContent = own
-      ? (gameState?.deck_name || deck?.name || 'Selected deck')
-      : (deck?.name || 'Selected deck');
+    if (!own) $('game-opponent-deck-name').textContent = deck?.name || 'Selected deck';
     renderGamePatron(seat, own ? (gameState?.patron_name || deck?.patron_name) : deck?.patron_name);
   }
   function renderGamePatron(seat, patronName) {
-    const card = getPatronCard?.(patronName);
+    const card = getPatronCard?.(patronName) || (patronName ? { title: patronName, card_type: 'Patron' } : null);
     const preview = patronPreviews[seat];
     const key = `${patronName || ''}:${card?.id || ''}:${card?.artwork_id || ''}`;
     if (preview.key === key) return;
@@ -135,7 +132,6 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     const fallback = $(`game-${seat}-patron-fallback`);
     canvas.hidden = true;
     fallback.hidden = false;
-    fallback.textContent = patronName?.split(',')[0] || 'Patron';
     $(`game-${seat}-patron-slot`).setAttribute('aria-label', `${seat === 'self' ? 'Your' : "Opponent's"} Patron: ${patronName || 'unknown'}`);
     if (!card) return;
     void (async () => {
