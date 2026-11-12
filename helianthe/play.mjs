@@ -193,7 +193,13 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     gameLoading = false;
     if (error || !data) {
       gameLoadFailed = true;
-      message(error ? 'The game could not be loaded yet. Please try again later.' : 'This table has no opening hands. Start a new table after game setup is available.', true);
+      const setupMissing = ['42P01', 'PGRST205'].includes(error?.code)
+        || /play_game_decks|schema cache/i.test(error?.message || '');
+      message(setupMissing
+        ? 'Opening hands are not available on the server yet. The game database update still needs to be applied.'
+        : error
+          ? 'Your opening hand could not be loaded. Return to the Lobby and try entering the table again.'
+          : 'This table has no opening hands. Start a new table after game setup is available.', true);
     } else gameState = data;
     renderGame();
   }
