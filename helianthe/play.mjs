@@ -31,8 +31,12 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     </section>
     <section id="play-game" hidden>
       <section id="play-game-opponent" class="play-surface play-game-seat" aria-label="Opponent's area">
-        <div class="play-game-seat-heading"><strong id="play-game-opponent-name"></strong><span id="play-game-opponent-presence" class="play-away-pill" hidden></span></div>
-        <div id="play-game-opponent-hand" class="play-game-opponent-hand" role="group" aria-label="Opponent's five face-down cards" hidden><span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span></div>
+        <div class="play-game-opponent-row">
+          <span aria-hidden="true"></span>
+          <div id="play-game-opponent-hand" class="play-game-opponent-hand" role="group" aria-label="Opponent's five face-down cards" hidden><span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span></div>
+          <div class="play-game-actions"><details class="play-table-menu"><summary class="play-menu-toggle" aria-label="Table actions" title="Table actions"><span class="play-menu-bars" aria-hidden="true"><span></span><span></span><span></span></span></summary><div class="play-table-menu-panel"><strong id="play-game-name" class="play-menu-table-name"></strong><button id="play-game-back" class="play-menu-lobby" type="button">Back to Lobby</button><button id="play-game-leave" class="action-delete" type="button">Smash Table</button></div></details></div>
+        </div>
+        <div class="play-game-opponent-identity"><strong id="play-game-opponent-name"></strong><span id="play-game-opponent-presence" class="play-away-pill" hidden></span></div>
       </section>
       <div class="play-game-board-wrap"><div class="play-game-table">
         <div class="play-game-zones-left">
@@ -46,11 +50,8 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
         </div>
       </div></div>
       <section id="play-game-self" class="play-surface play-game-seat" aria-label="Your area">
-        <div class="play-game-self-row">
-          <div class="play-game-self-identity"><strong id="play-game-self-name"></strong><span id="play-game-self-presence" class="play-away-pill" hidden></span></div>
-          <div class="play-game-hand-wrap"><p id="play-game-loading" role="status">Preparing the opening hands…</p><div id="play-game-hand" class="play-game-hand"></div></div>
-          <div class="play-game-actions"><details class="play-table-menu"><summary class="play-menu-toggle" aria-label="Table actions" title="Table actions"><span class="play-menu-bars" aria-hidden="true"><span></span><span></span><span></span></span></summary><div class="play-table-menu-panel"><strong id="play-game-name" class="play-menu-table-name"></strong><button id="play-game-back" class="play-menu-lobby" type="button">Back to Lobby</button><button id="play-game-leave" class="action-delete" type="button">Smash Table</button></div></details></div>
-        </div>
+        <div class="play-game-self-identity"><strong id="play-game-self-name"></strong><span id="play-game-self-presence" class="play-away-pill" hidden></span></div>
+        <div class="play-game-hand-wrap"><p id="play-game-loading" role="status">Preparing the opening hands…</p><div id="play-game-hand" class="play-game-hand"></div></div>
         <p id="play-game-card-detail" class="play-game-card-detail" hidden></p>
       </section>
     </section>`;
