@@ -21,7 +21,7 @@ $graphics.PixelOffsetMode = [Drawing.Drawing2D.PixelOffsetMode]::HighQuality
 $cx = 845.0
 $cy = 870.0
 $radius = 194.0
-$tileRadius = $radius - 2
+$tileRadius = $radius - 8
 $hexHeight = [Math]::Sqrt(3) * $radius
 $terrainImages = @{}
 foreach ($type in @('Flow', 'Verdant')) {
