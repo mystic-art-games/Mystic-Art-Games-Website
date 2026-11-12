@@ -143,7 +143,8 @@ textarea { resize: vertical; }
 .about-section h3:first-of-type { margin-top: .2rem; }
 .vision-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 43%); align-items: start; gap: 1.25rem; }
 .vision-board-figure { min-width: 0; width: 100%; max-width: 460px; margin: .15rem auto; }
-.vision-board-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: clamp(6px, .9vw, 12px); width: 100%; padding: 0 12px 16px 0; background: transparent; }
+.vision-board-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: clamp(6px, .9vw, 12px); width: 100%; padding: 0 12px 16px 0; background: transparent; pointer-events: none; user-select: none; -webkit-user-select: none; }
+.vision-board-grid img { -webkit-user-drag: none; }
 .vision-board-cell { position: relative; min-width: 0; }
 .vision-board-cell:nth-child(5n + 2) { transform: rotate(1.1deg) translateY(2px); }
 .vision-board-cell:nth-child(4n + 3) { transform: rotate(-1.3deg) translateY(-1px); }
@@ -159,7 +160,13 @@ textarea { resize: vertical; }
 .vision-board-cell:nth-child(3n) .vision-entity-card { transform: rotate(1.5deg); }
 .vision-entity-art { position: absolute; top: 13%; left: 6%; width: 88%; height: 49%; border-radius: 12% 12% 9% 9%; object-fit: cover; }
 .vision-entity-title { position: absolute; z-index: 2; top: 4%; left: 16%; width: 68%; overflow: hidden; color: #2b2823; font: 700 clamp(5px, .78vw, 10px)/1 Alegreya, Georgia, serif; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
-.vision-entity-type { position: absolute; top: 70%; left: 10%; color: #344c43; font: 800 clamp(4px, .48vw, 6px)/1 Nunito, Arial, sans-serif; letter-spacing: .07em; }
+.vision-entity-icon { position: absolute; z-index: 3; display: block; object-fit: contain; }
+.vision-entity-icon-left { left: 4%; }
+.vision-entity-icon-right { right: 4%; }
+.vision-entity-icon-type { top: 3.5%; width: 14%; height: 8%; }
+.vision-entity-icon-faction { top: 13.5%; width: 10%; height: 6%; }
+.vision-entity-effect { position: absolute; top: 66%; left: 10%; width: 80%; height: 22%; overflow: hidden; color: #233a39; font: 500 clamp(2.6px, .28vw, 3.6px)/1.16 Nunito, Arial, sans-serif; overflow-wrap: anywhere; }
+.vision-entity-author { position: absolute; right: 10%; bottom: 3.5%; left: 10%; overflow: hidden; color: #46443a; font: italic 500 clamp(2.5px, .3vw, 4px)/1 Nunito, Arial, sans-serif; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
 .vision-board-figure figcaption { margin: .8rem .3rem 0; color: #486755; font-size: .78rem; font-weight: 800; line-height: 1.35; text-align: center; }
 body.dark-mode .vision-board-figure figcaption { color: #d3e6d1; }
 .vision-copy { min-width: 0; }
