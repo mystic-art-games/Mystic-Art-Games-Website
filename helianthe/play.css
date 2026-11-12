@@ -57,18 +57,26 @@ body.dark-mode #play-back { color: #e5eee0; }
 .play-game-toolbar #play-game-back { width: auto; padding: .2rem .3rem; border: 0; background: transparent; box-shadow: none; font-size: .85rem; }
 .play-game-toolbar #play-game-back:hover { background: transparent; box-shadow: none; text-decoration: underline; }
 #play-game-name { font-size: 1.35rem; overflow-wrap: anywhere; }
-.play-game-players { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .75rem; }
-.play-game-players strong, .play-game-players span { display: block; overflow-wrap: anywhere; }
-.play-game-players span { margin-top: .25rem; font-size: .85rem; }
-.play-game-board-wrap { margin: 1.25rem auto; max-width: 760px; }
+.play-game-seat { padding: 1rem 1.25rem; }
+.play-game-seat-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .85rem; }
+.play-game-seat-heading > strong { font-size: 1.12rem; overflow-wrap: anywhere; }
+.play-game-deck { display: flex; align-items: center; gap: .8rem; min-width: 0; }
+.play-game-deck > div:last-child { min-width: 0; }
+.play-game-deck span { display: block; overflow-wrap: anywhere; }
+.play-game-deck span:last-child { font-size: .85rem; font-weight: 700; }
+.play-deck-stack, .play-game-opponent-hand span { display: block; flex: 0 0 auto; width: 62px; aspect-ratio: 63 / 88; border: 2px solid #b99b58; border-radius: 8px; background: url('../images/helianthe-logo.png') center / 62% no-repeat, linear-gradient(145deg,#194a3a,#286b58); box-shadow: inset 0 0 0 3px #e0c88c, 0 3px 9px #16372744; }
+.play-deck-stack { box-shadow: inset 0 0 0 3px #e0c88c, 4px -4px 0 #245341, 7px -7px 0 #b99b58, 0 6px 12px #16372744; }
+.play-game-opponent-hand { display: flex; gap: .45rem; margin-top: .9rem; }
+.play-game-opponent-hand span { width: clamp(44px, 7vw, 66px); }
+.play-game-board-wrap { margin: 1.25rem auto; max-width: 600px; }
 .play-game-board-wrap h2, .play-game-hand-heading h2 { margin: 0 0 .7rem; font-size: 1.2rem; }
-.play-game-board { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: .55rem; }
-.play-game-node { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: .3rem; min-width: 0; aspect-ratio: 63 / 88; padding: .35rem; border: 1px dashed #9db6a8; border-radius: 8px; background: #ffffff44; text-align: center; }
-.play-game-node strong, .play-game-node span { overflow-wrap: anywhere; font-size: clamp(.6rem,1.3vw,.85rem); }
-.play-game-node.terrain-symbiosis { border-style: solid; background: #d9c5e4; }
-.play-game-node.terrain-flow { border-style: solid; background: #b8dce7; }
-.play-game-node.terrain-verdant { border-style: solid; background: #c5e2c1; }
-.play-game-node.terrain-radiance { border-style: solid; background: #f1e4a9; }
+.play-game-board { position: relative; width: 100%; aspect-ratio: 1; background: radial-gradient(circle, #a7ccb64d, transparent 72%); }
+.play-game-node { position: absolute; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: .25rem; width: 22.6%; aspect-ratio: 2 / 1.732; padding: .4rem; box-sizing: border-box; transform: translate(-50%, -50%); clip-path: polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%); background: #c9ded0aa; text-align: center; }
+.play-game-node strong, .play-game-node span { max-width: 90%; padding: .08rem .3rem; border-radius: 4px; overflow-wrap: anywhere; background: #fffdf3d9; color: #163a2b; font-size: clamp(.6rem,1.3vw,.85rem); line-height: 1.15; }
+.play-game-node.terrain-symbiosis { background: url('./assets/Terrain_Symbiosis_Full_Art.png') center / cover; }
+.play-game-node.terrain-flow { background: url('./assets/Terrain_Flow_Full_Art.png') center / cover; }
+.play-game-node.terrain-verdant { background: url('./assets/Terrain_Verdant_Full_Art.png') center / cover; }
+.play-game-node.terrain-radiance { background: url('./assets/Terrain_Radiance_Full_Art.png') center / cover; }
 .play-game-hand-heading { display: flex; align-items: baseline; justify-content: space-between; gap: .75rem; }
 #play-game-counts { font-size: .85rem; }
 .play-game-hand { display: flex; gap: .75rem; overflow-x: auto; padding: .25rem .15rem 1rem; }
@@ -82,7 +90,6 @@ body.dark-mode .play-workspace .play-surface, body.dark-mode .play-player { back
 body.dark-mode .play-workspace .play-eyebrow { color: #b2c9b9; }
 body.dark-mode .play-leave-note { color: #f0c6b8; }
 body.dark-mode #play-message { color: #163737; }
-body.dark-mode .play-game-node { border-color: #80a992; }
 body.dark-mode .play-game-node:not([class*="terrain-"]) { background: #12372c90; }
 body.dark-mode .play-game-card-detail { border-color: #527460; }
 body.dark-mode #play-game-back { color: #e5eee0; }
@@ -101,8 +108,7 @@ body.dark-mode #play-game-back { color: #e5eee0; }
   .mobile-menu-panel #account-name { margin: 0; }
 }
 @media (max-width: 850px) {
-  .play-game-players { grid-template-columns: 1fr; }
-  .play-game-board { gap: .25rem; }
+  .play-game-seat-heading { align-items: flex-start; }
   .play-workspace { width: calc(100% - 1rem); margin: .5rem auto 2rem; padding: 1rem; }
   .play-heading { align-items: start; }
   .play-lobby, .play-players { grid-template-columns: 1fr; }

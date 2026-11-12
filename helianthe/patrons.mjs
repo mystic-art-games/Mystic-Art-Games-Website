@@ -1,11 +1,11 @@
 export const FACTION_VISIONS = {
-  Verdant: 'Win immediately when all 20 spaces of the 4 × 5 board contain Terrain of any type and no Verdant Terrain is in Crisis.',
+  Verdant: 'Win immediately when all 19 spaces of the hexagonal board contain Terrain of any type and no Verdant Terrain is in Crisis.',
   Brightworks: 'Win immediately when Radiance Terrain without Crisis holds at least 15 Lumens in total.',
   Dreamwardens: 'Win immediately with at least 5 Entanglements in one connected Symbiosis group. Every entangled Symbiosis Node in that group must be free from Crisis.',
   Flowbound: 'Win immediately when at least 10 Flow Entities occupy Terrains without Crisis, regardless of those Nodes’ Terrain or the Entities’ Patron, owner or controller.',
 };
 
-export const PATRON_RULES_REVISION = '2026-11-11-faction-visions';
+export const PATRON_RULES_REVISION = '2026-11-12-hex-board';
 
 // Replace only the scoring paragraph; retain artwork, flavor and other edits.
 export function updatePatronVision(effect, patron) {

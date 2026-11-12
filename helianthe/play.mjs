@@ -30,12 +30,18 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     </section>
     <section id="play-game" hidden>
       <div class="play-game-toolbar"><button id="play-game-back" class="back-to-decks" type="button"><span aria-hidden="true">←</span> Back to Lobby</button><strong id="play-game-name"></strong><div class="play-game-actions"><span class="play-leave-note">Leave your opponent all alone. Forever.</span><button id="play-game-leave" class="action-delete" type="button">Smash Table</button></div></div>
-      <div class="play-game-players"><div id="play-game-opponent" class="play-surface"></div><div id="play-game-self" class="play-surface"></div></div>
-      <div class="play-game-board-wrap"><h2>The World</h2><div id="play-game-board" class="play-game-board" aria-label="Shared four by five Terrain board"></div></div>
-      <div class="play-game-hand-heading"><h2>Your hand</h2><span id="play-game-counts"></span></div>
-      <p id="play-game-loading" role="status">Preparing the opening hands…</p>
-      <div id="play-game-hand" class="play-game-hand"></div>
-      <p id="play-game-card-detail" class="play-game-card-detail" hidden></p>
+      <section id="play-game-opponent" class="play-surface play-game-seat" aria-label="Opponent's area">
+        <div class="play-game-seat-heading"><strong id="play-game-opponent-name"></strong><div class="play-game-deck"><div class="play-deck-stack" aria-hidden="true"></div><div><span class="play-eyebrow">HORIZON</span><span id="play-game-opponent-deck-name"></span></div></div></div>
+        <div id="play-game-opponent-hand" class="play-game-opponent-hand" role="group" aria-label="Opponent's five face-down cards" hidden><span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span></div>
+      </section>
+      <div class="play-game-board-wrap"><h2>The World</h2><div id="play-game-board" class="play-game-board" role="group" aria-label="Shared 19-hex Terrain board"></div></div>
+      <section id="play-game-self" class="play-surface play-game-seat" aria-label="Your area">
+        <div class="play-game-seat-heading"><strong id="play-game-self-name"></strong><div class="play-game-deck"><div class="play-deck-stack" aria-hidden="true"></div><div><span class="play-eyebrow">YOUR HORIZON</span><span id="play-game-self-deck-name"></span></div></div></div>
+        <div class="play-game-hand-heading"><h2>Your hand</h2><span id="play-game-counts"></span></div>
+        <p id="play-game-loading" role="status">Preparing the opening hands…</p>
+        <div id="play-game-hand" class="play-game-hand"></div>
+        <p id="play-game-card-detail" class="play-game-card-detail" hidden></p>
+      </section>
     </section>`;
   const deckField = $('deck-field');
   const readyButton = $('ready');
@@ -108,14 +114,13 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     void run(() => action('deck', { deck_id: first.id }));
   }
   function gamePlayerCard(id, deckId, own) {
-    const panel = $(own ? 'game-self' : 'game-opponent');
+    const seat = own ? 'self' : 'opponent';
     const profile = getProfiles().find(person => person.id === id);
     const deck = getDecks().find(item => item.id === deckId);
-    const name = document.createElement('strong');
-    name.textContent = `${profile?.display_name || 'Player'}${own ? ' · You' : ''}`;
-    const description = document.createElement('span');
-    description.textContent = own ? (gameState?.deck_name || deck?.name || 'Selected deck') : (deck?.name || 'Selected deck');
-    panel.replaceChildren(name, description);
+    $(`game-${seat}-name`).textContent = `${profile?.display_name || 'Player'}${own ? ' · You' : ''}`;
+    $(`game-${seat}-deck-name`).textContent = own
+      ? (gameState?.deck_name || deck?.name || 'Selected deck')
+      : (deck?.name || 'Selected deck');
   }
   function renderGameHand() {
     const hand = Array.isArray(gameState?.hand) ? gameState.hand : [];
@@ -155,9 +160,12 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
       room.host_id === userId ? room.guest_deck_id : room.host_deck_id, false);
     gamePlayerCard(userId, ownDeckId(), true);
     const nodes = [];
-    for (let y = 0; y < 4; y++) for (let x = 0; x < 5; x++) {
-      const node = room.board?.[`${x},${y}`];
+    for (let q = -2; q <= 2; q++) for (let r = -2; r <= 2; r++) {
+      if (Math.abs(q + r) > 2) continue;
+      const node = room.board?.[`${q},${r}`];
       const cell = document.createElement('div'); cell.className = 'play-game-node';
+      cell.style.left = `${50 + 17.25 * q}%`;
+      cell.style.top = `${50 + 19.918 * (r + q / 2)}%`;
       if (node?.terrain) {
         cell.classList.add(`terrain-${node.terrain.toLowerCase()}`);
         const terrain = document.createElement('strong'); terrain.textContent = node.terrain;
@@ -167,11 +175,12 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
           cell.append(entity);
         }
       }
-      cell.setAttribute('aria-label', node?.terrain ? `${node.terrain} Terrain at ${x + 1}, ${y + 1}` : `Empty space ${x + 1}, ${y + 1}`);
+      cell.setAttribute('aria-label', node?.terrain ? `${node.terrain} Terrain at ${q}, ${r}` : `Empty space ${q}, ${r}`);
       nodes.push(cell);
     }
     $('game-board').replaceChildren(...nodes);
     $('game-loading').hidden = Boolean(gameState) || gameLoadFailed;
+    $('game-opponent-hand').hidden = !gameState;
     $('game-counts').textContent = gameState ? `Horizon: ${gameState.horizon.length} · Archive: ${gameState.archive.length}` : '';
     renderGameHand();
   }
