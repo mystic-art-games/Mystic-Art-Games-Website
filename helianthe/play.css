@@ -84,6 +84,7 @@ body.dark-mode #play-back { color: #e5eee0; }
 .play-game-board { position: relative; align-self: center; min-width: 0; width: 100%; aspect-ratio: 1; background: radial-gradient(circle, #a7ccb64d, transparent 72%); }
 .play-game-zones-left, .play-game-zones-right { display: flex; flex-direction: column; justify-content: space-between; }
 .play-game-zone-pair { position: relative; width: 63px; height: 180px; }
+.play-game-zone-pair-opponent { transform: translateY(-16px); }
 .play-game-zone-pair .play-game-zone { position: absolute; }
 .play-game-zone-pair .play-game-zone-horizon { top: 78px; left: 15px; }
 .play-game-zone-pair .play-game-zone-archive { left: -65px; }
@@ -151,7 +152,7 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) .masthead { display:
   .play-game-zone-pair .play-game-zone-archive { order: 0; margin-top: 20px; }
   .play-game-zone-pair .play-game-zone-horizon { order: 1; }
   .play-game-zone-opponent-patron { grid-column: 1; grid-row: 1; }
-  .play-game-zone-pair-opponent { grid-column: 2 / -1; grid-row: 1; }
+  .play-game-zone-pair-opponent { grid-column: 2 / -1; grid-row: 1; transform: none; }
   .play-game-board { grid-column: 1 / -1; grid-row: 2; width: min(100%, 500px); }
   .play-game-zone-self-patron { grid-column: 1; grid-row: 3; margin-bottom: 0; }
   .play-game-zone-pair-self { grid-column: 2 / -1; grid-row: 3; }
