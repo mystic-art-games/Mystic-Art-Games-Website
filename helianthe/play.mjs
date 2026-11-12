@@ -127,7 +127,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
       if (entry.is_participant) {
         const action = document.createElement('div'); action.className = 'play-table-action';
         const hint = document.createElement('span'); hint.className = 'play-chair-note';
-        hint.textContent = 'Your chair is missing you';
+        hint.textContent = 'Your chair is missing you.';
         action.append(hint, b);
         row.append(details, action);
       } else row.append(details, b);
