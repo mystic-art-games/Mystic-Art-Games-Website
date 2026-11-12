@@ -22,7 +22,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     </div>
     <section id="play-session" hidden>
       <button id="play-back" class="back-to-decks" type="button"><span aria-hidden="true">←</span> Back to Lobby</button>
-      <div class="play-room-bar"><div class="play-room-identity"><span class="play-eyebrow">TABLE</span><div class="play-room-name-line"><strong id="play-room-name"></strong><button id="play-edit-name" class="action-cancel" type="button">Edit name</button></div><form id="play-name-form" hidden><input id="play-name-input" aria-label="Table name" maxlength="60" required><button type="submit">Save</button><button id="play-cancel-name" type="button">Cancel</button></form><span class="play-room-code-line">Code: <strong id="play-room-code"></strong></span></div><div class="play-room-actions"><details class="play-table-menu"><summary class="play-menu-toggle" aria-label="Table actions" title="Table actions"></summary><div class="play-table-menu-panel"><button id="play-leave" class="action-delete" type="button">Abandon Table</button></div></details></div></div>
+      <div class="play-room-bar"><div class="play-room-identity"><span class="play-eyebrow">TABLE</span><div class="play-room-name-line"><strong id="play-room-name"></strong><button id="play-edit-name" class="action-cancel" type="button">Edit name</button></div><form id="play-name-form" hidden><input id="play-name-input" aria-label="Table name" maxlength="60" required><button type="submit">Save</button><button id="play-cancel-name" type="button">Cancel</button></form><span class="play-room-code-line">Code: <strong id="play-room-code"></strong></span></div><div class="play-room-actions"><details class="play-table-menu"><summary class="play-menu-toggle" aria-label="Table actions" title="Table actions"><span class="play-menu-bars" aria-hidden="true"><span></span><span></span><span></span></span></summary><div class="play-table-menu-panel"><button id="play-leave" class="action-delete" type="button">Abandon Table</button></div></details></div></div>
       <div id="play-players" class="play-players"></div>
       <label id="play-deck-field" class="play-deck-field" for="play-deck">Your deck<select id="play-deck"><option value="">No decks available</option></select></label>
       <button id="play-ready" class="action-add-save" type="button">Ready</button>
@@ -30,7 +30,6 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
       <p id="play-room-status" role="status"></p>
     </section>
     <section id="play-game" hidden>
-      <div class="play-game-toolbar"><strong id="play-game-name"></strong><div class="play-game-actions"><details class="play-table-menu"><summary class="play-menu-toggle" aria-label="Table actions" title="Table actions"></summary><div class="play-table-menu-panel"><button id="play-game-back" class="play-menu-lobby" type="button">Back to Lobby</button><button id="play-game-leave" class="action-delete" type="button">Smash Table</button></div></details></div></div>
       <section id="play-game-opponent" class="play-surface play-game-seat" aria-label="Opponent's area">
         <div class="play-game-seat-heading"><strong id="play-game-opponent-name"></strong><span id="play-game-opponent-presence" class="play-away-pill" hidden></span></div>
         <div id="play-game-opponent-hand" class="play-game-opponent-hand" role="group" aria-label="Opponent's five face-down cards" hidden><span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span></div>
@@ -47,14 +46,24 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
         </div>
       </div></div>
       <section id="play-game-self" class="play-surface play-game-seat" aria-label="Your area">
-        <div class="play-game-seat-heading"><strong id="play-game-self-name"></strong><span id="play-game-self-presence" class="play-away-pill" hidden></span></div>
-        <p id="play-game-loading" role="status">Preparing the opening hands…</p>
-        <div id="play-game-hand" class="play-game-hand"></div>
+        <div class="play-game-self-row">
+          <div class="play-game-self-identity"><strong id="play-game-self-name"></strong><span id="play-game-self-presence" class="play-away-pill" hidden></span></div>
+          <div class="play-game-hand-wrap"><p id="play-game-loading" role="status">Preparing the opening hands…</p><div id="play-game-hand" class="play-game-hand"></div></div>
+          <div class="play-game-actions"><details class="play-table-menu"><summary class="play-menu-toggle" aria-label="Table actions" title="Table actions"><span class="play-menu-bars" aria-hidden="true"><span></span><span></span><span></span></span></summary><div class="play-table-menu-panel"><strong id="play-game-name" class="play-menu-table-name"></strong><button id="play-game-back" class="play-menu-lobby" type="button">Back to Lobby</button><button id="play-game-leave" class="action-delete" type="button">Smash Table</button></div></details></div>
+        </div>
         <p id="play-game-card-detail" class="play-game-card-detail" hidden></p>
       </section>
     </section>`;
   const deckField = $('deck-field');
   const readyButton = $('ready');
+  document.addEventListener('pointerdown', event => {
+    for (const menu of root.querySelectorAll('.play-table-menu[open]')) {
+      if (!menu.contains(event.target)) menu.open = false;
+    }
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') for (const menu of root.querySelectorAll('.play-table-menu[open]')) menu.open = false;
+  });
   function message(text = '', error = false) {
     $('message-text').textContent = text;
     $('message').hidden = !text;
