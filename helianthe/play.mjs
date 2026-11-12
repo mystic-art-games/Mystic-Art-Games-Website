@@ -56,6 +56,12 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
   function storageKey() { return `helianthe-play-room:${userId}`; }
   function remember(id) { try { if (id) localStorage.setItem(storageKey(), id); else localStorage.removeItem(storageKey()); } catch {} }
   function savedRoom() { try { return localStorage.getItem(storageKey()); } catch { return null; } }
+  async function seatedUserId(data) {
+    if (!data) return null;
+    if (data.host_id === userId || data.guest_id === userId) return userId;
+    const { data: auth } = await client.auth.getUser();
+    return auth?.user && (auth.user.id === data.host_id || auth.user.id === data.guest_id) ? auth.user.id : null;
+  }
   function friendly(error) {
     if (['PGRST202', 'PGRST205', '42P01', '42883'].includes(error.code)) return 'Play is not available yet. Please try again later.';
     if (error instanceof TypeError) return 'Something went wrong while showing the table. Return to the Lobby and try again.';
@@ -249,11 +255,14 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     const { data, error } = await client.from('play_rooms').select('*').eq('id', id).maybeSingle();
     if (expected !== epoch || serial !== fetchSerial || room?.id !== id) return;
     if (error) throw error;
-    if (!data || (data.host_id !== userId && data.guest_id !== userId)) {
+    const seatId = await seatedUserId(data);
+    if (expected !== epoch || serial !== fetchSerial || room?.id !== id) return;
+    if (!data || !seatId) {
       await disconnect(); room = null; remember(null); render(); await listTables();
-      if (data) message('Your seat at this table is no longer available.');
+      if (data) message('This table belongs to another account. Sign in with the account that joined it.');
       return;
     }
+    userId = seatId;
     room = data; render();
     if (room.status === 'active') void loadGameState();
     if (room.status === 'closed') {
@@ -279,7 +288,10 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     if (expected !== epoch) return;
     if (error) throw error;
     if (!data || data.status === 'closed') { remember(null); throw new Error('Table not found or closed.'); }
-    if (data.host_id !== userId && data.guest_id !== userId) { remember(null); throw new Error('Your seat at this table is no longer available.'); }
+    const seatId = await seatedUserId(data);
+    if (expected !== epoch) return;
+    if (!seatId) { remember(null); throw new Error('This table belongs to another account. Sign in with the account that joined it.'); }
+    userId = seatId;
     let renameFailed = false;
     if (newTable && data.name?.endsWith(' table')) {
       const name = defaultTableName(data.name.slice(0, -6));
@@ -374,7 +386,12 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
   }
 
   $('signin-button').addEventListener('click', requireSignIn);
-  $('create').addEventListener('click', () => run(async () => { const id = await rpc('play_create_room'); await enter(id, true); }));
+  $('create').addEventListener('click', () => run(async () => {
+    await refreshIdentity();
+    if (!userId) throw new Error('Sign in to create a table.');
+    const id = await rpc('play_create_room');
+    await enter(id, true);
+  }));
   $('back').addEventListener('click', () => run(async () => {
     await disconnect(); room = null; remember(null); render(); await listTables();
   }));
@@ -432,9 +449,13 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
   async function refreshIdentity() {
     const next = getUser()?.id || null;
     if (next === userId) return;
-    await disconnect(); room = null; userId = next; tableListSignature = ''; $('room-list').replaceChildren(); render(); refreshCollections();
+    userId = next; room = null; tableListSignature = '';
+    const pendingDisconnect = disconnect();
+    $('room-list').replaceChildren(); render(); refreshCollections();
+    await pendingDisconnect;
+    if (userId !== next) return;
     if (!userId) return;
-    if (visible) { const id = savedRoom(); if (id) void run(() => enter(id)); else await listTables(); }
+    if (visible && !busy) { const id = savedRoom(); if (id) void run(() => enter(id)); else await listTables(); }
   }
   function setVisible(value) {
     visible = value;
