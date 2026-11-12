@@ -41,7 +41,14 @@ body.dark-mode #play-back { color: #e5eee0; }
 .play-room-code-line { display: block; margin-top: .35rem; font-size: .85rem; }
 #play-room-code { letter-spacing: .1em; }
 .play-room-actions, .play-game-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: .65rem; }
-.play-leave-note { color: #7a4b42; font-size: .82rem; font-style: italic; line-height: 1.3; text-align: right; }
+.play-table-menu { position: relative; z-index: 10; }
+.play-menu-toggle { display: flex; align-items: center; justify-content: center; width: 2.7rem; height: 2.5rem; border: 1px solid #749a88; border-radius: 10px; background: #f4f7ee; color: #265847; cursor: pointer; list-style: none; box-shadow: 0 2px 8px #16372724; }
+.play-menu-toggle::-webkit-details-marker { display: none; }
+.play-menu-toggle::before { content: ''; display: block; width: 20px; height: 14px; background: linear-gradient(to bottom, currentColor 0 2px, transparent 2px 6px, currentColor 6px 8px, transparent 8px 12px, currentColor 12px 14px); }
+.play-menu-toggle:hover, .play-table-menu[open] .play-menu-toggle { background: #e0ebda; }
+.play-menu-toggle:focus-visible { outline: 3px solid #b99b58; outline-offset: 2px; }
+.play-table-menu-panel { position: absolute; top: calc(100% + .4rem); right: 0; z-index: 20; min-width: 170px; padding: .5rem; border: 1px solid #a4b6a5; border-radius: 10px; background: #fffdf4; box-shadow: 0 10px 24px #16372733; }
+.play-table-menu-panel button { width: 100%; margin: 0; white-space: nowrap; }
 .play-player { display: flex; align-items: center; gap: .75rem; min-width: 0; padding: 1rem; border: 1px solid #aec4b7; border-radius: 14px; background: rgba(255,255,255,.5); }
 .play-player > .play-player-details { min-width: 0; flex: 1; }
 .play-player strong { display: block; overflow-wrap: anywhere; }
@@ -88,7 +95,9 @@ body.dark-mode #play-back { color: #e5eee0; }
 body.dark-mode .play-workspace { background: linear-gradient(145deg,#153f34,#246047); color: #f0f5e8; border-color: #416853; box-shadow: inset 1px 1px 0 #ffffff30; }
 body.dark-mode .play-workspace .play-surface, body.dark-mode .play-player { background: #12372c90; border-color: #527460; }
 body.dark-mode .play-workspace .play-eyebrow { color: #b2c9b9; }
-body.dark-mode .play-leave-note { color: #f0c6b8; }
+body.dark-mode .play-menu-toggle { border-color: #6b9a7d; background: #214d3d; color: #e5eee0; }
+body.dark-mode .play-menu-toggle:hover, body.dark-mode .play-table-menu[open] .play-menu-toggle { background: #2d664f; }
+body.dark-mode .play-table-menu-panel { border-color: #527460; background: #153f34; }
 body.dark-mode #play-message { color: #163737; }
 body.dark-mode .play-game-node:not([class*="terrain-"]) { background: #12372c90; }
 body.dark-mode .play-game-card-detail { border-color: #527460; }
@@ -100,9 +109,18 @@ body.dark-mode #play-game-back { color: #e5eee0; }
 @media (max-height: 800px) {
   #play-game { display: flex; flex-direction: column; }
   #play-game .play-game-toolbar { order: 0; }
-  #play-game .play-game-board-wrap { order: 1; width: min(100%, 600px, max(140px, calc(100dvh - 245px))); margin: .35rem auto 1rem; }
-  #play-game #play-game-opponent { order: 2; width: 100%; box-sizing: border-box; }
+  #play-game #play-game-opponent { order: 1; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .65rem; width: 100%; padding: .55rem .85rem; box-sizing: border-box; }
+  #play-game #play-game-opponent .play-game-seat-heading { flex: 1 1 auto; min-width: 0; }
+  #play-game #play-game-opponent .play-deck-stack { width: 42px; }
+  #play-game #play-game-opponent .play-game-opponent-hand { flex: 0 0 auto; gap: .25rem; margin: 0; }
+  #play-game #play-game-opponent .play-game-opponent-hand span { width: 44px; }
+  #play-game .play-game-board-wrap { order: 2; width: min(100%, 600px, max(140px, calc(100dvh - 330px))); margin: .35rem auto 1rem; }
   #play-game #play-game-self { order: 3; width: 100%; box-sizing: border-box; margin-top: .75rem; }
+}
+@media (max-height: 800px) and (max-width: 600px) {
+  #play-game #play-game-opponent { flex-direction: column; align-items: stretch; }
+  #play-game #play-game-opponent .play-game-opponent-hand { align-self: center; }
+  #play-game .play-game-board-wrap { width: min(100%, 600px, max(120px, calc(100dvh - 420px))); }
 }
 /* Keep account controls accessible on small desktop widths. */
 @media (min-width: 851px) and (max-width: 1000px) {
