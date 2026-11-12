@@ -353,7 +353,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     $('leave').classList.toggle('action-delete', room.status !== 'closed' && room.host_id === userId);
     let hasSeat = false;
     const rows = ['host', 'guest'].map(seat => {
-      const id = room[`${seat}_id`], online = playerOnline(room[`${seat}_seen_at`]);
+      const id = room[`${seat}_id`];
       const deck = getDecks().find(d => d.id === room[`${seat}_deck_id`]);
       const profile = getProfiles().find(p => p.id === id);
       const row = document.createElement('div'); row.className = 'play-player';
@@ -370,7 +370,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
       }
       else { const deckName = document.createElement('span'); deckName.textContent = deck?.name || 'No deck selected'; details.append(deckName); }
       row.append(avatar, details);
-      const state = room.status === 'closed' ? 'Closed' : !online ? 'Away' : room[`${seat}_ready`] ? 'Ready' : '';
+      const state = room.status === 'closed' ? 'Closed' : room[`${seat}_ready`] ? 'Ready' : '';
       if (id && state && !(id === userId && state === 'Ready')) {
         const status = document.createElement('span'); status.className = `play-pill${state === 'Ready' ? ' is-live' : ''}`;
         status.textContent = state;
