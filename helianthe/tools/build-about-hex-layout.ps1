@@ -4,11 +4,11 @@ $ErrorActionPreference = 'Stop'
 $assets = (Resolve-Path (Join-Path $PSScriptRoot '..\assets')).Path
 $output = Join-Path $assets 'vision-board-hex-transparent.png'
 $terrainTypes = @{
-    '-2,0' = 'Flow'; '-2,1' = 'Radiance'; '-2,2' = 'Verdant'
-    '-1,-1' = 'Symbiosis'; '-1,0' = 'Flow'; '-1,1' = 'Verdant'; '-1,2' = 'Radiance'
-    '0,-2' = 'Radiance'; '0,-1' = 'Verdant'; '0,0' = 'Symbiosis'; '0,1' = 'Verdant'; '0,2' = 'Flow'
-    '1,-2' = 'Flow'; '1,-1' = 'Symbiosis'; '1,0' = 'Radiance'; '1,1' = 'Verdant'
-    '2,-2' = 'Verdant'; '2,-1' = 'Flow'; '2,0' = 'Radiance'
+    '-2,0' = 'Verdant'; '-2,1' = 'Verdant'; '-2,2' = 'Verdant'
+    '-1,-1' = 'Verdant'; '-1,0' = 'Flow'; '-1,1' = 'Verdant'; '-1,2' = 'Verdant'
+    '0,-2' = 'Flow'; '0,-1' = 'Flow'; '0,0' = 'Verdant'; '0,1' = 'Verdant'; '0,2' = 'Flow'
+    '1,-2' = 'Flow'; '1,-1' = 'Flow'; '1,0' = 'Flow'; '1,1' = 'Verdant'
+    '2,-2' = 'Flow'; '2,-1' = 'Flow'; '2,0' = 'Flow'
 }
 
 $canvas = [Drawing.Bitmap]::new(1690, 1740, [Drawing.Imaging.PixelFormat]::Format32bppArgb)
@@ -21,10 +21,10 @@ $graphics.PixelOffsetMode = [Drawing.Drawing2D.PixelOffsetMode]::HighQuality
 $cx = 845.0
 $cy = 870.0
 $radius = 194.0
-$tileRadius = $radius - 9
+$tileRadius = $radius - 2
 $hexHeight = [Math]::Sqrt(3) * $radius
 $terrainImages = @{}
-foreach ($type in @('Symbiosis', 'Flow', 'Verdant', 'Radiance')) {
+foreach ($type in @('Flow', 'Verdant')) {
     $terrainImages[$type] = [Drawing.Image]::FromFile((Join-Path $assets "Terrain_${type}_Full_Art.png"))
 }
 
@@ -43,11 +43,6 @@ function Get-HexPoints([double]$x, [double]$y, [double]$r, [double]$offsetX = 0,
 function Draw-Hex([int]$q, [int]$r, [string]$type) {
     $x = $cx + 1.5 * $radius * $q
     $y = $cy + $hexHeight * ($r + $q / 2.0)
-    $shadowPoints = Get-HexPoints $x $y $tileRadius 8 12
-    $shadow = [Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(68, 11, 30, 24))
-    $graphics.FillPolygon($shadow, $shadowPoints)
-    $shadow.Dispose()
-
     $points = Get-HexPoints $x $y $tileRadius
     $clip = [Drawing.Drawing2D.GraphicsPath]::new()
     $clip.AddPolygon($points)
@@ -66,16 +61,6 @@ function Draw-Hex([int]$q, [int]$r, [string]$type) {
     $graphics.SetClip($clip)
     $graphics.DrawImage($image, $target, $source, [Drawing.GraphicsUnit]::Pixel)
     $graphics.Restore($state)
-    $edgeColor = if ($q -eq 0 -and $r -eq 0) {
-        [Drawing.Color]::FromArgb(255, 239, 209, 128)
-    } else {
-        [Drawing.Color]::FromArgb(235, 33, 72, 54)
-    }
-    $edgeWidth = if ($q -eq 0 -and $r -eq 0) { 12 } else { 8 }
-    $edge = [Drawing.Pen]::new($edgeColor, $edgeWidth)
-    $edge.LineJoin = [Drawing.Drawing2D.LineJoin]::Round
-    $graphics.DrawPolygon($edge, $points)
-    $edge.Dispose()
     $clip.Dispose()
 }
 
@@ -103,8 +88,10 @@ for ($q = -2; $q -le 2; $q++) {
 
 # Current Card Editor exports from the card list, placed on matching Terrain.
 Draw-Entity 'Confluence' -1 0 -3
-Draw-Entity 'Fungal-Rainwood' 1 -1 3
 Draw-Entity 'Bramble-Briar' 0 1 -2
+Draw-Entity 'Tideglass-Lagoon' 1 -1 3
+Draw-Entity 'Mirrorpool-Shrine' 1 0 -2
+Draw-Entity 'Terrace-Keepers' -1 1 2
 
 $canvas.Save($output, [Drawing.Imaging.ImageFormat]::Png)
 foreach ($image in $terrainImages.Values) { $image.Dispose() }
