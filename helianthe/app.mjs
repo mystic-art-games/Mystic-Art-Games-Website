@@ -4,7 +4,7 @@ import { renderCard, downloadCardPNG } from './card-renderer.mjs?v=patron-labels
 import { CardSheetPDF } from './card-sheet-pdf.mjs';
 import { PATRONS, FACTION_VISIONS, PATRON_RULES_REVISION, updatePatronVision } from './patrons.mjs?v=faction-visions-3';
 import { CARD_TAGS, normalizeCardTags, seedTagsForCard, tagLabel } from './card-tags.mjs?v=tags-3';
-import { createPlayView } from './play.mjs?v=play-35';
+import { createPlayView } from './play.mjs?v=play-36';
 
 document.title = ['127.0.0.1', 'localhost', '::1'].includes(window.location.hostname)
   ? 'Helianthe — Local Preview'
@@ -1111,6 +1111,7 @@ function setAuthMode(mode) {
   form.elements.password.autocomplete = signingUp || settingPassword ? 'new-password' : 'current-password';
   $('#auth-submit').textContent = signingUp ? 'Create account' : requestingReset ? 'Send recovery link' : settingPassword ? 'Save new password' : 'Sign in';
   $('#auth-mode-toggle').textContent = signingUp || requestingReset ? 'Back to sign in' : 'Create account';
+  $('#auth-mode-toggle').classList.toggle('action-add-save', signingUp || requestingReset);
   $('#auth-mode-toggle').hidden = settingPassword;
   $('#auth-forgot').hidden = mode !== 'sign-in';
   if (signingUp) populateFavoriteCards(form.elements.favorite_card_id, form.elements.favorite_card_id.value);

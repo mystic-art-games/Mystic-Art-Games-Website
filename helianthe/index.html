@@ -13,10 +13,10 @@
   <link rel="apple-touch-icon" href="../images/helianthe-logo.png?v=helianthe-logo-1">
   <link rel="manifest" href="./manifest.webmanifest">
   <title>Helianthe</title>
-  <link rel="stylesheet" href="./style.css?v=helianthe-ui-207">
+  <link rel="stylesheet" href="./style.css?v=helianthe-ui-208">
   <link rel="stylesheet" href="./play.css?v=play-19">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script type="module" src="./app.mjs?v=helianthe-ui-152"></script>
+  <script type="module" src="./app.mjs?v=helianthe-ui-153"></script>
 </head>
 <body>
   <header class="masthead">
@@ -42,7 +42,7 @@
         </div>
         <div class="account-controls">
           <button id="account-name" type="button" hidden></button>
-          <button id="sign-in" type="button" hidden>Sign in</button>
+          <button id="sign-in" class="action-add-save" type="button" hidden>Sign in</button>
           <button id="sign-out" type="button" hidden>Log out</button>
         </div>
       </div>
@@ -55,7 +55,7 @@
     <form id="auth-form">
       <label>Email<input name="email" type="email" autocomplete="email" required></label>
       <label>Password<input name="password" type="password" autocomplete="current-password" required minlength="6"></label>
-      <div class="actions"><button type="submit">Sign in</button><button id="sign-up" type="button">Create account</button></div><button id="auth-page-forgot" class="auth-text-button" type="button">Forgot password?</button>
+      <div class="actions"><button class="action-add-save" type="submit">Sign in</button><button id="sign-up" type="button">Create account</button></div><button id="auth-page-forgot" class="auth-text-button" type="button">Forgot password?</button>
     </form>
     <p class="hint">After creating an account, confirm your email address. The link opens the site with your new session.</p>
     <button id="browse-without-account" type="button">Continue browsing without an account</button>
@@ -78,7 +78,7 @@
           <p class="hint">The photo is cropped to a square and uploaded after your first confirmed sign-in in this browser.</p>
         </div>
         <p id="auth-error-message" class="auth-error" role="alert" hidden></p>
-          <div class="actions"><button id="auth-submit" type="submit">Sign in</button><button id="auth-mode-toggle" type="button">Create Account</button></div>
+          <div class="actions"><button id="auth-submit" class="action-add-save" type="submit">Sign in</button><button id="auth-mode-toggle" type="button">Create Account</button></div>
         <button id="auth-forgot" class="auth-text-button" type="button">Forgot password?</button>
       </form>
       <p class="hint">After creating an account, confirm your email address. The link opens the site with your new session.</p>
@@ -360,7 +360,7 @@
         <div class="idea-compose-footer"><span id="idea-form-author" class="idea-author"></span><button type="submit">Post idea</button></div>
         <p id="idea-form-message" class="idea-form-message" role="status" hidden></p>
       </form>
-      <div id="idea-signin-prompt" class="idea-signin-prompt" hidden><span>Have an idea of your own?</span><button id="idea-signin" type="button">Sign in to post</button></div>
+      <div id="idea-signin-prompt" class="idea-signin-prompt" hidden><span>Have an idea of your own?</span><button id="idea-signin" class="action-add-save" type="button">Sign in to post</button></div>
     </div><div class="art-scroll-rail" aria-hidden="true"><button class="art-scroll-thumb" type="button" tabindex="-1"></button></div></div></section>
   </section>
   </main>
