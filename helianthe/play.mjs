@@ -114,7 +114,8 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
       details.append(title, summary, countdown);
       const b = document.createElement('button'); b.type = 'button';
       const full = !entry.is_participant && entry.player_count >= 2;
-      b.textContent = entry.is_participant ? 'Your chair missed you.' : full ? 'Full' : 'Join table';
+      b.textContent = entry.is_participant ? 'Sit down' : full ? 'Full' : 'Join table';
+      if (entry.is_participant) b.classList.add('action-add-save');
       b.dataset.full = String(full); b.disabled = busy || full;
       b.setAttribute('aria-label', `${b.textContent} ${entry.code}`);
       b.addEventListener('click', () => run(async () => {
@@ -123,7 +124,14 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
           await enter(id);
         } finally { if (!room) await listTables(); }
       }));
-      row.append(details, b); $('room-list').append(row);
+      if (entry.is_participant) {
+        const action = document.createElement('div'); action.className = 'play-table-action';
+        const hint = document.createElement('span'); hint.className = 'play-chair-note';
+        hint.textContent = 'Your chair is missing you';
+        action.append(hint, b);
+        row.append(details, action);
+      } else row.append(details, b);
+      $('room-list').append(row);
     }
   }
   async function refreshRoom() {
