@@ -40,7 +40,8 @@ body.dark-mode #play-back { color: #e5eee0; }
 #play-name-input { max-width: min(100%, 22rem); }
 .play-room-code-line { display: block; margin-top: .35rem; font-size: .85rem; }
 #play-room-code { letter-spacing: .1em; }
-.play-room-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.play-room-actions, .play-game-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: .65rem; }
+.play-leave-note { color: #7a4b42; font-size: .82rem; font-style: italic; line-height: 1.3; text-align: right; }
 .play-player { display: flex; align-items: center; gap: .75rem; min-width: 0; padding: 1rem; border: 1px solid #aec4b7; border-radius: 14px; background: rgba(255,255,255,.5); }
 .play-player > .play-player-details { min-width: 0; flex: 1; }
 .play-player strong { display: block; overflow-wrap: anywhere; }
@@ -79,6 +80,7 @@ body.dark-mode #play-back { color: #e5eee0; }
 body.dark-mode .play-workspace { background: linear-gradient(145deg,#153f34,#246047); color: #f0f5e8; border-color: #416853; box-shadow: inset 1px 1px 0 #ffffff30; }
 body.dark-mode .play-workspace .play-surface, body.dark-mode .play-player { background: #12372c90; border-color: #527460; }
 body.dark-mode .play-workspace .play-eyebrow { color: #b2c9b9; }
+body.dark-mode .play-leave-note { color: #f0c6b8; }
 body.dark-mode #play-message { color: #163737; }
 body.dark-mode .play-game-node { border-color: #80a992; }
 body.dark-mode .play-game-node:not([class*="terrain-"]) { background: #12372c90; }

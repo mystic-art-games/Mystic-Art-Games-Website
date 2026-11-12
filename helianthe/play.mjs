@@ -21,7 +21,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     </div>
     <section id="play-session" hidden>
       <button id="play-back" class="back-to-decks" type="button"><span aria-hidden="true">←</span> Back to Lobby</button>
-      <div class="play-room-bar"><div class="play-room-identity"><span class="play-eyebrow">TABLE</span><div class="play-room-name-line"><strong id="play-room-name"></strong><button id="play-edit-name" class="action-cancel" type="button">Edit name</button></div><form id="play-name-form" hidden><input id="play-name-input" aria-label="Table name" maxlength="60" required><button type="submit">Save</button><button id="play-cancel-name" type="button">Cancel</button></form><span class="play-room-code-line">Code: <strong id="play-room-code"></strong></span></div><div class="play-room-actions"><button id="play-leave" type="button">Leave table</button></div></div>
+      <div class="play-room-bar"><div class="play-room-identity"><span class="play-eyebrow">TABLE</span><div class="play-room-name-line"><strong id="play-room-name"></strong><button id="play-edit-name" class="action-cancel" type="button">Edit name</button></div><form id="play-name-form" hidden><input id="play-name-input" aria-label="Table name" maxlength="60" required><button type="submit">Save</button><button id="play-cancel-name" type="button">Cancel</button></form><span class="play-room-code-line">Code: <strong id="play-room-code"></strong></span></div><div class="play-room-actions"><span class="play-leave-note">Leave your opponent all alone. Forever.</span><button id="play-leave" class="action-delete" type="button">Abandon Table</button></div></div>
       <div id="play-players" class="play-players"></div>
       <label id="play-deck-field" class="play-deck-field" for="play-deck">Your deck<select id="play-deck"><option value="">No decks available</option></select></label>
       <button id="play-ready" class="action-add-save" type="button">Ready</button>
@@ -29,7 +29,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
       <p id="play-room-status" role="status"></p>
     </section>
     <section id="play-game" hidden>
-      <div class="play-game-toolbar"><button id="play-game-back" class="back-to-decks" type="button"><span aria-hidden="true">←</span> Back to Lobby</button><strong id="play-game-name"></strong><button id="play-game-leave" class="action-delete" type="button">Smash this Table</button></div>
+      <div class="play-game-toolbar"><button id="play-game-back" class="back-to-decks" type="button"><span aria-hidden="true">←</span> Back to Lobby</button><strong id="play-game-name"></strong><div class="play-game-actions"><span class="play-leave-note">Leave your opponent all alone. Forever.</span><button id="play-game-leave" class="action-delete" type="button">Smash Table</button></div></div>
       <div class="play-game-players"><div id="play-game-opponent" class="play-surface"></div><div id="play-game-self" class="play-surface"></div></div>
       <div class="play-game-board-wrap"><h2>The World</h2><div id="play-game-board" class="play-game-board" aria-label="Shared four by five Terrain board"></div></div>
       <div class="play-game-hand-heading"><h2>Your hand</h2><span id="play-game-counts"></span></div>
@@ -150,8 +150,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
   function renderGame() {
     if (!room || room.status !== 'active') return;
     $('game-name').textContent = room.name || 'Table';
-    $('game-leave').textContent = room.host_id === userId ? 'Smash this Table' : 'Leave table';
-    $('game-leave').classList.toggle('action-delete', room.host_id === userId);
+    $('game-leave').textContent = room.host_id === userId ? 'Smash Table' : 'Abandon Table';
     gamePlayerCard(room.host_id === userId ? room.guest_id : room.host_id,
       room.host_id === userId ? room.guest_deck_id : room.host_deck_id, false);
     gamePlayerCard(userId, ownDeckId(), true);
@@ -349,8 +348,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     $('room-code').textContent = room.code;
     $('room-name').textContent = room.name || defaultTableName(getProfiles().find(p => p.id === room.host_id)?.display_name);
     $('edit-name').hidden = room.host_id !== userId || room.status === 'closed';
-    $('leave').textContent = room.host_id === userId ? 'Smash this Table' : 'Leave table';
-    $('leave').classList.toggle('action-delete', room.status !== 'closed' && room.host_id === userId);
+    $('leave').textContent = room.host_id === userId ? 'Smash Table' : 'Abandon Table';
     let hasSeat = false;
     const rows = ['host', 'guest'].map(seat => {
       const id = room[`${seat}_id`];
