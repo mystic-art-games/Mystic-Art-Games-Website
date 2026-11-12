@@ -1,4 +1,3 @@
-const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const defaultTableName = hostName => `${Array.from(String(hostName ?? '').trim() || 'Player').slice(0, 52).join("")}'s Table`;
 
 export function playerOnline(timestamp, now = Date.now()) {
@@ -18,7 +17,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
   const $ = id => root.querySelector(`#play-${id}`);
   let userId = null, room = null, channel = null, timer = null, visible = false;
   let lobbyTimer = null, listSerial = 0, tableListSignature = '';
-  let busy = false, epoch = 0, fetchSerial = 0, live = false, lastHeartbeat = 0, expiryPending = false;
+  let busy = false, epoch = 0, fetchSerial = 0, live = false, lastHeartbeat = 0, expiryPending = false, autoDeckPending = false;
   root.innerHTML = `
     <div class="play-heading"><h1>Lobby</h1></div>
     <div id="play-message" role="status" aria-live="polite" hidden><span id="play-message-text"></span><button id="play-message-close" type="button" aria-label="Dismiss message">×</button></div>
@@ -31,7 +30,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
       <button id="play-back" class="back-to-decks" type="button"><span aria-hidden="true">←</span> Back to Lobby</button>
       <div class="play-room-bar"><div class="play-room-identity"><span class="play-eyebrow">TABLE</span><div class="play-room-name-line"><strong id="play-room-name"></strong><button id="play-edit-name" class="action-cancel" type="button">Edit name</button></div><form id="play-name-form" hidden><input id="play-name-input" aria-label="Table name" maxlength="60" required><button type="submit">Save</button><button id="play-cancel-name" type="button">Cancel</button></form><span class="play-room-code-line">Code: <strong id="play-room-code"></strong></span></div><div class="play-room-actions"><button id="play-leave" type="button">Leave table</button></div></div>
       <div id="play-players" class="play-players"></div>
-      <label id="play-deck-field" class="play-deck-field" for="play-deck">Your deck<select id="play-deck"><option value="">No deck selected</option></select></label>
+      <label id="play-deck-field" class="play-deck-field" for="play-deck">Your deck<select id="play-deck"><option value="">No decks available</option></select></label>
       <button id="play-ready" class="action-add-save" type="button">Ready</button>
       <div id="play-controls-parking" hidden></div>
       <p id="play-ready-countdown" class="play-ready-countdown"></p><p id="play-room-status" role="status"></p>
@@ -50,6 +49,9 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
   function friendly(error) {
     if (['PGRST202', 'PGRST205', '42P01', '42883'].includes(error.code)) return 'Play is not available yet. Please try again later.';
     if (error instanceof TypeError) return 'Something went wrong while showing the table. Return to the Lobby and try again.';
+    if (error.message?.includes('play_rooms_host_ready_requires_deck') || error.message?.includes('play_rooms_guest_ready_requires_deck')) {
+      return 'Choose a deck before getting ready.';
+    }
     if (error.message?.includes('You already have an open table.') || error.message?.includes('Close an existing room before creating another one.')) {
       return 'You already have an open table. Close it before creating another.';
     }
@@ -70,10 +72,13 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     if (previous) await client.removeChannel(previous);
   }
   function canAct() { return Boolean(room && userId && (room.host_id === userId || room.guest_id === userId) && room.status !== 'closed' && !busy); }
+  function ownDeckId() { return room?.[`${room.host_id === userId ? 'host' : 'guest'}_deck_id`]; }
+  function ownReady() { return room?.[`${room.host_id === userId ? 'host' : 'guest'}_ready`]; }
   function controls() {
     $('create').disabled = busy;
     for (const b of $('room-list').querySelectorAll('button')) b.disabled = busy || b.dataset.full === 'true';
-    for (const id of ['deck', 'ready']) $(id).disabled = !canAct();
+    $('deck').disabled = !canAct() || !getDecks().length;
+    $('ready').disabled = !canAct() || (!ownReady() && !$('deck').value);
     $('edit-name').disabled = !canAct() || room?.host_id !== userId;
     $('back').disabled = busy || !room;
     $('leave').disabled = busy || !room;
@@ -83,7 +88,15 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     busy = true; controls(); message();
     try { await task(); }
     catch (error) { message(friendly(error), true); }
-    finally { busy = false; controls(); }
+    finally { busy = false; controls(); if (autoDeckPending) maybeAutoSelectDeck(); }
+  }
+  function maybeAutoSelectDeck() {
+    const first = getDecks()[0];
+    if (!room || !userId || room.status === 'closed' || (room.host_id !== userId && room.guest_id !== userId)
+      || !first || getDecks().some(deck => deck.id === ownDeckId())) { autoDeckPending = false; return; }
+    if (busy) { autoDeckPending = true; return; }
+    autoDeckPending = false;
+    void run(() => action('deck', { deck_id: first.id }));
   }
   function syncLobbyRefresh() {
     if (!visible || !userId || room) {
@@ -180,7 +193,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
       catch { renameFailed = true; }
       if (expected !== epoch) return;
     }
-    room = data; lastHeartbeat = 0; remember(id); render();
+    room = data; lastHeartbeat = 0; remember(id); render(); maybeAutoSelectDeck();
     if (renameFailed) message('The table was created, but its name could not be updated. Use Edit name to try again.', true);
     channel = client.channel(`play-room:${id}`)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'play_rooms', filter: `id=eq.${id}` }, () => {
@@ -200,9 +213,12 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     if (expected === epoch) { message(); await refreshRoom(); }
   }
   function refreshCollections() {
-    const value = room ? (room.host_id === userId ? room.host_deck_id : room.guest_deck_id) : $('deck').value;
-    $('deck').innerHTML = '<option value="">No deck selected</option>' + getDecks().map(d => `<option value="${escape(d.id)}">${escape(d.name)}</option>`).join('');
-    $('deck').value = value || '';
+    const decks = getDecks();
+    const value = room ? ownDeckId() : $('deck').value;
+    $('deck').replaceChildren(...(decks.length ? decks.map(deck => new Option(deck.name, deck.id)) : [new Option('No decks available', '')]));
+    $('deck').value = decks.some(deck => deck.id === value) ? value : (decks[0]?.id || '');
+    controls();
+    maybeAutoSelectDeck();
   }
   function render() {
     syncLobbyRefresh();
@@ -247,7 +263,8 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     if (!hasSeat) $('controls-parking').append(deckField, readyButton);
     $('players').replaceChildren(...rows);
     const mine = room.host_id === userId ? 'host' : 'guest';
-    $('deck').value = room[`${mine}_deck_id`] || '';
+    $('deck').value = getDecks().some(deck => deck.id === room[`${mine}_deck_id`])
+      ? room[`${mine}_deck_id`] : (getDecks()[0]?.id || '');
     const isReady = room[`${mine}_ready`];
     $('ready').textContent = isReady ? 'Not ready' : 'Ready';
     $('ready').classList.toggle('action-add-save', !isReady);
@@ -267,8 +284,17 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     if (room.status !== 'closed') await action('leave');
     await disconnect(); room = null; remember(null); render(); message(); await listTables();
   }));
-  $('deck').addEventListener('change', () => run(() => action('deck', { deck_id: $('deck').value })));
-  $('ready').addEventListener('click', () => run(() => action('ready')));
+  $('deck').addEventListener('change', () => {
+    if ($('deck').value) void run(() => action('deck', { deck_id: $('deck').value }));
+  });
+  $('ready').addEventListener('click', () => {
+    const deckId = $('deck').value;
+    if (!ownReady() && !deckId) return message('Create a deck before getting ready.', true);
+    void run(async () => {
+      if (!ownReady() && ownDeckId() !== deckId) await action('deck', { deck_id: deckId });
+      await action('ready');
+    });
+  });
   $('edit-name').addEventListener('click', () => {
     $('name-input').value = $('room-name').textContent;
     $('name-form').hidden = false;
