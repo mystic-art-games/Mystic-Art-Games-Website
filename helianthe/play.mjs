@@ -4,13 +4,14 @@ export function playerOnline(timestamp, now = Date.now()) {
   return Boolean(timestamp && now - Date.parse(timestamp) < 45000);
 }
 
-export function createPlayView({ client, getUser, getDecks, getProfiles, makeAvatar, requireSignIn, renderCard, getArtworkUrl }) {
+export function createPlayView({ client, getUser, getDecks, getProfiles, makeAvatar, requireSignIn, renderCard, getArtworkUrl, getPatronCard }) {
   const root = document.querySelector('#play-view');
   const $ = id => root.querySelector(`#play-${id}`);
   let userId = null, room = null, channel = null, timer = null, visible = false;
   let lobbyTimer = null, directoryChannel = null, directoryUserId = null, listSerial = 0, tableListSignature = '';
   let busy = false, epoch = 0, fetchSerial = 0, live = false, lastHeartbeat = 0, autoDeckPending = false;
   let gameState = null, gameLoading = false, gameLoadFailed = false, handSignature = '', gameRenderSerial = 0;
+  const patronPreviews = { self: { key: '', serial: 0 }, opponent: { key: '', serial: 0 } };
   root.innerHTML = `
     <div class="play-heading"><h1>Lobby</h1></div>
     <div id="play-message" role="status" aria-live="polite" hidden><span id="play-message-text"></span><button id="play-message-close" type="button" aria-label="Dismiss message">×</button></div>
@@ -31,12 +32,12 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     <section id="play-game" hidden>
       <div class="play-game-toolbar"><button id="play-game-back" class="back-to-decks" type="button"><span aria-hidden="true">←</span> Back to Lobby</button><strong id="play-game-name"></strong><div class="play-game-actions"><details class="play-table-menu"><summary class="play-menu-toggle" aria-label="Table actions" title="Table actions"></summary><div class="play-table-menu-panel"><button id="play-game-leave" class="action-delete" type="button">Smash Table</button></div></details></div></div>
       <section id="play-game-opponent" class="play-surface play-game-seat" aria-label="Opponent's area">
-        <div class="play-game-seat-heading"><strong id="play-game-opponent-name"></strong><div class="play-game-deck"><div class="play-deck-stack" aria-hidden="true"></div><div><span class="play-eyebrow">HORIZON</span><span id="play-game-opponent-deck-name"></span></div></div></div>
+        <div class="play-game-seat-heading"><strong id="play-game-opponent-name"></strong><div class="play-game-opponent-deck"><div id="play-game-opponent-patron-slot" class="play-game-patron-slot" role="img" aria-label="Opponent's Patron"><canvas id="play-game-opponent-patron" hidden></canvas><span id="play-game-opponent-patron-fallback" class="play-game-patron-fallback">Patron</span></div><div class="play-game-deck"><div class="play-deck-stack" aria-hidden="true"></div><div><span class="play-eyebrow">HORIZON</span><span id="play-game-opponent-deck-name"></span></div></div></div></div>
         <div id="play-game-opponent-hand" class="play-game-opponent-hand" role="group" aria-label="Opponent's five face-down cards" hidden><span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span></div>
       </section>
-      <div class="play-game-board-wrap"><h2>The World</h2><div id="play-game-board" class="play-game-board" role="group" aria-label="Shared 19-hex Terrain board"></div></div>
+      <div class="play-game-board-wrap"><h2>The World</h2><div id="play-game-board" class="play-game-board" role="group" aria-label="Shared 19-hex Terrain board"></div><div class="play-game-zones" aria-label="Your card zones"><div class="play-game-zone play-game-zone-patron"><div id="play-game-self-patron-slot" class="play-game-patron-slot" role="img" aria-label="Your Patron"><canvas id="play-game-self-patron" hidden></canvas><span id="play-game-self-patron-fallback" class="play-game-patron-fallback">Patron</span></div><span class="play-game-zone-label">PATRON</span></div><div class="play-game-zone play-game-zone-archive"><div class="play-game-archive-card"><span id="play-game-archive-top">Empty</span></div><span class="play-game-zone-label">ARCHIVE <span id="play-game-archive-count"></span></span></div><div class="play-game-zone play-game-zone-horizon"><div class="play-deck-stack" role="img" aria-label="Your Horizon, draw deck"></div><span class="play-game-zone-label">HORIZON <span id="play-game-horizon-count"></span></span></div></div></div>
       <section id="play-game-self" class="play-surface play-game-seat" aria-label="Your area">
-        <div class="play-game-seat-heading"><strong id="play-game-self-name"></strong><div class="play-game-deck"><div class="play-deck-stack" aria-hidden="true"></div><div><span class="play-eyebrow">YOUR HORIZON</span><span id="play-game-self-deck-name"></span></div></div></div>
+        <div class="play-game-seat-heading"><strong id="play-game-self-name"></strong><div class="play-game-deck"><div><span class="play-eyebrow">YOUR DECK</span><span id="play-game-self-deck-name"></span></div></div></div>
         <div class="play-game-hand-heading"><h2>Your hand</h2><span id="play-game-counts"></span></div>
         <p id="play-game-loading" role="status">Preparing the opening hands…</p>
         <div id="play-game-hand" class="play-game-hand"></div>
@@ -121,6 +122,30 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     $(`game-${seat}-deck-name`).textContent = own
       ? (gameState?.deck_name || deck?.name || 'Selected deck')
       : (deck?.name || 'Selected deck');
+    renderGamePatron(seat, own ? (gameState?.patron_name || deck?.patron_name) : deck?.patron_name);
+  }
+  function renderGamePatron(seat, patronName) {
+    const card = getPatronCard?.(patronName);
+    const preview = patronPreviews[seat];
+    const key = `${patronName || ''}:${card?.id || ''}:${card?.artwork_id || ''}`;
+    if (preview.key === key) return;
+    preview.key = key;
+    const serial = ++preview.serial;
+    const canvas = $(`game-${seat}-patron`);
+    const fallback = $(`game-${seat}-patron-fallback`);
+    canvas.hidden = true;
+    fallback.hidden = false;
+    fallback.textContent = patronName?.split(',')[0] || 'Patron';
+    $(`game-${seat}-patron-slot`).setAttribute('aria-label', `${seat === 'self' ? 'Your' : "Opponent's"} Patron: ${patronName || 'unknown'}`);
+    if (!card) return;
+    void (async () => {
+      const artwork = card.artwork_id ? await getArtworkUrl(card.artwork_id).catch(() => '') : '';
+      const result = await renderCard(canvas, card, artwork, () => serial === preview.serial);
+      if (serial === preview.serial && result && !result.cancelled) {
+        canvas.hidden = false;
+        fallback.hidden = true;
+      }
+    })().catch(() => {});
   }
   function renderGameHand() {
     const hand = Array.isArray(gameState?.hand) ? gameState.hand : [];
@@ -181,7 +206,12 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     $('game-board').replaceChildren(...nodes);
     $('game-loading').hidden = Boolean(gameState) || gameLoadFailed;
     $('game-opponent-hand').hidden = !gameState;
-    $('game-counts').textContent = gameState ? `Horizon: ${gameState.horizon.length} · Archive: ${gameState.archive.length}` : '';
+    const horizon = Array.isArray(gameState?.horizon) ? gameState.horizon : [];
+    const archive = Array.isArray(gameState?.archive) ? gameState.archive : [];
+    $('game-horizon-count').textContent = gameState ? `(${horizon.length})` : '';
+    $('game-archive-count').textContent = gameState ? `(${archive.length})` : '';
+    $('game-archive-top').textContent = archive.at(-1)?.title || 'Empty';
+    $('game-counts').textContent = gameState ? `${gameState.hand.length} cards` : '';
     renderGameHand();
   }
   async function loadGameState() {
