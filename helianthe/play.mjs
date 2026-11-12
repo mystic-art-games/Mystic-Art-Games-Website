@@ -1,5 +1,5 @@
 const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
-const defaultTableName = hostName => `${Array.from(String(hostName ?? '').trim() || 'Player').slice(0, 54).join('')} table`;
+const defaultTableName = hostName => `${Array.from(String(hostName ?? '').trim() || 'Player').slice(0, 52).join("")}'s Table`;
 
 export function playerOnline(timestamp, now = Date.now()) {
   return Boolean(timestamp && now - Date.parse(timestamp) < 45000);
@@ -165,7 +165,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
       await refreshRoom();
     } catch (error) { if (expected === epoch) { live = false; message('Connection interrupted. Reconnecting to your saved table…', true); } }
   }
-  async function enter(id) {
+  async function enter(id, newTable = false) {
     await disconnect();
     const expected = epoch;
     const { data, error } = await client.from('play_rooms').select('*').eq('id', id).maybeSingle();
@@ -173,7 +173,15 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     if (error) throw error;
     if (!data || data.status === 'closed') { remember(null); throw new Error('Table not found or closed.'); }
     if (data.host_id !== userId && data.guest_id !== userId) { remember(null); throw new Error('Your seat at this table is no longer available.'); }
+    let renameFailed = false;
+    if (newTable && data.name?.endsWith(' table')) {
+      const name = defaultTableName(data.name.slice(0, -6));
+      try { await rpc('play_rename_table', { p_room_id: id, p_name: name }); data.name = name; }
+      catch { renameFailed = true; }
+      if (expected !== epoch) return;
+    }
     room = data; lastHeartbeat = 0; remember(id); render();
+    if (renameFailed) message('The table was created, but its name could not be updated. Use Edit name to try again.', true);
     channel = client.channel(`play-room:${id}`)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'play_rooms', filter: `id=eq.${id}` }, () => {
         if (expected === epoch) void refreshRoom().catch(error => message(friendly(error), true));
@@ -207,7 +215,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     $('room-name').textContent = room.name || defaultTableName(getProfiles().find(p => p.id === room.host_id)?.display_name);
     $('ready-countdown').textContent = room.status === 'closed' ? '' : readyCountdown(room.created_at, room.activated_at);
     $('edit-name').hidden = room.host_id !== userId || room.status === 'closed';
-    $('leave').textContent = room.host_id === userId ? 'Close table' : 'Leave table';
+    $('leave').textContent = room.host_id === userId ? 'Smash this Table' : 'Leave table';
     $('leave').classList.toggle('action-delete', room.status !== 'closed' && room.host_id === userId);
     let hasSeat = false;
     const rows = ['host', 'guest'].map(seat => {
@@ -251,7 +259,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
   }
 
   $('signin-button').addEventListener('click', requireSignIn);
-  $('create').addEventListener('click', () => run(async () => { const id = await rpc('play_create_room'); await enter(id); }));
+  $('create').addEventListener('click', () => run(async () => { const id = await rpc('play_create_room'); await enter(id, true); }));
   $('back').addEventListener('click', () => run(async () => {
     await disconnect(); room = null; remember(null); render(); await listTables();
   }));
