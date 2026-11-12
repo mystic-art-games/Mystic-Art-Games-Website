@@ -54,10 +54,39 @@ body.dark-mode #play-back { color: #e5eee0; }
 .play-ready-countdown { color: #a14e2a; font-size: .85rem; font-weight: 800; }
 #play-ready-countdown { margin: 1rem 0 0; }
 #play-ready-countdown:empty, .play-table-entry .play-ready-countdown:empty { display: none; }
+#play-game[hidden], #play-game-loading[hidden], #play-game-card-detail[hidden] { display: none; }
+.play-game-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .75rem; margin-bottom: 1rem; }
+.play-game-toolbar #play-game-back { width: auto; padding: .2rem .3rem; border: 0; background: transparent; box-shadow: none; font-size: .85rem; }
+.play-game-toolbar #play-game-back:hover { background: transparent; box-shadow: none; text-decoration: underline; }
+#play-game-name { font-size: 1.35rem; overflow-wrap: anywhere; }
+.play-game-players { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .75rem; }
+.play-game-players strong, .play-game-players span { display: block; overflow-wrap: anywhere; }
+.play-game-players span { margin-top: .25rem; font-size: .85rem; }
+.play-game-board-wrap { margin: 1.25rem auto; max-width: 760px; }
+.play-game-board-wrap h2, .play-game-hand-heading h2 { margin: 0 0 .7rem; font-size: 1.2rem; }
+.play-game-board { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: .55rem; }
+.play-game-node { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: .3rem; min-width: 0; aspect-ratio: 63 / 88; padding: .35rem; border: 1px dashed #9db6a8; border-radius: 8px; background: #ffffff44; text-align: center; }
+.play-game-node strong, .play-game-node span { overflow-wrap: anywhere; font-size: clamp(.6rem,1.3vw,.85rem); }
+.play-game-node.terrain-symbiosis { border-style: solid; background: #d9c5e4; }
+.play-game-node.terrain-flow { border-style: solid; background: #b8dce7; }
+.play-game-node.terrain-verdant { border-style: solid; background: #c5e2c1; }
+.play-game-node.terrain-radiance { border-style: solid; background: #f1e4a9; }
+.play-game-hand-heading { display: flex; align-items: baseline; justify-content: space-between; gap: .75rem; }
+#play-game-counts { font-size: .85rem; }
+.play-game-hand { display: flex; gap: .75rem; overflow-x: auto; padding: .25rem .15rem 1rem; }
+.play-hand-card { display: flex; align-items: center; justify-content: center; flex: 0 0 min(18%,160px); min-width: 118px; aspect-ratio: 63 / 88; margin: 0; padding: 0; overflow: hidden; border: 1px solid #8da79a; border-radius: 9px; background: #e9ece1; box-shadow: 0 4px 12px #183a2c33; }
+.play-hand-card canvas { display: block; width: 100%; height: 100%; object-fit: fill; }
+.play-hand-card canvas[hidden], .play-hand-fallback[hidden] { display: none; }
+.play-hand-fallback { padding: .6rem; color: #234536; font-size: .9rem; font-weight: 700; text-align: center; }
+.play-game-card-detail { margin: 0; padding: .75rem; border: 1px solid #aec4b7; border-radius: 10px; white-space: pre-wrap; }
 body.dark-mode .play-workspace { background: linear-gradient(145deg,#153f34,#246047); color: #f0f5e8; border-color: #416853; box-shadow: inset 1px 1px 0 #ffffff30; }
 body.dark-mode .play-workspace .play-surface, body.dark-mode .play-player { background: #12372c90; border-color: #527460; }
 body.dark-mode .play-workspace .play-eyebrow { color: #b2c9b9; }
 body.dark-mode #play-message { color: #163737; }
+body.dark-mode .play-game-node { border-color: #80a992; }
+body.dark-mode .play-game-node:not([class*="terrain-"]) { background: #12372c90; }
+body.dark-mode .play-game-card-detail { border-color: #527460; }
+body.dark-mode #play-game-back { color: #e5eee0; }
 /* Keep account controls accessible on small desktop widths. */
 @media (min-width: 851px) and (max-width: 1000px) {
   .masthead { position: sticky; }
@@ -73,6 +102,8 @@ body.dark-mode #play-message { color: #163737; }
   .mobile-menu-panel #account-name { margin: 0; }
 }
 @media (max-width: 850px) {
+  .play-game-players { grid-template-columns: 1fr; }
+  .play-game-board { gap: .25rem; }
   .play-workspace { width: calc(100% - 1rem); margin: .5rem auto 2rem; padding: 1rem; }
   .play-heading { align-items: start; }
   .play-lobby, .play-players { grid-template-columns: 1fr; }

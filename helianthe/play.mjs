@@ -12,12 +12,13 @@ export function readyCountdown(createdAt, activatedAt, now = Date.now()) {
   return `Ready in ${String(Math.floor(remaining / 60)).padStart(2, '0')}:${String(remaining % 60).padStart(2, '0')}`;
 }
 
-export function createPlayView({ client, getUser, getDecks, getProfiles, makeAvatar, requireSignIn }) {
+export function createPlayView({ client, getUser, getDecks, getProfiles, makeAvatar, requireSignIn, renderCard, getArtworkUrl }) {
   const root = document.querySelector('#play-view');
   const $ = id => root.querySelector(`#play-${id}`);
   let userId = null, room = null, channel = null, timer = null, visible = false;
   let lobbyTimer = null, listSerial = 0, tableListSignature = '';
   let busy = false, epoch = 0, fetchSerial = 0, live = false, lastHeartbeat = 0, expiryPending = false, autoDeckPending = false;
+  let gameState = null, gameLoading = false, gameLoadFailed = false, handSignature = '', gameRenderSerial = 0;
   root.innerHTML = `
     <div class="play-heading"><h1>Lobby</h1></div>
     <div id="play-message" role="status" aria-live="polite" hidden><span id="play-message-text"></span><button id="play-message-close" type="button" aria-label="Dismiss message">×</button></div>
@@ -34,6 +35,15 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
       <button id="play-ready" class="action-add-save" type="button">Ready</button>
       <div id="play-controls-parking" hidden></div>
       <p id="play-ready-countdown" class="play-ready-countdown"></p><p id="play-room-status" role="status"></p>
+    </section>
+    <section id="play-game" hidden>
+      <div class="play-game-toolbar"><button id="play-game-back" class="back-to-decks" type="button"><span aria-hidden="true">←</span> Back to Lobby</button><strong id="play-game-name"></strong><button id="play-game-leave" class="action-delete" type="button">Smash this Table</button></div>
+      <div class="play-game-players"><div id="play-game-opponent" class="play-surface"></div><div id="play-game-self" class="play-surface"></div></div>
+      <div class="play-game-board-wrap"><h2>The World</h2><div id="play-game-board" class="play-game-board" aria-label="Shared four by five Terrain board"></div></div>
+      <div class="play-game-hand-heading"><h2>Your hand</h2><span id="play-game-counts"></span></div>
+      <p id="play-game-loading" role="status">Preparing the opening hands…</p>
+      <div id="play-game-hand" class="play-game-hand"></div>
+      <p id="play-game-card-detail" class="play-game-card-detail" hidden></p>
     </section>`;
   const deckField = $('deck-field');
   const readyButton = $('ready');
@@ -66,6 +76,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
   }
   async function disconnect() {
     ++epoch; ++fetchSerial;
+    ++gameRenderSerial; gameState = null; gameLoading = false; gameLoadFailed = false; handSignature = '';
     if (timer) clearInterval(timer);
     timer = null;
     const previous = channel; channel = null; live = false;
@@ -92,11 +103,93 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
   }
   function maybeAutoSelectDeck() {
     const first = getDecks()[0];
-    if (!room || !userId || room.status === 'closed' || (room.host_id !== userId && room.guest_id !== userId)
+    if (!room || !userId || room.status === 'closed' || room.activated_at || (room.host_id !== userId && room.guest_id !== userId)
       || !first || getDecks().some(deck => deck.id === ownDeckId())) { autoDeckPending = false; return; }
     if (busy) { autoDeckPending = true; return; }
     autoDeckPending = false;
     void run(() => action('deck', { deck_id: first.id }));
+  }
+  function gamePlayerCard(id, deckId, own) {
+    const panel = $(own ? 'game-self' : 'game-opponent');
+    const profile = getProfiles().find(person => person.id === id);
+    const deck = getDecks().find(item => item.id === deckId);
+    const name = document.createElement('strong');
+    name.textContent = `${profile?.display_name || 'Player'}${own ? ' · You' : ''}`;
+    const description = document.createElement('span');
+    description.textContent = own ? (gameState?.deck_name || deck?.name || 'Selected deck') : (deck?.name || 'Selected deck');
+    panel.replaceChildren(name, description);
+  }
+  function renderGameHand() {
+    const hand = Array.isArray(gameState?.hand) ? gameState.hand : [];
+    const signature = JSON.stringify(hand);
+    if (signature === handSignature) return;
+    handSignature = signature;
+    const serial = ++gameRenderSerial;
+    const cards = hand.map(card => {
+      const button = document.createElement('button');
+      button.type = 'button'; button.className = 'play-hand-card';
+      button.setAttribute('aria-label', `View ${card.title || 'card'}`);
+      const canvas = document.createElement('canvas'); canvas.hidden = true;
+      const fallback = document.createElement('span'); fallback.className = 'play-hand-fallback';
+      fallback.textContent = card.title || 'Card';
+      button.append(canvas, fallback);
+      button.addEventListener('click', () => {
+        $('game-card-detail').textContent = `${card.title || 'Card'} · ${card.card_type || 'Card'}${card.terrain ? ` · ${card.terrain}` : ''}${card.effect ? ` — ${card.effect}` : ''}`;
+        $('game-card-detail').hidden = false;
+      });
+      void (async () => {
+        const artwork = card.artwork_id ? await getArtworkUrl(card.artwork_id).catch(() => '') : '';
+        const result = await renderCard(canvas, card, artwork, () => serial === gameRenderSerial);
+        if (serial === gameRenderSerial && result && !result.cancelled) {
+          canvas.hidden = false; fallback.hidden = true;
+        }
+      })().catch(() => {});
+      return button;
+    });
+    $('game-hand').replaceChildren(...cards);
+    $('game-card-detail').hidden = true;
+  }
+  function renderGame() {
+    if (!room || room.status !== 'active') return;
+    $('game-name').textContent = room.name || 'Table';
+    $('game-leave').textContent = room.host_id === userId ? 'Smash this Table' : 'Leave table';
+    $('game-leave').classList.toggle('action-delete', room.host_id === userId);
+    gamePlayerCard(room.host_id === userId ? room.guest_id : room.host_id,
+      room.host_id === userId ? room.guest_deck_id : room.host_deck_id, false);
+    gamePlayerCard(userId, ownDeckId(), true);
+    const nodes = [];
+    for (let y = 0; y < 4; y++) for (let x = 0; x < 5; x++) {
+      const node = room.board?.[`${x},${y}`];
+      const cell = document.createElement('div'); cell.className = 'play-game-node';
+      if (node?.terrain) {
+        cell.classList.add(`terrain-${node.terrain.toLowerCase()}`);
+        const terrain = document.createElement('strong'); terrain.textContent = node.terrain;
+        cell.append(terrain);
+        if (node.entity) {
+          const entity = document.createElement('span'); entity.textContent = node.entity.title || 'Entity';
+          cell.append(entity);
+        }
+      }
+      cell.setAttribute('aria-label', node?.terrain ? `${node.terrain} Terrain at ${x + 1}, ${y + 1}` : `Empty space ${x + 1}, ${y + 1}`);
+      nodes.push(cell);
+    }
+    $('game-board').replaceChildren(...nodes);
+    $('game-loading').hidden = Boolean(gameState) || gameLoadFailed;
+    $('game-counts').textContent = gameState ? `Horizon: ${gameState.horizon.length} · Archive: ${gameState.archive.length}` : '';
+    renderGameHand();
+  }
+  async function loadGameState() {
+    if (!room || room.status !== 'active' || gameState?.room_id === room.id || gameLoading || gameLoadFailed) return;
+    const id = room.id, expected = epoch;
+    gameLoading = true;
+    const { data, error } = await client.from('play_game_decks').select('*').eq('room_id', id).eq('player_id', userId).maybeSingle();
+    if (expected !== epoch || room?.id !== id) return;
+    gameLoading = false;
+    if (error || !data) {
+      gameLoadFailed = true;
+      message(error ? 'The game could not be loaded yet. Please try again later.' : 'This table has no opening hands. Start a new table after game setup is available.', true);
+    } else gameState = data;
+    renderGame();
   }
   function syncLobbyRefresh() {
     if (!visible || !userId || room) {
@@ -162,6 +255,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
       return;
     }
     room = data; render();
+    if (room.status === 'active') void loadGameState();
     if (room.status === 'closed') {
       const notice = room.activated_at ? 'The table was smashed.' : 'The players spent 60 seconds twiddling their thumbs, so the table folded itself.';
       await disconnect(); room = null; remember(null); render(); await listTables(); message(notice);
@@ -194,6 +288,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
       if (expected !== epoch) return;
     }
     room = data; lastHeartbeat = 0; remember(id); render(); maybeAutoSelectDeck();
+    if (room.status === 'active') void loadGameState();
     if (renameFailed) message('The table was created, but its name could not be updated. Use Edit name to try again.', true);
     channel = client.channel(`play-room:${id}`)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'play_rooms', filter: `id=eq.${id}` }, () => {
@@ -223,9 +318,11 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
   function render() {
     syncLobbyRefresh();
     root.classList.toggle('is-at-table', Boolean(userId && room));
+    const playing = Boolean(userId && room?.status === 'active');
     $('signin').hidden = Boolean(userId);
     $('lobby').hidden = !userId || Boolean(room);
-    $('session').hidden = !userId || !room;
+    $('session').hidden = !userId || !room || playing;
+    $('game').hidden = !playing;
     if (!room) { controls(); return; }
     $('room-code').textContent = room.code;
     $('room-name').textContent = room.name || defaultTableName(getProfiles().find(p => p.id === room.host_id)?.display_name);
@@ -273,6 +370,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     $('room-status').textContent = room.status === 'closed' ? 'Table closed' : room.status === 'active' ? 'Both players are ready for a duel to the death.' : room.guest_id ? "Pick your decks. The table won't play itself." : '';
     controls();
     if (room.status === 'closed') $('leave').disabled = false;
+    if (playing) renderGame();
   }
 
   $('signin-button').addEventListener('click', requireSignIn);
@@ -280,10 +378,14 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
   $('back').addEventListener('click', () => run(async () => {
     await disconnect(); room = null; remember(null); render(); await listTables();
   }));
+  $('game-back').addEventListener('click', () => run(async () => {
+    await disconnect(); room = null; remember(null); render(); await listTables();
+  }));
   $('leave').addEventListener('click', () => run(async () => {
     if (room.status !== 'closed') await action('leave');
     await disconnect(); room = null; remember(null); render(); message(); await listTables();
   }));
+  $('game-leave').addEventListener('click', () => $('leave').click());
   $('deck').addEventListener('change', () => {
     if ($('deck').value) void run(() => action('deck', { deck_id: $('deck').value }));
   });
