@@ -81,17 +81,20 @@ body.dark-mode #play-back { color: #e5eee0; }
 .play-game-table { display: grid; grid-template-columns: 48px minmax(0, 600px) 63px; align-items: stretch; justify-content: center; gap: clamp(8px, 1.5vw, 18px); }
 .play-game-board { position: relative; align-self: center; min-width: 0; width: 100%; aspect-ratio: 1; background: radial-gradient(circle, #a7ccb64d, transparent 72%); }
 .play-game-zones-left, .play-game-zones-right { display: flex; flex-direction: column; justify-content: space-between; }
-.play-game-zone-pair { position: relative; width: 63px; height: 162px; }
+.play-game-zone-pair { position: relative; width: 63px; height: 180px; }
 .play-game-zone-pair .play-game-zone { position: absolute; }
-.play-game-zone-pair .play-game-zone-horizon { top: 0; left: 15px; }
-.play-game-zone-pair .play-game-zone-archive { top: 78px; left: 0; }
+.play-game-zone-pair .play-game-zone-horizon { top: 78px; left: 15px; }
+.play-game-zone-pair .play-game-zone-archive { left: -65px; }
+.play-game-zone-pair-opponent .play-game-zone-archive { top: 18px; }
+.play-game-zone-pair-self .play-game-zone-archive { top: 112px; }
 .play-game-zone { display: flex; flex: 0 0 48px; flex-direction: column; align-items: center; gap: .3rem; width: 48px; text-align: center; }
 .play-game-zone-self-patron { margin-bottom: 16px; }
 .play-game-zone .play-deck-stack, .play-game-patron-slot, .play-game-archive-card { width: 100%; aspect-ratio: 63 / 88; box-sizing: border-box; border-radius: 8px; }
 .play-game-patron-slot { display: flex; align-items: center; justify-content: center; overflow: hidden; border: 1px solid #8da79a; background: #e7ede3; box-shadow: 0 4px 12px #183a2c33; }
 .play-game-patron-slot canvas { display: block; width: 100%; height: 100%; object-fit: fill; }
 .play-game-patron-slot canvas[hidden], .play-game-patron-fallback[hidden] { display: none; }
-.play-game-patron-fallback { width: 100%; height: 100%; background: linear-gradient(145deg,#bdd5be,#e7ede3); }
+.play-game-patron-fallback { position: relative; display: block; width: 100%; height: 100%; box-sizing: border-box; padding: 8% 5% 0; overflow: hidden; background-color: #eeeae6; background-position: center 50%, center; background-size: 44% auto, 100% 100%; background-repeat: no-repeat; color: #302b27; font-size: 7px; font-weight: 800; line-height: 1; text-align: center; text-shadow: 0 1px #fff; }
+.play-game-patron-fallback::after { content: 'PATRON'; position: absolute; right: 0; bottom: 10%; left: 0; font-size: 6px; letter-spacing: .03em; }
 .play-game-archive-card { display: flex; align-items: center; justify-content: center; padding: .3rem; border: 1px solid #9fb7aa; background: #e7ede3; color: #567063; font-size: .72rem; font-weight: 700; overflow-wrap: anywhere; box-shadow: 0 4px 12px #183a2c22; }
 .play-game-zone-label { color: #254c3b; font-size: .65rem; font-weight: 800; letter-spacing: .06em; white-space: nowrap; }
 .play-game-node { position: absolute; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: .25rem; width: 22.6%; aspect-ratio: 2 / 1.732; padding: .4rem; box-sizing: border-box; transform: translate(-50%, -50%); clip-path: polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%); background: #c9ded0aa; text-align: center; }

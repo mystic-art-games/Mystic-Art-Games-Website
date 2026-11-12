@@ -164,7 +164,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     renderGamePatron(seat, own ? (gameState?.patron_name || deck?.patron_name) : deck?.patron_name);
   }
   function renderGamePatron(seat, patronName) {
-    const card = getPatronCard?.(patronName) || (patronName ? { title: patronName, card_type: 'Patron' } : null);
+    const card = getPatronCard?.(patronName) || { title: patronName || 'Patron', card_type: 'Patron' };
     const preview = patronPreviews[seat];
     const key = `${patronName || ''}:${card?.id || ''}:${card?.artwork_id || ''}`;
     if (preview.key === key) return;
@@ -174,8 +174,11 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     const fallback = $(`game-${seat}-patron-fallback`);
     canvas.hidden = true;
     fallback.hidden = false;
-    $(`game-${seat}-patron-slot`).setAttribute('aria-label', `${seat === 'self' ? 'Your' : "Opponent's"} Patron: ${patronName || 'unknown'}`);
-    if (!card) return;
+    fallback.textContent = (card.title || 'Patron').split(',')[0];
+    const terrain = ['Flow', 'Verdant', 'Symbiosis', 'Radiance'].includes(card.terrain) ? card.terrain : 'Nomads';
+    const frame = terrain === 'Radiance' ? 'Radiance_CardFrame_v2.png' : `${terrain}_CardFrame.png`;
+    fallback.style.backgroundImage = `url('./assets/Type_Patron_${terrain}_Arcane.png'), url('./assets/${frame}')`;
+    $(`game-${seat}-patron-slot`).setAttribute('aria-label', `${seat === 'self' ? 'Your' : "Opponent's"} Patron: ${card.title || 'Patron'}`);
     void (async () => {
       const artwork = card.artwork_id ? await getArtworkUrl(card.artwork_id).catch(() => '') : '';
       const result = await renderCard(canvas, card, artwork, () => serial === preview.serial);
