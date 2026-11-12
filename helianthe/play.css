@@ -93,6 +93,17 @@ body.dark-mode #play-message { color: #163737; }
 body.dark-mode .play-game-node:not([class*="terrain-"]) { background: #12372c90; }
 body.dark-mode .play-game-card-detail { border-color: #527460; }
 body.dark-mode #play-game-back { color: #e5eee0; }
+@media (min-width: 851px) {
+  html:has(#play-view:not([hidden])) { height: auto; overflow-y: auto; }
+  body:has(#play-view:not([hidden])) { height: auto; min-height: 100dvh; overflow-y: visible; }
+}
+@media (max-height: 800px) {
+  #play-game { display: flex; flex-direction: column; }
+  #play-game .play-game-toolbar { order: 0; }
+  #play-game .play-game-board-wrap { order: 1; width: min(100%, 600px, max(140px, calc(100dvh - 245px))); margin: .35rem auto 1rem; }
+  #play-game #play-game-opponent { order: 2; width: 100%; box-sizing: border-box; }
+  #play-game #play-game-self { order: 3; width: 100%; box-sizing: border-box; margin-top: .75rem; }
+}
 /* Keep account controls accessible on small desktop widths. */
 @media (min-width: 851px) and (max-width: 1000px) {
   .masthead { position: sticky; }
