@@ -51,9 +51,6 @@ body.dark-mode #play-back { color: #e5eee0; }
 .play-deck-field select { display: block; width: 100%; margin-top: .25rem; }
 #play-ready { flex: 0 0 auto; margin: 0; }
 #play-room-status { margin: 1rem 0 0; font-size: .85rem; }
-.play-ready-countdown { color: #a14e2a; font-size: .85rem; font-weight: 800; }
-#play-ready-countdown { margin: 1rem 0 0; }
-#play-ready-countdown:empty, .play-table-entry .play-ready-countdown:empty { display: none; }
 #play-game[hidden], #play-game-loading[hidden], #play-game-card-detail[hidden] { display: none; }
 .play-game-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .75rem; margin-bottom: 1rem; }
 .play-game-toolbar #play-game-back { width: auto; padding: .2rem .3rem; border: 0; background: transparent; box-shadow: none; font-size: .85rem; }
