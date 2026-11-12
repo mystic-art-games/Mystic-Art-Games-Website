@@ -142,7 +142,7 @@ textarea { resize: vertical; }
 .about-section h3 { margin: 1rem 0 .35rem; color: #265847; font-size: 1.2rem; }
 .about-section h3:first-of-type { margin-top: .2rem; }
 .vision-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 43%); align-items: start; gap: 1.25rem; }
-.vision-board-figure { min-width: 0; width: 100%; max-width: 460px; margin: .15rem auto; }
+.vision-board-figure { min-width: 0; width: 100%; max-width: 520px; margin: .15rem auto; }
 .vision-board-hex { display: block; width: 100%; height: auto; pointer-events: none; user-select: none; -webkit-user-select: none; -webkit-user-drag: none; }
 .vision-board-figure figcaption { margin: .8rem .3rem 0; color: #486755; font-size: .78rem; font-weight: 800; line-height: 1.35; text-align: center; }
 body.dark-mode .vision-board-figure figcaption { color: #d3e6d1; }

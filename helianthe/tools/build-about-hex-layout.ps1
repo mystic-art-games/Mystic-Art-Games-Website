@@ -11,15 +11,15 @@ $terrainTypes = @{
     '2,-2' = 'Verdant'; '2,-1' = 'Flow'; '2,0' = 'Radiance'
 }
 
-$canvas = [Drawing.Bitmap]::new(1950, 1900, [Drawing.Imaging.PixelFormat]::Format32bppArgb)
+$canvas = [Drawing.Bitmap]::new(1690, 1740, [Drawing.Imaging.PixelFormat]::Format32bppArgb)
 $graphics = [Drawing.Graphics]::FromImage($canvas)
 $graphics.Clear([Drawing.Color]::Transparent)
 $graphics.SmoothingMode = [Drawing.Drawing2D.SmoothingMode]::AntiAlias
 $graphics.InterpolationMode = [Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
 $graphics.PixelOffsetMode = [Drawing.Drawing2D.PixelOffsetMode]::HighQuality
 
-$cx = 975.0
-$cy = 950.0
+$cx = 845.0
+$cy = 870.0
 $radius = 194.0
 $tileRadius = $radius - 9
 $hexHeight = [Math]::Sqrt(3) * $radius
@@ -82,15 +82,13 @@ function Draw-Hex([int]$q, [int]$r, [string]$type) {
 function Draw-Entity([string]$name, [int]$q, [int]$r, [float]$rotation) {
     $x = $cx + 1.5 * $radius * $q
     $y = $cy + $hexHeight * ($r + $q / 2.0)
-    $width = 320
-    $height = 448
+    # The rotated portrait card stays inside the flat-top hex at this size.
+    $width = 182
+    $height = 255
     $image = [Drawing.Image]::FromFile((Join-Path $assets "about-entities\$name.png"))
     $state = $graphics.Save()
     $graphics.TranslateTransform([single]$x, [single]$y)
     $graphics.RotateTransform($rotation)
-    $shadow = [Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(76, 8, 30, 22))
-    $graphics.FillRectangle($shadow, -$width / 2 + 12, -$height / 2 + 16, $width, $height)
-    $shadow.Dispose()
     $graphics.DrawImage($image, [Drawing.Rectangle]::new(-$width / 2, -$height / 2, $width, $height))
     $graphics.Restore($state)
     $image.Dispose()
@@ -104,7 +102,7 @@ for ($q = -2; $q -le 2; $q++) {
 }
 
 # Current Card Editor exports from the card list, placed on matching Terrain.
-Draw-Entity 'Confluence' -1 0 -4
+Draw-Entity 'Confluence' -1 0 -3
 Draw-Entity 'Fungal-Rainwood' 1 -1 3
 Draw-Entity 'Bramble-Briar' 0 1 -2
 
