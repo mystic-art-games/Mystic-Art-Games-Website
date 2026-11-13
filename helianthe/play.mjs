@@ -382,7 +382,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
       scene.setAttribute('aria-hidden', 'true');
       const artwork = document.createElement('img');
       artwork.className = 'play-table-art';
-      artwork.src = './assets/arcane-table-tile.svg';
+      artwork.src = './assets/arcane-table-tile.svg?v=2';
       artwork.alt = '';
       artwork.loading = 'lazy';
       scene.append(artwork);
@@ -404,10 +404,12 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
       }));
       if (entry.is_participant) {
         const action = document.createElement('div'); action.className = 'play-table-action';
-        const hint = document.createElement('span'); hint.className = 'play-chair-note';
-        if (inLobby && room?.id === entry.table_id && awayDeadline(true)) hint.id = 'play-away-note';
-        hint.textContent = hint.id ? `Away · ${awayTime(awayDeadline(true))}` : 'Your chair is missing you.';
-        action.append(hint, b);
+        if (inLobby && room?.id === entry.table_id && awayDeadline(true)) {
+          const hint = document.createElement('span'); hint.className = 'play-chair-note'; hint.id = 'play-away-note';
+          hint.textContent = `Away · ${awayTime(awayDeadline(true))}`;
+          action.append(hint);
+        }
+        action.append(b);
         row.append(scene, details, action);
       } else row.append(scene, details, b);
       $('room-list').append(row);
