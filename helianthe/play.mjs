@@ -11,6 +11,8 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
   let lobbyTimer = null, directoryChannel = null, directoryUserId = null, listSerial = 0, tableListSignature = '';
   let busy = false, epoch = 0, fetchSerial = 0, live = false, lastHeartbeat = 0, autoDeckPending = false;
   let gameState = null, gameLoading = false, gameLoadFailed = false, handSignature = '', gameRenderSerial = 0, cardPreviewSerial = 0;
+  let turnSeat = null, turnPhase = null, patronDeckRequest = '';
+  const gameDeckPatrons = new Map();
   const patronPreviews = { self: { key: '', serial: 0 }, opponent: { key: '', serial: 0 } };
   root.innerHTML = `
     <div class="play-heading"><h1>Lobby</h1></div>
@@ -40,7 +42,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
       </section>
       <div class="play-game-opponent-identity play-game-player-identity"><strong id="play-game-opponent-name"></strong><span id="play-game-opponent-presence" class="play-away-pill" hidden></span></div>
       </div>
-      <aside id="play-game-card-preview" class="play-game-card-preview" aria-label="Card preview" hidden><button id="play-game-card-preview-close" class="play-game-card-preview-close" type="button" aria-label="Close card preview">×</button><canvas id="play-game-card-preview-canvas" hidden></canvas><span id="play-game-card-preview-fallback" class="play-hand-fallback"></span></aside>
+      <aside id="play-game-card-preview" class="play-game-card-preview" aria-label="Card preview" hidden><button id="play-game-card-preview-close" class="play-game-card-preview-close action-delete" type="button" aria-label="Close card preview">×</button><canvas id="play-game-card-preview-canvas" hidden></canvas><span id="play-game-card-preview-fallback" class="play-hand-fallback"></span></aside>
       <div class="play-game-board-wrap"><div class="play-game-table">
         <div class="play-game-zones-left">
           <div class="play-game-zone play-game-zone-opponent-patron"><div id="play-game-opponent-patron-slot" class="play-game-patron-slot" role="img" aria-label="Opponent's Patron"><canvas id="play-game-opponent-patron" hidden></canvas><span id="play-game-opponent-patron-fallback" class="play-game-patron-fallback" aria-hidden="true"></span></div></div>
@@ -51,7 +53,17 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
           <div class="play-game-zone-pair play-game-zone-pair-opponent" aria-label="Opponent's card zones"><div class="play-game-zone play-game-zone-archive"><div class="play-game-archive-card" role="img" aria-label="Opponent's Archive"></div></div><div class="play-game-zone play-game-zone-horizon"><div id="play-game-opponent-horizon" class="play-deck-stack" role="img" aria-label="Opponent's Horizon, draw deck"></div></div></div>
           <div class="play-game-zone play-game-zone-self-patron"><div id="play-game-self-patron-slot" class="play-game-patron-slot" role="img" aria-label="Your Patron"><canvas id="play-game-self-patron" hidden></canvas><span id="play-game-self-patron-fallback" class="play-game-patron-fallback" aria-hidden="true"></span></div></div>
         </div>
-      </div></div>
+      </div>
+      <aside id="play-game-phases" class="play-game-phases" aria-label="Turn phases">
+        <span class="play-eyebrow">TURN PHASE</span>
+        <div class="play-game-turn-players" role="group" aria-label="Whose turn"><button id="play-game-turn-self" type="button">You</button><button id="play-game-turn-opponent" type="button">Opponent</button></div>
+        <ol class="play-game-phase-list">
+          <li><button type="button" data-phase="0"><span class="play-game-phase-marker" aria-hidden="true"></span>Beginning of Turn</button></li>
+          <li><button type="button" data-phase="1"><span class="play-game-phase-marker" aria-hidden="true"></span>Draw</button></li>
+          <li><button type="button" data-phase="2"><span class="play-game-phase-marker" aria-hidden="true"></span>Main Phase</button></li>
+          <li><button type="button" data-phase="3"><span class="play-game-phase-marker" aria-hidden="true"></span>End of Turn</button></li>
+        </ol>
+      </aside></div>
       <div class="play-game-player-block">
       <div class="play-game-self-identity play-game-player-identity"><strong id="play-game-self-name"></strong><span id="play-game-self-presence" class="play-away-pill" hidden></span></div>
       <section id="play-game-self" class="play-surface play-game-seat" aria-label="Your area">
@@ -72,13 +84,54 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
   }
   const deckField = $('deck-field');
   const readyButton = $('ready');
+  const patronMarkerColors = { Flow: '#4b9ab7', Radiance: '#d4a13e', Symbiosis: '#9c71bc', Verdant: '#5d9c69' };
+  function ownTurnSeat() { return room?.host_id === userId ? 'host' : 'guest'; }
+  function renderTurnPhase() {
+    const selected = turnSeat || ownTurnSeat();
+    const own = selected === ownTurnSeat();
+    const patron = patronPreviews[own ? 'self' : 'opponent'].card;
+    $('game-phases').style.setProperty('--play-phase-color', patronMarkerColors[patron?.terrain] || '#7ba98a');
+    for (const [seat, id] of [['self', 'game-turn-self'], ['opponent', 'game-turn-opponent']]) {
+      const button = $(id), active = seat === (own ? 'self' : 'opponent');
+      button.classList.toggle('is-selected', active);
+      button.setAttribute('aria-pressed', String(active));
+    }
+    for (const button of root.querySelectorAll('.play-game-phase-list button')) {
+      const active = Number(button.dataset.phase) === turnPhase;
+      button.classList.toggle('is-current', active);
+      button.setAttribute('aria-pressed', String(active));
+    }
+  }
+  function restoreTurnPhase() {
+    let saved = null;
+    try { saved = JSON.parse(localStorage.getItem(`helianthe-play-phase:${room.id}`) || 'null'); } catch {}
+    turnSeat = ['host', 'guest'].includes(saved?.seat) ? saved.seat : ownTurnSeat();
+    turnPhase = Number.isInteger(saved?.phase) && saved.phase >= 0 && saved.phase < 4 ? saved.phase : null;
+  }
+  function setTurnPhase(seat, phase, publish = true) {
+    if (!room || !['host', 'guest'].includes(seat) || !(phase === null || (Number.isInteger(phase) && phase >= 0 && phase < 4))) return;
+    turnSeat = seat; turnPhase = phase;
+    try { localStorage.setItem(`helianthe-play-phase:${room.id}`, JSON.stringify({ seat, phase })); } catch {}
+    renderTurnPhase();
+    if (publish && channel) void channel.send({ type: 'broadcast', event: 'turn_phase', payload: { seat, phase } }).catch(() => {});
+  }
+  $('game-turn-self').addEventListener('click', () => setTurnPhase(ownTurnSeat(), null));
+  $('game-turn-opponent').addEventListener('click', () => setTurnPhase(ownTurnSeat() === 'host' ? 'guest' : 'host', null));
+  for (const button of root.querySelectorAll('.play-game-phase-list button')) {
+    button.addEventListener('click', () => setTurnPhase(turnSeat || ownTurnSeat(), Number(button.dataset.phase)));
+  }
   for (const seat of ['self', 'opponent']) {
     $(`game-${seat}-patron-slot`).addEventListener('contextmenu', event => {
       event.preventDefault();
+      event.stopPropagation();
       const card = patronPreviews[seat].card;
       if (card) showCardPreview(card);
     });
   }
+  root.querySelector('.play-game-board-wrap').addEventListener('contextmenu', event => {
+    event.preventDefault();
+    hideCardPreview();
+  });
   document.addEventListener('pointerdown', event => {
     for (const menu of root.querySelectorAll('.play-table-menu[open]')) {
       if (!menu.contains(event.target)) menu.open = false;
@@ -148,6 +201,13 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
   async function disconnect() {
     ++epoch; ++fetchSerial;
     ++gameRenderSerial; gameState = null; gameLoading = false; gameLoadFailed = false; handSignature = '';
+    turnSeat = null; turnPhase = null; patronDeckRequest = ''; gameDeckPatrons.clear();
+    for (const seat of ['self', 'opponent']) {
+      const preview = patronPreviews[seat];
+      preview.key = ''; preview.card = null; ++preview.serial;
+      $(`game-${seat}-patron`).hidden = true;
+      $(`game-${seat}-patron-fallback`).hidden = false;
+    }
     hideCardPreview();
     if (timer) clearInterval(timer);
     if (awayTicker) clearInterval(awayTicker);
@@ -186,19 +246,33 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     const seat = own ? 'self' : 'opponent';
     const roomSeat = room.host_id === id ? 'host' : 'guest';
     const profile = getProfiles().find(person => person.id === id);
-    const deck = getDecks().find(item => item.id === deckId);
+    const deck = getDecks().find(item => String(item.id) === String(deckId));
     $(`game-${seat}-name`).textContent = `${profile?.display_name || 'Player'}${own ? ' · You' : ''}`;
     if (!own) $('game-opponent-horizon').setAttribute('aria-label', `Opponent's Horizon, ${deck?.name || 'selected deck'}`);
     const savedPatron = room[`${roomSeat}_patron_name`];
     const selectedPatron = own
-      ? gameState?.patron_name || deck?.patron_name || savedPatron
-      : deck?.patron_name || savedPatron;
+      ? gameDeckPatrons.get(String(deckId)) || deck?.patron_name || gameState?.patron_name || savedPatron
+      : gameDeckPatrons.get(String(deckId)) || deck?.patron_name || savedPatron;
     renderGamePatron(seat, selectedPatron);
+  }
+  async function loadGamePatrons() {
+    if (!room || room.status !== 'active') return;
+    const deckIds = [room.host_deck_id, room.guest_deck_id].filter(Boolean);
+    const signature = deckIds.map(String).join(':');
+    if (!signature || signature === patronDeckRequest) return;
+    patronDeckRequest = signature;
+    const expected = epoch, roomId = room.id;
+    const { data, error } = await client.from('decks').select('id,patron_name').in('id', deckIds);
+    if (expected !== epoch || room?.id !== roomId) return;
+    if (error) { patronDeckRequest = ''; return; }
+    for (const deck of data || []) gameDeckPatrons.set(String(deck.id), deck.patron_name);
+    if (!inLobby) renderGame();
   }
   function renderGamePatron(seat, patronName) {
     const card = patronName ? (getPatronCard?.(patronName) || { title: patronName, card_type: 'Patron' }) : null;
     const preview = patronPreviews[seat];
     preview.card = card;
+    renderTurnPhase();
     const key = `${patronName || ''}:${card?.id || ''}:${card?.artwork_id || ''}`;
     if (preview.key === key) return;
     preview.key = key;
@@ -209,7 +283,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     fallback.hidden = false;
     fallback.textContent = card?.title?.split(',')[0] || '';
     const terrain = ['Flow', 'Verdant', 'Symbiosis', 'Radiance'].includes(card?.terrain) ? card.terrain : 'Nomads';
-    const frame = terrain === 'Radiance' ? 'Radiance_CardFrame_v2.png' : `${terrain}_CardFrame.png`;
+    const frame = terrain === 'Radiance' ? 'Radiance_CardFrame_v2.png' : terrain === 'Nomads' ? 'Nomads_CardFrame_v2.png' : `${terrain}_CardFrame.png`;
     fallback.style.backgroundImage = card
       ? `url('./assets/Type_Patron_${terrain}_Arcane.png'), url('./assets/${frame}')`
       : `url('./assets/${frame}')`;
@@ -223,7 +297,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
         canvas.hidden = false;
         fallback.hidden = true;
       }
-    })().catch(() => {});
+    })().catch(() => { if (serial === preview.serial) preview.key = ''; });
   }
   function hideCardPreview() {
     ++cardPreviewSerial;
@@ -437,7 +511,10 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
       hideCardPreview();
     }
     room = data; render();
-    if (room.status === 'active') void loadGameState();
+    if (room.status === 'active') {
+      void loadGameState();
+      void loadGamePatrons().catch(() => { patronDeckRequest = ''; });
+    }
     if (room.status === 'closed') {
       const timedOut = [room.host_away_until, room.guest_away_until].some(deadline => deadline && Date.parse(deadline) <= Date.now());
       const notice = timedOut ? 'The away timer expired. The table closed.' : 'The table was smashed.';
@@ -493,12 +570,18 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
       catch { renameFailed = true; }
       if (expected !== epoch) return;
     }
-    room = data; lastHeartbeat = 0; remember(id); render(); maybeAutoSelectDeck();
-    if (room.status === 'active') void loadGameState();
+    room = data; lastHeartbeat = 0; remember(id); restoreTurnPhase(); render(); maybeAutoSelectDeck();
+    if (room.status === 'active') {
+      void loadGameState();
+      void loadGamePatrons().catch(() => { patronDeckRequest = ''; });
+    }
     if (renameFailed) message('The table was created, but its name could not be updated. Use Edit name to try again.', true);
     channel = client.channel(`play-room:${id}`)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'play_rooms', filter: `id=eq.${id}` }, () => {
         if (expected === epoch) void refreshRoom().catch(error => message(friendly(error), true));
+      })
+      .on('broadcast', { event: 'turn_phase' }, ({ payload }) => {
+        if (expected === epoch && room?.id === id) setTurnPhase(payload?.seat, payload?.phase, false);
       }).subscribe(status => {
         if (expected !== epoch) return;
         live = status === 'SUBSCRIBED';
