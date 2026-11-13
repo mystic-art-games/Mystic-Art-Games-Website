@@ -370,7 +370,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
       scene.setAttribute('aria-hidden', 'true');
       const artwork = document.createElement('img');
       artwork.className = 'play-table-art';
-      artwork.src = './assets/arcane-table-v1.png';
+      artwork.src = './assets/arcane-table-tile.svg';
       artwork.alt = '';
       artwork.loading = 'lazy';
       scene.append(artwork);
@@ -514,6 +514,15 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     await refreshRoom();
     if (visible) await listTables();
   }
+  async function leaveTable() {
+    if (!room) return;
+    const id = room.id;
+    if (room.status !== 'closed') await rpc('play_room_action', { p_room_id: id, p_action: 'leave', p_payload: {} });
+    await disconnect();
+    room = null; inLobby = false; tableListSignature = '';
+    remember(null); render(); message();
+    await listTables();
+  }
   function refreshCollections() {
     const decks = getDecks();
     const value = room ? ownDeckId() : $('deck').value;
@@ -588,15 +597,10 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     const id = await rpc('play_create_room');
     await enter(id, true);
   }));
-  $('back').addEventListener('click', () => run(async () => {
-    await disconnect(); room = null; remember(null); render(); await listTables();
-  }));
-  $('game-back').addEventListener('click', () => run(goAway));
-  $('leave').addEventListener('click', () => run(async () => {
-    if (room.status !== 'closed') await action('leave');
-    await disconnect(); room = null; inLobby = false; remember(null); render(); message(); await listTables();
-  }));
-  $('game-leave').addEventListener('click', () => $('leave').click());
+  $('back').addEventListener('click', () => run(leaveTable));
+  $('game-back').addEventListener('click', () => run(leaveTable));
+  $('leave').addEventListener('click', () => run(leaveTable));
+  $('game-leave').addEventListener('click', () => run(leaveTable));
   $('deck').addEventListener('change', () => {
     if ($('deck').value) void run(() => action('deck', { deck_id: $('deck').value }));
   });
