@@ -12,7 +12,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
   let busy = false, epoch = 0, fetchSerial = 0, live = false, lastHeartbeat = 0, autoDeckPending = false;
   let gameState = null, gameLoading = false, gameLoadFailed = false, handSignature = '', gameRenderSerial = 0, cardPreviewSerial = 0;
   let turnSeat = null, turnPhase = null, patronDeckRequest = '';
-  const gameDeckPatrons = new Map();
+  const gameDeckPatrons = new Map(), gamePlayerPatrons = new Map();
   const patronPreviews = { self: { key: '', serial: 0 }, opponent: { key: '', serial: 0 } };
   root.innerHTML = `
     <div class="play-heading"><h1>Lobby</h1></div>
@@ -201,7 +201,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
   async function disconnect() {
     ++epoch; ++fetchSerial;
     ++gameRenderSerial; gameState = null; gameLoading = false; gameLoadFailed = false; handSignature = '';
-    turnSeat = null; turnPhase = null; patronDeckRequest = ''; gameDeckPatrons.clear();
+    turnSeat = null; turnPhase = null; patronDeckRequest = ''; gameDeckPatrons.clear(); gamePlayerPatrons.clear();
     for (const seat of ['self', 'opponent']) {
       const preview = patronPreviews[seat];
       preview.key = ''; preview.card = null; ++preview.serial;
@@ -250,9 +250,8 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     $(`game-${seat}-name`).textContent = `${profile?.display_name || 'Player'}${own ? ' · You' : ''}`;
     if (!own) $('game-opponent-horizon').setAttribute('aria-label', `Opponent's Horizon, ${deck?.name || 'selected deck'}`);
     const savedPatron = room[`${roomSeat}_patron_name`];
-    const selectedPatron = own
-      ? gameDeckPatrons.get(String(deckId)) || deck?.patron_name || gameState?.patron_name || savedPatron
-      : gameDeckPatrons.get(String(deckId)) || deck?.patron_name || savedPatron;
+    const selectedPatron = gamePlayerPatrons.get(String(id)) || gameDeckPatrons.get(String(deckId))
+      || deck?.patron_name || (own ? gameState?.patron_name : null) || savedPatron;
     renderGamePatron(seat, selectedPatron);
   }
   async function loadGamePatrons() {
@@ -262,10 +261,14 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     if (!signature || signature === patronDeckRequest) return;
     patronDeckRequest = signature;
     const expected = epoch, roomId = room.id;
-    const { data, error } = await client.from('decks').select('id,patron_name').in('id', deckIds);
+    const [decks, gameDecks] = await Promise.all([
+      client.from('decks').select('id,patron_name').in('id', deckIds),
+      client.from('play_game_decks').select('player_id,patron_name').eq('room_id', roomId),
+    ]);
     if (expected !== epoch || room?.id !== roomId) return;
-    if (error) { patronDeckRequest = ''; return; }
-    for (const deck of data || []) gameDeckPatrons.set(String(deck.id), deck.patron_name);
+    if (!decks.error) for (const deck of decks.data || []) gameDeckPatrons.set(String(deck.id), deck.patron_name);
+    if (!gameDecks.error) for (const deck of gameDecks.data || []) gamePlayerPatrons.set(String(deck.player_id), deck.patron_name);
+    if (decks.error && gameDecks.error) patronDeckRequest = '';
     if (!inLobby) renderGame();
   }
   function renderGamePatron(seat, patronName) {
@@ -292,8 +295,13 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     if (!card) return;
     void (async () => {
       const artwork = card.artwork_id ? await getArtworkUrl(card.artwork_id).catch(() => '') : '';
-      const result = await renderCard(canvas, card, artwork, () => serial === preview.serial);
+      const stagedCanvas = document.createElement('canvas');
+      const result = await renderCard(stagedCanvas, card, artwork, () => serial === preview.serial);
       if (serial === preview.serial && result && !result.cancelled) {
+        canvas.width = stagedCanvas.width;
+        canvas.height = stagedCanvas.height;
+        canvas.getContext('2d').drawImage(stagedCanvas, 0, 0);
+        canvas.setAttribute('aria-label', stagedCanvas.getAttribute('aria-label') || `${card.title} Patron card`);
         canvas.hidden = false;
         fallback.hidden = true;
       }
