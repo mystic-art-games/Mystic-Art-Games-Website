@@ -4,7 +4,7 @@ import { renderCard, downloadCardPNG } from './card-renderer.mjs?v=patron-labels
 import { CardSheetPDF } from './card-sheet-pdf.mjs';
 import { PATRONS, FACTION_VISIONS, PATRON_RULES_REVISION, updatePatronVision } from './patrons.mjs?v=faction-visions-3';
 import { CARD_TAGS, normalizeCardTags, seedTagsForCard, tagLabel } from './card-tags.mjs?v=tags-3';
-import { createPlayView } from './play.mjs?v=play-47';
+import { createPlayView } from './play.mjs?v=play-48';
 
 document.title = ['127.0.0.1', 'localhost', '::1'].includes(window.location.hostname)
   ? 'Helianthe — Local Preview'
@@ -52,6 +52,15 @@ const terrainCards = ['Radiance', 'Verdant', 'Flow', 'Symbiosis'].map(terrain =>
   fullArtUrl: new URL(`./assets/Terrain_${terrain}_Full_Art.png`, import.meta.url).href,
   tags: [],
 }));
+terrainCards.push({
+  id: 'terrain:center',
+  title: 'Center Card',
+  card_type: 'Terrain',
+  terrain: 'none',
+  fullArtTerrain: true,
+  fullArtUrl: new URL('./assets/Center_Card.png', import.meta.url).href,
+  tags: [],
+});
 try {
   const overrides = JSON.parse(localStorage.getItem(PATRON_CARD_OVERRIDES_KEY) || '{}');
   let updated = false;
@@ -2108,10 +2117,10 @@ function selectProfile(profile) {
 async function reloadCollections() {
   [state.cards, state.decks, state.profiles] = await Promise.all([api.listCards(), api.listDecks(), api.listProfiles()]);
   state.cards = resolveLegacyCardAuthors(state.cards, state.profiles);
-  play.refreshCollections();
   refreshDeckPatronOptions();
   const savedPatrons = savedDeckPatrons();
   state.decks = state.decks.map(deck => deck.patron_name || !savedPatrons[deck.id] ? deck : { ...deck, patron_name: savedPatrons[deck.id] });
+  play.refreshCollections();
   refreshCardAuthorFilter();
   updateAddToDeckButtons(state.card || state.deckPreviewCard);
   renderCardList(); renderDeckList(); renderDeckCards(); renderProfileList();

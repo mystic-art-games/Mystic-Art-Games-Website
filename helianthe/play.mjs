@@ -46,7 +46,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
           <div class="play-game-zone play-game-zone-opponent-patron"><div id="play-game-opponent-patron-slot" class="play-game-patron-slot" role="img" aria-label="Opponent's Patron"><canvas id="play-game-opponent-patron" hidden></canvas><span id="play-game-opponent-patron-fallback" class="play-game-patron-fallback" aria-hidden="true"></span></div></div>
           <div class="play-game-zone play-game-zone-self-patron"><div id="play-game-self-patron-slot" class="play-game-patron-slot" role="img" aria-label="Your Patron"><canvas id="play-game-self-patron" hidden></canvas><span id="play-game-self-patron-fallback" class="play-game-patron-fallback" aria-hidden="true"></span></div></div>
         </div>
-        <div id="play-game-board" class="play-game-board" role="group" aria-label="Shared 19-hex Terrain board"></div>
+        <div id="play-game-board" class="play-game-board" role="group" aria-label="Shared four-column, five-row Terrain board"></div>
         <div class="play-game-zones-right">
           <div class="play-game-zone-pair play-game-zone-pair-opponent" aria-label="Opponent's card zones"><div class="play-game-zone play-game-zone-horizon"><div id="play-game-opponent-horizon" class="play-deck-stack" role="img" aria-label="Opponent's Horizon, draw deck"></div><span class="play-game-zone-label">HORIZON</span></div><div class="play-game-zone play-game-zone-archive"><div class="play-game-archive-card" role="img" aria-label="Opponent's Archive"></div><span class="play-game-zone-label">ARCHIVE</span></div></div>
           <div class="play-game-zone-pair play-game-zone-pair-self" aria-label="Your card zones"><div class="play-game-zone play-game-zone-horizon"><div class="play-deck-stack" role="img" aria-label="Your Horizon, draw deck"></div><span class="play-game-zone-label">HORIZON <span id="play-game-horizon-count"></span></span></div><div class="play-game-zone play-game-zone-archive"><div class="play-game-archive-card"><span id="play-game-archive-top">Empty</span></div><span class="play-game-zone-label">ARCHIVE <span id="play-game-archive-count"></span></span></div></div>
@@ -172,7 +172,10 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     $(`game-${seat}-name`).textContent = `${profile?.display_name || 'Player'}${own ? ' · You' : ''}`;
     if (!own) $('game-opponent-horizon').setAttribute('aria-label', `Opponent's Horizon, ${deck?.name || 'selected deck'}`);
     const savedPatron = room[`${roomSeat}_patron_name`];
-    renderGamePatron(seat, savedPatron !== undefined ? savedPatron : ((own && gameState?.patron_name) || deck?.patron_name));
+    const selectedPatron = own
+      ? gameState?.patron_name || deck?.patron_name || savedPatron
+      : deck?.patron_name || savedPatron;
+    renderGamePatron(seat, selectedPatron);
   }
   function renderGamePatron(seat, patronName) {
     const card = patronName ? (getPatronCard?.(patronName) || { title: patronName, card_type: 'Patron' }) : null;
@@ -266,12 +269,16 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
       room.host_id === userId ? room.guest_deck_id : room.host_deck_id, false);
     gamePlayerCard(userId, ownDeckId(), true);
     const nodes = [];
-    for (let q = -2; q <= 2; q++) for (let r = -2; r <= 2; r++) {
-      if (Math.abs(q + r) > 2) continue;
-      const node = room.board?.[`${q},${r}`];
+    for (let row = 0; row < 5; row++) for (let column = 0; column < 4; column++) {
+      const isCenter = row === 2 && (column === 1 || column === 2);
+      const node = isCenter ? null : room.board?.[`${column},${row}`];
       const cell = document.createElement('div'); cell.className = 'play-game-node';
-      cell.style.left = `${50 + 17.25 * q}%`;
-      cell.style.top = `${50 + 19.918 * (r + q / 2)}%`;
+      if (isCenter) {
+        cell.classList.add('terrain-center');
+        cell.setAttribute('aria-label', `Center card at row ${row + 1}, column ${column + 1}`);
+        nodes.push(cell);
+        continue;
+      }
       if (node?.terrain) {
         cell.classList.add(`terrain-${node.terrain.toLowerCase()}`);
         const terrain = document.createElement('strong'); terrain.textContent = node.terrain;
@@ -281,7 +288,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
           cell.append(entity);
         }
       }
-      cell.setAttribute('aria-label', node?.terrain ? `${node.terrain} Terrain at ${q}, ${r}` : `Empty space ${q}, ${r}`);
+      cell.setAttribute('aria-label', node?.terrain ? `${node.terrain} Terrain at row ${row + 1}, column ${column + 1}` : `Empty space at row ${row + 1}, column ${column + 1}`);
       nodes.push(cell);
     }
     $('game-board').replaceChildren(...nodes);
@@ -496,6 +503,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     $('deck').value = decks.some(deck => deck.id === value) ? value : (decks[0]?.id || '');
     controls();
     maybeAutoSelectDeck();
+    if (room?.status === 'active' && !inLobby) renderGame();
   }
   function render() {
     syncLobbyRefresh();
