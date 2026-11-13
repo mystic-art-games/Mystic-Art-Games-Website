@@ -1,54 +1,33 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 130" role="img" aria-label="Arcane card table">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 120" role="img" aria-label="Arcane table with an inlaid Helianthe emblem">
   <defs>
-    <linearGradient id="wood" x1="0" y1="0" x2="0" y2="1">
-      <stop stop-color="#8a543d"/>
-      <stop offset=".5" stop-color="#563345"/>
-      <stop offset="1" stop-color="#342839"/>
+    <linearGradient id="oak" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#80533b"/>
+      <stop offset=".5" stop-color="#553b32"/>
+      <stop offset="1" stop-color="#2c2730"/>
     </linearGradient>
-    <linearGradient id="edge" x1="0" y1="0" x2="0" y2="1">
-      <stop stop-color="#8b593f"/>
-      <stop offset="1" stop-color="#352633"/>
+    <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#e7bd76"/>
+      <stop offset=".55" stop-color="#9f6b3c"/>
+      <stop offset="1" stop-color="#edca83"/>
     </linearGradient>
     <linearGradient id="felt" x1="0" y1="0" x2="1" y2="1">
-      <stop stop-color="#297663"/>
-      <stop offset=".6" stop-color="#155746"/>
-      <stop offset="1" stop-color="#0b3e3b"/>
+      <stop stop-color="#237d67"/>
+      <stop offset=".5" stop-color="#135746"/>
+      <stop offset="1" stop-color="#093d3b"/>
     </linearGradient>
-    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
-      <stop stop-color="#f4d996"/>
-      <stop offset=".55" stop-color="#b27c3d"/>
-      <stop offset="1" stop-color="#e3be70"/>
-    </linearGradient>
-    <radialGradient id="aura">
-      <stop stop-color="#b4fff1" stop-opacity=".8"/>
-      <stop offset="1" stop-color="#66e8cf" stop-opacity="0"/>
-    </radialGradient>
   </defs>
-  <ellipse cx="110" cy="119" rx="94" ry="8" fill="#112c29" opacity=".2"/>
-  <path d="M9 47 Q8 38 15 35 L24 34 Q31 35 32 42 L34 76 10 81Z" fill="url(#wood)" stroke="#c69a5c" stroke-width="2"/>
-  <path d="M14 43 Q20 38 27 43 L29 67 14 72Z" fill="#175849" stroke="#b9894c" stroke-width="1.5"/>
-  <path d="M10 80 34 75 38 86 15 92Z" fill="url(#edge)" stroke="#c69a5c" stroke-width="2"/>
-  <path d="M14 90 15 110 M33 85 34 103" fill="none" stroke="#5a3540" stroke-width="5"/>
-  <path d="M187 43 Q189 35 196 34 L204 35 Q212 38 212 46 L210 81 186 77Z" fill="url(#wood)" stroke="#c69a5c" stroke-width="2"/>
-  <path d="M193 43 Q200 39 207 44 L207 72 191 67Z" fill="#175849" stroke="#b9894c" stroke-width="1.5"/>
-  <path d="M186 76 210 81 205 92 183 85Z" fill="url(#edge)" stroke="#c69a5c" stroke-width="2"/>
-  <path d="M187 85 186 104 M205 91 205 110" fill="none" stroke="#5a3540" stroke-width="5"/>
-  <path d="M35 90 48 90 46 117 35 120Z M182 86 195 85 193 116 182 119Z" fill="url(#wood)" stroke="#9c724b" stroke-width="2"/>
-  <path d="M30 32 177 26 207 78 20 87Z" fill="url(#wood)" stroke="url(#gold)" stroke-width="3" stroke-linejoin="round"/>
-  <path d="M20 87 207 78 205 91 20 101Z" fill="url(#edge)" stroke="#c3985b" stroke-width="2" stroke-linejoin="round"/>
-  <path d="M27 93 197 84" fill="none" stroke="#d9ad69" stroke-width="1.3" opacity=".8"/>
-  <path d="M37 39 172 33 197 73 29 80Z" fill="url(#felt)" stroke="#d0ae70" stroke-width="2" stroke-linejoin="round"/>
-  <path d="M44 44 167 39 188 69 37 75Z" fill="none" stroke="#a8d7b0" stroke-opacity=".5" stroke-width="1"/>
-  <ellipse cx="112" cy="56" rx="36" ry="16" fill="none" stroke="#bbd49b" stroke-opacity=".45" stroke-width="1.5"/>
-  <path d="M112 40 119 56 112 72 105 56Z M97 56 H127" fill="none" stroke="#e7cc85" stroke-width="1.8" stroke-linejoin="round"/>
-  <circle cx="112" cy="56" r="3" fill="#a9f9e3"/>
-  <path d="M49 52 Q58 44 66 49 M159 47 Q168 43 177 49 M44 67 Q54 72 62 68 M165 66 Q174 70 182 64" fill="none" stroke="#cfae6e" stroke-width="1.5" stroke-linecap="round"/>
-  <path d="M51 55 61 54 63 67 53 68Z M57 52 67 51 69 64 59 65Z M159 49 169 48 171 61 161 62Z M165 52 175 51 177 64 167 65Z" fill="#3b3450" stroke="#c89d60" stroke-width="1"/>
-  <path d="M34 36 39 39 34 44 29 40Z M176 29 181 33 176 38 171 34Z M27 76 32 80 27 85 22 81Z M199 70 204 74 199 79 194 75Z" fill="url(#gold)"/>
-  <circle cx="34" cy="39" r="10" fill="url(#aura)"/>
-  <circle cx="177" cy="33" r="10" fill="url(#aura)"/>
-  <path d="M34 34 37 39 34 44 31 39Z M177 28 180 33 177 38 174 33Z" fill="#c5fff0" stroke="#6dcfb9" stroke-width="1"/>
-  <path d="M82 94 87 89 92 94 87 99Z M130 92 135 87 140 92 135 97Z" fill="#d9ad69"/>
-  <circle cx="87" cy="94" r="2" fill="#7fe2c8"/>
-  <circle cx="135" cy="92" r="2" fill="#7fe2c8"/>
+  <ellipse cx="105" cy="113" rx="90" ry="6" fill="#122b29" opacity=".22"/>
+  <path d="M40 80 56 80 53 111 40 114Z M153 79 169 79 171 112 158 114Z" fill="url(#oak)" stroke="#9c724c" stroke-width="2"/>
+  <path d="M39 108 54 106 M157 107 171 109" stroke="#d4ad70" stroke-width="3"/>
+  <path d="M42 25 167 25 203 75 7 75Z" fill="url(#oak)" stroke="url(#rim)" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M7 75 203 75 201 90 9 90Z" fill="url(#oak)" stroke="#bd9258" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M17 82 H192" fill="none" stroke="#d9b472" stroke-width="1.5" opacity=".8"/>
+  <path d="M50 32 H160 L189 69 H21Z" fill="url(#felt)" stroke="#d2aa68" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M56 37 H154 L178 64 H32Z" fill="none" stroke="#a8d7ad" stroke-opacity=".56" stroke-width="1.3"/>
+  <path d="M63 44 Q52 49 48 58 M147 44 Q158 49 162 58 M65 60 Q58 59 55 56 M145 60 Q152 59 155 56" fill="none" stroke="#cbb275" stroke-width="1.3" stroke-linecap="round"/>
+  <path d="M36 60 39 56 42 60 39 64Z M168 60 171 56 174 60 171 64Z" fill="#edcc83"/>
+  <path d="M35 29 40 34 35 39 30 34Z M175 29 180 34 175 39 170 34Z M15 72 20 77 15 82 10 77Z M195 72 200 77 195 82 190 77Z" fill="url(#rim)"/>
+  <path d="M90 84 95 79 100 84 95 89Z M110 84 115 79 120 84 115 89Z" fill="#c89e5e"/>
+  <circle cx="95" cy="84" r="1.7" fill="#8ce4c8"/>
+  <circle cx="115" cy="84" r="1.7" fill="#8ce4c8"/>
 </svg>
