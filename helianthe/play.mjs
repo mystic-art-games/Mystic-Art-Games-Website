@@ -368,7 +368,12 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
       row.classList.toggle('is-yours', entry.is_participant);
       const scene = document.createElement('div'); scene.className = 'play-table-scene';
       scene.setAttribute('aria-hidden', 'true');
-      scene.innerHTML = '<span class="play-table-chair play-table-chair-host"></span><span class="play-table-felt"><span class="play-table-card-back play-table-card-one"></span><span class="play-table-card-back play-table-card-two"></span><span class="play-table-cup"></span></span><span class="play-table-chair play-table-chair-guest"></span>';
+      const artwork = document.createElement('img');
+      artwork.className = 'play-table-art';
+      artwork.src = './assets/arcane-table-v1.png';
+      artwork.alt = '';
+      artwork.loading = 'lazy';
+      scene.append(artwork);
       const details = document.createElement('div'); details.className = 'play-table-details';
       const title = document.createElement('strong'); title.textContent = entry.name || defaultTableName(entry.host_name);
       const summary = document.createElement('span'); summary.textContent = `${entry.host_name} · ${entry.player_count} / 2 players`;

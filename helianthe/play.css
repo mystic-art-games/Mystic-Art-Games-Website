@@ -1,4 +1,9 @@
 .play-workspace { width: calc(100% - 2rem); max-width: 1100px; margin: 1.25rem auto 3rem; padding: 1.5rem; border: 1px solid rgba(55,91,78,.4); border-radius: 22px; background: linear-gradient(145deg,rgba(255,255,255,.95),rgba(224,234,229,.88)); box-shadow: inset 1px 1px 0 #fff; }
+.play-workspace:not(.is-at-table) { margin: .6rem auto 1rem; padding: 1rem; }
+.play-workspace:not(.is-at-table) .play-heading { margin-bottom: .75rem; }
+.play-workspace:not(.is-at-table) .play-lobby { gap: .75rem; }
+.play-workspace:not(.is-at-table) .play-create-panel { padding: .75rem 1rem; }
+.play-workspace:not(.is-at-table) .play-recent { padding: .8rem 1rem 1rem; }
 .play-heading, .play-room-bar, .play-table-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
 .play-heading { margin-bottom: 1.5rem; }
 .play-workspace.is-at-table .play-heading { display: none; }
@@ -14,8 +19,8 @@
 .play-create-panel .play-eyebrow { margin-bottom: .5rem; }
 #play-signin button { margin-top: .8rem; }
 .play-recent { grid-column: 1/-1; }
-#play-room-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1rem; margin-top: .8rem; }
-.play-table-entry { display: flex; flex-direction: column; align-items: center; gap: .7rem; min-width: 0; min-height: 285px; padding: .75rem .9rem 1rem; border: 1px solid #aec4b7; border-radius: 18px; background: linear-gradient(150deg, #fffef8, #eaf1e8); box-shadow: inset 1px 1px 0 #fff, 0 6px 18px #173d2b1c; text-align: center; }
+#play-room-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: .75rem; margin-top: .6rem; }
+.play-table-entry { display: flex; flex-direction: column; align-items: center; gap: .4rem; min-width: 0; min-height: 210px; padding: .45rem .7rem .7rem; border: 1px solid #aec4b7; border-radius: 16px; background: linear-gradient(150deg, #fffef8, #eaf1e8); box-shadow: inset 1px 1px 0 #fff, 0 6px 18px #173d2b1c; text-align: center; }
 .play-table-entry.is-yours { border-color: #b99755; box-shadow: inset 1px 1px 0 #fff, 0 6px 18px #7a592b32; }
 .play-table-details { width: 100%; min-width: 0; }
 .play-table-details strong, .play-table-details span { display: block; overflow-wrap: anywhere; }
@@ -24,18 +29,9 @@
 .play-table-entry > button, .play-table-action { margin-top: auto; }
 .play-table-action { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: .5rem; width: 100%; }
 .play-table-entry .play-chair-note { margin: 0; color: #486755; font-size: .85rem; font-weight: 400; }
-.play-table-scene { position: relative; flex: 0 0 135px; width: min(100%, 230px); }
-.play-table-scene::before { content: ''; position: absolute; top: 102px; left: 50%; width: 90px; height: 26px; border-radius: 0 0 45px 45px; background: #68452f; box-shadow: 0 9px 12px #172c2040; transform: translateX(-50%); }
-.play-table-felt { position: absolute; top: 20px; left: 50%; display: block; width: 176px; height: 102px; border: 8px solid #85583b; border-radius: 50%; background: radial-gradient(ellipse at 45% 35%, #408761, #245840 72%); box-shadow: inset 0 0 0 2px #a87850, inset 0 7px 11px #0c3a2b69, 0 8px 0 #5e3c29, 0 12px 17px #193a2b44; transform: translateX(-50%) rotate(-6deg); }
-.play-table-chair { position: absolute; z-index: 0; top: 48px; width: 37px; height: 48px; border: 3px solid #6b452e; border-radius: 12px; background: linear-gradient(145deg, #b58257, #85583a); box-shadow: 0 5px 0 #543721, 0 8px 12px #173d2b4d; }
-.play-table-chair::after { content: ''; position: absolute; inset: 8px 5px; border-radius: 7px; background: #d6af79; }
-.play-table-chair-host { left: 0; transform: rotate(-12deg); }
-.play-table-chair-guest { right: 0; opacity: .48; transform: rotate(12deg); }
-.play-table-entry.is-full .play-table-chair-guest { opacity: 1; }
-.play-table-card-back { position: absolute; display: block; width: 23px; height: 33px; border: 2px solid #ddc587; border-radius: 3px; background: url('../images/helianthe-logo.png') center / 70% no-repeat, #173f34; box-shadow: 0 2px 4px #0a2a1f66; }
-.play-table-card-one { top: 29px; left: 56px; transform: rotate(-16deg); }
-.play-table-card-two { top: 36px; left: 82px; transform: rotate(12deg); }
-.play-table-cup { position: absolute; top: 27px; left: 28px; width: 19px; height: 19px; border: 3px solid #f0e7c9; border-radius: 50%; background: #8a5132; box-shadow: 2px 3px 4px #0a2a1f66; }
+.play-table-scene { display: grid; place-items: center; flex: 0 0 108px; width: min(100%, 235px); }
+.play-table-art { display: block; width: 100%; height: 108px; object-fit: contain; }
+.play-table-entry.is-full:not(.is-yours) .play-table-art { filter: saturate(.75) brightness(.9); }
 body.dark-mode .play-table-entry { border-color: #527460; background: linear-gradient(150deg, #173f34, #214d3d); box-shadow: inset 1px 1px 0 #ffffff20, 0 6px 18px #061e154f; }
 body.dark-mode .play-table-entry.is-yours { border-color: #b99755; }
 body.dark-mode .play-table-entry .play-chair-note { color: #d5e9d4; }
