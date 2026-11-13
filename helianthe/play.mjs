@@ -382,7 +382,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
       scene.setAttribute('aria-hidden', 'true');
       const artwork = document.createElement('img');
       artwork.className = 'play-table-art';
-      artwork.src = './assets/arcane-table-tile.svg?v=3';
+      artwork.src = './assets/fantasy-table-helianthe.png';
       artwork.alt = '';
       artwork.loading = 'lazy';
       scene.append(artwork);
