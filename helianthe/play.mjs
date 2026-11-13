@@ -10,7 +10,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
   let userId = null, room = null, channel = null, timer = null, awayTicker = null, visible = false, inLobby = false;
   let lobbyTimer = null, directoryChannel = null, directoryUserId = null, listSerial = 0, tableListSignature = '';
   let busy = false, epoch = 0, fetchSerial = 0, live = false, lastHeartbeat = 0, autoDeckPending = false;
-  let gameState = null, gameLoading = false, gameLoadFailed = false, handSignature = '', gameRenderSerial = 0;
+  let gameState = null, gameLoading = false, gameLoadFailed = false, handSignature = '', gameRenderSerial = 0, cardPreviewSerial = 0;
   const patronPreviews = { self: { key: '', serial: 0 }, opponent: { key: '', serial: 0 } };
   root.innerHTML = `
     <div class="play-heading"><h1>Lobby</h1></div>
@@ -22,7 +22,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     </div>
     <section id="play-session" hidden>
       <button id="play-back" class="back-to-decks" type="button"><span aria-hidden="true">←</span> Back to Lobby</button>
-      <div class="play-room-bar"><div class="play-room-identity"><span class="play-eyebrow">TABLE</span><div class="play-room-name-line"><strong id="play-room-name"></strong><button id="play-edit-name" class="action-cancel" type="button">Edit name</button></div><form id="play-name-form" hidden><input id="play-name-input" aria-label="Table name" maxlength="60" required><button type="submit">Save</button><button id="play-cancel-name" type="button">Cancel</button></form><span class="play-room-code-line">Code: <strong id="play-room-code"></strong></span></div><div class="play-room-actions"><details class="play-table-menu"><summary class="play-menu-toggle" aria-label="Table actions" title="Table actions"><span class="play-menu-bars" aria-hidden="true"><span></span><span></span><span></span></span></summary><div class="play-table-menu-panel"><button id="play-leave" class="action-delete" type="button">Abandon Table</button></div></details></div></div>
+      <div class="play-room-bar"><div class="play-room-identity"><span class="play-eyebrow">TABLE</span><div class="play-room-name-line"><strong id="play-room-name"></strong><button id="play-edit-name" class="action-cancel" type="button">Edit name</button></div><form id="play-name-form" hidden><input id="play-name-input" aria-label="Table name" maxlength="60" required><button type="submit">Save</button><button id="play-cancel-name" type="button">Cancel</button></form><span class="play-room-code-line">Code: <strong id="play-room-code"></strong></span></div><div class="play-room-actions"><details class="play-table-menu"><summary class="play-menu-toggle" aria-label="Table actions" title="Table actions"><svg class="play-menu-bars" aria-hidden="true" viewBox="0 0 22 22"><path d="M3 5h16 M3 11h16 M3 17h16"/></svg></summary><div class="play-table-menu-panel"><button id="play-leave" class="action-delete" type="button">Abandon Table</button></div></details></div></div>
       <div id="play-players" class="play-players"></div>
       <label id="play-deck-field" class="play-deck-field" for="play-deck">Your deck<select id="play-deck"><option value="">No decks available</option></select></label>
       <button id="play-ready" class="action-add-save" type="button">Ready</button>
@@ -30,15 +30,18 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
       <p id="play-room-status" role="status"></p>
     </section>
     <section id="play-game" hidden>
+      <div class="play-game-player-block">
+      <div class="play-game-opponent-identity play-game-player-identity"><strong id="play-game-opponent-name"></strong><span id="play-game-opponent-presence" class="play-away-pill" hidden></span></div>
       <section id="play-game-opponent" class="play-surface play-game-seat" aria-label="Opponent's area">
         <div class="play-game-opponent-row">
           <span aria-hidden="true"></span>
           <div id="play-game-opponent-hand" class="play-game-opponent-hand" role="group" aria-label="Opponent's five face-down cards" hidden><span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span></div>
-          <div class="play-game-actions"><details class="play-table-menu"><summary class="play-menu-toggle" aria-label="Table actions" title="Table actions"><span class="play-menu-bars" aria-hidden="true"><span></span><span></span><span></span></span></summary><div class="play-table-menu-panel"><strong id="play-game-name" class="play-menu-table-name"></strong><button id="play-game-back" class="play-menu-lobby" type="button">Back to Lobby</button><button id="play-game-leave" class="action-delete" type="button">Smash Table</button></div></details></div>
+          <div class="play-game-actions"><details class="play-table-menu"><summary class="play-menu-toggle" aria-label="Table actions" title="Table actions"><svg class="play-menu-bars" aria-hidden="true" viewBox="0 0 22 22"><path d="M3 5h16 M3 11h16 M3 17h16"/></svg></summary><div class="play-table-menu-panel"><strong id="play-game-name" class="play-menu-table-name"></strong><button id="play-game-back" class="play-menu-lobby" type="button">Back to Lobby</button><button id="play-game-leave" class="action-delete" type="button">Smash Table</button></div></details></div>
         </div>
-        <div class="play-game-opponent-identity"><strong id="play-game-opponent-name"></strong><span id="play-game-opponent-presence" class="play-away-pill" hidden></span></div>
       </section>
+      </div>
       <div class="play-game-board-wrap"><div class="play-game-table">
+        <aside id="play-game-card-preview" class="play-game-card-preview" aria-label="Card preview" hidden><button id="play-game-card-preview-close" class="play-game-card-preview-close" type="button" aria-label="Close card preview">×</button><canvas id="play-game-card-preview-canvas" hidden></canvas><span id="play-game-card-preview-fallback" class="play-hand-fallback"></span></aside>
         <div class="play-game-zones-left">
           <div class="play-game-zone play-game-zone-opponent-patron"><div id="play-game-opponent-patron-slot" class="play-game-patron-slot" role="img" aria-label="Opponent's Patron"><canvas id="play-game-opponent-patron" hidden></canvas><span id="play-game-opponent-patron-fallback" class="play-game-patron-fallback" aria-hidden="true"></span></div></div>
           <div class="play-game-zone play-game-zone-self-patron"><div id="play-game-self-patron-slot" class="play-game-patron-slot" role="img" aria-label="Your Patron"><canvas id="play-game-self-patron" hidden></canvas><span id="play-game-self-patron-fallback" class="play-game-patron-fallback" aria-hidden="true"></span></div></div>
@@ -49,11 +52,12 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
           <div class="play-game-zone-pair play-game-zone-pair-self" aria-label="Your card zones"><div class="play-game-zone play-game-zone-horizon"><div class="play-deck-stack" role="img" aria-label="Your Horizon, draw deck"></div><span class="play-game-zone-label">HORIZON <span id="play-game-horizon-count"></span></span></div><div class="play-game-zone play-game-zone-archive"><div class="play-game-archive-card"><span id="play-game-archive-top">Empty</span></div><span class="play-game-zone-label">ARCHIVE <span id="play-game-archive-count"></span></span></div></div>
         </div>
       </div></div>
+      <div class="play-game-player-block">
+      <div class="play-game-self-identity play-game-player-identity"><strong id="play-game-self-name"></strong><span id="play-game-self-presence" class="play-away-pill" hidden></span></div>
       <section id="play-game-self" class="play-surface play-game-seat" aria-label="Your area">
-        <div class="play-game-self-identity"><strong id="play-game-self-name"></strong><span id="play-game-self-presence" class="play-away-pill" hidden></span></div>
         <div class="play-game-hand-wrap"><p id="play-game-loading" role="status">Preparing the opening hands…</p><div id="play-game-hand" class="play-game-hand"></div></div>
-        <p id="play-game-card-detail" class="play-game-card-detail" hidden></p>
       </section>
+      </div>
     </section>`;
   const deckField = $('deck-field');
   const readyButton = $('ready');
@@ -63,7 +67,10 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     }
   });
   document.addEventListener('keydown', event => {
-    if (event.key === 'Escape') for (const menu of root.querySelectorAll('.play-table-menu[open]')) menu.open = false;
+    if (event.key === 'Escape') {
+      for (const menu of root.querySelectorAll('.play-table-menu[open]')) menu.open = false;
+      hideCardPreview();
+    }
   });
   function message(text = '', error = false) {
     $('message-text').textContent = text;
@@ -123,6 +130,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
   async function disconnect() {
     ++epoch; ++fetchSerial;
     ++gameRenderSerial; gameState = null; gameLoading = false; gameLoadFailed = false; handSignature = '';
+    hideCardPreview();
     if (timer) clearInterval(timer);
     if (awayTicker) clearInterval(awayTicker);
     timer = null; awayTicker = null;
@@ -195,23 +203,49 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
       }
     })().catch(() => {});
   }
+  function hideCardPreview() {
+    ++cardPreviewSerial;
+    $('game-card-preview').hidden = true;
+  }
+  function showCardPreview(card) {
+    const serial = ++cardPreviewSerial;
+    const panel = $('game-card-preview');
+    const canvas = $('game-card-preview-canvas');
+    const fallback = $('game-card-preview-fallback');
+    canvas.hidden = true;
+    fallback.hidden = false;
+    fallback.textContent = card.title || 'Card';
+    panel.setAttribute('aria-label', `Preview of ${card.title || 'card'}`);
+    panel.hidden = false;
+    void (async () => {
+      const artwork = card.artwork_id ? await getArtworkUrl(card.artwork_id).catch(() => '') : '';
+      const result = await renderCard(canvas, card, artwork, () => serial === cardPreviewSerial);
+      if (serial === cardPreviewSerial && result && !result.cancelled) {
+        canvas.hidden = false;
+        fallback.hidden = true;
+      }
+    })().catch(() => {});
+  }
+  $('game-card-preview-close').addEventListener('click', hideCardPreview);
   function renderGameHand() {
     const hand = Array.isArray(gameState?.hand) ? gameState.hand : [];
     const signature = JSON.stringify(hand);
     if (signature === handSignature) return;
     handSignature = signature;
     const serial = ++gameRenderSerial;
+    hideCardPreview();
     const cards = hand.map(card => {
       const button = document.createElement('button');
       button.type = 'button'; button.className = 'play-hand-card';
-      button.setAttribute('aria-label', `View ${card.title || 'card'}`);
+      button.setAttribute('aria-label', `Preview ${card.title || 'card'}`);
       const canvas = document.createElement('canvas'); canvas.hidden = true;
       const fallback = document.createElement('span'); fallback.className = 'play-hand-fallback';
       fallback.textContent = card.title || 'Card';
       button.append(canvas, fallback);
-      button.addEventListener('click', () => {
-        $('game-card-detail').textContent = `${card.title || 'Card'} · ${card.card_type || 'Card'}${card.terrain ? ` · ${card.terrain}` : ''}${card.effect ? ` — ${card.effect}` : ''}`;
-        $('game-card-detail').hidden = false;
+      button.addEventListener('click', () => showCardPreview(card));
+      button.addEventListener('contextmenu', event => {
+        event.preventDefault();
+        showCardPreview(card);
       });
       void (async () => {
         const artwork = card.artwork_id ? await getArtworkUrl(card.artwork_id).catch(() => '') : '';
@@ -223,7 +257,6 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
       return button;
     });
     $('game-hand').replaceChildren(...cards);
-    $('game-card-detail').hidden = true;
   }
   function renderGame() {
     if (!room || room.status !== 'active') return;
@@ -322,8 +355,8 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
       details.append(title, summary);
       const b = document.createElement('button'); b.type = 'button';
       const full = !entry.is_participant && entry.player_count >= 2;
-      b.textContent = entry.is_participant ? 'Sit down' : full ? 'Full' : 'Join table';
-      if (entry.is_participant) b.classList.add('action-add-save');
+      b.textContent = entry.is_participant ? 'Sit down' : full ? 'Full' : 'Sit at the table';
+      if (!full) b.classList.add('action-add-save');
       b.dataset.full = String(full); b.disabled = busy || full;
       b.setAttribute('aria-label', `${b.textContent} ${entry.code}`);
       b.addEventListener('click', () => run(async () => {
@@ -362,6 +395,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     userId = seatId;
     if (room.activated_at && !data.activated_at) {
       ++gameRenderSerial; gameState = null; gameLoading = false; gameLoadFailed = false; handSignature = '';
+      hideCardPreview();
     }
     room = data; render();
     if (room.status === 'active') void loadGameState();
@@ -467,6 +501,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     syncLobbyRefresh();
     root.classList.toggle('is-at-table', Boolean(userId && room && !inLobby));
     const playing = Boolean(userId && room?.status === 'active' && !inLobby);
+    if (!playing) hideCardPreview();
     $('signin').hidden = Boolean(userId);
     $('lobby').hidden = !userId || Boolean(room && !inLobby);
     $('session').hidden = !userId || !room || playing || inLobby;

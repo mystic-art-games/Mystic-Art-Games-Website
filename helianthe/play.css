@@ -44,8 +44,8 @@ body.dark-mode #play-back { color: #e5eee0; }
 .play-table-menu { position: relative; z-index: 10; }
 .play-menu-toggle { display: flex; align-items: center; justify-content: center; width: 2.7rem; height: 2.5rem; border: 1px solid #749a88; border-radius: 10px; background: #f4f7ee; color: #265847; cursor: pointer; list-style: none; box-shadow: 0 2px 8px #16372724; }
 .play-menu-toggle::-webkit-details-marker { display: none; }
-.play-menu-bars { display: flex; flex-direction: column; justify-content: space-between; width: 20px; height: 14px; }
-.play-menu-bars span { display: block; width: 20px; height: 2px; flex: 0 0 2px; border-radius: 1px; background: currentColor; }
+.play-menu-bars { display: block; flex: 0 0 auto; width: 22px; height: 22px; }
+.play-menu-bars path { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
 .play-menu-toggle:hover, .play-table-menu[open] .play-menu-toggle { background: #e0ebda; }
 .play-menu-toggle:focus-visible { outline: 3px solid #b99b58; outline-offset: 2px; }
 .play-table-menu-panel { position: absolute; top: calc(100% + .4rem); right: 0; z-index: 20; min-width: 170px; padding: .5rem; border: 1px solid #a4b6a5; border-radius: 10px; background: #fffdf4; box-shadow: 0 10px 24px #16372733; }
@@ -64,24 +64,30 @@ body.dark-mode #play-back { color: #e5eee0; }
 .play-table-menu-panel .play-menu-lobby { margin-bottom: .4rem; border: 1px solid #a4b6a5; background: #fff; color: #214b38; box-shadow: none; }
 .play-table-menu-panel .play-menu-lobby:hover { background: #eaf2e9; box-shadow: none; }
 .play-menu-table-name { display: block; margin: .15rem .3rem .6rem; padding-bottom: .55rem; border-bottom: 1px solid #d2dfd1; font-size: .95rem; line-height: 1.25; overflow-wrap: anywhere; }
-.play-game-seat { padding: 1rem 1.25rem; }
+.play-game-seat { padding: .35rem .75rem; }
+.play-game-player-identity { display: flex; align-items: center; gap: .6rem; min-height: 1.4rem; padding: 0 .5rem .2rem; }
+.play-game-player-identity strong { font-size: 1rem; overflow-wrap: anywhere; }
 .play-game-seat-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .85rem; }
 .play-game-seat-heading > strong { font-size: 1.12rem; overflow-wrap: anywhere; }
 .play-game-opponent-row { display: grid; grid-template-columns: minmax(44px, 1fr) minmax(0, 520px) minmax(44px, 1fr); align-items: center; gap: .75rem; }
 .play-game-opponent-row .play-game-actions { justify-self: end; }
-.play-game-opponent-identity { display: flex; align-items: center; flex-wrap: wrap; gap: .6rem; margin-top: .45rem; }
-.play-game-opponent-identity strong { font-size: 1.12rem; overflow-wrap: anywhere; }
-.play-game-self-identity { display: flex; align-items: center; flex-wrap: wrap; gap: .6rem; min-width: 0; }
-.play-game-self-identity strong { font-size: 1.12rem; overflow-wrap: anywhere; }
+.play-game-opponent-identity, .play-game-self-identity { flex-wrap: wrap; min-width: 0; }
 .play-game-hand-wrap { min-width: 0; }
 .play-game-hand-wrap #play-game-loading { margin: 0; text-align: center; }
 .play-deck-stack, .play-game-opponent-hand span { display: block; flex: 0 0 auto; width: 62px; aspect-ratio: 63 / 88; border: 2px solid #b99b58; border-radius: 8px; background: url('../images/helianthe-logo.png') center / 62% no-repeat, linear-gradient(145deg,#194a3a,#286b58); box-shadow: inset 0 0 0 3px #e0c88c, 0 3px 9px #16372744; }
 .play-deck-stack { box-shadow: inset 0 0 0 3px #e0c88c, 4px -4px 0 #245341, 7px -7px 0 #b99b58, 0 6px 12px #16372744; }
 .play-game-opponent-hand { display: flex; justify-content: center; gap: .45rem; min-width: 0; overflow-x: auto; }
 .play-game-opponent-hand span { width: clamp(44px, 7vw, 66px); }
-.play-game-board-wrap { width: 100%; max-width: 780px; margin: 1.25rem auto; }
+.play-game-board-wrap { width: 100%; max-width: 1000px; margin: 0 auto; }
 .play-game-table { display: grid; grid-template-columns: 48px minmax(0, 600px) 63px; align-items: stretch; justify-content: center; gap: clamp(8px, 1.5vw, 18px); }
 .play-game-board { position: relative; align-self: center; min-width: 0; width: 100%; aspect-ratio: 1; background: radial-gradient(circle, #a7ccb64d, transparent 72%); }
+.play-game-table:has(.play-game-card-preview:not([hidden])) { grid-template-columns: minmax(140px, 190px) 48px minmax(0, 600px) 63px; }
+.play-game-card-preview { position: relative; align-self: center; width: min(100%, 190px, 71cqh); aspect-ratio: 63 / 88; overflow: hidden; border: 1px solid #8da79a; border-radius: 9px; background: #e9ece1; box-shadow: 0 8px 24px #183a2c55; }
+.play-game-card-preview canvas { display: block; width: 100%; height: 100%; }
+.play-game-card-preview canvas[hidden], .play-game-card-preview .play-hand-fallback[hidden] { display: none; }
+.play-game-card-preview .play-hand-fallback { display: grid; place-items: center; width: 100%; height: 100%; }
+.play-game-card-preview-close { position: absolute; z-index: 1; top: .2rem; right: .2rem; width: 1.65rem; height: 1.65rem; padding: 0; border-radius: 50%; line-height: 1; background: #fffdf4e8; }
+.play-game-card-preview-close:hover { background: #fff; }
 .play-game-zones-left, .play-game-zones-right { display: flex; flex-direction: column; justify-content: space-between; }
 .play-game-zone-pair { position: relative; width: 63px; height: 180px; }
 .play-game-zone-pair-opponent { transform: translateY(-16px); }
@@ -112,7 +118,6 @@ body.dark-mode #play-back { color: #e5eee0; }
 .play-hand-card canvas { display: block; width: 100%; height: 100%; object-fit: fill; }
 .play-hand-card canvas[hidden], .play-hand-fallback[hidden] { display: none; }
 .play-hand-fallback { padding: .6rem; color: #234536; font-size: .9rem; font-weight: 700; text-align: center; }
-.play-game-card-detail { margin: .65rem 0 0; padding: .75rem; border: 1px solid #aec4b7; border-radius: 10px; white-space: pre-wrap; }
 body.dark-mode .play-workspace { background: linear-gradient(145deg,#153f34,#246047); color: #f0f5e8; border-color: #416853; box-shadow: inset 1px 1px 0 #ffffff30; }
 body.dark-mode .play-workspace .play-surface, body.dark-mode .play-player { background: #12372c90; border-color: #527460; }
 body.dark-mode .play-workspace .play-eyebrow { color: #b2c9b9; }
@@ -125,27 +130,28 @@ body.dark-mode #play-message { color: #163737; }
 body.dark-mode .play-game-node:not([class*="terrain-"]) { background: #12372c90; }
 body.dark-mode .play-game-patron-slot, body.dark-mode .play-game-archive-card { background: #204537; border-color: #668c76; color: #d8e7d7; }
 body.dark-mode .play-game-patron-fallback, body.dark-mode .play-game-zone-label { color: #d8e7d7; }
-body.dark-mode .play-game-card-detail { border-color: #527460; }
+body.dark-mode .play-game-card-preview { background: #204537; border-color: #668c76; }
 body:has(#play-view:not([hidden]) #play-game:not([hidden])) .masthead { display: none; }
 .play-away-pill { display: inline-flex; align-items: center; padding: .25rem .55rem; border: 1px solid #c49958; border-radius: 999px; background: #fff4dd; color: #704d15; font-size: .78rem; font-weight: 800; white-space: nowrap; }
 .play-away-pill[hidden] { display: none; }
-@media (min-width: 851px) {
-  html:has(#play-view:not([hidden])) { height: auto; overflow-y: auto; }
-  body:has(#play-view:not([hidden])) { height: auto; min-height: 100dvh; overflow-y: visible; }
-}
-@media (max-height: 800px) {
-  #play-game { display: flex; flex-direction: column; }
-  #play-game #play-game-opponent { order: 1; width: 100%; padding: .55rem .85rem; box-sizing: border-box; }
-  #play-game #play-game-opponent .play-game-opponent-hand { gap: .25rem; margin: 0; }
-  #play-game #play-game-opponent .play-game-opponent-hand span { width: 44px; }
-  #play-game .play-game-board-wrap { order: 2; width: min(100%, calc(max(300px, 100dvh - 280px) + 150px)); margin: .35rem auto 1rem; }
-  #play-game #play-game-self { order: 3; width: 100%; box-sizing: border-box; margin-top: .75rem; }
-}
-@media (max-height: 800px) and (max-width: 600px) {
-  #play-game .play-game-board-wrap { width: min(100%, calc(max(120px, 100dvh - 340px) + 150px)); }
-}
+html:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100%; overflow-y: hidden; }
+body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; min-height: 0; overflow-y: hidden; scrollbar-gutter: auto; }
+#play-view:has(#play-game:not([hidden])) { display: flex; flex-direction: column; width: min(100%, 1200px); height: 100dvh; margin: 0 auto; padding: clamp(.3rem, 1vh, .7rem); border-radius: 0; }
+#play-game:not([hidden]) { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: .35rem; flex: 1; min-height: 0; }
+#play-game .play-game-player-block { min-height: 0; }
+#play-game .play-game-opponent-hand span { width: clamp(38px, 7vh, 58px); }
+#play-game .play-game-hand { gap: .4rem; padding: .2rem 0; }
+#play-game .play-hand-card { flex-basis: clamp(52px, 9vh, 78px); }
+#play-game .play-game-board-wrap { min-height: 0; height: 100%; container-type: size; }
+#play-game .play-game-table { width: min(100%, calc(100cqh + 150px)); height: 100%; margin: 0 auto; grid-template-columns: 48px minmax(0, 1fr) 63px; }
+#play-game .play-game-table:has(.play-game-card-preview:not([hidden])) { width: min(100%, calc(100cqh + 370px)); grid-template-columns: minmax(140px, 190px) 48px minmax(0, 1fr) 63px; }
+#play-game .play-game-table:has(.play-game-card-preview:not([hidden])) .play-game-zones-left { grid-column: 2; }
+#play-game .play-game-table:has(.play-game-card-preview:not([hidden])) .play-game-board { grid-column: 3; }
+#play-game .play-game-table:has(.play-game-card-preview:not([hidden])) .play-game-zones-right { grid-column: 4; }
+#play-game .play-game-board { width: min(100%, 100cqh); max-height: 100%; margin: auto; }
 @media (max-width: 650px) {
-  .play-game-table { grid-template-columns: repeat(3, minmax(0,1fr)); justify-items: center; gap: .75rem; }
+  #play-game .play-game-table, #play-game .play-game-table:has(.play-game-card-preview:not([hidden])) { width: 100%; grid-template-columns: repeat(3, minmax(0,1fr)); grid-template-rows: 82px minmax(0,1fr) 82px; justify-items: center; gap: .25rem; }
+  #play-game .play-game-card-preview { position: fixed; z-index: 30; top: 50%; left: .5rem; width: min(44vw, 160px, 38vh); transform: translateY(-50%); }
   .play-game-zones-left, .play-game-zones-right { display: contents; }
   .play-game-zone-pair { position: static; display: flex; align-items: flex-start; gap: 10px; width: auto; height: auto; }
   .play-game-zone-pair .play-game-zone { position: static; }
@@ -153,11 +159,10 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) .masthead { display:
   .play-game-zone-pair .play-game-zone-horizon { order: 1; }
   .play-game-zone-opponent-patron { grid-column: 1; grid-row: 1; }
   .play-game-zone-pair-opponent { grid-column: 2 / -1; grid-row: 1; transform: none; }
-  .play-game-board { grid-column: 1 / -1; grid-row: 2; width: min(100%, 500px); }
+  #play-game .play-game-board, #play-game .play-game-table:has(.play-game-card-preview:not([hidden])) .play-game-board { grid-column: 1 / -1; grid-row: 2; width: auto; height: 100%; max-width: 100%; }
   .play-game-zone-self-patron { grid-column: 1; grid-row: 3; margin-bottom: 0; }
   .play-game-zone-pair-self { grid-column: 2 / -1; grid-row: 3; }
   #play-game .play-game-board-wrap { width: 100%; }
-  #play-game .play-game-board { width: min(100%, max(120px, calc(100dvh - 340px))); }
 }
 /* Keep account controls accessible on small desktop widths. */
 @media (min-width: 851px) and (max-width: 1000px) {
