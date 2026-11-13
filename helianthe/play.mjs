@@ -12,7 +12,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   let busy = false, epoch = 0, fetchSerial = 0, live = false, lastHeartbeat = 0, autoDeckPending = false;
   let gameState = null, gameLoading = false, gameLoadFailed = false, handSignature = '', gameRenderSerial = 0, cardPreviewSerial = 0;
   let turnSeat = null, turnPhase = null, patronDeckRequest = '';
-  const gameDeckPatrons = new Map(), gamePlayerPatrons = new Map();
+  const gameDeckPatrons = new Map(), gamePlayerPatrons = new Map(), gameDeckNames = new Map();
   const patronPreviews = { self: { key: '', serial: 0 }, opponent: { key: '', serial: 0 } };
   root.innerHTML = `
     <div class="play-heading"><h1>Lobby</h1></div>
@@ -66,7 +66,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         <button id="play-game-next-phase" class="play-game-next-phase" type="button">Next phase →</button>
       </aside></div>
       <div class="play-game-player-block">
-      <div class="play-game-self-identity play-game-player-identity"><strong id="play-game-self-name"></strong><span id="play-game-self-presence" class="play-away-pill" hidden></span></div>
+      <div class="play-game-self-identity play-game-player-identity"><div class="play-game-self-labels"><strong id="play-game-self-name"></strong><span id="play-game-self-deck-name" class="play-game-self-deck-name"></span></div><span id="play-game-self-presence" class="play-away-pill" hidden></span></div>
       <section id="play-game-self" class="play-surface play-game-seat" aria-label="Your area">
         <div class="play-game-hand-wrap"><p id="play-game-loading" role="status">Preparing the opening hands…</p><div id="play-game-hand" class="play-game-hand"></div></div>
       </section>
@@ -204,7 +204,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   async function disconnect() {
     ++epoch; ++fetchSerial;
     ++gameRenderSerial; gameState = null; gameLoading = false; gameLoadFailed = false; handSignature = '';
-    turnSeat = null; turnPhase = null; patronDeckRequest = ''; gameDeckPatrons.clear(); gamePlayerPatrons.clear();
+    turnSeat = null; turnPhase = null; patronDeckRequest = ''; gameDeckPatrons.clear(); gamePlayerPatrons.clear(); gameDeckNames.clear();
     for (const seat of ['self', 'opponent']) {
       const preview = patronPreviews[seat];
       preview.key = ''; preview.card = null; ++preview.serial;
@@ -251,6 +251,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const profile = getProfiles().find(person => person.id === id);
     const deck = getDecks().find(item => String(item.id) === String(deckId));
     $(`game-${seat}-name`).textContent = `${profile?.display_name || 'Player'}${own ? ' · You' : ''}`;
+    if (own) $('game-self-deck-name').textContent = gameDeckNames.get(String(deckId)) || deck?.name || '';
     if (!own) $('game-opponent-horizon').setAttribute('aria-label', `Opponent's Horizon, ${deck?.name || 'selected deck'}`);
     const savedPatron = room[`${roomSeat}_patron_name`];
     const selectedPatron = gamePlayerPatrons.get(String(id)) || gameDeckPatrons.get(String(deckId))
@@ -265,11 +266,14 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     patronDeckRequest = signature;
     const expected = epoch, roomId = room.id;
     const [decks, gameDecks] = await Promise.all([
-      client.from('decks').select('id,patron_name').in('id', deckIds),
+      client.from('decks').select('id,name,patron_name').in('id', deckIds),
       client.from('play_game_decks').select('player_id,patron_name').eq('room_id', roomId),
     ]);
     if (expected !== epoch || room?.id !== roomId) return;
-    if (!decks.error) for (const deck of decks.data || []) gameDeckPatrons.set(String(deck.id), deck.patron_name);
+    if (!decks.error) for (const deck of decks.data || []) {
+      gameDeckPatrons.set(String(deck.id), deck.patron_name);
+      gameDeckNames.set(String(deck.id), deck.name);
+    }
     if (!gameDecks.error) for (const deck of gameDecks.data || []) gamePlayerPatrons.set(String(deck.player_id), deck.patron_name);
     if (decks.error && gameDecks.error) patronDeckRequest = '';
     if (!inLobby) renderGame();

@@ -79,6 +79,8 @@ body.dark-mode #play-back { color: #e5eee0; }
 .play-game-seat { padding: .35rem .75rem; }
 .play-game-player-identity { display: flex; align-items: center; gap: .6rem; min-height: 1.4rem; padding: 0 .5rem .2rem; }
 .play-game-player-identity strong { font-size: 1rem; overflow-wrap: anywhere; }
+.play-game-self-labels { display: flex; flex-direction: column; min-width: 0; }
+.play-game-self-deck-name { font-size: .78rem; line-height: 1.2; opacity: .82; overflow-wrap: anywhere; }
 .play-game-seat-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .85rem; }
 .play-game-seat-heading > strong { font-size: 1.12rem; overflow-wrap: anywhere; }
 .play-game-opponent-row { display: grid; grid-template-columns: minmax(44px, 1fr) minmax(0, 520px) minmax(44px, 1fr); align-items: center; gap: .75rem; }
