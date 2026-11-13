@@ -4,7 +4,7 @@ export function playerOnline(timestamp, now = Date.now()) {
   return Boolean(timestamp && now - Date.parse(timestamp) < 45000);
 }
 
-export function createPlayView({ client, getUser, getDecks, getProfiles, makeAvatar, requireSignIn, renderCard, getArtworkUrl, getPatronCard }) {
+export function createPlayView({ client, getUser, getDecks, getCards, getProfiles, makeAvatar, requireSignIn, renderCard, getArtworkUrl, getPatronCard }) {
   const root = document.querySelector('#play-view');
   const $ = id => root.querySelector(`#play-${id}`);
   let userId = null, room = null, channel = null, timer = null, awayTicker = null, visible = false, inLobby = false;
@@ -56,13 +56,14 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
       </div>
       <aside id="play-game-phases" class="play-game-phases" aria-label="Turn phases">
         <span class="play-eyebrow">TURN PHASE</span>
-        <div class="play-game-turn-players" role="group" aria-label="Whose turn"><button id="play-game-turn-self" type="button">You</button><button id="play-game-turn-opponent" type="button">Opponent</button></div>
+        <p id="play-game-turn-owner" class="play-game-turn-owner" aria-live="polite"></p>
         <ol class="play-game-phase-list">
-          <li><button type="button" data-phase="0"><span class="play-game-phase-marker" aria-hidden="true"></span>Beginning of Turn</button></li>
-          <li><button type="button" data-phase="1"><span class="play-game-phase-marker" aria-hidden="true"></span>Draw</button></li>
-          <li><button type="button" data-phase="2"><span class="play-game-phase-marker" aria-hidden="true"></span>Main Phase</button></li>
-          <li><button type="button" data-phase="3"><span class="play-game-phase-marker" aria-hidden="true"></span>End of Turn</button></li>
+          <li data-phase="0"><span class="play-game-phase-marker" aria-hidden="true"></span>Beginning of Turn</li>
+          <li data-phase="1"><span class="play-game-phase-marker" aria-hidden="true"></span>Draw</li>
+          <li data-phase="2"><span class="play-game-phase-marker" aria-hidden="true"></span>Main Phase</li>
+          <li data-phase="3"><span class="play-game-phase-marker" aria-hidden="true"></span>End of Turn</li>
         </ol>
+        <button id="play-game-next-phase" class="play-game-next-phase" type="button">Next phase →</button>
       </aside></div>
       <div class="play-game-player-block">
       <div class="play-game-self-identity play-game-player-identity"><strong id="play-game-self-name"></strong><span id="play-game-self-presence" class="play-away-pill" hidden></span></div>
@@ -87,39 +88,41 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
   const patronMarkerColors = { Flow: '#4b9ab7', Radiance: '#d4a13e', Symbiosis: '#9c71bc', Verdant: '#5d9c69' };
   function ownTurnSeat() { return room?.host_id === userId ? 'host' : 'guest'; }
   function renderTurnPhase() {
-    const selected = turnSeat || ownTurnSeat();
+    const selected = turnSeat || 'host';
     const own = selected === ownTurnSeat();
     const patron = patronPreviews[own ? 'self' : 'opponent'].card;
     $('game-phases').style.setProperty('--play-phase-color', patronMarkerColors[patron?.terrain] || '#7ba98a');
-    for (const [seat, id] of [['self', 'game-turn-self'], ['opponent', 'game-turn-opponent']]) {
-      const button = $(id), active = seat === (own ? 'self' : 'opponent');
-      button.classList.toggle('is-selected', active);
-      button.setAttribute('aria-pressed', String(active));
+    $('game-turn-owner').textContent = own ? 'Your turn' : "Opponent's turn";
+    for (const step of root.querySelectorAll('.play-game-phase-list li')) {
+      const active = Number(step.dataset.phase) === turnPhase;
+      step.classList.toggle('is-current', active);
+      if (active) step.setAttribute('aria-current', 'step');
+      else step.removeAttribute('aria-current');
     }
-    for (const button of root.querySelectorAll('.play-game-phase-list button')) {
-      const active = Number(button.dataset.phase) === turnPhase;
-      button.classList.toggle('is-current', active);
-      button.setAttribute('aria-pressed', String(active));
-    }
+    const next = $('game-next-phase');
+    next.textContent = turnPhase === 3 ? 'Pass turn →' : 'Next phase →';
+    next.disabled = !room || room.status !== 'active' || !own;
   }
   function restoreTurnPhase() {
     let saved = null;
     try { saved = JSON.parse(localStorage.getItem(`helianthe-play-phase:${room.id}`) || 'null'); } catch {}
-    turnSeat = ['host', 'guest'].includes(saved?.seat) ? saved.seat : ownTurnSeat();
-    turnPhase = Number.isInteger(saved?.phase) && saved.phase >= 0 && saved.phase < 4 ? saved.phase : null;
+    const startingSeat = room.starting_player_id === room.guest_id || room.first_player_id === room.guest_id ? 'guest' : 'host';
+    turnSeat = ['host', 'guest'].includes(saved?.seat) ? saved.seat : startingSeat;
+    turnPhase = Number.isInteger(saved?.phase) && saved.phase >= 0 && saved.phase < 4 ? saved.phase : 0;
   }
   function setTurnPhase(seat, phase, publish = true) {
-    if (!room || !['host', 'guest'].includes(seat) || !(phase === null || (Number.isInteger(phase) && phase >= 0 && phase < 4))) return;
+    if (!room || !['host', 'guest'].includes(seat) || !(Number.isInteger(phase) && phase >= 0 && phase < 4)) return;
     turnSeat = seat; turnPhase = phase;
     try { localStorage.setItem(`helianthe-play-phase:${room.id}`, JSON.stringify({ seat, phase })); } catch {}
     renderTurnPhase();
     if (publish && channel) void channel.send({ type: 'broadcast', event: 'turn_phase', payload: { seat, phase } }).catch(() => {});
   }
-  $('game-turn-self').addEventListener('click', () => setTurnPhase(ownTurnSeat(), null));
-  $('game-turn-opponent').addEventListener('click', () => setTurnPhase(ownTurnSeat() === 'host' ? 'guest' : 'host', null));
-  for (const button of root.querySelectorAll('.play-game-phase-list button')) {
-    button.addEventListener('click', () => setTurnPhase(turnSeat || ownTurnSeat(), Number(button.dataset.phase)));
+  function advanceTurnPhase() {
+    if (!room || room.status !== 'active' || turnSeat !== ownTurnSeat()) return;
+    if (turnPhase === 3) setTurnPhase(turnSeat === 'host' ? 'guest' : 'host', 0);
+    else setTurnPhase(turnSeat, turnPhase + 1);
   }
+  $('game-next-phase').addEventListener('click', advanceTurnPhase);
   for (const seat of ['self', 'opponent']) {
     $(`game-${seat}-patron-slot`).addEventListener('contextmenu', event => {
       event.preventDefault();
@@ -331,8 +334,17 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     })().catch(() => {});
   }
   $('game-card-preview-close').addEventListener('click', hideCardPreview);
+  function resolveGameCard(raw) {
+    const card = raw && typeof raw === 'object' ? raw : { title: String(raw || '') };
+    const catalog = getCards?.() || [];
+    const id = card.card_id || card.id;
+    const title = String(card.title || card.name || '').trim().toLocaleLowerCase();
+    const full = catalog.find(item => id && String(item.id) === String(id))
+      || catalog.find(item => title && item.title?.trim().toLocaleLowerCase() === title);
+    return full ? { ...card, ...full } : card;
+  }
   function renderGameHand() {
-    const hand = Array.isArray(gameState?.hand) ? gameState.hand : [];
+    const hand = Array.isArray(gameState?.hand) ? gameState.hand.map(resolveGameCard) : [];
     const signature = JSON.stringify(hand);
     if (signature === handSignature) return;
     handSignature = signature;
