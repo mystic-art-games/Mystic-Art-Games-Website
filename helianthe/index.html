@@ -3,6 +3,18 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <script>
+    try {
+      document.documentElement.classList.toggle('dark-mode', localStorage.getItem('mystic-art-theme') === 'dark');
+    } catch {}
+  </script>
+  <style>
+    :root { color-scheme: light; background: #fff; }
+    :root.dark-mode { color-scheme: dark; background: #102f27; }
+    body { background-color: #fff; }
+    body.dark-mode { background-color: #102f27; }
+  </style>
   <meta name="theme-color" content="#153f34">
   <meta name="application-name" content="Helianthe">
   <meta name="mobile-web-app-capable" content="yes">
@@ -16,9 +28,10 @@
   <link rel="stylesheet" href="./style.css?v=helianthe-ui-208">
   <link rel="stylesheet" href="./play.css?v=play-29">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script type="module" src="./app.mjs?v=helianthe-ui-163"></script>
+  <script type="module" src="./app.mjs?v=helianthe-ui-164"></script>
 </head>
 <body>
+  <script>document.body.classList.toggle('dark-mode', document.documentElement.classList.contains('dark-mode'));</script>
   <header class="masthead">
     <div class="brand"><img class="brand-mark" src="../images/helianthe-logo.png?v=helianthe-logo-1" alt=""><div><strong>Helianthe</strong></div></div>
     <div class="header-controls">

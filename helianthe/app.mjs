@@ -73,6 +73,7 @@ try {
 } catch {}
 
 function applyTheme(dark) {
+  document.documentElement.classList.toggle('dark-mode', dark);
   document.body.classList.toggle('dark-mode', dark);
   const toggle = $('#theme-toggle');
   toggle.querySelector('.theme-state').textContent = dark ? 'On' : 'Off';
