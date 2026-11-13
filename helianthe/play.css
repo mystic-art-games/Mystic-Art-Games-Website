@@ -92,7 +92,7 @@ body.dark-mode #play-back { color: #e5eee0; }
 .play-game-opponent-hand { display: flex; justify-content: center; gap: .45rem; min-width: 0; overflow-x: auto; }
 .play-game-opponent-hand span { width: clamp(44px, 7vw, 66px); }
 .play-game-board-wrap { width: 100%; max-width: 1000px; margin: 0 auto; }
-.play-game-table { display: grid; grid-template-columns: 63px minmax(0, 600px) 63px; align-items: stretch; justify-content: center; gap: clamp(8px, 1.5vw, 18px); }
+.play-game-table { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 5fr) minmax(0, 1fr); align-items: stretch; justify-content: center; gap: clamp(8px, 1.5vw, 18px); }
 .play-game-board { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); grid-template-rows: repeat(4, minmax(0, 1fr)); align-self: center; gap: clamp(2px, .5cqh, 6px); min-width: 0; width: 100%; aspect-ratio: 315 / 352; background: radial-gradient(circle, #a7ccb64d, transparent 72%); }
 .play-game-card-preview { position: fixed; z-index: 30; top: 50%; left: clamp(.75rem, 1.5vw, 1.25rem); transform: translateY(-50%); width: min(240px, 21vw, 40vh); aspect-ratio: 63 / 88; overflow: hidden; border: 1px solid #8da79a; border-radius: 9px; background: #e9ece1; box-shadow: 0 8px 24px #183a2c55; }
 .play-game-card-preview canvas { display: block; width: 100%; height: 100%; }
@@ -104,11 +104,10 @@ body.dark-mode #play-back { color: #e5eee0; }
 .play-game-zone-pair { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: clamp(.1rem, .7cqh, .4rem); width: 100%; height: 100%; }
 .play-game-zone-pair-opponent { grid-row: 1 / 3; }
 .play-game-zone-pair-self { grid-row: 3 / 5; }
-.play-game-zone { display: flex; flex-direction: column; align-items: center; gap: .15rem; width: clamp(26px, 10cqh, 48px); min-width: 0; text-align: center; }
+.play-game-zone { display: flex; flex-direction: column; align-items: center; gap: .15rem; width: var(--play-map-card-width, 100%); max-width: 100%; min-width: 0; text-align: center; }
 .play-game-zone-opponent-patron { grid-row: 2; }
 .play-game-zone-self-patron { grid-row: 3; }
-.play-game-zone:is(.play-game-zone-opponent-patron, .play-game-zone-self-patron) { width: clamp(36px, 13cqh, 54px); }
-.play-game-zone .play-deck-stack, .play-game-patron-slot, .play-game-archive-card { width: 100%; aspect-ratio: 63 / 88; box-sizing: border-box; border-radius: 8px; }
+.play-game-zone .play-deck-stack, .play-game-patron-slot, .play-game-archive-card { width: 100%; height: var(--play-map-card-height, auto); aspect-ratio: 63 / 88; box-sizing: border-box; border-radius: 8px; }
 .play-game-patron-slot { display: flex; align-items: center; justify-content: center; overflow: hidden; border: 1px solid #8da79a; background: #e7ede3; box-shadow: 0 4px 12px #183a2c33; }
 .play-game-patron-slot canvas { display: block; width: 100%; height: 100%; object-fit: fill; }
 .play-game-patron-slot canvas[hidden], .play-game-patron-fallback[hidden] { display: none; }
@@ -153,15 +152,13 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
 #play-game .play-game-hand { gap: .4rem; padding: .2rem 0; }
 #play-game .play-hand-card { flex-basis: clamp(52px, 9vh, 78px); }
 #play-game .play-game-board-wrap { min-height: 0; height: 100%; container-type: size; }
-#play-game .play-game-table { width: min(100%, calc(89cqh + 150px)); height: 100%; margin: 0 auto; grid-template-columns: 63px minmax(0, 1fr) 63px; }
+#play-game .play-game-table { width: min(100%, calc(124.6cqh + 24px)); height: 100%; margin: 0 auto; }
 #play-game .play-game-board { width: min(100%, 89cqh); max-height: 100%; margin: auto; }
 @media (max-width: 650px) {
-  #play-game .play-game-table { width: 100%; grid-template-columns: repeat(3, minmax(0,1fr)); grid-template-rows: 104px minmax(0,1fr) 104px; justify-items: center; gap: .25rem; }
+  #play-game .play-game-table { width: 100%; grid-template-columns: repeat(3, minmax(0,1fr)); grid-template-rows: minmax(0,1fr) minmax(0,3fr) minmax(0,1fr); justify-items: center; gap: .25rem; }
   #play-game .play-game-card-preview { left: .25rem; width: min(50vw, 190px, 42vh); }
   .play-game-zones-left, .play-game-zones-right { display: contents; }
-  .play-game-zone-pair { width: auto; height: 100%; gap: .1rem; }
-  .play-game-zone-pair .play-game-zone { width: clamp(24px, 7cqh, 30px); }
-  .play-game-zone:is(.play-game-zone-opponent-patron, .play-game-zone-self-patron) { width: clamp(32px, 10cqh, 42px); }
+  .play-game-zone-pair { flex-direction: row; width: auto; height: 100%; gap: .25rem; }
   .play-game-zone-opponent-patron { grid-column: 1; grid-row: 1; }
   .play-game-zone-pair-opponent { grid-column: 2 / -1; grid-row: 1; }
   #play-game .play-game-board { grid-column: 1 / -1; grid-row: 2; width: auto; height: 100%; max-width: 100%; }

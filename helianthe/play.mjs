@@ -59,6 +59,17 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
       </section>
       </div>
     </section>`;
+  function syncZoneCardSize() {
+    const cell = $('game-board').firstElementChild;
+    if (!cell) return;
+    const { width, height } = cell.getBoundingClientRect();
+    if (!width || !height) return;
+    root.style.setProperty('--play-map-card-width', `${width}px`);
+    root.style.setProperty('--play-map-card-height', `${height}px`);
+  }
+  if (typeof ResizeObserver === 'function') {
+    new ResizeObserver(syncZoneCardSize).observe($('game-board'));
+  }
   const deckField = $('deck-field');
   const readyButton = $('ready');
   for (const seat of ['self', 'opponent']) {
@@ -300,6 +311,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
       nodes.push(cell);
     }
     $('game-board').replaceChildren(...nodes);
+    requestAnimationFrame(syncZoneCardSize);
     $('game-loading').hidden = Boolean(gameState) || gameLoadFailed;
     $('game-opponent-hand').hidden = !gameState;
     const horizon = Array.isArray(gameState?.horizon) ? gameState.horizon : [];
