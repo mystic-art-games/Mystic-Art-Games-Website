@@ -61,6 +61,13 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     </section>`;
   const deckField = $('deck-field');
   const readyButton = $('ready');
+  for (const seat of ['self', 'opponent']) {
+    $(`game-${seat}-patron-slot`).addEventListener('contextmenu', event => {
+      event.preventDefault();
+      const card = patronPreviews[seat].card;
+      if (card) showCardPreview(card);
+    });
+  }
   document.addEventListener('pointerdown', event => {
     for (const menu of root.querySelectorAll('.play-table-menu[open]')) {
       if (!menu.contains(event.target)) menu.open = false;
@@ -180,6 +187,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
   function renderGamePatron(seat, patronName) {
     const card = patronName ? (getPatronCard?.(patronName) || { title: patronName, card_type: 'Patron' }) : null;
     const preview = patronPreviews[seat];
+    preview.card = card;
     const key = `${patronName || ''}:${card?.id || ''}:${card?.artwork_id || ''}`;
     if (preview.key === key) return;
     preview.key = key;
@@ -355,8 +363,13 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     tableListSignature = signature;
     $('room-list').replaceChildren();
     for (const entry of data) {
-      const row = document.createElement('div'); row.className = 'play-table-entry';
-      const details = document.createElement('div');
+      const row = document.createElement('article'); row.className = 'play-table-entry';
+      row.classList.toggle('is-full', entry.player_count >= 2);
+      row.classList.toggle('is-yours', entry.is_participant);
+      const scene = document.createElement('div'); scene.className = 'play-table-scene';
+      scene.setAttribute('aria-hidden', 'true');
+      scene.innerHTML = '<span class="play-table-chair play-table-chair-host"></span><span class="play-table-felt"><span class="play-table-card-back play-table-card-one"></span><span class="play-table-card-back play-table-card-two"></span><span class="play-table-cup"></span></span><span class="play-table-chair play-table-chair-guest"></span>';
+      const details = document.createElement('div'); details.className = 'play-table-details';
       const title = document.createElement('strong'); title.textContent = entry.name || defaultTableName(entry.host_name);
       const summary = document.createElement('span'); summary.textContent = `${entry.host_name} · ${entry.player_count} / 2 players`;
       details.append(title, summary);
@@ -378,8 +391,8 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
         if (inLobby && room?.id === entry.table_id && awayDeadline(true)) hint.id = 'play-away-note';
         hint.textContent = hint.id ? `Away · ${awayTime(awayDeadline(true))}` : 'Your chair is missing you.';
         action.append(hint, b);
-        row.append(details, action);
-      } else row.append(details, b);
+        row.append(scene, details, action);
+      } else row.append(scene, details, b);
       $('room-list').append(row);
     }
     updateAwayDisplays();

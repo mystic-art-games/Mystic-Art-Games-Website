@@ -14,14 +14,30 @@
 .play-create-panel .play-eyebrow { margin-bottom: .5rem; }
 #play-signin button { margin-top: .8rem; }
 .play-recent { grid-column: 1/-1; }
-.play-table-entry { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 0; border-top: 1px solid #aec4b7; }
-.play-table-entry:first-child { margin-top: .8rem; }
-.play-table-entry > div { min-width: 0; }
-.play-table-entry strong, .play-table-entry span { display: block; overflow-wrap: anywhere; }
-.play-table-entry span { margin-top: .25rem; font-size: .85rem; }
-.play-table-entry button { flex: 0 0 auto; }
-.play-table-action { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: .6rem; }
-.play-table-entry .play-chair-note { margin: 0; color: #486755; font-size: 1rem; font-weight: 400; }
+#play-room-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1rem; margin-top: .8rem; }
+.play-table-entry { display: flex; flex-direction: column; align-items: center; gap: .7rem; min-width: 0; min-height: 285px; padding: .75rem .9rem 1rem; border: 1px solid #aec4b7; border-radius: 18px; background: linear-gradient(150deg, #fffef8, #eaf1e8); box-shadow: inset 1px 1px 0 #fff, 0 6px 18px #173d2b1c; text-align: center; }
+.play-table-entry.is-yours { border-color: #b99755; box-shadow: inset 1px 1px 0 #fff, 0 6px 18px #7a592b32; }
+.play-table-details { width: 100%; min-width: 0; }
+.play-table-details strong, .play-table-details span { display: block; overflow-wrap: anywhere; }
+.play-table-details strong { line-height: 1.2; }
+.play-table-details span { margin-top: .25rem; font-size: .85rem; }
+.play-table-entry > button, .play-table-action { margin-top: auto; }
+.play-table-action { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: .5rem; width: 100%; }
+.play-table-entry .play-chair-note { margin: 0; color: #486755; font-size: .85rem; font-weight: 400; }
+.play-table-scene { position: relative; flex: 0 0 135px; width: min(100%, 230px); }
+.play-table-scene::before { content: ''; position: absolute; top: 102px; left: 50%; width: 90px; height: 26px; border-radius: 0 0 45px 45px; background: #68452f; box-shadow: 0 9px 12px #172c2040; transform: translateX(-50%); }
+.play-table-felt { position: absolute; top: 20px; left: 50%; display: block; width: 176px; height: 102px; border: 8px solid #85583b; border-radius: 50%; background: radial-gradient(ellipse at 45% 35%, #408761, #245840 72%); box-shadow: inset 0 0 0 2px #a87850, inset 0 7px 11px #0c3a2b69, 0 8px 0 #5e3c29, 0 12px 17px #193a2b44; transform: translateX(-50%) rotate(-6deg); }
+.play-table-chair { position: absolute; z-index: 0; top: 48px; width: 37px; height: 48px; border: 3px solid #6b452e; border-radius: 12px; background: linear-gradient(145deg, #b58257, #85583a); box-shadow: 0 5px 0 #543721, 0 8px 12px #173d2b4d; }
+.play-table-chair::after { content: ''; position: absolute; inset: 8px 5px; border-radius: 7px; background: #d6af79; }
+.play-table-chair-host { left: 0; transform: rotate(-12deg); }
+.play-table-chair-guest { right: 0; opacity: .48; transform: rotate(12deg); }
+.play-table-entry.is-full .play-table-chair-guest { opacity: 1; }
+.play-table-card-back { position: absolute; display: block; width: 23px; height: 33px; border: 2px solid #ddc587; border-radius: 3px; background: url('../images/helianthe-logo.png') center / 70% no-repeat, #173f34; box-shadow: 0 2px 4px #0a2a1f66; }
+.play-table-card-one { top: 29px; left: 56px; transform: rotate(-16deg); }
+.play-table-card-two { top: 36px; left: 82px; transform: rotate(12deg); }
+.play-table-cup { position: absolute; top: 27px; left: 28px; width: 19px; height: 19px; border: 3px solid #f0e7c9; border-radius: 50%; background: #8a5132; box-shadow: 2px 3px 4px #0a2a1f66; }
+body.dark-mode .play-table-entry { border-color: #527460; background: linear-gradient(150deg, #173f34, #214d3d); box-shadow: inset 1px 1px 0 #ffffff20, 0 6px 18px #061e154f; }
+body.dark-mode .play-table-entry.is-yours { border-color: #b99755; }
 body.dark-mode .play-table-entry .play-chair-note { color: #d5e9d4; }
 #play-message { display: flex; align-items: center; gap: .75rem; margin: 0 0 1rem; padding: .6rem .7rem .6rem 1rem; border: 1px solid #98b49e; border-radius: 10px; overflow-wrap: anywhere; background: #edf5e9; }
 #play-message-text { min-width: 0; flex: 1; }
@@ -81,8 +97,8 @@ body.dark-mode #play-back { color: #e5eee0; }
 .play-game-board-wrap { width: 100%; max-width: 1000px; margin: 0 auto; }
 .play-game-table { display: grid; grid-template-columns: 48px minmax(0, 600px) 63px; align-items: stretch; justify-content: center; gap: clamp(8px, 1.5vw, 18px); }
 .play-game-board { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(5, minmax(0, 1fr)); align-self: center; gap: clamp(2px, .5cqh, 6px); min-width: 0; width: 100%; aspect-ratio: 252 / 440; background: radial-gradient(circle, #a7ccb64d, transparent 72%); }
-.play-game-table:has(.play-game-card-preview:not([hidden])) { grid-template-columns: minmax(140px, 190px) 48px minmax(0, 600px) 63px; }
-.play-game-card-preview { position: relative; align-self: center; width: min(100%, 190px, 71cqh); aspect-ratio: 63 / 88; overflow: hidden; border: 1px solid #8da79a; border-radius: 9px; background: #e9ece1; box-shadow: 0 8px 24px #183a2c55; }
+.play-game-table:has(.play-game-card-preview:not([hidden])) { grid-template-columns: minmax(200px, 240px) 48px minmax(0, 600px) 63px; }
+.play-game-card-preview { position: relative; left: -clamp(14px, 2vw, 30px); align-self: center; width: min(100%, 240px, 71cqh); aspect-ratio: 63 / 88; overflow: hidden; border: 1px solid #8da79a; border-radius: 9px; background: #e9ece1; box-shadow: 0 8px 24px #183a2c55; }
 .play-game-card-preview canvas { display: block; width: 100%; height: 100%; }
 .play-game-card-preview canvas[hidden], .play-game-card-preview .play-hand-fallback[hidden] { display: none; }
 .play-game-card-preview .play-hand-fallback { display: grid; place-items: center; width: 100%; height: 100%; }
@@ -146,14 +162,14 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
 #play-game .play-hand-card { flex-basis: clamp(52px, 9vh, 78px); }
 #play-game .play-game-board-wrap { min-height: 0; height: 100%; container-type: size; }
 #play-game .play-game-table { width: min(100%, calc(57cqh + 150px)); height: 100%; margin: 0 auto; grid-template-columns: 48px minmax(0, 1fr) 63px; }
-#play-game .play-game-table:has(.play-game-card-preview:not([hidden])) { width: min(100%, calc(57cqh + 370px)); grid-template-columns: minmax(140px, 190px) 48px minmax(0, 1fr) 63px; }
+#play-game .play-game-table:has(.play-game-card-preview:not([hidden])) { width: min(100%, calc(57cqh + 440px)); grid-template-columns: minmax(200px, 240px) 48px minmax(0, 1fr) 63px; }
 #play-game .play-game-table:has(.play-game-card-preview:not([hidden])) .play-game-zones-left { grid-column: 2; }
 #play-game .play-game-table:has(.play-game-card-preview:not([hidden])) .play-game-board { grid-column: 3; }
 #play-game .play-game-table:has(.play-game-card-preview:not([hidden])) .play-game-zones-right { grid-column: 4; }
 #play-game .play-game-board { width: min(100%, 57cqh); max-height: 100%; margin: auto; }
 @media (max-width: 650px) {
   #play-game .play-game-table, #play-game .play-game-table:has(.play-game-card-preview:not([hidden])) { width: 100%; grid-template-columns: repeat(3, minmax(0,1fr)); grid-template-rows: 82px minmax(0,1fr) 82px; justify-items: center; gap: .25rem; }
-  #play-game .play-game-card-preview { position: fixed; z-index: 30; top: 50%; left: .5rem; width: min(44vw, 160px, 38vh); transform: translateY(-50%); }
+  #play-game .play-game-card-preview { position: fixed; z-index: 30; top: 50%; left: .25rem; width: min(50vw, 190px, 42vh); transform: translateY(-50%); }
   .play-game-zones-left, .play-game-zones-right { display: contents; }
   .play-game-zone-pair { position: static; display: flex; align-items: flex-start; gap: 10px; width: auto; height: auto; }
   .play-game-zone-pair .play-game-zone { position: static; }
@@ -188,6 +204,6 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
   .play-player { display: grid; grid-template-columns: 36px minmax(0,1fr); }
   .play-player > .play-pill { grid-column: 2; justify-self: start; }
   .play-recent { grid-column: auto; }
-  .play-table-entry { align-items: stretch; flex-direction: column; }
+  #play-room-list { grid-template-columns: 1fr; }
   .play-room-bar { align-items: start; flex-direction: column; }
 }
