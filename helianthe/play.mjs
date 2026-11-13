@@ -31,7 +31,6 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     </section>
     <section id="play-game" hidden>
       <div class="play-game-player-block">
-      <div class="play-game-opponent-identity play-game-player-identity"><strong id="play-game-opponent-name"></strong><span id="play-game-opponent-presence" class="play-away-pill" hidden></span></div>
       <section id="play-game-opponent" class="play-surface play-game-seat" aria-label="Opponent's area">
         <div class="play-game-opponent-row">
           <span aria-hidden="true"></span>
@@ -39,16 +38,17 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
           <div class="play-game-actions"><details class="play-table-menu"><summary class="play-menu-toggle" aria-label="Table actions" title="Table actions"><svg class="play-menu-bars" aria-hidden="true" viewBox="0 0 22 22"><path d="M3 5h16 M3 11h16 M3 17h16"/></svg></summary><div class="play-table-menu-panel"><strong id="play-game-name" class="play-menu-table-name"></strong><button id="play-game-back" class="play-menu-lobby" type="button">Back to Lobby</button><button id="play-game-leave" class="action-delete" type="button">Smash Table</button></div></details></div>
         </div>
       </section>
+      <div class="play-game-opponent-identity play-game-player-identity"><strong id="play-game-opponent-name"></strong><span id="play-game-opponent-presence" class="play-away-pill" hidden></span></div>
       </div>
+      <aside id="play-game-card-preview" class="play-game-card-preview" aria-label="Card preview" hidden><button id="play-game-card-preview-close" class="play-game-card-preview-close" type="button" aria-label="Close card preview">×</button><canvas id="play-game-card-preview-canvas" hidden></canvas><span id="play-game-card-preview-fallback" class="play-hand-fallback"></span></aside>
       <div class="play-game-board-wrap"><div class="play-game-table">
-        <aside id="play-game-card-preview" class="play-game-card-preview" aria-label="Card preview" hidden><button id="play-game-card-preview-close" class="play-game-card-preview-close" type="button" aria-label="Close card preview">×</button><canvas id="play-game-card-preview-canvas" hidden></canvas><span id="play-game-card-preview-fallback" class="play-hand-fallback"></span></aside>
         <div class="play-game-zones-left">
           <div class="play-game-zone play-game-zone-opponent-patron"><div id="play-game-opponent-patron-slot" class="play-game-patron-slot" role="img" aria-label="Opponent's Patron"><canvas id="play-game-opponent-patron" hidden></canvas><span id="play-game-opponent-patron-fallback" class="play-game-patron-fallback" aria-hidden="true"></span></div></div>
-          <div class="play-game-zone-pair play-game-zone-pair-self" aria-label="Your card zones"><div class="play-game-zone play-game-zone-horizon"><div class="play-deck-stack" role="img" aria-label="Your Horizon, draw deck"></div><span class="play-game-zone-label">HORIZON <span id="play-game-horizon-count"></span></span></div><div class="play-game-zone play-game-zone-archive"><div class="play-game-archive-card"><span id="play-game-archive-top">Empty</span></div><span class="play-game-zone-label">ARCHIVE <span id="play-game-archive-count"></span></span></div></div>
+          <div class="play-game-zone-pair play-game-zone-pair-self" aria-label="Your card zones"><div class="play-game-zone play-game-zone-horizon"><div id="play-game-self-horizon" class="play-deck-stack" role="img" aria-label="Your Horizon, draw deck"></div></div><div class="play-game-zone play-game-zone-archive"><div id="play-game-self-archive" class="play-game-archive-card" role="img" aria-label="Your Archive"><span id="play-game-archive-top"></span></div></div></div>
         </div>
         <div id="play-game-board" class="play-game-board" role="group" aria-label="Shared five-column, four-row Terrain board"></div>
         <div class="play-game-zones-right">
-          <div class="play-game-zone-pair play-game-zone-pair-opponent" aria-label="Opponent's card zones"><div class="play-game-zone play-game-zone-archive"><div class="play-game-archive-card" role="img" aria-label="Opponent's Archive"></div><span class="play-game-zone-label">ARCHIVE</span></div><div class="play-game-zone play-game-zone-horizon"><div id="play-game-opponent-horizon" class="play-deck-stack" role="img" aria-label="Opponent's Horizon, draw deck"></div><span class="play-game-zone-label">HORIZON</span></div></div>
+          <div class="play-game-zone-pair play-game-zone-pair-opponent" aria-label="Opponent's card zones"><div class="play-game-zone play-game-zone-archive"><div class="play-game-archive-card" role="img" aria-label="Opponent's Archive"></div></div><div class="play-game-zone play-game-zone-horizon"><div id="play-game-opponent-horizon" class="play-deck-stack" role="img" aria-label="Opponent's Horizon, draw deck"></div></div></div>
           <div class="play-game-zone play-game-zone-self-patron"><div id="play-game-self-patron-slot" class="play-game-patron-slot" role="img" aria-label="Your Patron"><canvas id="play-game-self-patron" hidden></canvas><span id="play-game-self-patron-fallback" class="play-game-patron-fallback" aria-hidden="true"></span></div></div>
         </div>
       </div></div>
@@ -196,7 +196,7 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     const fallback = $(`game-${seat}-patron-fallback`);
     canvas.hidden = true;
     fallback.hidden = false;
-    fallback.textContent = (card?.title || 'No Patron').split(',')[0];
+    fallback.textContent = card?.title?.split(',')[0] || '';
     const terrain = ['Flow', 'Verdant', 'Symbiosis', 'Radiance'].includes(card?.terrain) ? card.terrain : 'Nomads';
     const frame = terrain === 'Radiance' ? 'Radiance_CardFrame_v2.png' : `${terrain}_CardFrame.png`;
     fallback.style.backgroundImage = card
@@ -304,9 +304,9 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
     $('game-opponent-hand').hidden = !gameState;
     const horizon = Array.isArray(gameState?.horizon) ? gameState.horizon : [];
     const archive = Array.isArray(gameState?.archive) ? gameState.archive : [];
-    $('game-horizon-count').textContent = gameState ? `(${horizon.length})` : '';
-    $('game-archive-count').textContent = gameState ? `(${archive.length})` : '';
-    $('game-archive-top').textContent = archive.at(-1)?.title || 'Empty';
+    $('game-self-horizon').setAttribute('aria-label', gameState ? `Your Horizon, ${horizon.length} cards` : 'Your Horizon, draw deck');
+    $('game-self-archive').setAttribute('aria-label', gameState ? `Your Archive, ${archive.length} cards` : 'Your Archive');
+    $('game-archive-top').textContent = archive.at(-1)?.title || '';
     updateAwayDisplays();
     renderGameHand();
   }
