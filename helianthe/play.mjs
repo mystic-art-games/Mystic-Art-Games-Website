@@ -44,12 +44,12 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
         <aside id="play-game-card-preview" class="play-game-card-preview" aria-label="Card preview" hidden><button id="play-game-card-preview-close" class="play-game-card-preview-close" type="button" aria-label="Close card preview">×</button><canvas id="play-game-card-preview-canvas" hidden></canvas><span id="play-game-card-preview-fallback" class="play-hand-fallback"></span></aside>
         <div class="play-game-zones-left">
           <div class="play-game-zone play-game-zone-opponent-patron"><div id="play-game-opponent-patron-slot" class="play-game-patron-slot" role="img" aria-label="Opponent's Patron"><canvas id="play-game-opponent-patron" hidden></canvas><span id="play-game-opponent-patron-fallback" class="play-game-patron-fallback" aria-hidden="true"></span></div></div>
-          <div class="play-game-zone play-game-zone-self-patron"><div id="play-game-self-patron-slot" class="play-game-patron-slot" role="img" aria-label="Your Patron"><canvas id="play-game-self-patron" hidden></canvas><span id="play-game-self-patron-fallback" class="play-game-patron-fallback" aria-hidden="true"></span></div></div>
-        </div>
-        <div id="play-game-board" class="play-game-board" role="group" aria-label="Shared four-column, five-row Terrain board"></div>
-        <div class="play-game-zones-right">
-          <div class="play-game-zone-pair play-game-zone-pair-opponent" aria-label="Opponent's card zones"><div class="play-game-zone play-game-zone-horizon"><div id="play-game-opponent-horizon" class="play-deck-stack" role="img" aria-label="Opponent's Horizon, draw deck"></div><span class="play-game-zone-label">HORIZON</span></div><div class="play-game-zone play-game-zone-archive"><div class="play-game-archive-card" role="img" aria-label="Opponent's Archive"></div><span class="play-game-zone-label">ARCHIVE</span></div></div>
           <div class="play-game-zone-pair play-game-zone-pair-self" aria-label="Your card zones"><div class="play-game-zone play-game-zone-horizon"><div class="play-deck-stack" role="img" aria-label="Your Horizon, draw deck"></div><span class="play-game-zone-label">HORIZON <span id="play-game-horizon-count"></span></span></div><div class="play-game-zone play-game-zone-archive"><div class="play-game-archive-card"><span id="play-game-archive-top">Empty</span></div><span class="play-game-zone-label">ARCHIVE <span id="play-game-archive-count"></span></span></div></div>
+        </div>
+        <div id="play-game-board" class="play-game-board" role="group" aria-label="Shared five-column, four-row Terrain board"></div>
+        <div class="play-game-zones-right">
+          <div class="play-game-zone-pair play-game-zone-pair-opponent" aria-label="Opponent's card zones"><div class="play-game-zone play-game-zone-archive"><div class="play-game-archive-card" role="img" aria-label="Opponent's Archive"></div><span class="play-game-zone-label">ARCHIVE</span></div><div class="play-game-zone play-game-zone-horizon"><div id="play-game-opponent-horizon" class="play-deck-stack" role="img" aria-label="Opponent's Horizon, draw deck"></div><span class="play-game-zone-label">HORIZON</span></div></div>
+          <div class="play-game-zone play-game-zone-self-patron"><div id="play-game-self-patron-slot" class="play-game-patron-slot" role="img" aria-label="Your Patron"><canvas id="play-game-self-patron" hidden></canvas><span id="play-game-self-patron-fallback" class="play-game-patron-fallback" aria-hidden="true"></span></div></div>
         </div>
       </div></div>
       <div class="play-game-player-block">
@@ -277,8 +277,8 @@ export function createPlayView({ client, getUser, getDecks, getProfiles, makeAva
       room.host_id === userId ? room.guest_deck_id : room.host_deck_id, false);
     gamePlayerCard(userId, ownDeckId(), true);
     const nodes = [];
-    for (let row = 0; row < 5; row++) for (let column = 0; column < 4; column++) {
-      const isCenter = row === 2 && (column === 1 || column === 2);
+    for (let row = 0; row < 4; row++) for (let column = 0; column < 5; column++) {
+      const isCenter = column === 2 && (row === 1 || row === 2);
       const node = isCenter ? null : room.board?.[`${column},${row}`];
       const cell = document.createElement('div'); cell.className = 'play-game-node';
       if (isCenter) {
