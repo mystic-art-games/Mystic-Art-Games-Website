@@ -307,7 +307,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       const card = patronPreviews[seat].card;
       if (card) showCardPreview(card, slot);
     };
-    slot.addEventListener('click', previewPatron);
+    slot.addEventListener('click', () => {
+      const card = patronPreviews[seat].card;
+      if (card) toggleCardPreview(card, slot);
+    });
     slot.addEventListener('contextmenu', event => {
       event.preventDefault();
       event.stopPropagation();
@@ -550,6 +553,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       }
     })().catch(() => {});
   }
+  function toggleCardPreview(card, source, handIndex = null) {
+    if (selectedCardElement === source && !$('game-card-preview').hidden) hideCardPreview();
+    else showCardPreview(card, source, handIndex);
+  }
   $('game-card-preview-close').addEventListener('click', hideCardPreview);
   async function discardSelectedCard() {
     if (!room || room.status !== 'active' || room.turn_player_id !== userId
@@ -767,7 +774,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       fallback.textContent = card.title || 'Card';
       button.append(canvas, fallback);
       item.append(button);
-      button.addEventListener('click', () => showCardPreview(card, button, index));
+      button.addEventListener('click', () => toggleCardPreview(card, button, index));
       button.addEventListener('contextmenu', event => {
         event.preventDefault();
         showCardPreview(card, button, index);
