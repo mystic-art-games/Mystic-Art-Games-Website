@@ -866,7 +866,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     $('game-self-archive').setAttribute('aria-label', gameState ? `Your Archive, ${archive.length} cards` : 'Your Archive');
     $('game-self-archive').dataset.count = gameState ? String(archive.length) : '';
     $('game-self-archive').classList.toggle('is-empty', archive.length === 0);
-    $('game-archive-top').textContent = archive.at(-1)?.title || '';
+    $('game-archive-top').textContent = archive.length ? archive.at(-1)?.title || '' : 'ARCHIVE';
     const opponentSeat = room.host_id === userId ? 'guest' : 'host';
     const opponentArchiveCount = room[`${opponentSeat}_archive_count`] || 0;
     const opponentHorizonCount = zoneCounts?.[opponentSeat]?.horizon_count;
@@ -875,7 +875,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     $('game-opponent-archive').setAttribute('aria-label', `Opponent's Archive, ${opponentArchiveCount} cards`);
     $('game-opponent-archive').dataset.count = String(opponentArchiveCount);
     $('game-opponent-archive').classList.toggle('is-empty', opponentArchiveCount === 0);
-    $('game-opponent-archive-top').textContent = room[`${opponentSeat}_archive_top`]?.title || '';
+    $('game-opponent-archive-top').textContent = opponentArchiveCount
+      ? room[`${opponentSeat}_archive_top`]?.title || '' : 'ARCHIVE';
     updateAwayDisplays();
     renderGameHand();
     renderTurnPhase();
