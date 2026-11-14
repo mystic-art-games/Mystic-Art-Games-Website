@@ -12,6 +12,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   let busy = false, epoch = 0, fetchSerial = 0, live = false, lastHeartbeat = 0, autoDeckPending = false;
   let gameState = null, gameLoading = false, gameLoadFailed = false, gameReloadPending = false, handSignature = '', gameRenderSerial = 0, cardPreviewSerial = 0;
   let phaseBusy = false, selectedCardElement = null, patronDeckRequest = '', patronDeckLoadedAt = 0;
+  let selectedGameCard = null, pendingEvent = null, zoneCounts = null, zoneCountsRevision = null, zoneCountsRequest = null, eventNoticeTimer = null;
   const gameDeckPatrons = new Map(), gamePlayerPatrons = new Map();
   const patronPreviews = { self: { key: '', serial: 0 }, opponent: { key: '', serial: 0 } };
   root.innerHTML = `
@@ -41,6 +42,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       <div class="play-game-opponent-footer"><div class="play-game-opponent-identity play-game-player-identity"><strong id="play-game-opponent-name"></strong><span id="play-game-opponent-presence" class="play-away-pill" hidden></span></div><div class="play-game-actions"><details class="play-table-menu"><summary class="play-menu-toggle" aria-label="Table actions" title="Table actions"><svg class="play-menu-bars" aria-hidden="true" viewBox="0 0 22 22"><path d="M3 5h16 M3 11h16 M3 17h16"/></svg></summary><div class="play-table-menu-panel"><strong id="play-game-name" class="play-menu-table-name"></strong><button id="play-game-back" class="play-menu-lobby" type="button">Back to Lobby</button><button id="play-game-leave" class="action-delete" type="button">Smash Table</button></div></details></div></div>
       </div>
       <div class="play-game-board-wrap">
+      <p id="play-game-event-notice" class="play-game-event-notice" role="status" aria-live="polite" hidden></p>
       <aside id="play-game-card-preview" class="play-game-card-preview" aria-label="Card preview" hidden><button id="play-game-card-preview-close" class="play-game-card-preview-close action-delete" type="button" aria-label="Close card preview">×</button><canvas id="play-game-card-preview-canvas" hidden></canvas><span id="play-game-card-preview-fallback" class="play-hand-fallback"></span></aside>
       <div class="play-game-table">
         <div class="play-game-zones-left">
@@ -87,13 +89,50 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   const readyButton = $('ready');
   const patronMarkerColors = { Flow: '#4b9ab7', Radiance: '#d4a13e', Symbiosis: '#9c71bc', Verdant: '#5d9c69' };
   const phaseOrder = ['beginning', 'draw', 'main', 'end'];
+  const eventEffects = {
+    'Static Insulation': ['protect any terrain.', 'protect', 'Terrain'],
+    'Verdant Faultline': ['unprotect any entity.', 'unprotect_entity', 'protected Entity'],
+    'Beacon Grid': ['add 2 lumens on any radiance terrain.', 'lumens_two', 'Radiance Terrain'],
+    'Breachside Repairs': ['add 1 lumen on any radiance terrain. draw 1 card.', 'lumen_draw', 'Radiance Terrain'],
+    'Controlled Overload': ['add 3 lumens on any radiance terrain. unprotect it.', 'lumens_three_unprotect', 'Radiance Terrain'],
+    'Grid Stabilization': ['protect any radiance terrain with at least 1 lumen. draw 1 card.', 'protect_radiance_draw', 'Radiance Terrain with at least 1 Lumen'],
+    'Feel the Power': ['draw a card for every 4 lumen counters in the world', 'draw_from_lumens', ''],
+    'Path of Radiance': ['remove all lumen counters from the world, draw that many cards minus 8', 'clear_lumens_draw', ''],
+  };
+  function eventSupport(card) {
+    const rule = eventEffects[card?.title];
+    return rule && String(card?.effect || '').replace(/\s+/g, ' ').trim().toLowerCase() === rule[0] ? rule : null;
+  }
+  function eventNotice(text, temporary = false) {
+    if (eventNoticeTimer) clearTimeout(eventNoticeTimer);
+    const notice = $('game-event-notice');
+    notice.textContent = text || '';
+    notice.hidden = !text;
+    if (text && temporary) eventNoticeTimer = setTimeout(() => { notice.hidden = true; eventNoticeTimer = null; }, 4500);
+  }
+  function legalEventTarget(kind, node) {
+    if (!node?.terrain) return false;
+    if (kind === 'protect') return true;
+    if (kind === 'unprotect_entity') return Boolean(node.entity && node.protected);
+    if (kind === 'protect_radiance_draw') return node.terrain === 'Radiance' && Number(node.lumens || 0) >= 1;
+    return node.terrain === 'Radiance';
+  }
+  function syncEventTargets() {
+    for (const cell of $('game-board').children) {
+      const legal = Boolean(pendingEvent && legalEventTarget(pendingEvent.rule[1], room?.board?.[cell.dataset.key]));
+      cell.classList.toggle('is-event-target', legal);
+      if (legal) { cell.tabIndex = 0; cell.setAttribute('role', 'button'); }
+      else { cell.removeAttribute('tabindex'); cell.removeAttribute('role'); }
+    }
+  }
   function syncEventEvokeButton() {
     const evoke = selectedCardElement?.closest('.play-hand-item')?.querySelector('.play-event-evoke');
     if (!evoke) return;
     const canEvoke = room?.status === 'active' && room.turn_player_id === userId
       && room.turn_phase === 'main' && !phaseBusy;
-    evoke.disabled = !canEvoke;
-    evoke.title = canEvoke ? 'Evoke Event' : 'Available during your Main Phase';
+    const supported = eventSupport(selectedGameCard);
+    evoke.disabled = !canEvoke || !supported;
+    evoke.title = !supported ? (selectedGameCard?.effect ? 'This Event effect is not available in online play yet.' : 'This Event has no effect text yet.') : canEvoke ? 'Evoke Event' : 'Available during your Main Phase';
   }
   function renderTurnPhase() {
     const phase = room?.turn_phase;
@@ -234,6 +273,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     ++epoch; ++fetchSerial;
     ++gameRenderSerial; gameState = null; gameLoading = false; gameLoadFailed = false; gameReloadPending = false; handSignature = '';
     phaseBusy = false; patronDeckRequest = ''; patronDeckLoadedAt = 0; gameDeckPatrons.clear(); gamePlayerPatrons.clear();
+    zoneCounts = null; zoneCountsRevision = null; zoneCountsRequest = null;
     for (const seat of ['self', 'opponent']) {
       const preview = patronPreviews[seat];
       preview.key = ''; preview.card = null; ++preview.serial;
@@ -350,6 +390,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   function hideCardPreview() {
     ++cardPreviewSerial;
+    pendingEvent = null;
+    selectedGameCard = null;
+    syncEventTargets();
+    eventNotice('');
     const previousAction = selectedCardElement?.closest('.play-hand-item')?.querySelector('.play-event-evoke');
     if (previousAction) previousAction.hidden = true;
     selectedCardElement?.classList.remove('is-selected');
@@ -358,6 +402,12 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     $('game-card-preview').hidden = true;
   }
   function showCardPreview(card, source) {
+    pendingEvent = null;
+    syncEventTargets();
+    selectedGameCard = card;
+    const support = card.card_type === 'Event' ? eventSupport(card) : null;
+    eventNotice(card.card_type === 'Event' && !support
+      ? (card.effect ? 'This Event effect is not available in online play yet.' : 'This Event has no effect text yet.') : '');
     const serial = ++cardPreviewSerial;
     const previousAction = selectedCardElement?.closest('.play-hand-item')?.querySelector('.play-event-evoke');
     if (previousAction) previousAction.hidden = true;
@@ -398,25 +448,40 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       || catalog.find(item => title && item.title?.trim().toLocaleLowerCase() === title);
     return full ? { ...card, ...full } : card;
   }
-  async function evokeEvent(card, handIndex) {
+  async function evokeEvent(card, handIndex, targetX = null, targetY = null) {
     if (!room || room.status !== 'active' || room.turn_player_id !== userId
       || room.turn_phase !== 'main' || phaseBusy || !Array.isArray(gameState?.hand)) return;
+    const rule = eventSupport(card);
+    if (!rule) { eventNotice('This Event effect is not available in online play yet.'); return; }
+    if (targetX === null && targetY === null && !['draw_from_lumens', 'clear_lumens_draw'].includes(rule[1])) {
+      const legalKeys = Object.keys(room.board || {}).filter(key => legalEventTarget(rule[1], room.board[key]));
+      if (legalKeys.length) {
+        pendingEvent = { card, handIndex, rule };
+        syncEventTargets();
+        eventNotice(`Choose ${rule[2]} on the board. Press Esc to cancel.`);
+        return;
+      }
+    }
     const cardId = card.card_id || card.id;
     if (!cardId) return;
     const expected = epoch, roomId = room.id;
     phaseBusy = true;
     renderTurnPhase();
     try {
-      await rpc('play_evoke_event', {
+      const result = await rpc('play_evoke_event', {
         p_room_id: roomId,
         p_expected_turn: room.turn_number,
         p_hand_index: handIndex,
         p_card_id: cardId,
         p_expected_hand_count: gameState.hand.length,
+        p_target_x: targetX,
+        p_target_y: targetY,
       });
       if (expected !== epoch || room?.id !== roomId) return;
+      pendingEvent = null;
       await refreshRoom();
       if (expected === epoch && room?.id === roomId) await loadGameState(true);
+      if (expected === epoch && room?.id === roomId) eventNotice(`${result?.title || card.title} evoked${result?.drawn ? ` · drew ${result.drawn}` : ''}${result?.applied ? ' · board updated' : ''}.`, true);
     } catch (error) {
       if (expected === epoch && room?.id === roomId) {
         await refreshRoom().catch(() => {});
@@ -427,6 +492,13 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       phaseBusy = false;
       renderTurnPhase();
     }
+  }
+  function chooseEventTarget(column, row) {
+    const event = pendingEvent;
+    if (!event || !legalEventTarget(event.rule[1], room?.board?.[`${column},${row}`])) return;
+    pendingEvent = null;
+    syncEventTargets();
+    void evokeEvent(event.card, event.handIndex, column, row);
   }
   function renderGameHand() {
     const hand = Array.isArray(gameState?.hand) ? gameState.hand.map(resolveGameCard) : [];
@@ -487,6 +559,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         nodes.push(cell);
         continue;
       }
+      cell.dataset.key = `${column},${row}`;
       if (node?.terrain) {
         cell.classList.add(`terrain-${node.terrain.toLowerCase()}`);
         const terrain = document.createElement('strong'); terrain.textContent = node.terrain;
@@ -495,11 +568,24 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
           const entity = document.createElement('span'); entity.textContent = node.entity.title || 'Entity';
           cell.append(entity);
         }
+        const markers = [];
+        if (Number(node.lumens || 0) > 0) markers.push(`${node.lumens} ✦`);
+        if (node.protected) markers.push('Protected');
+        if (node.crisis) markers.push('Crisis');
+        if (markers.length) {
+          const badge = document.createElement('span'); badge.className = 'play-node-markers';
+          badge.textContent = markers.join(' · '); cell.append(badge);
+        }
       }
-      cell.setAttribute('aria-label', node?.terrain ? `${node.terrain} Terrain at row ${row + 1}, column ${column + 1}` : `Empty space at row ${row + 1}, column ${column + 1}`);
+      cell.setAttribute('aria-label', node?.terrain ? `${node.terrain} Terrain at row ${row + 1}, column ${column + 1}, ${node.lumens || 0} Lumens${node.protected ? ', Protected' : ''}${node.crisis ? ', Crisis' : ''}` : `Empty space at row ${row + 1}, column ${column + 1}`);
+      cell.addEventListener('click', () => chooseEventTarget(column, row));
+      cell.addEventListener('keydown', event => {
+        if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); chooseEventTarget(column, row); }
+      });
       nodes.push(cell);
     }
     $('game-board').replaceChildren(...nodes);
+    syncEventTargets();
     requestAnimationFrame(syncZoneCardSize);
     $('game-loading').hidden = Boolean(gameState) || gameLoadFailed;
     const opponentHand = $('game-opponent-hand');
@@ -517,17 +603,42 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const horizon = Array.isArray(gameState?.horizon) ? gameState.horizon : [];
     const archive = Array.isArray(gameState?.archive) ? gameState.archive : [];
     $('game-self-horizon').setAttribute('aria-label', gameState ? `Your Horizon, ${horizon.length} cards` : 'Your Horizon, draw deck');
+    $('game-self-horizon').dataset.count = gameState ? String(horizon.length) : '';
     $('game-self-archive').setAttribute('aria-label', gameState ? `Your Archive, ${archive.length} cards` : 'Your Archive');
+    $('game-self-archive').dataset.count = gameState ? String(archive.length) : '';
     $('game-self-archive').classList.toggle('is-empty', archive.length === 0);
     $('game-archive-top').textContent = archive.at(-1)?.title || '';
     const opponentSeat = room.host_id === userId ? 'guest' : 'host';
     const opponentArchiveCount = room[`${opponentSeat}_archive_count`] || 0;
+    const opponentHorizonCount = zoneCounts?.[opponentSeat]?.horizon_count;
+    $('game-opponent-horizon').dataset.count = Number.isInteger(opponentHorizonCount) ? String(opponentHorizonCount) : '';
+    $('game-opponent-horizon').setAttribute('aria-label', Number.isInteger(opponentHorizonCount) ? `Opponent's Horizon, ${opponentHorizonCount} cards` : "Opponent's Horizon, draw deck");
     $('game-opponent-archive').setAttribute('aria-label', `Opponent's Archive, ${opponentArchiveCount} cards`);
+    $('game-opponent-archive').dataset.count = String(opponentArchiveCount);
     $('game-opponent-archive').classList.toggle('is-empty', opponentArchiveCount === 0);
     $('game-opponent-archive-top').textContent = room[`${opponentSeat}_archive_top`]?.title || '';
     updateAwayDisplays();
     renderGameHand();
     renderTurnPhase();
+    void loadZoneCounts();
+  }
+  async function loadZoneCounts() {
+    if (!room || room.status !== 'active' || zoneCountsRevision === room.revision || zoneCountsRequest === `${room.id}:${room.revision}`) return;
+    const expected = epoch, roomId = room.id, revision = room.revision;
+    zoneCountsRequest = `${roomId}:${revision}`;
+    try {
+      const rows = await rpc('play_zone_counts', { p_room_id: roomId });
+      if (expected !== epoch || room?.id !== roomId || room.revision !== revision) return;
+      zoneCounts = Object.fromEntries((rows || []).map(entry => [entry.seat, entry]));
+      zoneCountsRevision = revision;
+      const opponentSeat = room.host_id === userId ? 'guest' : 'host';
+      const count = zoneCounts[opponentSeat]?.horizon_count;
+      if (Number.isInteger(count)) {
+        $('game-opponent-horizon').dataset.count = String(count);
+        $('game-opponent-horizon').setAttribute('aria-label', `Opponent's Horizon, ${count} cards`);
+      }
+    } catch { /* The room and archive counters remain available during rollout. */ }
+    finally { if (zoneCountsRequest === `${roomId}:${revision}`) zoneCountsRequest = null; }
   }
   async function loadGameState(force = false) {
     if (!room || room.status !== 'active' || gameLoadFailed) return;
