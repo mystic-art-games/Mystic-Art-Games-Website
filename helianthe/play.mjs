@@ -14,6 +14,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   let phaseBusy = false, selectedCardElement = null, patronDeckRequest = '', patronDeckLoadedAt = 0;
   let drawRetryAt = 0, activeDrawFlight = null, activeHandShifts = [];
   let selectedGameCard = null, selectedHandIndex = null, pendingEvent = null, zoneCounts = null, zoneCountsRevision = null, zoneCountsRequest = null, eventNoticeTimer = null;
+  const discardSelections = new Set();
   const gameDeckPatrons = new Map(), gamePlayerPatrons = new Map();
   const patronPreviews = { self: { key: '', serial: 0 }, opponent: { key: '', serial: 0 } };
   root.innerHTML = `
@@ -36,6 +37,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     <section id="play-game" hidden>
       <div class="play-game-player-block">
       <section id="play-game-opponent" class="play-surface play-game-seat" aria-label="Opponent's area">
+        <span id="play-game-opponent-hand-count" class="play-game-hand-count" aria-live="polite" hidden></span>
         <div class="play-game-opponent-row">
           <div id="play-game-opponent-hand" class="play-game-opponent-hand" role="group" aria-label="Opponent's five face-down cards" hidden><span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span></div>
         </div>
@@ -44,7 +46,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       </div>
       <div class="play-game-board-wrap">
       <p id="play-game-event-notice" class="play-game-event-notice" role="status" aria-live="polite" hidden></p>
-      <aside id="play-game-card-preview" class="play-game-card-preview" aria-label="Card preview" hidden><button id="play-game-card-preview-close" class="play-game-card-preview-close action-delete" type="button" aria-label="Close card preview">×</button><canvas id="play-game-card-preview-canvas" hidden></canvas><span id="play-game-card-preview-fallback" class="play-hand-fallback"></span><button id="play-game-discard-card" class="play-game-discard-card" type="button" hidden>Discard selected card</button></aside>
+      <aside id="play-game-card-preview" class="play-game-card-preview" aria-label="Card preview" hidden><button id="play-game-card-preview-close" class="play-game-card-preview-close action-delete" type="button" aria-label="Close card preview">×</button><canvas id="play-game-card-preview-canvas" hidden></canvas><span id="play-game-card-preview-fallback" class="play-hand-fallback"></span></aside>
       <div class="play-game-table">
         <div class="play-game-zones-left">
           <div class="play-game-zone play-game-zone-opponent-patron"><button id="play-game-opponent-patron-slot" class="play-game-patron-slot" type="button" aria-label="Preview opponent's Patron"><canvas id="play-game-opponent-patron" hidden></canvas><span id="play-game-opponent-patron-fallback" class="play-game-patron-fallback" aria-hidden="true"></span></button></div>
@@ -65,12 +67,12 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
           <li data-phase="2"><span class="play-game-phase-marker" aria-hidden="true"></span>Main Phase</li>
           <li data-phase="3"><span class="play-game-phase-marker" aria-hidden="true"></span>End of Turn</li>
         </ol>
-        <p id="play-game-discard-prompt" class="play-game-discard-prompt" role="status" hidden></p>
         <button id="play-game-extra-draw" class="play-game-next-phase play-game-extra-draw" type="button" aria-label="Draw one card instead of playing and go to End of Turn" hidden>Draw Instead</button>
         <button id="play-game-next-phase" class="play-game-next-phase" type="button">Next Phase</button>
       </aside></div>
       <div class="play-game-player-block">
       <div class="play-game-self-identity play-game-player-identity"><strong id="play-game-self-name"></strong><span id="play-game-self-presence" class="play-away-pill" hidden></span></div>
+      <div id="play-game-discard-bar" class="play-game-discard-bar" hidden><strong id="play-game-discard-text" role="status" aria-live="polite"></strong><button id="play-game-confirm-discard" type="button" disabled>Confirm Discard</button></div>
       <section id="play-game-self" class="play-surface play-game-seat" aria-label="Your area">
         <span id="play-game-hand-count" class="play-game-hand-count" aria-live="polite" hidden></span>
         <div class="play-game-hand-wrap"><p id="play-game-loading" role="status">Preparing the opening hands…</p><div id="play-game-hand" class="play-game-hand"></div></div>
@@ -134,6 +136,23 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       else { cell.removeAttribute('tabindex'); cell.removeAttribute('role'); }
     }
   }
+  function requiredDiscards() {
+    return room?.status === 'active' && room.turn_player_id === userId && room.turn_phase === 'end'
+      ? Math.max(0, (gameState?.hand?.length || 0) - 7) : 0;
+  }
+  function syncDiscardBar() {
+    const required = requiredDiscards();
+    if (!required) discardSelections.clear();
+    const bar = $('game-discard-bar');
+    bar.hidden = required === 0;
+    if (required) {
+      $('game-discard-text').textContent = `Discard ${required} card${required === 1 ? '' : 's'} so 7 remain. Selected ${discardSelections.size}/${required}.`;
+      $('game-confirm-discard').disabled = phaseBusy || discardSelections.size !== required;
+    }
+    for (const [index, item] of Array.from($('game-hand').children).entries()) {
+      item.querySelector('.play-hand-card')?.classList.toggle('is-discard-selected', required > 0 && discardSelections.has(index));
+    }
+  }
   function renderTurnPhase() {
     const phase = room?.turn_phase;
     const phaseIndex = phaseOrder.indexOf(phase);
@@ -149,16 +168,11 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     }
     const next = $('game-next-phase');
     next.textContent = phase === 'end' ? 'Pass Turn' : 'Next Phase';
-    const excess = own && phase === 'end' ? Math.max(0, (gameState?.hand?.length || 0) - 7) : 0;
+    const excess = requiredDiscards();
     next.hidden = phase === 'draw' || (own && phase === 'end' && (!gameState || excess > 0));
     next.disabled = !room || room.status !== 'active' || !own || phaseBusy || phaseIndex < 0
       || (phase === 'beginning' && !gameState);
-    const discardPrompt = $('game-discard-prompt');
-    discardPrompt.hidden = excess === 0;
-    if (excess) discardPrompt.textContent = `Discard ${excess} card${excess === 1 ? '' : 's'} to end your turn. Select a card in your hand.`;
-    const discardAction = $('game-discard-card');
-    discardAction.hidden = excess === 0 || selectedHandIndex === null || $('game-card-preview').hidden;
-    discardAction.disabled = phaseBusy;
+    syncDiscardBar();
     const extra = $('game-extra-draw');
     extra.hidden = !own || phase !== 'main' || Boolean(room?.main_played_card);
     extra.disabled = phaseBusy || !Array.isArray(gameState?.horizon) || gameState.horizon.length === 0;
@@ -303,10 +317,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   $('game-extra-draw').addEventListener('click', () => void advanceTurnPhase(true));
   for (const seat of ['self', 'opponent']) {
     const slot = $(`game-${seat}-patron-slot`);
-    const previewPatron = () => {
-      const card = patronPreviews[seat].card;
-      if (card) showCardPreview(card, slot);
-    };
     slot.addEventListener('click', () => {
       const card = patronPreviews[seat].card;
       if (card) toggleCardPreview(card, slot);
@@ -314,7 +324,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     slot.addEventListener('contextmenu', event => {
       event.preventDefault();
       event.stopPropagation();
-      previewPatron();
+      const card = patronPreviews[seat].card;
+      if (card) toggleCardPreview(card, slot);
     });
   }
   root.querySelector('.play-game-board-wrap').addEventListener('contextmenu', event => {
@@ -391,7 +402,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   async function disconnect() {
     ++epoch; ++fetchSerial;
     ++gameRenderSerial; gameState = null; gameLoading = false; gameLoadFailed = false; gameReloadPending = false; handSignature = '';
-    phaseBusy = false; drawRetryAt = 0; clearDrawFlight();
+    phaseBusy = false; drawRetryAt = 0; clearDrawFlight(); discardSelections.clear();
     patronDeckRequest = ''; patronDeckLoadedAt = 0; gameDeckPatrons.clear(); gamePlayerPatrons.clear();
     zoneCounts = null; zoneCountsRevision = null; zoneCountsRequest = null;
     for (const seat of ['self', 'opponent']) {
@@ -519,7 +530,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     selectedCardElement?.removeAttribute('aria-pressed');
     selectedCardElement = null;
     $('game-card-preview').hidden = true;
-    $('game-discard-card').hidden = true;
   }
   function showCardPreview(card, source, handIndex = null) {
     pendingEvent = null;
@@ -557,24 +567,36 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (selectedCardElement === source && !$('game-card-preview').hidden) hideCardPreview();
     else showCardPreview(card, source, handIndex);
   }
+  function chooseHandCard(card, source, handIndex) {
+    if (!requiredDiscards()) { toggleCardPreview(card, source, handIndex); return; }
+    if (discardSelections.has(handIndex)) {
+      discardSelections.delete(handIndex);
+      if (selectedCardElement === source) hideCardPreview();
+    } else {
+      discardSelections.add(handIndex);
+      showCardPreview(card, source, handIndex);
+    }
+    syncDiscardBar();
+  }
   $('game-card-preview-close').addEventListener('click', hideCardPreview);
-  async function discardSelectedCard() {
+  async function confirmDiscardSelection() {
     if (!room || room.status !== 'active' || room.turn_player_id !== userId
-      || room.turn_phase !== 'end' || phaseBusy || (gameState?.hand?.length || 0) <= 7
-      || selectedHandIndex === null) return;
-    const card = gameState.hand[selectedHandIndex];
-    const cardId = card?.card_id || card?.id;
-    if (!cardId) return;
+      || room.turn_phase !== 'end' || phaseBusy || discardSelections.size !== requiredDiscards()
+      || !requiredDiscards()) return;
+    const indexes = Array.from(discardSelections).sort((a, b) => a - b);
+    const cardIds = indexes.map(index => gameState.hand[index]?.card_id || gameState.hand[index]?.id);
+    if (cardIds.some(id => !id)) return;
     const expected = epoch, roomId = room.id;
     phaseBusy = true;
     renderTurnPhase();
     try {
-      await rpc('play_discard_to_limit', {
+      await rpc('play_discard_to_limit_batch', {
         p_room_id: roomId, p_expected_turn: room.turn_number,
-        p_hand_index: selectedHandIndex, p_card_id: cardId,
+        p_hand_indexes: indexes, p_card_ids: cardIds,
         p_expected_hand_count: gameState.hand.length,
       });
       if (expected !== epoch || room?.id !== roomId) return;
+      discardSelections.clear();
       await refreshRoom();
       if (expected === epoch && room?.id === roomId) await loadGameState(true);
     } catch (error) {
@@ -588,7 +610,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       renderTurnPhase();
     }
   }
-  $('game-discard-card').addEventListener('click', () => void discardSelectedCard());
+  $('game-confirm-discard').addEventListener('click', () => void confirmDiscardSelection());
   function resolveGameCard(raw) {
     const card = raw && typeof raw === 'object' ? raw : { title: String(raw || '') };
     const catalog = getCards?.() || [];
@@ -762,6 +784,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const signature = JSON.stringify(hand);
     if (signature === handSignature) return;
     handSignature = signature;
+    discardSelections.clear();
     const serial = ++gameRenderSerial;
     hideCardPreview();
     const cards = hand.map((card, index) => {
@@ -774,10 +797,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       fallback.textContent = card.title || 'Card';
       button.append(canvas, fallback);
       item.append(button);
-      button.addEventListener('click', () => toggleCardPreview(card, button, index));
+      button.addEventListener('click', () => chooseHandCard(card, button, index));
       button.addEventListener('contextmenu', event => {
         event.preventDefault();
-        showCardPreview(card, button, index);
+        chooseHandCard(card, button, index);
       });
       if (card.card_type === 'Event') enableEventDrag(button, card, index);
       void (async () => {
@@ -851,7 +874,12 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const opponentHand = $('game-opponent-hand');
     const reportedCount = room.host_id === userId ? room.guest_hand_count : room.host_hand_count;
     const opponentHandCount = Number.isInteger(reportedCount) ? Math.max(0, Math.min(reportedCount, 100)) : 5;
-    opponentHand.style.setProperty('--opponent-count', String(Math.max(1, opponentHandCount)));
+    const opponentBadge = $('game-opponent-hand-count');
+    opponentBadge.hidden = !gameState;
+    if (gameState) {
+      opponentBadge.textContent = String(opponentHandCount);
+      opponentBadge.setAttribute('aria-label', `${opponentHandCount} cards in the opponent's hand`);
+    }
     if (opponentHand.childElementCount !== opponentHandCount) {
       opponentHand.replaceChildren(...Array.from({ length: opponentHandCount }, () => {
         const back = document.createElement('span');
