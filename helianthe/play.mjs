@@ -10,8 +10,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   let userId = null, room = null, channel = null, timer = null, awayTicker = null, visible = false, inLobby = false;
   let lobbyTimer = null, directoryChannel = null, directoryUserId = null, listSerial = 0, tableListSignature = '';
   let busy = false, epoch = 0, fetchSerial = 0, live = false, lastHeartbeat = 0, autoDeckPending = false;
-  let gameState = null, gameLoading = false, gameLoadFailed = false, handSignature = '', gameRenderSerial = 0, cardPreviewSerial = 0;
-  let turnSeat = null, turnPhase = null, patronDeckRequest = '', patronDeckLoadedAt = 0;
+  let gameState = null, gameLoading = false, gameLoadFailed = false, gameReloadPending = false, handSignature = '', gameRenderSerial = 0, cardPreviewSerial = 0;
+  let phaseBusy = false, selectedCardElement = null, patronDeckRequest = '', patronDeckLoadedAt = 0;
   const gameDeckPatrons = new Map(), gamePlayerPatrons = new Map();
   const patronPreviews = { self: { key: '', serial: 0 }, opponent: { key: '', serial: 0 } };
   root.innerHTML = `
@@ -64,6 +64,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
           <li data-phase="2"><span class="play-game-phase-marker" aria-hidden="true"></span>Main Phase</li>
           <li data-phase="3"><span class="play-game-phase-marker" aria-hidden="true"></span>End of Turn</li>
         </ol>
+        <button id="play-game-extra-draw" class="play-game-next-phase play-game-extra-draw" type="button" aria-label="Draw one card instead of playing and go to End of Turn" hidden>Draw Instead</button>
         <button id="play-game-next-phase" class="play-game-next-phase" type="button">Next Phase</button>
       </aside></div>
       <div class="play-game-player-block">
@@ -87,48 +88,62 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   const deckField = $('deck-field');
   const readyButton = $('ready');
   const patronMarkerColors = { Flow: '#4b9ab7', Radiance: '#d4a13e', Symbiosis: '#9c71bc', Verdant: '#5d9c69' };
-  function ownTurnSeat() { return room?.host_id === userId ? 'host' : 'guest'; }
+  const phaseOrder = ['beginning', 'draw', 'main', 'end'];
   function renderTurnPhase() {
-    const selected = turnSeat || 'host';
-    const own = selected === ownTurnSeat();
+    const phase = room?.turn_phase;
+    const phaseIndex = phaseOrder.indexOf(phase);
+    const own = Boolean(room?.turn_player_id && room.turn_player_id === userId);
     const patron = patronPreviews[own ? 'self' : 'opponent'].card;
     $('game-phases').style.setProperty('--play-phase-color', patronMarkerColors[patron?.terrain] || '#7ba98a');
-    $('game-turn-owner').textContent = own ? 'Your turn' : "Opponent's turn";
+    $('game-turn-owner').textContent = !room?.turn_player_id ? 'Turn setup pending' : own ? 'Your turn' : "Opponent's turn";
     for (const step of root.querySelectorAll('.play-game-phase-list li')) {
-      const active = Number(step.dataset.phase) === turnPhase;
+      const active = Number(step.dataset.phase) === phaseIndex;
       step.classList.toggle('is-current', active);
       if (active) step.setAttribute('aria-current', 'step');
       else step.removeAttribute('aria-current');
     }
     const next = $('game-next-phase');
-    next.textContent = turnPhase === 3 ? 'Pass Turn' : 'Next Phase';
-    next.disabled = !room || room.status !== 'active' || !own;
+    next.textContent = phase === 'end' ? 'Pass Turn' : 'Next Phase';
+    next.disabled = !room || room.status !== 'active' || !own || phaseBusy || phaseIndex < 0;
+    const extra = $('game-extra-draw');
+    extra.hidden = !own || phase !== 'main';
+    extra.disabled = phaseBusy || !Array.isArray(gameState?.horizon) || gameState.horizon.length === 0;
   }
-  function restoreTurnPhase() {
-    let saved = null;
-    try { saved = JSON.parse(localStorage.getItem(`helianthe-play-phase:${room.id}`) || 'null'); } catch {}
-    const startingSeat = room.starting_player_id === room.guest_id || room.first_player_id === room.guest_id ? 'guest' : 'host';
-    turnSeat = ['host', 'guest'].includes(saved?.seat) ? saved.seat : startingSeat;
-    turnPhase = Number.isInteger(saved?.phase) && saved.phase >= 0 && saved.phase < 4 ? saved.phase : 0;
-  }
-  function setTurnPhase(seat, phase, publish = true) {
-    if (!room || !['host', 'guest'].includes(seat) || !(Number.isInteger(phase) && phase >= 0 && phase < 4)) return;
-    turnSeat = seat; turnPhase = phase;
-    try { localStorage.setItem(`helianthe-play-phase:${room.id}`, JSON.stringify({ seat, phase })); } catch {}
+  async function advanceTurnPhase(takeExtraCard = false) {
+    if (!room || room.status !== 'active' || room.turn_player_id !== userId || phaseBusy) return;
+    if (takeExtraCard && (room.turn_phase !== 'main' || !gameState?.horizon?.length)) return;
+    const expected = epoch, roomId = room.id, turn = room.turn_number, phase = room.turn_phase;
+    phaseBusy = true;
     renderTurnPhase();
-    if (publish && channel) void channel.send({ type: 'broadcast', event: 'turn_phase', payload: { seat, phase } }).catch(() => {});
+    try {
+      await rpc('play_advance_turn_phase', {
+        p_room_id: roomId,
+        p_expected_turn: turn,
+        p_expected_phase: phase,
+        p_take_extra_card: takeExtraCard,
+      });
+      if (expected !== epoch || room?.id !== roomId) return;
+      await refreshRoom();
+      if (expected === epoch && room?.id === roomId && (takeExtraCard || (phase === 'beginning' && turn > 1))) {
+        await loadGameState(true);
+      }
+    } catch (error) {
+      if (expected === epoch && room?.id === roomId) {
+        await refreshRoom().catch(() => {});
+        message(friendly(error), true);
+      }
+    } finally {
+      phaseBusy = false;
+      renderTurnPhase();
+    }
   }
-  function advanceTurnPhase() {
-    if (!room || room.status !== 'active' || turnSeat !== ownTurnSeat()) return;
-    if (turnPhase === 3) setTurnPhase(turnSeat === 'host' ? 'guest' : 'host', 0);
-    else setTurnPhase(turnSeat, turnPhase + 1);
-  }
-  $('game-next-phase').addEventListener('click', advanceTurnPhase);
+  $('game-next-phase').addEventListener('click', () => void advanceTurnPhase());
+  $('game-extra-draw').addEventListener('click', () => void advanceTurnPhase(true));
   for (const seat of ['self', 'opponent']) {
     const slot = $(`game-${seat}-patron-slot`);
     const previewPatron = () => {
       const card = patronPreviews[seat].card;
-      if (card) showCardPreview(card);
+      if (card) showCardPreview(card, slot);
     };
     slot.addEventListener('click', previewPatron);
     slot.addEventListener('contextmenu', event => {
@@ -210,8 +225,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   async function disconnect() {
     ++epoch; ++fetchSerial;
-    ++gameRenderSerial; gameState = null; gameLoading = false; gameLoadFailed = false; handSignature = '';
-    turnSeat = null; turnPhase = null; patronDeckRequest = ''; patronDeckLoadedAt = 0; gameDeckPatrons.clear(); gamePlayerPatrons.clear();
+    ++gameRenderSerial; gameState = null; gameLoading = false; gameLoadFailed = false; gameReloadPending = false; handSignature = '';
+    phaseBusy = false; patronDeckRequest = ''; patronDeckLoadedAt = 0; gameDeckPatrons.clear(); gamePlayerPatrons.clear();
     for (const seat of ['self', 'opponent']) {
       const preview = patronPreviews[seat];
       preview.key = ''; preview.card = null; ++preview.serial;
@@ -328,10 +343,18 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   function hideCardPreview() {
     ++cardPreviewSerial;
+    selectedCardElement?.classList.remove('is-selected');
+    selectedCardElement?.removeAttribute('aria-pressed');
+    selectedCardElement = null;
     $('game-card-preview').hidden = true;
   }
-  function showCardPreview(card) {
+  function showCardPreview(card, source) {
     const serial = ++cardPreviewSerial;
+    selectedCardElement?.classList.remove('is-selected');
+    selectedCardElement?.removeAttribute('aria-pressed');
+    selectedCardElement = source;
+    selectedCardElement?.classList.add('is-selected');
+    selectedCardElement?.setAttribute('aria-pressed', 'true');
     const panel = $('game-card-preview');
     const canvas = $('game-card-preview-canvas');
     const fallback = $('game-card-preview-fallback');
@@ -374,10 +397,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       const fallback = document.createElement('span'); fallback.className = 'play-hand-fallback';
       fallback.textContent = card.title || 'Card';
       button.append(canvas, fallback);
-      button.addEventListener('click', () => showCardPreview(card));
+      button.addEventListener('click', () => showCardPreview(card, button));
       button.addEventListener('contextmenu', event => {
         event.preventDefault();
-        showCardPreview(card);
+        showCardPreview(card, button);
       });
       void (async () => {
         const artwork = card.artwork_id ? await getArtworkUrl(card.artwork_id).catch(() => '') : '';
@@ -423,7 +446,18 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     $('game-board').replaceChildren(...nodes);
     requestAnimationFrame(syncZoneCardSize);
     $('game-loading').hidden = Boolean(gameState) || gameLoadFailed;
-    $('game-opponent-hand').hidden = !gameState;
+    const opponentHand = $('game-opponent-hand');
+    const reportedCount = room.host_id === userId ? room.guest_hand_count : room.host_hand_count;
+    const opponentHandCount = Number.isInteger(reportedCount) ? Math.max(0, Math.min(reportedCount, 100)) : 5;
+    if (opponentHand.childElementCount !== opponentHandCount) {
+      opponentHand.replaceChildren(...Array.from({ length: opponentHandCount }, () => {
+        const back = document.createElement('span');
+        back.setAttribute('aria-hidden', 'true');
+        return back;
+      }));
+    }
+    opponentHand.setAttribute('aria-label', `Opponent's ${opponentHandCount} face-down cards`);
+    opponentHand.hidden = !gameState;
     const horizon = Array.isArray(gameState?.horizon) ? gameState.horizon : [];
     const archive = Array.isArray(gameState?.archive) ? gameState.archive : [];
     $('game-self-horizon').setAttribute('aria-label', gameState ? `Your Horizon, ${horizon.length} cards` : 'Your Horizon, draw deck');
@@ -432,13 +466,16 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     $('game-archive-top').textContent = archive.at(-1)?.title || '';
     updateAwayDisplays();
     renderGameHand();
+    renderTurnPhase();
   }
-  async function loadGameState() {
-    if (!room || room.status !== 'active' || gameState?.room_id === room.id || gameLoading || gameLoadFailed) return;
-    const id = room.id, expected = epoch, gameSerial = gameRenderSerial;
+  async function loadGameState(force = false) {
+    if (!room || room.status !== 'active' || gameLoadFailed) return;
+    if (gameLoading) { if (force) gameReloadPending = true; return; }
+    if (!force && gameState?.room_id === room.id) return;
+    const id = room.id, expected = epoch;
     gameLoading = true;
     const { data, error } = await client.from('play_game_decks').select('*').eq('room_id', id).eq('player_id', userId).maybeSingle();
-    if (expected !== epoch || room?.id !== id || gameSerial !== gameRenderSerial) return;
+    if (expected !== epoch || room?.id !== id) return;
     gameLoading = false;
     if (error || !data) {
       gameLoadFailed = true;
@@ -451,6 +488,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
           : 'This table has no opening hands. Start a new table after game setup is available.', true);
     } else gameState = data;
     renderGame();
+    if (gameReloadPending) { gameReloadPending = false; void loadGameState(true); }
   }
   function syncLobbyRefresh() {
     const directoryIdentity = visible && userId && (!room || inLobby) ? userId : null;
@@ -542,14 +580,16 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       else if (wasAway) message('This table is no longer available.');
       return;
     }
+    const turnChanged = room.turn_number !== data.turn_number || room.turn_phase !== data.turn_phase
+      || room.turn_player_id !== data.turn_player_id;
     userId = seatId;
     if (room.activated_at && !data.activated_at) {
-      ++gameRenderSerial; gameState = null; gameLoading = false; gameLoadFailed = false; handSignature = '';
+      ++gameRenderSerial; gameState = null; gameLoading = false; gameLoadFailed = false; gameReloadPending = false; handSignature = '';
       hideCardPreview();
     }
     room = data; render();
     if (room.status === 'active') {
-      void loadGameState();
+      void loadGameState(turnChanged && !phaseBusy);
       void loadGamePatrons().catch(() => { patronDeckRequest = ''; });
     }
     if (room.status === 'closed') {
@@ -607,7 +647,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       catch { renameFailed = true; }
       if (expected !== epoch) return;
     }
-    room = data; lastHeartbeat = 0; remember(id); restoreTurnPhase(); render(); maybeAutoSelectDeck();
+    room = data; lastHeartbeat = 0; remember(id); render(); maybeAutoSelectDeck();
     if (room.status === 'active') {
       void loadGameState();
       void loadGamePatrons().catch(() => { patronDeckRequest = ''; });
@@ -616,9 +656,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     channel = client.channel(`play-room:${id}`)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'play_rooms', filter: `id=eq.${id}` }, () => {
         if (expected === epoch) void refreshRoom().catch(error => message(friendly(error), true));
-      })
-      .on('broadcast', { event: 'turn_phase' }, ({ payload }) => {
-        if (expected === epoch && room?.id === id) setTurnPhase(payload?.seat, payload?.phase, false);
       }).subscribe(status => {
         if (expected !== epoch) return;
         live = status === 'SUBSCRIBED';

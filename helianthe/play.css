@@ -151,8 +151,9 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
 #play-game .play-game-seat { padding: .2rem .65rem; border-color: #c69a65; background: #f7dfbd24; color: #fff7e8; }
 #play-game .play-game-player-block { min-height: 0; }
 #play-game .play-game-opponent-hand span { width: clamp(56px, 9.6vh, 84px); }
-#play-game .play-game-hand { gap: 1.1rem; padding: .2rem 0; }
+#play-game .play-game-hand { gap: 1.1rem; padding: .4rem .3rem; }
 #play-game .play-hand-card { flex-basis: clamp(56px, 9.6vh, 84px); }
+#play-game .play-hand-card.is-selected, #play-game .play-game-patron-slot.is-selected { outline: 3px solid #f2d47e; outline-offset: 2px; }
 #play-game .play-game-board-wrap { display: grid; grid-template-columns: var(--play-preview-gutter) minmax(0, 1fr) minmax(145px, 170px); grid-template-rows: minmax(0, 1fr); align-items: stretch; gap: clamp(.5rem, 1vw, .9rem); box-sizing: border-box; width: 100%; min-height: 0; max-width: none; height: 100%; margin: 0; container-type: size; }
 #play-game .play-game-card-preview { position: relative; grid-column: 1; grid-row: 1; align-self: center; justify-self: start; top: auto; left: auto; transform: none; width: min(325px, 70cqh, 100%); max-height: 100%; }
 #play-game .play-game-card-preview, #play-game .play-hand-card, #play-game .play-game-patron-slot, #play-game .play-game-archive-card { border-color: #123c2d; }
@@ -169,16 +170,21 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
 .play-game-phase-marker { flex: 0 0 .7rem; width: .7rem; height: .7rem; border: 1px solid #d4cfb6; border-radius: 50%; background: transparent; }
 .play-game-phase-list li.is-current .play-game-phase-marker { border-color: var(--play-phase-color); background: var(--play-phase-color); box-shadow: 0 0 0 2px #fff6d83d; }
 .play-game-next-phase { width: 100%; margin: .65rem 0 0; padding: .5rem .4rem; border: 1px solid #123c2d; border-radius: 7px; background: #477452; color: #fff; font-size: .78rem; font-weight: 800; }
+.play-game-extra-draw { background: #d7b66a; color: #173b2d; }
+.play-game-extra-draw[hidden] { display: none; }
 .play-game-next-phase:hover:not(:disabled) { background: #568a61; }
+.play-game-extra-draw:hover:not(:disabled) { background: #e4c783; }
 .play-game-next-phase:disabled { cursor: default; opacity: .5; }
 @media (max-width: 900px) {
   #play-game .play-game-board-wrap { display: flex; flex-direction: column; gap: .35rem; }
   #play-game .play-game-card-preview { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(325px, 70vw, 56vh); max-height: calc(100dvh - 1rem); }
   #play-game .play-game-table { flex: 1 1 0; min-height: 0; height: auto; }
-  .play-game-phases { order: -1; display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; align-items: center; gap: .5rem; align-self: stretch; flex: 0 0 auto; padding: .3rem .5rem; }
+  .play-game-phases { order: -1; display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto auto; align-items: center; gap: .5rem; align-self: stretch; flex: 0 0 auto; padding: .3rem .5rem; }
   .play-game-turn-owner, .play-game-phase-list, .play-game-next-phase { margin: 0; }
   .play-game-phase-list { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .2rem; }
   .play-game-phase-list li { min-height: 1.8rem; padding: .25rem; font-size: .65rem; }
+  .play-game-extra-draw { grid-column: 4; grid-row: 1; }
+  .play-game-next-phase:not(.play-game-extra-draw) { grid-column: 5; grid-row: 1; }
   .play-game-next-phase { width: auto; }
 }
 @media (max-width: 650px) {
@@ -195,8 +201,10 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
   .play-game-zone-self-patron { grid-column: 3; grid-row: 3; }
   .play-game-phases { grid-template-columns: minmax(0, 1fr) auto; gap: .25rem; }
   .play-game-phases .play-eyebrow { display: none; }
+  .play-game-turn-owner { grid-column: 1; grid-row: 1; }
   .play-game-phase-list { grid-column: 1 / -1; grid-row: 2; }
-  .play-game-next-phase { grid-column: 2; grid-row: 1; }
+  .play-game-extra-draw { grid-column: 1 / -1; grid-row: 3; width: 100%; }
+  .play-game-next-phase:not(.play-game-extra-draw) { grid-column: 2; grid-row: 1; }
 }
 /* Keep account controls accessible on small desktop widths. */
 @media (min-width: 851px) and (max-width: 1000px) {
