@@ -42,8 +42,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       </section>
       <div class="play-game-opponent-identity play-game-player-identity"><strong id="play-game-opponent-name"></strong><span id="play-game-opponent-presence" class="play-away-pill" hidden></span></div>
       </div>
+      <div class="play-game-board-wrap">
       <aside id="play-game-card-preview" class="play-game-card-preview" aria-label="Card preview" hidden><button id="play-game-card-preview-close" class="play-game-card-preview-close action-delete" type="button" aria-label="Close card preview">×</button><canvas id="play-game-card-preview-canvas" hidden></canvas><span id="play-game-card-preview-fallback" class="play-hand-fallback"></span></aside>
-      <div class="play-game-board-wrap"><div class="play-game-table">
+      <div class="play-game-table">
         <div class="play-game-zones-left">
           <div class="play-game-zone play-game-zone-opponent-patron"><button id="play-game-opponent-patron-slot" class="play-game-patron-slot" type="button" aria-label="Preview opponent's Patron"><canvas id="play-game-opponent-patron" hidden></canvas><span id="play-game-opponent-patron-fallback" class="play-game-patron-fallback" aria-hidden="true"></span></button></div>
           <div class="play-game-zone-pair play-game-zone-pair-self" aria-label="Your card zones"><div class="play-game-zone play-game-zone-horizon"><div id="play-game-self-horizon" class="play-deck-stack" role="img" aria-label="Your Horizon, draw deck"></div></div><div class="play-game-zone play-game-zone-archive"><div id="play-game-self-archive" class="play-game-archive-card is-empty" role="img" aria-label="Your Archive"><span id="play-game-archive-top"></span></div></div></div>
@@ -137,6 +138,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     });
   }
   root.querySelector('.play-game-board-wrap').addEventListener('contextmenu', event => {
+    if (event.target.closest('.play-game-card-preview')) return;
     event.preventDefault();
     hideCardPreview();
   });
