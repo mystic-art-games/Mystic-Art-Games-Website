@@ -232,14 +232,16 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         { duration: reducedMotion ? 80 : 360, easing: 'ease-in-out', fill: 'forwards' }).finished;
     } catch { /* Leaving the table cancels the flight. */ }
   }
-  async function finishDrawPhase(drawnCard = null) {
+  async function finishDrawPhase(drawnCard = undefined) {
     if (!room || room.status !== 'active' || room.turn_player_id !== userId
       || room.turn_phase !== 'draw' || phaseBusy || Date.now() < drawRetryAt) return;
     const expected = epoch, roomId = room.id, turn = room.turn_number;
     phaseBusy = true;
     renderTurnPhase();
     try {
-      if (drawnCard || gameState?.hand?.length) await animateDrawToHand(drawnCard || gameState.hand.at(-1));
+      const flightCard = drawnCard === undefined
+        ? (gameState?.horizon?.length ? gameState.hand.at(-1) : null) : drawnCard;
+      if (flightCard) await animateDrawToHand(flightCard);
       if (expected !== epoch || room?.id !== roomId || room.turn_phase !== 'draw') return;
       await rpc('play_advance_turn_phase', {
         p_room_id: roomId, p_expected_turn: turn, p_expected_phase: 'draw', p_take_extra_card: false,
