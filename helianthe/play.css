@@ -148,7 +148,7 @@ html:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100%; over
 body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; min-height: 0; overflow-y: hidden; scrollbar-gutter: auto; background-color: #986845; background-image: linear-gradient(#e6c79859, #e6c79859), url('./assets/table-wood-texture.png'); background-position: center; background-size: cover; background-attachment: fixed; background-blend-mode: screen, normal; }
 #play-view:has(#play-game:not([hidden])) { display: flex; flex-direction: column; width: 100%; max-width: none; height: 100dvh; margin: 0; padding: clamp(.3rem, 1vh, .7rem); border: 0; border-radius: 0; background: transparent; box-shadow: none; }
 #play-game:not([hidden]) { --play-preview-gutter: clamp(170px, 22vw, 330px); display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: .25rem; flex: 1; min-height: 0; color: #fff7e8; }
-#play-game .play-game-seat { padding: .2rem .65rem; border-color: #c69a65; background: #f7dfbd24; color: #fff7e8; }
+#play-game .play-game-seat { padding: .2rem .65rem; border-color: #effff048; background: #effff01c; color: #fff7e8; backdrop-filter: blur(10px) saturate(1.15); -webkit-backdrop-filter: blur(10px) saturate(1.15); box-shadow: inset 0 1px 0 #ffffff47, 0 5px 16px #0e241a2e; }
 #play-game .play-game-player-block { min-height: 0; }
 #play-game .play-game-opponent-hand span { width: clamp(56px, 9.6vh, 84px); }
 #play-game .play-game-hand { gap: 1.1rem; padding: .4rem .3rem; }
@@ -157,7 +157,7 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
 #play-game .play-game-board-wrap { display: grid; grid-template-columns: var(--play-preview-gutter) minmax(0, 1fr) minmax(145px, 170px); grid-template-rows: minmax(0, 1fr); align-items: stretch; gap: clamp(.5rem, 1vw, .9rem); box-sizing: border-box; width: 100%; min-height: 0; max-width: none; height: 100%; margin: 0; container-type: size; }
 #play-game .play-game-card-preview { position: relative; grid-column: 1; grid-row: 1; align-self: center; justify-self: start; top: auto; left: auto; transform: none; width: min(325px, 70cqh, 100%); max-height: 100%; }
 #play-game .play-game-card-preview, #play-game .play-hand-card, #play-game .play-game-patron-slot, #play-game .play-game-archive-card { border-color: #123c2d; }
-#play-game .play-game-archive-card.is-empty { border-color: transparent; background: #f7dfbd24; box-shadow: none; }
+#play-game .play-game-archive-card.is-empty { border-color: transparent; background: #effff01c; backdrop-filter: blur(10px) saturate(1.15); -webkit-backdrop-filter: blur(10px) saturate(1.15); box-shadow: none; }
 #play-game .play-game-table { grid-column: 2; grid-row: 1; width: min(100%, calc(124.6cqh + 24px)); height: 100%; margin: 0 auto; }
 #play-game .play-game-board { width: min(100%, 89cqh); max-height: 100%; margin: auto; }
 .play-game-phases { align-self: center; min-width: 0; max-height: 100%; padding: .6rem; overflow: auto; border: 1px solid #123c2d; border-radius: 12px; background: #1b352bd9; color: #f5f2e8; box-shadow: inset 0 1px 0 #fff2cf36, 0 4px 12px #130b0a55; }
