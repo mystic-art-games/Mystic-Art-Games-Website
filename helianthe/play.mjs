@@ -352,7 +352,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     ++cardPreviewSerial;
     const previousAction = selectedCardElement?.closest('.play-hand-item')?.querySelector('.play-event-evoke');
     if (previousAction) previousAction.hidden = true;
-    $('game-hand').classList.remove('has-event-action');
     selectedCardElement?.classList.remove('is-selected');
     selectedCardElement?.removeAttribute('aria-pressed');
     selectedCardElement = null;
@@ -362,7 +361,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const serial = ++cardPreviewSerial;
     const previousAction = selectedCardElement?.closest('.play-hand-item')?.querySelector('.play-event-evoke');
     if (previousAction) previousAction.hidden = true;
-    $('game-hand').classList.remove('has-event-action');
     selectedCardElement?.classList.remove('is-selected');
     selectedCardElement?.removeAttribute('aria-pressed');
     selectedCardElement = source;
@@ -371,7 +369,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const evoke = source?.closest('.play-hand-item')?.querySelector('.play-event-evoke');
     if (evoke) {
       evoke.hidden = false;
-      $('game-hand').classList.add('has-event-action');
       syncEventEvokeButton();
     }
     const panel = $('game-card-preview');
