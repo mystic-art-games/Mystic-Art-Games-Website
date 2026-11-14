@@ -45,13 +45,13 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       <aside id="play-game-card-preview" class="play-game-card-preview" aria-label="Card preview" hidden><button id="play-game-card-preview-close" class="play-game-card-preview-close action-delete" type="button" aria-label="Close card preview">×</button><canvas id="play-game-card-preview-canvas" hidden></canvas><span id="play-game-card-preview-fallback" class="play-hand-fallback"></span></aside>
       <div class="play-game-board-wrap"><div class="play-game-table">
         <div class="play-game-zones-left">
-          <div class="play-game-zone play-game-zone-opponent-patron"><div id="play-game-opponent-patron-slot" class="play-game-patron-slot" role="img" aria-label="Opponent's Patron"><canvas id="play-game-opponent-patron" hidden></canvas><span id="play-game-opponent-patron-fallback" class="play-game-patron-fallback" aria-hidden="true"></span></div></div>
-          <div class="play-game-zone-pair play-game-zone-pair-self" aria-label="Your card zones"><div class="play-game-zone play-game-zone-horizon"><div id="play-game-self-horizon" class="play-deck-stack" role="img" aria-label="Your Horizon, draw deck"></div></div><div class="play-game-zone play-game-zone-archive"><div id="play-game-self-archive" class="play-game-archive-card" role="img" aria-label="Your Archive"><span id="play-game-archive-top"></span></div></div></div>
+          <div class="play-game-zone play-game-zone-opponent-patron"><button id="play-game-opponent-patron-slot" class="play-game-patron-slot" type="button" aria-label="Preview opponent's Patron"><canvas id="play-game-opponent-patron" hidden></canvas><span id="play-game-opponent-patron-fallback" class="play-game-patron-fallback" aria-hidden="true"></span></button></div>
+          <div class="play-game-zone-pair play-game-zone-pair-self" aria-label="Your card zones"><div class="play-game-zone play-game-zone-horizon"><div id="play-game-self-horizon" class="play-deck-stack" role="img" aria-label="Your Horizon, draw deck"></div></div><div class="play-game-zone play-game-zone-archive"><div id="play-game-self-archive" class="play-game-archive-card is-empty" role="img" aria-label="Your Archive"><span id="play-game-archive-top"></span></div></div></div>
         </div>
         <div id="play-game-board" class="play-game-board" role="group" aria-label="Shared five-column, four-row Terrain board"></div>
         <div class="play-game-zones-right">
-          <div class="play-game-zone-pair play-game-zone-pair-opponent" aria-label="Opponent's card zones"><div class="play-game-zone play-game-zone-archive"><div class="play-game-archive-card" role="img" aria-label="Opponent's Archive"></div></div><div class="play-game-zone play-game-zone-horizon"><div id="play-game-opponent-horizon" class="play-deck-stack" role="img" aria-label="Opponent's Horizon, draw deck"></div></div></div>
-          <div class="play-game-zone play-game-zone-self-patron"><div id="play-game-self-patron-slot" class="play-game-patron-slot" role="img" aria-label="Your Patron"><canvas id="play-game-self-patron" hidden></canvas><span id="play-game-self-patron-fallback" class="play-game-patron-fallback" aria-hidden="true"></span></div></div>
+          <div class="play-game-zone-pair play-game-zone-pair-opponent" aria-label="Opponent's card zones"><div class="play-game-zone play-game-zone-archive"><div class="play-game-archive-card is-empty" role="img" aria-label="Opponent's Archive"></div></div><div class="play-game-zone play-game-zone-horizon"><div id="play-game-opponent-horizon" class="play-deck-stack" role="img" aria-label="Opponent's Horizon, draw deck"></div></div></div>
+          <div class="play-game-zone play-game-zone-self-patron"><button id="play-game-self-patron-slot" class="play-game-patron-slot" type="button" aria-label="Preview your Patron"><canvas id="play-game-self-patron" hidden></canvas><span id="play-game-self-patron-fallback" class="play-game-patron-fallback" aria-hidden="true"></span></button></div>
         </div>
       </div>
       <aside id="play-game-phases" class="play-game-phases" aria-label="Turn phases">
@@ -124,11 +124,16 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   $('game-next-phase').addEventListener('click', advanceTurnPhase);
   for (const seat of ['self', 'opponent']) {
-    $(`game-${seat}-patron-slot`).addEventListener('contextmenu', event => {
-      event.preventDefault();
-      event.stopPropagation();
+    const slot = $(`game-${seat}-patron-slot`);
+    const previewPatron = () => {
       const card = patronPreviews[seat].card;
       if (card) showCardPreview(card);
+    };
+    slot.addEventListener('click', previewPatron);
+    slot.addEventListener('contextmenu', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      previewPatron();
     });
   }
   root.querySelector('.play-game-board-wrap').addEventListener('contextmenu', event => {
@@ -303,7 +308,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       ? `url('./assets/Type_Patron_${terrain}_Arcane.png'), url('./assets/${frame}')`
       : `url('./assets/${frame}')`;
     fallback.style.backgroundSize = card ? '44% auto, 100% 100%' : '100% 100%';
-    $(`game-${seat}-patron-slot`).setAttribute('aria-label', `${seat === 'self' ? 'Your' : "Opponent's"} Patron: ${card?.title || 'none selected'}`);
+    $(`game-${seat}-patron-slot`).setAttribute('aria-label', `Preview ${seat === 'self' ? 'your' : "opponent's"} Patron: ${card?.title || 'none selected'}`);
     if (!card) return;
     void (async () => {
       const artwork = card.artwork_id ? await getArtworkUrl(card.artwork_id).catch(() => '') : '';
@@ -421,6 +426,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const archive = Array.isArray(gameState?.archive) ? gameState.archive : [];
     $('game-self-horizon').setAttribute('aria-label', gameState ? `Your Horizon, ${horizon.length} cards` : 'Your Horizon, draw deck');
     $('game-self-archive').setAttribute('aria-label', gameState ? `Your Archive, ${archive.length} cards` : 'Your Archive');
+    $('game-self-archive').classList.toggle('is-empty', archive.length === 0);
     $('game-archive-top').textContent = archive.at(-1)?.title || '';
     updateAwayDisplays();
     renderGameHand();
