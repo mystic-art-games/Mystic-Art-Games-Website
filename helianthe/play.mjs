@@ -12,8 +12,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   let busy = false, epoch = 0, fetchSerial = 0, live = false, lastHeartbeat = 0, autoDeckPending = false;
   let gameState = null, gameLoading = false, gameLoadFailed = false, gameReloadPending = false, handSignature = '', gameRenderSerial = 0, cardPreviewSerial = 0;
   let phaseBusy = false, selectedCardElement = null, patronDeckRequest = '', patronDeckLoadedAt = 0;
-  let drawRetryAt = 0, activeDrawFlight = null;
-  let selectedGameCard = null, pendingEvent = null, zoneCounts = null, zoneCountsRevision = null, zoneCountsRequest = null, eventNoticeTimer = null;
+  let drawRetryAt = 0, activeDrawFlight = null, activeHandShifts = [];
+  let selectedGameCard = null, selectedHandIndex = null, pendingEvent = null, zoneCounts = null, zoneCountsRevision = null, zoneCountsRequest = null, eventNoticeTimer = null;
   const gameDeckPatrons = new Map(), gamePlayerPatrons = new Map();
   const patronPreviews = { self: { key: '', serial: 0 }, opponent: { key: '', serial: 0 } };
   root.innerHTML = `
@@ -44,7 +44,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       </div>
       <div class="play-game-board-wrap">
       <p id="play-game-event-notice" class="play-game-event-notice" role="status" aria-live="polite" hidden></p>
-      <aside id="play-game-card-preview" class="play-game-card-preview" aria-label="Card preview" hidden><button id="play-game-card-preview-close" class="play-game-card-preview-close action-delete" type="button" aria-label="Close card preview">×</button><canvas id="play-game-card-preview-canvas" hidden></canvas><span id="play-game-card-preview-fallback" class="play-hand-fallback"></span></aside>
+      <aside id="play-game-card-preview" class="play-game-card-preview" aria-label="Card preview" hidden><button id="play-game-card-preview-close" class="play-game-card-preview-close action-delete" type="button" aria-label="Close card preview">×</button><canvas id="play-game-card-preview-canvas" hidden></canvas><span id="play-game-card-preview-fallback" class="play-hand-fallback"></span><button id="play-game-discard-card" class="play-game-discard-card" type="button" hidden>Discard selected card</button></aside>
       <div class="play-game-table">
         <div class="play-game-zones-left">
           <div class="play-game-zone play-game-zone-opponent-patron"><button id="play-game-opponent-patron-slot" class="play-game-patron-slot" type="button" aria-label="Preview opponent's Patron"><canvas id="play-game-opponent-patron" hidden></canvas><span id="play-game-opponent-patron-fallback" class="play-game-patron-fallback" aria-hidden="true"></span></button></div>
@@ -65,12 +65,14 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
           <li data-phase="2"><span class="play-game-phase-marker" aria-hidden="true"></span>Main Phase</li>
           <li data-phase="3"><span class="play-game-phase-marker" aria-hidden="true"></span>End of Turn</li>
         </ol>
+        <p id="play-game-discard-prompt" class="play-game-discard-prompt" role="status" hidden></p>
         <button id="play-game-extra-draw" class="play-game-next-phase play-game-extra-draw" type="button" aria-label="Draw one card instead of playing and go to End of Turn" hidden>Draw Instead</button>
         <button id="play-game-next-phase" class="play-game-next-phase" type="button">Next Phase</button>
       </aside></div>
       <div class="play-game-player-block">
       <div class="play-game-self-identity play-game-player-identity"><strong id="play-game-self-name"></strong><span id="play-game-self-presence" class="play-away-pill" hidden></span></div>
       <section id="play-game-self" class="play-surface play-game-seat" aria-label="Your area">
+        <span id="play-game-hand-count" class="play-game-hand-count" aria-live="polite" hidden></span>
         <div class="play-game-hand-wrap"><p id="play-game-loading" role="status">Preparing the opening hands…</p><div id="play-game-hand" class="play-game-hand"></div></div>
       </section>
       </div>
@@ -99,6 +101,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     'Grid Stabilization': ['protect any radiance terrain with at least 1 lumen. draw 1 card.', 'protect_radiance_draw', 'Radiance Terrain with at least 1 Lumen'],
     'Feel the Power': ['draw a card for every 4 lumen counters in the world', 'draw_from_lumens', ''],
     'Path of Radiance': ['remove all lumen counters from the world, draw that many cards minus 8', 'clear_lumens_draw', ''],
+    'Greenway Advance': ['fertilize 2.', 'fertilize_two', 'empty space for the first Fertilize token'],
+    'Verdant Vineroots': ['fertilize 1. draw 1 card.', 'fertilize_draw', 'empty space to Fertilize'],
+    'Seed Convoy': ['put a fertilize counter on an fertilized node, after that draw a card.', 'fertilize_existing_draw', 'already fertilized empty space'],
   };
   function eventSupport(card) {
     const rule = eventEffects[card?.title];
@@ -112,6 +117,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (text && temporary) eventNoticeTimer = setTimeout(() => { notice.hidden = true; eventNoticeTimer = null; }, 4500);
   }
   function legalEventTarget(kind, node) {
+    if (kind === 'fertilize_two' || kind === 'fertilize_draw') return !node?.terrain;
+    if (kind === 'fertilize_existing_draw') return !node?.terrain && Boolean(node?.fertilize);
     if (!node?.terrain) return false;
     if (kind === 'protect') return true;
     if (kind === 'unprotect_entity') return Boolean(node.entity && node.protected);
@@ -120,7 +127,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   function syncEventTargets() {
     for (const cell of $('game-board').children) {
-      const legal = Boolean(pendingEvent && legalEventTarget(pendingEvent.rule[1], room?.board?.[cell.dataset.key]));
+      const legal = Boolean(pendingEvent && cell.dataset.key
+        && legalEventTarget(pendingEvent.rule[1], room?.board?.[cell.dataset.key]));
       cell.classList.toggle('is-event-target', legal);
       if (legal) { cell.tabIndex = 0; cell.setAttribute('role', 'button'); }
       else { cell.removeAttribute('tabindex'); cell.removeAttribute('role'); }
@@ -141,50 +149,97 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     }
     const next = $('game-next-phase');
     next.textContent = phase === 'end' ? 'Pass Turn' : 'Next Phase';
-    next.hidden = phase === 'draw';
+    const excess = own && phase === 'end' ? Math.max(0, (gameState?.hand?.length || 0) - 7) : 0;
+    next.hidden = phase === 'draw' || (own && phase === 'end' && (!gameState || excess > 0));
     next.disabled = !room || room.status !== 'active' || !own || phaseBusy || phaseIndex < 0
       || (phase === 'beginning' && !gameState);
+    const discardPrompt = $('game-discard-prompt');
+    discardPrompt.hidden = excess === 0;
+    if (excess) discardPrompt.textContent = `Discard ${excess} card${excess === 1 ? '' : 's'} to end your turn. Select a card in your hand.`;
+    const discardAction = $('game-discard-card');
+    discardAction.hidden = excess === 0 || selectedHandIndex === null || $('game-card-preview').hidden;
+    discardAction.disabled = phaseBusy;
     const extra = $('game-extra-draw');
     extra.hidden = !own || phase !== 'main' || Boolean(room?.main_played_card);
     extra.disabled = phaseBusy || !Array.isArray(gameState?.horizon) || gameState.horizon.length === 0;
   }
-  async function animateDrawToHand() {
-    const source = $('game-self-horizon').getBoundingClientRect();
-    const hand = $('game-hand').getBoundingClientRect();
-    if (!$('game').hidden && source.width && source.height && hand.width && hand.height) {
-      const lastCard = $('game-hand').lastElementChild?.getBoundingClientRect();
-      const destinationX = lastCard
-        ? Math.min(hand.right - source.width / 2, lastCard.right + 12 + source.width / 2)
-        : hand.left + hand.width / 2;
-      const destinationY = hand.top + hand.height / 2;
-      const card = document.createElement('div');
-      card.className = 'play-draw-flight play-deck-stack';
-      card.setAttribute('aria-hidden', 'true');
-      card.style.left = `${source.left}px`;
-      card.style.top = `${source.top}px`;
-      card.style.width = `${source.width}px`;
-      card.style.height = `${source.height}px`;
-      document.body.append(card);
-      activeDrawFlight = card;
-      const motion = card.animate([
-        { transform: 'translate(0, 0) rotate(0deg) scale(1)', opacity: 1 },
-        { transform: `translate(${(destinationX - source.left - source.width / 2) * .65}px, ${(destinationY - source.top - source.height / 2) * .65}px) rotate(-7deg) scale(1.08)`, opacity: 1, offset: .68 },
-        { transform: `translate(${destinationX - source.left - source.width / 2}px, ${destinationY - source.top - source.height / 2}px) rotate(0deg) scale(1)`, opacity: 0 },
-      ], { duration: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 80 : 820,
-        easing: 'cubic-bezier(.22,.7,.18,1)', fill: 'forwards' });
-      try { await motion.finished; } catch { /* Leaving the table cancels the flight. */ }
-      card.remove();
-      if (activeDrawFlight === card) activeDrawFlight = null;
-    }
+  function clearDrawFlight() {
+    activeDrawFlight?.remove();
+    activeDrawFlight = null;
+    for (const animation of activeHandShifts) animation.cancel();
+    activeHandShifts = [];
   }
-  async function finishDrawPhase() {
+  async function animateDrawToHand(rawCard) {
+    const source = $('game-self-horizon').getBoundingClientRect();
+    const handElement = $('game-hand');
+    const hand = handElement.getBoundingClientRect();
+    if ($('game').hidden || !source.width || !source.height || !hand.width || !hand.height) return;
+    clearDrawFlight();
+    const items = Array.from(handElement.children);
+    const first = items[0]?.getBoundingClientRect();
+    const cardWidth = first?.width || Math.min(source.width, 100);
+    const cardHeight = first?.height || cardWidth * 88 / 63;
+    const style = getComputedStyle(handElement);
+    const gap = parseFloat(style.columnGap) || 0;
+    const paddingLeft = parseFloat(style.paddingLeft) || 0;
+    const paddingRight = parseFloat(style.paddingRight) || 0;
+    const available = hand.width - paddingLeft - paddingRight;
+    const total = (items.length + 1) * cardWidth + items.length * gap;
+    const startX = hand.left + paddingLeft + Math.max(0, (available - total) / 2) - handElement.scrollLeft;
+    const destinationX = startX + items.length * (cardWidth + gap) + cardWidth / 2;
+    const destinationY = first ? first.top + cardHeight / 2 : hand.top + hand.height / 2;
+    const flight = document.createElement('div');
+    flight.className = 'play-draw-flight';
+    flight.setAttribute('aria-hidden', 'true');
+    Object.assign(flight.style, { left: `${source.left}px`, top: `${source.top}px`, width: `${source.width}px`, height: `${source.height}px` });
+    const inner = document.createElement('div'); inner.className = 'play-draw-flight-inner';
+    const back = document.createElement('div'); back.className = 'play-draw-flight-face play-draw-flight-back';
+    const front = document.createElement('div'); front.className = 'play-draw-flight-face play-draw-flight-front';
+    const canvas = document.createElement('canvas'); canvas.hidden = true;
+    const fallback = document.createElement('span'); fallback.textContent = rawCard?.title || 'Card';
+    front.append(canvas, fallback); inner.append(back, front); flight.append(inner); document.body.append(flight);
+    activeDrawFlight = flight;
+    const frontReady = rawCard ? (async () => {
+      const card = resolveGameCard(rawCard);
+      fallback.textContent = card.title || 'Card';
+      try {
+        const artwork = card.artwork_id ? await getArtworkUrl(card.artwork_id) : '';
+        const result = await renderCard(canvas, card, artwork, () => activeDrawFlight === flight);
+        if (result && !result.cancelled) { canvas.hidden = false; fallback.hidden = true; }
+      } catch { /* The title remains visible if card art cannot load. */ }
+    })() : Promise.resolve();
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    activeHandShifts = items.map((item, index) => {
+      const current = item.getBoundingClientRect();
+      const delta = startX + index * (cardWidth + gap) - current.left;
+      return item.animate([{ transform: 'translateX(0)' }, { transform: `translateX(${delta}px)` }],
+        { duration: reducedMotion ? 80 : 470, easing: 'ease-in-out', fill: 'forwards' });
+    });
+    const dx = destinationX - source.left - source.width / 2;
+    const dy = destinationY - source.top - source.height / 2;
+    const scale = cardWidth / source.width;
+    const motion = flight.animate([
+      { transform: 'translate(0, 0) rotate(0deg) scale(1)' },
+      { transform: `translate(${dx * .65}px, ${dy * .65}px) rotate(-7deg) scale(${1 + (scale - 1) * .65})`, offset: .7 },
+      { transform: `translate(${dx}px, ${dy}px) rotate(0deg) scale(${scale})` },
+    ], { duration: reducedMotion ? 100 : 850, easing: 'cubic-bezier(.22,.7,.18,1)', fill: 'forwards' });
+    try {
+      await motion.finished;
+      if (activeDrawFlight !== flight) return;
+      await frontReady;
+      if (activeDrawFlight !== flight) return;
+      await inner.animate([{ transform: 'rotateY(0deg)' }, { transform: 'rotateY(180deg)' }],
+        { duration: reducedMotion ? 80 : 360, easing: 'ease-in-out', fill: 'forwards' }).finished;
+    } catch { /* Leaving the table cancels the flight. */ }
+  }
+  async function finishDrawPhase(drawnCard = null) {
     if (!room || room.status !== 'active' || room.turn_player_id !== userId
       || room.turn_phase !== 'draw' || phaseBusy || Date.now() < drawRetryAt) return;
     const expected = epoch, roomId = room.id, turn = room.turn_number;
     phaseBusy = true;
     renderTurnPhase();
     try {
-      if ((gameState?.horizon?.length || 0) > 0) await animateDrawToHand();
+      if (drawnCard || gameState?.hand?.length) await animateDrawToHand(drawnCard || gameState.hand.at(-1));
       if (expected !== epoch || room?.id !== roomId || room.turn_phase !== 'draw') return;
       await rpc('play_advance_turn_phase', {
         p_room_id: roomId, p_expected_turn: turn, p_expected_phase: 'draw', p_take_extra_card: false,
@@ -199,6 +254,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         message(friendly(error), true);
       }
     } finally {
+      clearDrawFlight();
       phaseBusy = false;
       renderTurnPhase();
     }
@@ -208,10 +264,11 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (room.turn_phase === 'beginning' && !gameState) return;
     if (takeExtraCard && (room.turn_phase !== 'main' || !gameState?.horizon?.length)) return;
     const expected = epoch, roomId = room.id, turn = room.turn_number, phase = room.turn_phase;
+    const drawnCard = gameState?.horizon?.[0] || null;
     phaseBusy = true;
     renderTurnPhase();
     try {
-      if (takeExtraCard) await animateDrawToHand();
+      if (takeExtraCard) await animateDrawToHand(drawnCard);
       if (expected !== epoch || room?.id !== roomId) return;
       await rpc('play_advance_turn_phase', {
         p_room_id: roomId,
@@ -223,7 +280,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       await refreshRoom();
       if (expected === epoch && room?.id === roomId && phase === 'beginning' && room.turn_phase === 'draw') {
         phaseBusy = false;
-        await finishDrawPhase();
+        await finishDrawPhase(drawnCard);
         return;
       }
       if (expected === epoch && room?.id === roomId && takeExtraCard) {
@@ -235,6 +292,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         message(friendly(error), true);
       }
     } finally {
+      clearDrawFlight();
       phaseBusy = false;
       renderTurnPhase();
     }
@@ -328,7 +386,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   async function disconnect() {
     ++epoch; ++fetchSerial;
     ++gameRenderSerial; gameState = null; gameLoading = false; gameLoadFailed = false; gameReloadPending = false; handSignature = '';
-    phaseBusy = false; drawRetryAt = 0; activeDrawFlight?.remove(); activeDrawFlight = null;
+    phaseBusy = false; drawRetryAt = 0; clearDrawFlight();
     patronDeckRequest = ''; patronDeckLoadedAt = 0; gameDeckPatrons.clear(); gamePlayerPatrons.clear();
     zoneCounts = null; zoneCountsRevision = null; zoneCountsRequest = null;
     for (const seat of ['self', 'opponent']) {
@@ -449,17 +507,20 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     ++cardPreviewSerial;
     pendingEvent = null;
     selectedGameCard = null;
+    selectedHandIndex = null;
     syncEventTargets();
     eventNotice('');
     selectedCardElement?.classList.remove('is-selected');
     selectedCardElement?.removeAttribute('aria-pressed');
     selectedCardElement = null;
     $('game-card-preview').hidden = true;
+    $('game-discard-card').hidden = true;
   }
-  function showCardPreview(card, source) {
+  function showCardPreview(card, source, handIndex = null) {
     pendingEvent = null;
     syncEventTargets();
     selectedGameCard = card;
+    selectedHandIndex = handIndex;
     const support = card.card_type === 'Event' ? eventSupport(card) : null;
     eventNotice(card.card_type === 'Event' && !support
       ? (card.effect ? 'This Event effect is not available in online play yet.' : 'This Event has no effect text yet.') : '');
@@ -477,6 +538,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     fallback.textContent = card.title || 'Card';
     panel.setAttribute('aria-label', `Preview of ${card.title || 'card'}`);
     panel.hidden = false;
+    renderTurnPhase();
     void (async () => {
       const artwork = card.artwork_id ? await getArtworkUrl(card.artwork_id).catch(() => '') : '';
       const result = await renderCard(canvas, card, artwork, () => serial === cardPreviewSerial);
@@ -487,6 +549,37 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     })().catch(() => {});
   }
   $('game-card-preview-close').addEventListener('click', hideCardPreview);
+  async function discardSelectedCard() {
+    if (!room || room.status !== 'active' || room.turn_player_id !== userId
+      || room.turn_phase !== 'end' || phaseBusy || (gameState?.hand?.length || 0) <= 7
+      || selectedHandIndex === null) return;
+    const card = gameState.hand[selectedHandIndex];
+    const cardId = card?.card_id || card?.id;
+    if (!cardId) return;
+    const expected = epoch, roomId = room.id;
+    phaseBusy = true;
+    renderTurnPhase();
+    try {
+      await rpc('play_discard_to_limit', {
+        p_room_id: roomId, p_expected_turn: room.turn_number,
+        p_hand_index: selectedHandIndex, p_card_id: cardId,
+        p_expected_hand_count: gameState.hand.length,
+      });
+      if (expected !== epoch || room?.id !== roomId) return;
+      await refreshRoom();
+      if (expected === epoch && room?.id === roomId) await loadGameState(true);
+    } catch (error) {
+      if (expected === epoch && room?.id === roomId) {
+        await refreshRoom().catch(() => {});
+        await loadGameState(true).catch(() => {});
+        message(friendly(error), true);
+      }
+    } finally {
+      phaseBusy = false;
+      renderTurnPhase();
+    }
+  }
+  $('game-discard-card').addEventListener('click', () => void discardSelectedCard());
   function resolveGameCard(raw) {
     const card = raw && typeof raw === 'object' ? raw : { title: String(raw || '') };
     const catalog = getCards?.() || [];
@@ -496,19 +589,33 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       || catalog.find(item => title && item.title?.trim().toLocaleLowerCase() === title);
     return full ? { ...card, ...full } : card;
   }
-  async function evokeEvent(card, handIndex, targetX = null, targetY = null) {
+  async function evokeEvent(card, handIndex, targetX = null, targetY = null, targetCells = null) {
     if (!room || room.status !== 'active' || room.turn_player_id !== userId
       || room.turn_phase !== 'main' || phaseBusy || !Array.isArray(gameState?.hand)) return;
     const rule = eventSupport(card);
     if (!rule) { eventNotice('This Event effect is not available in online play yet.'); return; }
-    if (targetX === null && targetY === null && !['draw_from_lumens', 'clear_lumens_draw'].includes(rule[1])) {
-      const legalKeys = Object.keys(room.board || {}).filter(key => legalEventTarget(rule[1], room.board[key]));
-      if (legalKeys.length) {
+    if (rule[1] === 'fertilize_two' && !targetCells) {
+      const legalCells = Array.from($('game-board').children).filter(cell => cell.dataset.key
+        && legalEventTarget(rule[1], room?.board?.[cell.dataset.key]));
+      if (!legalCells.length) { eventNotice('There is no empty space to Fertilize.'); return; }
+      const targets = targetX !== null && targetY !== null ? [[targetX, targetY]] : [];
+      pendingEvent = { card, handIndex, rule, targets };
+      syncEventTargets();
+      eventNotice(targets.length ? 'Choose an empty space for the second Fertilize token. Press Esc to cancel.'
+        : 'Choose an empty space for the first Fertilize token. Press Esc to cancel.');
+      return;
+    }
+    if (targetX === null && targetY === null && !targetCells
+      && !['draw_from_lumens', 'clear_lumens_draw'].includes(rule[1])) {
+      const legalCells = Array.from($('game-board').children).filter(cell => cell.dataset.key
+        && legalEventTarget(rule[1], room?.board?.[cell.dataset.key]));
+      if (legalCells.length) {
         pendingEvent = { card, handIndex, rule };
         syncEventTargets();
         eventNotice(`Choose ${rule[2]} on the board. Press Esc to cancel.`);
         return;
       }
+      if (rule[1].startsWith('fertilize')) { eventNotice('There is no valid space to Fertilize.'); return; }
     }
     const cardId = card.card_id || card.id;
     if (!cardId) return;
@@ -524,6 +631,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         p_expected_hand_count: gameState.hand.length,
         p_target_x: targetX,
         p_target_y: targetY,
+        p_target_cells: targetCells,
       });
       if (expected !== epoch || room?.id !== roomId) return;
       pendingEvent = null;
@@ -544,6 +652,17 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   function chooseEventTarget(column, row) {
     const event = pendingEvent;
     if (!event || !legalEventTarget(event.rule[1], room?.board?.[`${column},${row}`])) return;
+    if (event.rule[1] === 'fertilize_two') {
+      event.targets.push([column, row]);
+      if (event.targets.length < 2) {
+        eventNotice('Choose an empty space for the second Fertilize token. You may choose the same space again.');
+        return;
+      }
+      pendingEvent = null;
+      syncEventTargets();
+      void evokeEvent(event.card, event.handIndex, null, null, event.targets);
+      return;
+    }
     pendingEvent = null;
     syncEventTargets();
     void evokeEvent(event.card, event.handIndex, column, row);
@@ -584,7 +703,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         drag.bounds = bounds;
         button.classList.add('is-drag-source');
         root.querySelector('.play-game-table').classList.add('is-event-drop-zone');
-        showCardPreview(card, button);
+        showCardPreview(card, button, handIndex);
       }
       event.preventDefault();
       drag.ghost.style.left = `${drag.bounds.left + dx}px`;
@@ -625,7 +744,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     button.addEventListener('keydown', event => {
       if (event.key.toLowerCase() !== 'e') return;
       event.preventDefault();
-      showCardPreview(card, button);
+      showCardPreview(card, button, handIndex);
       void evokeEvent(card, handIndex);
     });
   }
@@ -646,10 +765,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       fallback.textContent = card.title || 'Card';
       button.append(canvas, fallback);
       item.append(button);
-      button.addEventListener('click', () => showCardPreview(card, button));
+      button.addEventListener('click', () => showCardPreview(card, button, index));
       button.addEventListener('contextmenu', event => {
         event.preventDefault();
-        showCardPreview(card, button);
+        showCardPreview(card, button, index);
       });
       if (card.card_type === 'Event') enableEventDrag(button, card, index);
       void (async () => {
@@ -699,7 +818,17 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
           badge.textContent = markers.join(' · '); cell.append(badge);
         }
       }
-      cell.setAttribute('aria-label', node?.terrain ? `${node.terrain} Terrain at row ${row + 1}, column ${column + 1}, ${node.lumens || 0} Lumens${node.protected ? ', Protected' : ''}${node.crisis ? ', Crisis' : ''}` : `Empty space at row ${row + 1}, column ${column + 1}`);
+      if (!node?.terrain && node?.fertilize) {
+        cell.classList.add('is-fertilized');
+        const token = document.createElement('img');
+        token.className = 'play-fertilize-token';
+        token.src = './assets/Fertilize_Simple.png';
+        token.alt = '';
+        cell.append(token);
+      }
+      cell.setAttribute('aria-label', node?.terrain ? `${node.terrain} Terrain at row ${row + 1}, column ${column + 1}, ${node.lumens || 0} Lumens${node.protected ? ', Protected' : ''}${node.crisis ? ', Crisis' : ''}`
+        : node?.fertilize ? `${node.fertilize.owner_id === userId ? 'Your' : "Opponent's"} Fertilize marker on empty space at row ${row + 1}, column ${column + 1}`
+          : `Empty space at row ${row + 1}, column ${column + 1}`);
       cell.addEventListener('click', () => chooseEventTarget(column, row));
       cell.addEventListener('keydown', event => {
         if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); chooseEventTarget(column, row); }
@@ -713,6 +842,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const opponentHand = $('game-opponent-hand');
     const reportedCount = room.host_id === userId ? room.guest_hand_count : room.host_hand_count;
     const opponentHandCount = Number.isInteger(reportedCount) ? Math.max(0, Math.min(reportedCount, 100)) : 5;
+    opponentHand.style.setProperty('--opponent-count', String(Math.max(1, opponentHandCount)));
     if (opponentHand.childElementCount !== opponentHandCount) {
       opponentHand.replaceChildren(...Array.from({ length: opponentHandCount }, () => {
         const back = document.createElement('span');
@@ -724,6 +854,13 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     opponentHand.hidden = !gameState;
     const horizon = Array.isArray(gameState?.horizon) ? gameState.horizon : [];
     const archive = Array.isArray(gameState?.archive) ? gameState.archive : [];
+    const handCount = Array.isArray(gameState?.hand) ? gameState.hand.length : null;
+    const handBadge = $('game-hand-count');
+    handBadge.hidden = handCount === null;
+    if (handCount !== null) {
+      handBadge.textContent = String(handCount);
+      handBadge.setAttribute('aria-label', `${handCount} cards in your hand`);
+    }
     $('game-self-horizon').setAttribute('aria-label', gameState ? `Your Horizon, ${horizon.length} cards` : 'Your Horizon, draw deck');
     $('game-self-horizon').dataset.count = gameState ? String(horizon.length) : '';
     $('game-self-archive').setAttribute('aria-label', gameState ? `Your Archive, ${archive.length} cards` : 'Your Archive');
