@@ -49,7 +49,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         </div>
         <div id="play-game-board" class="play-game-board" role="group" aria-label="Shared five-column, four-row Terrain board"></div>
         <div class="play-game-zones-right">
-          <div class="play-game-zone-pair play-game-zone-pair-opponent" aria-label="Opponent's card zones"><div class="play-game-zone play-game-zone-archive"><div class="play-game-archive-card is-empty" role="img" aria-label="Opponent's Archive"></div></div><div class="play-game-zone play-game-zone-horizon"><div id="play-game-opponent-horizon" class="play-deck-stack" role="img" aria-label="Opponent's Horizon, draw deck"></div></div></div>
+          <div class="play-game-zone-pair play-game-zone-pair-opponent" aria-label="Opponent's card zones"><div class="play-game-zone play-game-zone-archive"><div id="play-game-opponent-archive" class="play-game-archive-card is-empty" role="img" aria-label="Opponent's Archive"><span id="play-game-opponent-archive-top"></span></div></div><div class="play-game-zone play-game-zone-horizon"><div id="play-game-opponent-horizon" class="play-deck-stack" role="img" aria-label="Opponent's Horizon, draw deck"></div></div></div>
           <div class="play-game-zone play-game-zone-self-patron"><button id="play-game-self-patron-slot" class="play-game-patron-slot" type="button" aria-label="Preview your Patron"><canvas id="play-game-self-patron" hidden></canvas><span id="play-game-self-patron-fallback" class="play-game-patron-fallback" aria-hidden="true"></span></button></div>
         </div>
       </div>
@@ -87,6 +87,14 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   const readyButton = $('ready');
   const patronMarkerColors = { Flow: '#4b9ab7', Radiance: '#d4a13e', Symbiosis: '#9c71bc', Verdant: '#5d9c69' };
   const phaseOrder = ['beginning', 'draw', 'main', 'end'];
+  function syncEventEvokeButton() {
+    const evoke = selectedCardElement?.closest('.play-hand-item')?.querySelector('.play-event-evoke');
+    if (!evoke) return;
+    const canEvoke = room?.status === 'active' && room.turn_player_id === userId
+      && room.turn_phase === 'main' && !phaseBusy;
+    evoke.disabled = !canEvoke;
+    evoke.title = canEvoke ? 'Evoke Event' : 'Available during your Main Phase';
+  }
   function renderTurnPhase() {
     const phase = room?.turn_phase;
     const phaseIndex = phaseOrder.indexOf(phase);
@@ -104,8 +112,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     next.textContent = phase === 'end' ? 'Pass Turn' : 'Next Phase';
     next.disabled = !room || room.status !== 'active' || !own || phaseBusy || phaseIndex < 0;
     const extra = $('game-extra-draw');
-    extra.hidden = !own || phase !== 'main';
+    extra.hidden = !own || phase !== 'main' || Boolean(room?.main_played_card);
     extra.disabled = phaseBusy || !Array.isArray(gameState?.horizon) || gameState.horizon.length === 0;
+    syncEventEvokeButton();
   }
   async function advanceTurnPhase(takeExtraCard = false) {
     if (!room || room.status !== 'active' || room.turn_player_id !== userId || phaseBusy) return;
@@ -341,6 +350,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   function hideCardPreview() {
     ++cardPreviewSerial;
+    const previousAction = selectedCardElement?.closest('.play-hand-item')?.querySelector('.play-event-evoke');
+    if (previousAction) previousAction.hidden = true;
+    $('game-hand').classList.remove('has-event-action');
     selectedCardElement?.classList.remove('is-selected');
     selectedCardElement?.removeAttribute('aria-pressed');
     selectedCardElement = null;
@@ -348,11 +360,20 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   function showCardPreview(card, source) {
     const serial = ++cardPreviewSerial;
+    const previousAction = selectedCardElement?.closest('.play-hand-item')?.querySelector('.play-event-evoke');
+    if (previousAction) previousAction.hidden = true;
+    $('game-hand').classList.remove('has-event-action');
     selectedCardElement?.classList.remove('is-selected');
     selectedCardElement?.removeAttribute('aria-pressed');
     selectedCardElement = source;
     selectedCardElement?.classList.add('is-selected');
     selectedCardElement?.setAttribute('aria-pressed', 'true');
+    const evoke = source?.closest('.play-hand-item')?.querySelector('.play-event-evoke');
+    if (evoke) {
+      evoke.hidden = false;
+      $('game-hand').classList.add('has-event-action');
+      syncEventEvokeButton();
+    }
     const panel = $('game-card-preview');
     const canvas = $('game-card-preview-canvas');
     const fallback = $('game-card-preview-fallback');
@@ -380,6 +401,36 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       || catalog.find(item => title && item.title?.trim().toLocaleLowerCase() === title);
     return full ? { ...card, ...full } : card;
   }
+  async function evokeEvent(card, handIndex) {
+    if (!room || room.status !== 'active' || room.turn_player_id !== userId
+      || room.turn_phase !== 'main' || phaseBusy || !Array.isArray(gameState?.hand)) return;
+    const cardId = card.card_id || card.id;
+    if (!cardId) return;
+    const expected = epoch, roomId = room.id;
+    phaseBusy = true;
+    renderTurnPhase();
+    try {
+      await rpc('play_evoke_event', {
+        p_room_id: roomId,
+        p_expected_turn: room.turn_number,
+        p_hand_index: handIndex,
+        p_card_id: cardId,
+        p_expected_hand_count: gameState.hand.length,
+      });
+      if (expected !== epoch || room?.id !== roomId) return;
+      await refreshRoom();
+      if (expected === epoch && room?.id === roomId) await loadGameState(true);
+    } catch (error) {
+      if (expected === epoch && room?.id === roomId) {
+        await refreshRoom().catch(() => {});
+        await loadGameState(true).catch(() => {});
+        message(friendly(error), true);
+      }
+    } finally {
+      phaseBusy = false;
+      renderTurnPhase();
+    }
+  }
   function renderGameHand() {
     const hand = Array.isArray(gameState?.hand) ? gameState.hand.map(resolveGameCard) : [];
     const signature = JSON.stringify(hand);
@@ -387,7 +438,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     handSignature = signature;
     const serial = ++gameRenderSerial;
     hideCardPreview();
-    const cards = hand.map(card => {
+    const cards = hand.map((card, index) => {
+      const item = document.createElement('div'); item.className = 'play-hand-item';
       const button = document.createElement('button');
       button.type = 'button'; button.className = 'play-hand-card';
       button.setAttribute('aria-label', `Preview ${card.title || 'card'}`);
@@ -395,11 +447,20 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       const fallback = document.createElement('span'); fallback.className = 'play-hand-fallback';
       fallback.textContent = card.title || 'Card';
       button.append(canvas, fallback);
+      item.append(button);
       button.addEventListener('click', () => showCardPreview(card, button));
       button.addEventListener('contextmenu', event => {
         event.preventDefault();
         showCardPreview(card, button);
       });
+      if (card.card_type === 'Event') {
+        const evoke = document.createElement('button');
+        evoke.type = 'button'; evoke.className = 'play-event-evoke'; evoke.hidden = true;
+        evoke.setAttribute('aria-label', `Evoke ${card.title || 'Event'}`);
+        evoke.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5m0 0-5 5m5-5 5 5"/></svg>';
+        evoke.addEventListener('click', () => void evokeEvent(card, index));
+        item.append(evoke);
+      }
       void (async () => {
         const artwork = card.artwork_id ? await getArtworkUrl(card.artwork_id).catch(() => '') : '';
         const result = await renderCard(canvas, card, artwork, () => serial === gameRenderSerial);
@@ -407,7 +468,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
           canvas.hidden = false; fallback.hidden = true;
         }
       })().catch(() => {});
-      return button;
+      return item;
     });
     $('game-hand').replaceChildren(...cards);
   }
@@ -462,6 +523,11 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     $('game-self-archive').setAttribute('aria-label', gameState ? `Your Archive, ${archive.length} cards` : 'Your Archive');
     $('game-self-archive').classList.toggle('is-empty', archive.length === 0);
     $('game-archive-top').textContent = archive.at(-1)?.title || '';
+    const opponentSeat = room.host_id === userId ? 'guest' : 'host';
+    const opponentArchiveCount = room[`${opponentSeat}_archive_count`] || 0;
+    $('game-opponent-archive').setAttribute('aria-label', `Opponent's Archive, ${opponentArchiveCount} cards`);
+    $('game-opponent-archive').classList.toggle('is-empty', opponentArchiveCount === 0);
+    $('game-opponent-archive-top').textContent = room[`${opponentSeat}_archive_top`]?.title || '';
     updateAwayDisplays();
     renderGameHand();
     renderTurnPhase();

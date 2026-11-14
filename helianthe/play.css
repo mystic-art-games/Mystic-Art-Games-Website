@@ -126,7 +126,13 @@ body.dark-mode #play-back { color: #e5eee0; }
 .play-game-node.terrain-radiance { background: url('./assets/Terrain_Radiance_Full_Art.png') center / cover; }
 #play-game-counts { font-size: .85rem; }
 .play-game-hand { display: flex; justify-content: safe center; gap: 1.2rem; overflow-x: auto; padding: .6rem .15rem .8rem; }
-.play-hand-card { display: flex; align-items: center; justify-content: center; flex: 0 0 clamp(72px, 9vw, 92px); box-sizing: border-box; min-width: 0; aspect-ratio: 63 / 88; margin: 0; padding: 0; overflow: hidden; border: 1px solid #8da79a; border-radius: 6px; background: #e9ece1; box-shadow: 0 4px 12px #183a2c33; }
+.play-hand-item { position: relative; flex: 0 0 clamp(72px, 9vw, 92px); min-width: 0; }
+.play-hand-card { display: flex; align-items: center; justify-content: center; box-sizing: border-box; width: 100%; min-width: 0; aspect-ratio: 63 / 88; margin: 0; padding: 0; overflow: hidden; border: 1px solid #8da79a; border-radius: 6px; background: #e9ece1; box-shadow: 0 4px 12px #183a2c33; }
+.play-event-evoke { position: absolute; z-index: 2; bottom: calc(100% + .2rem); left: 50%; display: grid; place-items: center; width: 1.9rem; height: 1.9rem; margin: 0; padding: 0; transform: translateX(-50%); border: 1px solid #123c2d; border-radius: 50%; background: #1b352bd9; color: #f5f2e8; box-shadow: inset 0 1px 0 #fff2cf36, 0 4px 12px #130b0a55; cursor: pointer; }
+.play-event-evoke[hidden] { display: none; }
+.play-event-evoke:hover:not(:disabled) { background: #305443; }
+.play-event-evoke:disabled { cursor: default; opacity: .5; }
+.play-event-evoke svg { width: 1.1rem; height: 1.1rem; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
 .play-hand-card canvas { display: block; width: 100%; height: 100%; object-fit: fill; }
 .play-hand-card canvas[hidden], .play-hand-fallback[hidden] { display: none; }
 .play-hand-fallback { padding: .6rem; color: #234536; font-size: .9rem; font-weight: 700; text-align: center; }
@@ -156,7 +162,8 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
 #play-game .play-game-player-block { min-height: 0; }
 #play-game .play-game-opponent-hand span { width: clamp(67px, 11.5vh, 100px); }
 #play-game .play-game-hand { gap: 1.1rem; padding: .4rem .3rem; }
-#play-game .play-hand-card { flex-basis: clamp(67px, 11.5vh, 100px); }
+#play-game .play-game-hand.has-event-action { padding-top: 2.2rem; }
+#play-game .play-hand-item { flex-basis: clamp(67px, 11.5vh, 100px); }
 #play-game .play-hand-card.is-selected, #play-game .play-game-patron-slot.is-selected { outline: 2px solid #202827; outline-offset: 1px; box-shadow: 0 0 0 6px #d7dad9, 0 4px 12px #0d171766; }
 #play-game .play-game-board-wrap { display: grid; grid-template-columns: var(--play-preview-gutter) minmax(0, 1fr) var(--play-preview-gutter); grid-template-rows: minmax(0, 1fr); align-items: stretch; gap: clamp(.5rem, 1vw, .9rem); box-sizing: border-box; width: 100%; min-height: 0; max-width: none; height: 100%; margin: 0; container-type: size; }
 #play-game .play-game-card-preview { position: relative; grid-column: 1; grid-row: 1; align-self: center; justify-self: start; top: auto; left: auto; transform: none; width: min(325px, 70cqh, 100%); max-height: 100%; }
