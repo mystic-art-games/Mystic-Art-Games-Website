@@ -4,7 +4,9 @@ import { renderCard, downloadCardPNG } from './card-renderer.mjs?v=patron-labels
 import { CardSheetPDF } from './card-sheet-pdf.mjs';
 import { PATRONS, FACTION_VISIONS, PATRON_RULES_REVISION, updatePatronVision } from './patrons.mjs?v=faction-visions-3';
 import { CARD_TAGS, normalizeCardTags, seedTagsForCard, tagLabel } from './card-tags.mjs?v=tags-3';
-import { createPlayView } from './play.mjs?v=play-61';
+import { createPlayView } from './play.mjs?v=play-62';
+
+const DEFAULT_PATRON_NAME = PATRONS[0].name;
 
 document.title = ['127.0.0.1', 'localhost', '::1'].includes(window.location.hostname)
   ? 'Helianthe — Local Preview'
@@ -22,7 +24,7 @@ let authMode = 'sign-in';
 let recoveryPending = arrivedFromPasswordRecovery, authReady = false;
 let profileSaveStatusTimer = null;
 const state = { user: null, isAdmin: false, cards: [], decks: [], profiles: [], ideas: [], card: null, deck: null, profile: null, deckCards: [], deckPreviewCard: null, deckPreviewSerial: 0, deckPatronSerial: 0, artworkUrl: null, artworkLoading: false, artworkError: '', artworkSerial: 0, renderSerial: 0, authVersion: 0, realtimeChannel: null, cardFormDirty: false, cardAuthorEdited: false };
-const play = createPlayView({ client, getUser: () => state.user, getDecks: () => state.decks, getCards: () => state.cards, getProfiles: () => state.profiles, makeAvatar: avatarElement, requireSignIn: showSignIn, renderCard, getArtworkUrl, getPatronCard: name => patronCardByName(patronByName(name)?.name || name) });
+const play = createPlayView({ client, getUser: () => state.user, getDecks: () => state.decks, getCards: () => state.cards, getProfiles: () => state.profiles, makeAvatar: avatarElement, requireSignIn: showSignIn, renderCard, getArtworkUrl, getPatronCard: name => patronCardByName(patronByName(name)?.name || name), getDefaultPatronName: () => DEFAULT_PATRON_NAME });
 let addToDeckCard = null;
 let recentDeckCardAddition = null;
 const ARTWORK_UPLOAD_LIMIT = 100 * 1024;
@@ -234,8 +236,8 @@ function patronPickerTerrain(patron) {
 
 function refreshDeckPatronOptions() {
   const select = $('#deck-form').elements.patron_name;
-  const selected = select.value;
-  select.replaceChildren(new Option('No Patron', ''));
+  const selected = patronByName(select.value)?.name || DEFAULT_PATRON_NAME;
+  select.replaceChildren();
   for (const patron of availablePatrons()) select.append(new Option(patron.name, patron.name));
   select.value = selected;
   if (patronPicker) syncPatronPicker(select);
@@ -313,7 +315,7 @@ function syncPatronPicker(select) {
   trigger.setAttribute('aria-label', `Patron: ${selected?.name || 'No Patron'}`);
   trigger.disabled = select.disabled;
   menu.replaceChildren();
-  for (const patron of [null, ...availablePatrons()]) {
+  for (const patron of availablePatrons()) {
     const option = document.createElement('button');
     option.type = 'button';
     option.className = `patron-picker-option${patron ? ` is-patron patron-picker-terrain-${patronPickerTerrain(patron).toLowerCase()}` : ''}`;
@@ -332,7 +334,7 @@ function syncPatronPicker(select) {
     name.style.color = patronPickerColor(patron);
     option.append(name);
     option.addEventListener('click', () => {
-      select.value = patron?.name || '';
+      select.value = patron.name;
       menu.hidden = true;
       trigger.setAttribute('aria-expanded', 'false');
       syncPatronPicker(select);
@@ -1909,7 +1911,7 @@ async function selectDeck(deck) {
   closeDeckEdit();
   state.deckCards = [];
   $('#decks-view').classList.toggle('deck-detail-open', Boolean(deck));
-  void renderDeckPatron(patronByName(deck?.patron_name), { clearPrevious: true });
+  void renderDeckPatron(patronByName(deck?.patron_name || DEFAULT_PATRON_NAME), { clearPrevious: true });
   renderDeckList();
   renderDeckHeader();
   const canDelete = Boolean(deck && state.user && (deck.owner_id === state.user.id || state.isAdmin));
@@ -1921,7 +1923,7 @@ async function selectDeck(deck) {
   form.elements.name.value = deck?.name || '';
   const patronSelect = form.elements.patron_name;
   refreshDeckPatronOptions();
-  patronSelect.value = patronByName(deck?.patron_name)?.name || '';
+  patronSelect.value = patronByName(deck?.patron_name)?.name || DEFAULT_PATRON_NAME;
   renderDeckAuthorSelect(deck?.author_ids?.[0] || deck?.owner_id || state.user?.id);
   $('#deck-cover').value = '';
   $('#deck-cover-button').disabled = !deck || !canEditDeck(deck) || savingDeckCover;
@@ -2119,7 +2121,16 @@ async function reloadCollections() {
   state.cards = resolveLegacyCardAuthors(state.cards, state.profiles);
   refreshDeckPatronOptions();
   const savedPatrons = savedDeckPatrons();
-  state.decks = state.decks.map(deck => deck.patron_name || !savedPatrons[deck.id] ? deck : { ...deck, patron_name: savedPatrons[deck.id] });
+  const missingOwnPatrons = state.decks.filter(deck => !deck.patron_name && deck.owner_id === state.user?.id);
+  state.decks = state.decks.map(deck => ({
+    ...deck,
+    patron_name: patronByName(deck.patron_name || savedPatrons[deck.id])?.name || DEFAULT_PATRON_NAME,
+  }));
+  await Promise.all(missingOwnPatrons.map(async deck => {
+    const patronName = state.decks.find(item => item.id === deck.id)?.patron_name || DEFAULT_PATRON_NAME;
+    const { error } = await client.from('decks').update({ patron_name: patronName }).eq('id', deck.id).eq('owner_id', state.user.id);
+    if (error) console.warn('[Helianthe] Could not save default deck Patron:', error.message);
+  }));
   play.refreshCollections();
   refreshCardAuthorFilter();
   updateAddToDeckButtons(state.card || state.deckPreviewCard);

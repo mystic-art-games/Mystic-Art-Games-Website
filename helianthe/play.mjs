@@ -4,14 +4,14 @@ export function playerOnline(timestamp, now = Date.now()) {
   return Boolean(timestamp && now - Date.parse(timestamp) < 45000);
 }
 
-export function createPlayView({ client, getUser, getDecks, getCards, getProfiles, makeAvatar, requireSignIn, renderCard, getArtworkUrl, getPatronCard }) {
+export function createPlayView({ client, getUser, getDecks, getCards, getProfiles, makeAvatar, requireSignIn, renderCard, getArtworkUrl, getPatronCard, getDefaultPatronName }) {
   const root = document.querySelector('#play-view');
   const $ = id => root.querySelector(`#play-${id}`);
   let userId = null, room = null, channel = null, timer = null, awayTicker = null, visible = false, inLobby = false;
   let lobbyTimer = null, directoryChannel = null, directoryUserId = null, listSerial = 0, tableListSignature = '';
   let busy = false, epoch = 0, fetchSerial = 0, live = false, lastHeartbeat = 0, autoDeckPending = false;
   let gameState = null, gameLoading = false, gameLoadFailed = false, handSignature = '', gameRenderSerial = 0, cardPreviewSerial = 0;
-  let turnSeat = null, turnPhase = null, patronDeckRequest = '';
+  let turnSeat = null, turnPhase = null, patronDeckRequest = '', patronDeckLoadedAt = 0;
   const gameDeckPatrons = new Map(), gamePlayerPatrons = new Map(), gameDeckNames = new Map();
   const patronPreviews = { self: { key: '', serial: 0 }, opponent: { key: '', serial: 0 } };
   root.innerHTML = `
@@ -204,7 +204,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   async function disconnect() {
     ++epoch; ++fetchSerial;
     ++gameRenderSerial; gameState = null; gameLoading = false; gameLoadFailed = false; handSignature = '';
-    turnSeat = null; turnPhase = null; patronDeckRequest = ''; gameDeckPatrons.clear(); gamePlayerPatrons.clear(); gameDeckNames.clear();
+    turnSeat = null; turnPhase = null; patronDeckRequest = ''; patronDeckLoadedAt = 0; gameDeckPatrons.clear(); gamePlayerPatrons.clear(); gameDeckNames.clear();
     for (const seat of ['self', 'opponent']) {
       const preview = patronPreviews[seat];
       preview.key = ''; preview.card = null; ++preview.serial;
@@ -255,27 +255,34 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (!own) $('game-opponent-horizon').setAttribute('aria-label', `Opponent's Horizon, ${deck?.name || 'selected deck'}`);
     const savedPatron = room[`${roomSeat}_patron_name`];
     const selectedPatron = gamePlayerPatrons.get(String(id)) || gameDeckPatrons.get(String(deckId))
-      || deck?.patron_name || (own ? gameState?.patron_name : null) || savedPatron;
+      || deck?.patron_name || (own ? gameState?.patron_name : null) || savedPatron || getDefaultPatronName();
     renderGamePatron(seat, selectedPatron);
   }
   async function loadGamePatrons() {
     if (!room || room.status !== 'active') return;
     const deckIds = [room.host_deck_id, room.guest_deck_id].filter(Boolean);
     const signature = deckIds.map(String).join(':');
-    if (!signature || signature === patronDeckRequest) return;
+    if (!signature || (signature === patronDeckRequest && Date.now() - patronDeckLoadedAt < 10000)) return;
     patronDeckRequest = signature;
+    patronDeckLoadedAt = Date.now();
     const expected = epoch, roomId = room.id;
     const [decks, gameDecks] = await Promise.all([
       client.from('decks').select('id,name,patron_name').in('id', deckIds),
       client.from('play_game_decks').select('player_id,patron_name').eq('room_id', roomId),
     ]);
     if (expected !== epoch || room?.id !== roomId) return;
-    if (!decks.error) for (const deck of decks.data || []) {
-      gameDeckPatrons.set(String(deck.id), deck.patron_name);
-      gameDeckNames.set(String(deck.id), deck.name);
+    if (!decks.error) {
+      gameDeckPatrons.clear(); gameDeckNames.clear();
+      for (const deck of decks.data || []) {
+        gameDeckPatrons.set(String(deck.id), deck.patron_name);
+        gameDeckNames.set(String(deck.id), deck.name);
+      }
     }
-    if (!gameDecks.error) for (const deck of gameDecks.data || []) gamePlayerPatrons.set(String(deck.player_id), deck.patron_name);
-    if (decks.error && gameDecks.error) patronDeckRequest = '';
+    if (!gameDecks.error) {
+      gamePlayerPatrons.clear();
+      for (const deck of gameDecks.data || []) gamePlayerPatrons.set(String(deck.player_id), deck.patron_name);
+    }
+    if (decks.error && gameDecks.error) { patronDeckRequest = ''; patronDeckLoadedAt = 0; }
     if (!inLobby) renderGame();
   }
   function renderGamePatron(seat, patronName) {
