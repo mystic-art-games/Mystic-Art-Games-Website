@@ -193,7 +193,9 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
 #play-game .play-game-opponent-hand span { width: min(100%, clamp(67px, 11.5vh, 100px)); }
 #play-game .play-game-hand { gap: 1.1rem; padding: .4rem .3rem; }
 #play-game .play-hand-item { flex-basis: clamp(67px, 11.5vh, 100px); }
-#play-game .play-hand-card.is-selected, #play-game .play-game-patron-slot.is-selected { outline: 2px solid #202827; outline-offset: 1px; box-shadow: 0 0 0 6px #d7dad9, 0 4px 12px #0d171766; }
+#play-game .play-hand-card { transition: filter .16s ease; }
+#play-game .play-hand-card.is-selected { outline: 2px solid #17372b; outline-offset: 1px; filter: brightness(.8); box-shadow: 0 4px 12px #0d171766; }
+#play-game .play-game-patron-slot.is-selected { outline: 2px solid #17372b; outline-offset: 1px; box-shadow: 0 4px 12px #0d171766; }
 #play-game .play-game-board-wrap { position: relative; display: grid; grid-template-columns: var(--play-preview-gutter) minmax(0, 1fr) var(--play-preview-gutter); grid-template-rows: minmax(0, 1fr); align-items: stretch; gap: clamp(.5rem, 1vw, .9rem); box-sizing: border-box; width: 100%; min-height: 0; max-width: none; height: 100%; margin: 0; container-type: size; }
 #play-game .play-game-card-preview { position: relative; grid-column: 1; grid-row: 1; align-self: center; justify-self: start; top: auto; left: auto; transform: none; width: min(325px, 60cqh, 100%); max-height: calc(100% - 2rem); }
 #play-game .play-game-card-preview, #play-game .play-hand-card, #play-game .play-game-patron-slot, #play-game .play-game-archive-card { border-color: #123c2d; }
