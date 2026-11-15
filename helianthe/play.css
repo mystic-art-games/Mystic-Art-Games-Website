@@ -209,7 +209,7 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
 #play-game .play-game-table { grid-column: 2; grid-row: 1; width: min(100%, calc(144cqh + 24px)); height: 100%; margin: 0 auto; }
 #play-game .play-game-board { width: min(100%, 94cqh); max-height: 100%; margin: auto; }
 .play-game-phases { align-self: center; min-width: 0; padding: .6rem; overflow: visible; border: 1px solid #123c2d; border-radius: 12px; background: #1b352bd9; color: #f5f2e8; box-shadow: inset 0 1px 0 #fff2cf36, 0 4px 12px #130b0a55; }
-#play-game .play-game-phases { grid-column: 3; grid-row: 1; justify-self: end; width: min(100%, 170px); }
+#play-game .play-game-phases { grid-column: 3; grid-row: 1; justify-self: end; width: max-content; max-width: 100%; }
 .play-game-phases .play-eyebrow { color: #d7c9a7; }
 .play-game-turn-owner { margin: .4rem 0 0; color: var(--play-phase-color); font-size: .8rem; font-weight: 800; }
 .play-game-phase-list { display: grid; gap: .35rem; margin: .65rem 0 0; padding: 0; list-style: none; }
