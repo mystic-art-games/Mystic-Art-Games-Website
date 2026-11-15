@@ -67,8 +67,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
           <li data-phase="2"><span class="play-game-phase-marker" aria-hidden="true"></span>Main Phase</li>
           <li data-phase="3"><span class="play-game-phase-marker" aria-hidden="true"></span>End of Turn</li>
         </ol>
-        <button id="play-game-extra-draw" class="play-game-next-phase play-game-extra-draw" type="button" aria-label="Draw one card instead of playing and go to End of Turn" hidden>Draw Instead</button>
-        <button id="play-game-next-phase" class="play-game-next-phase" type="button">Next Phase</button>
+        <div class="play-game-phase-actions">
+          <button id="play-game-extra-draw" class="play-game-next-phase play-game-extra-draw" type="button" aria-label="Draw one card instead of playing and go to End of Turn" hidden>Draw Instead</button>
+          <button id="play-game-next-phase" class="play-game-next-phase" type="button">Next Phase</button>
+        </div>
       </aside></div>
       <div class="play-game-player-block">
       <div class="play-game-self-identity play-game-player-identity"><strong id="play-game-self-name"></strong><span id="play-game-self-presence" class="play-away-pill" hidden></span></div>
@@ -178,7 +180,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const next = $('game-next-phase');
     next.textContent = phase === 'end' ? 'Pass Turn' : 'Next Phase';
     const excess = requiredDiscards();
-    next.hidden = phase === 'draw' || (own && phase === 'end' && (!gameState || excess > 0));
+    next.hidden = phase === 'draw' || (phase === 'main' && (!own || !room?.main_played_card))
+      || (own && phase === 'end' && (!gameState || excess > 0));
     next.disabled = !room || room.status !== 'active' || !own || phaseBusy || pendingFestival || phaseIndex < 0
       || (phase === 'beginning' && !gameState);
     syncDiscardBar();
