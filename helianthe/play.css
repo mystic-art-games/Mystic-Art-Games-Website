@@ -137,7 +137,10 @@ body.dark-mode #play-back { color: #e5eee0; }
 .play-game-node .play-node-markers { background: #153c32ed; color: #fff9e8; font-size: clamp(.48rem, .95vw, .68rem); font-weight: 800; }
 .play-game-node.is-event-target { border: 2px solid #87e1d5; box-shadow: inset 0 0 0 2px #173d37, 0 0 0 3px #87e1d5a8; cursor: pointer; }
 .play-game-node.is-event-target:hover, .play-game-node.is-event-target:focus-visible { outline: 2px solid #fff; outline-offset: 2px; filter: brightness(1.15); }
-.play-game-event-notice { position: absolute; z-index: 12; top: .25rem; left: 50%; width: max-content; max-width: min(38rem, 65vw); margin: 0; padding: .45rem .7rem; transform: translateX(-50%); border: 1px solid #8bb4a2; border-radius: 8px; background: #1b352bf2; color: #f5f2e8; font-size: .78rem; font-weight: 700; text-align: center; box-shadow: 0 4px 12px #130b0a55; }
+.play-game-event-notice { position: absolute; z-index: 12; top: .25rem; left: 50%; display: flex; align-items: center; gap: .5rem; width: max-content; max-width: min(38rem, 65vw); margin: 0; padding: .45rem .7rem; transform: translateX(-50%); border: 1px solid #8bb4a2; border-radius: 8px; background: #1b352bf2; color: #f5f2e8; font-size: .78rem; font-weight: 700; text-align: center; box-shadow: 0 4px 12px #130b0a55; }
+.play-game-event-notice.error { border-color: #dd876a; background: #4e2723f2; color: #fff1e8; }
+.play-game-event-notice button { flex: 0 0 auto; width: 1.3rem; height: 1.3rem; padding: 0; border: 0; background: transparent; color: inherit; box-shadow: none; font-size: 1.25rem; line-height: 1; }
+.play-game-event-notice button:hover { background: transparent; box-shadow: none; opacity: .7; }
 .play-game-event-notice[hidden] { display: none; }
 .play-game-zone .play-deck-stack, .play-game-zone .play-game-archive-card { position: relative; overflow: visible; }
 .play-game-zone [data-count]:not([data-count=""])::after { content: attr(data-count); position: absolute; z-index: 3; top: 50%; display: grid; place-items: center; min-width: 1.4rem; height: 1.4rem; padding: 0 .16rem; transform: translateY(-50%); border: 1px solid #b9d4c1; border-radius: 999px; background: #1b352b; color: #fff; font-size: .72rem; font-weight: 800; line-height: 1; box-shadow: 0 2px 7px #0e241a88; }

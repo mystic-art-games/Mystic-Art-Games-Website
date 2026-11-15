@@ -45,7 +45,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       <div class="play-game-opponent-footer"><div class="play-game-opponent-identity play-game-player-identity"><strong id="play-game-opponent-name"></strong><span id="play-game-opponent-presence" class="play-away-pill" hidden></span></div><div class="play-game-actions"><details class="play-table-menu"><summary class="play-menu-toggle" aria-label="Table actions" title="Table actions"><svg class="play-menu-bars" aria-hidden="true" viewBox="0 0 22 22"><path d="M3 5h16 M3 11h16 M3 17h16"/></svg></summary><div class="play-table-menu-panel"><strong id="play-game-name" class="play-menu-table-name"></strong><button id="play-game-back" class="play-menu-lobby" type="button">Back to Lobby</button><button id="play-game-restart" type="button">Restart</button><button id="play-game-leave" class="action-delete" type="button">Smash Table</button></div></details></div></div>
       </div>
       <div class="play-game-board-wrap">
-      <p id="play-game-event-notice" class="play-game-event-notice" role="status" aria-live="polite" hidden></p>
+      <div id="play-game-event-notice" class="play-game-event-notice" role="status" aria-live="polite" hidden><span id="play-game-event-notice-text"></span><button id="play-game-event-notice-close" type="button" aria-label="Dismiss message" hidden>×</button></div>
       <aside id="play-game-card-preview" class="play-game-card-preview" aria-label="Card preview" hidden><button id="play-game-card-preview-close" class="play-game-card-preview-close action-delete" type="button" aria-label="Close card preview">×</button><canvas id="play-game-card-preview-canvas" hidden></canvas><span id="play-game-card-preview-fallback" class="play-hand-fallback"></span></aside>
       <div class="play-game-table">
         <div class="play-game-zones-left">
@@ -114,13 +114,17 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const rule = eventEffects[card?.title];
     return rule && String(card?.effect || '').replace(/\s+/g, ' ').trim().toLowerCase() === rule[0] ? rule : null;
   }
-  function eventNotice(text, temporary = false) {
+  function eventNotice(text, temporary = false, error = false, dismissible = false) {
     if (eventNoticeTimer) clearTimeout(eventNoticeTimer);
     const notice = $('game-event-notice');
-    notice.textContent = text || '';
+    $('game-event-notice-text').textContent = text || '';
     notice.hidden = !text;
+    notice.classList.toggle('error', Boolean(text && error));
+    notice.classList.toggle('is-message', Boolean(text && dismissible));
+    $('game-event-notice-close').hidden = !text || !dismissible;
     if (text && temporary) eventNoticeTimer = setTimeout(() => { notice.hidden = true; eventNoticeTimer = null; }, 4500);
   }
+  $('game-event-notice-close').addEventListener('click', () => eventNotice(''));
   function legalEventTarget(kind, node) {
     if (kind === 'fertilize_two' || kind === 'fertilize_draw') return !node?.terrain;
     if (kind === 'fertilize_existing_draw') return !node?.terrain && Boolean(node?.fertilize);
@@ -382,9 +386,14 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     }
   });
   function message(text = '', error = false) {
+    const inGame = !$('game').hidden && room?.status === 'active' && !inLobby;
     $('message-text').textContent = text;
-    $('message').hidden = !text;
+    $('message').hidden = !text || inGame;
     $('message').classList.toggle('error', error);
+    if (inGame) {
+      if (text) eventNotice(text, false, error, true);
+      else if ($('game-event-notice').classList.contains('is-message')) eventNotice('');
+    }
   }
   $('message-close').addEventListener('click', () => message());
   function storageKey() { return `helianthe-play-room:${userId}`; }
