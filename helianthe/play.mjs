@@ -13,7 +13,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   let gameState = null, gameLoading = false, gameLoadFailed = false, gameReloadPending = false, handSignature = '', gameRenderSerial = 0, cardPreviewSerial = 0;
   let phaseBusy = false, selectedCardElement = null, patronDeckRequest = '', patronDeckLoadedAt = 0;
   let drawRetryAt = 0, activeDrawFlight = null, activeHandShifts = [];
-  let selectedGameCard = null, selectedHandIndex = null, pendingEvent = null, zoneCounts = null, zoneCountsRevision = null, zoneCountsRequest = null, eventNoticeTimer = null;
+  let selectedGameCard = null, selectedHandIndex = null, pendingEvent = null, pendingFestival = null, zoneCounts = null, zoneCountsRevision = null, zoneCountsRequest = null, eventNoticeTimer = null;
   const discardSelections = new Set();
   const gameDeckPatrons = new Map(), gamePlayerPatrons = new Map();
   const patronPreviews = { self: { key: '', serial: 0 }, opponent: { key: '', serial: 0 } };
@@ -106,6 +106,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     'Greenway Advance': ['fertilize 2.', 'fertilize_two', 'empty space for the first Fertilize token'],
     'Verdant Vineroots': ['fertilize 1. draw 1 card.', 'fertilize_draw', 'empty space to Fertilize'],
     'Seed Convoy': ['put a fertilize counter on an fertilized node, after that draw a card.', 'fertilize_existing_draw', 'already fertilized empty space'],
+    'Festival of New Canopies': ['draw 2 cards, then discard 1 card.', 'draw_two_discard_one', ''],
   };
   function eventSupport(card) {
     const rule = eventEffects[card?.title];
@@ -142,15 +143,23 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   function syncDiscardBar() {
     const required = requiredDiscards();
-    if (!required) discardSelections.clear();
+    if (!required && !pendingFestival) discardSelections.clear();
     const bar = $('game-discard-bar');
-    bar.hidden = required === 0;
-    if (required) {
+    bar.hidden = required === 0 && !pendingFestival;
+    if (pendingFestival) {
+      const choiceNeeded = pendingFestival.hand.length > 0;
+      $('game-discard-text').textContent = choiceNeeded
+        ? 'Festival of New Canopies: choose 1 card to discard after drawing 2. Press Esc to cancel.'
+        : 'Festival of New Canopies: no card remains to discard.';
+      $('game-confirm-discard').textContent = choiceNeeded ? 'Discard and Resolve' : 'Resolve Event';
+      $('game-confirm-discard').disabled = phaseBusy || (choiceNeeded && discardSelections.size !== 1);
+    } else if (required) {
       $('game-discard-text').textContent = `Discard ${required} card${required === 1 ? '' : 's'} so 7 remain. Selected ${discardSelections.size}/${required}.`;
+      $('game-confirm-discard').textContent = 'Confirm Discard';
       $('game-confirm-discard').disabled = phaseBusy || discardSelections.size !== required;
     }
     for (const [index, item] of Array.from($('game-hand').children).entries()) {
-      item.querySelector('.play-hand-card')?.classList.toggle('is-discard-selected', required > 0 && discardSelections.has(index));
+      item.querySelector('.play-hand-card')?.classList.toggle('is-discard-selected', (required > 0 || pendingFestival) && discardSelections.has(index));
     }
   }
   function renderTurnPhase() {
@@ -170,12 +179,12 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     next.textContent = phase === 'end' ? 'Pass Turn' : 'Next Phase';
     const excess = requiredDiscards();
     next.hidden = phase === 'draw' || (own && phase === 'end' && (!gameState || excess > 0));
-    next.disabled = !room || room.status !== 'active' || !own || phaseBusy || phaseIndex < 0
+    next.disabled = !room || room.status !== 'active' || !own || phaseBusy || pendingFestival || phaseIndex < 0
       || (phase === 'beginning' && !gameState);
     syncDiscardBar();
     const extra = $('game-extra-draw');
     extra.hidden = !own || phase !== 'main' || Boolean(room?.main_played_card);
-    extra.disabled = phaseBusy || !Array.isArray(gameState?.horizon) || gameState.horizon.length === 0;
+    extra.disabled = phaseBusy || pendingFestival || !Array.isArray(gameState?.horizon) || gameState.horizon.length === 0;
   }
   function clearDrawFlight() {
     activeDrawFlight?.remove();
@@ -341,7 +350,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   document.addEventListener('keydown', event => {
     if (event.key === 'Escape') {
       for (const menu of root.querySelectorAll('.play-table-menu[open]')) menu.open = false;
-      hideCardPreview();
+      if (pendingFestival && !phaseBusy) cancelFestival();
+      else hideCardPreview();
     }
   });
   function message(text = '', error = false) {
@@ -402,7 +412,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   async function disconnect() {
     ++epoch; ++fetchSerial;
     ++gameRenderSerial; gameState = null; gameLoading = false; gameLoadFailed = false; gameReloadPending = false; handSignature = '';
-    phaseBusy = false; drawRetryAt = 0; clearDrawFlight(); discardSelections.clear();
+    phaseBusy = false; drawRetryAt = 0; clearDrawFlight(); discardSelections.clear(); pendingFestival = null;
     patronDeckRequest = ''; patronDeckLoadedAt = 0; gameDeckPatrons.clear(); gamePlayerPatrons.clear();
     zoneCounts = null; zoneCountsRevision = null; zoneCountsRequest = null;
     for (const seat of ['self', 'opponent']) {
@@ -568,6 +578,13 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     else showCardPreview(card, source, handIndex);
   }
   function chooseHandCard(card, source, handIndex) {
+    if (pendingFestival) {
+      discardSelections.clear();
+      discardSelections.add(handIndex);
+      showCardPreview(card, source, handIndex);
+      syncDiscardBar();
+      return;
+    }
     if (!requiredDiscards()) { toggleCardPreview(card, source, handIndex); return; }
     if (discardSelections.has(handIndex)) {
       discardSelections.delete(handIndex);
@@ -579,6 +596,61 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     syncDiscardBar();
   }
   $('game-card-preview-close').addEventListener('click', hideCardPreview);
+  function cancelFestival() {
+    pendingFestival = null;
+    discardSelections.clear();
+    handSignature = '';
+    renderGame();
+    eventNotice('');
+  }
+  function stageFestival(card, handIndex) {
+    const drawn = (gameState.horizon || []).slice(0, 2);
+    const hand = gameState.hand.filter((_, index) => index !== handIndex).concat(drawn);
+    pendingFestival = { card, handIndex, drawn, hand };
+    discardSelections.clear();
+    handSignature = '';
+    renderGame();
+    eventNotice(`Festival of New Canopies draws ${drawn.length} card${drawn.length === 1 ? '' : 's'}. Choose one to discard, then resolve the Event.`);
+  }
+  async function confirmFestival() {
+    const festival = pendingFestival;
+    if (!festival || !room || room.status !== 'active' || room.turn_player_id !== userId
+      || room.turn_phase !== 'main' || phaseBusy || (festival.hand.length && discardSelections.size !== 1)) return;
+    const discardIndex = festival.hand.length ? [...discardSelections][0] : null;
+    const discarded = discardIndex === null ? null : festival.hand[discardIndex];
+    if (discardIndex !== null && !discarded) return;
+    const expected = epoch, roomId = room.id;
+    phaseBusy = true;
+    renderTurnPhase();
+    try {
+      const result = await rpc('play_evoke_festival', {
+        p_room_id: roomId, p_expected_turn: room.turn_number,
+        p_hand_index: festival.handIndex, p_card_id: festival.card.card_id || festival.card.id,
+        p_expected_hand_count: gameState.hand.length,
+        p_expected_draw_ids: festival.drawn.map(card => card.card_id || card.id),
+        p_discard_index: discardIndex,
+        p_discard_card_id: discarded?.card_id || discarded?.id || null,
+      });
+      if (expected !== epoch || room?.id !== roomId) return;
+      if (discardIndex !== null) await animateDiscardToArchive([discardIndex]);
+      if (expected !== epoch || room?.id !== roomId) return;
+      pendingFestival = null;
+      discardSelections.clear();
+      await refreshRoom();
+      if (expected === epoch && room?.id === roomId) await loadGameState(true);
+      if (expected === epoch && room?.id === roomId) eventNotice(`Festival of New Canopies evoked · drew ${result?.drawn || 0}${result?.discarded ? ` · discarded ${result.discarded}` : ''}.`, true);
+    } catch (error) {
+      if (expected === epoch && room?.id === roomId) {
+        pendingFestival = null;
+        await refreshRoom().catch(() => {});
+        await loadGameState(true).catch(() => {});
+        message(friendly(error), true);
+      }
+    } finally {
+      phaseBusy = false;
+      renderTurnPhase();
+    }
+  }
   async function animateDiscardToArchive(indexes) {
     const destination = $('game-self-archive').getBoundingClientRect();
     if ($('game').hidden || !destination.width || !destination.height) return;
@@ -625,6 +697,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     }
   }
   async function confirmDiscardSelection() {
+    if (pendingFestival) { await confirmFestival(); return; }
     if (!room || room.status !== 'active' || room.turn_player_id !== userId
       || room.turn_phase !== 'end' || phaseBusy || discardSelections.size !== requiredDiscards()
       || !requiredDiscards()) return;
@@ -669,9 +742,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   async function evokeEvent(card, handIndex, targetX = null, targetY = null, targetCells = null) {
     if (!room || room.status !== 'active' || room.turn_player_id !== userId
-      || room.turn_phase !== 'main' || phaseBusy || !Array.isArray(gameState?.hand)) return;
+      || room.turn_phase !== 'main' || phaseBusy || pendingFestival || !Array.isArray(gameState?.hand)) return;
     const rule = eventSupport(card);
     if (!rule) { eventNotice('This Event effect is not available in online play yet.'); return; }
+    if (rule[1] === 'draw_two_discard_one') { stageFestival(card, handIndex); return; }
     if (rule[1] === 'fertilize_two' && !targetCells) {
       const legalCells = Array.from($('game-board').children).filter(cell => cell.dataset.key
         && legalEventTarget(rule[1], room?.board?.[cell.dataset.key]));
@@ -759,7 +833,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     button.setAttribute('aria-label', `Preview ${card.title || 'Event'}; drag toward the table to Evoke, or press E`);
     button.addEventListener('pointerdown', event => {
       if (event.button !== 0 || !event.isPrimary || room?.turn_player_id !== userId
-        || room.turn_phase !== 'main' || phaseBusy) return;
+        || room.turn_phase !== 'main' || phaseBusy || pendingFestival) return;
       drag = { pointerId: event.pointerId, x: event.clientX, y: event.clientY, ghost: null };
       button.setPointerCapture(event.pointerId);
     });
@@ -829,14 +903,14 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       if (suppressClick) { event.preventDefault(); event.stopImmediatePropagation(); }
     }, true);
     button.addEventListener('keydown', event => {
-      if (event.key.toLowerCase() !== 'e') return;
+      if (event.key.toLowerCase() !== 'e' || pendingFestival) return;
       event.preventDefault();
       showCardPreview(card, button, handIndex);
       void evokeEvent(card, handIndex);
     });
   }
   function renderGameHand() {
-    const hand = Array.isArray(gameState?.hand) ? gameState.hand.map(resolveGameCard) : [];
+    const hand = (pendingFestival?.hand || (Array.isArray(gameState?.hand) ? gameState.hand : [])).map(resolveGameCard);
     const signature = JSON.stringify(hand);
     if (signature === handSignature) return;
     handSignature = signature;
@@ -947,7 +1021,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     opponentHand.hidden = !gameState;
     const horizon = Array.isArray(gameState?.horizon) ? gameState.horizon : [];
     const archive = Array.isArray(gameState?.archive) ? gameState.archive : [];
-    const handCount = Array.isArray(gameState?.hand) ? gameState.hand.length : null;
+    const handCount = pendingFestival?.hand.length ?? (Array.isArray(gameState?.hand) ? gameState.hand.length : null);
     const handBadge = $('game-hand-count');
     handBadge.hidden = handCount === null;
     if (handCount !== null) {
@@ -1110,6 +1184,11 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     }
     const turnChanged = room.turn_number !== data.turn_number || room.turn_phase !== data.turn_phase
       || room.turn_player_id !== data.turn_player_id;
+    if (pendingFestival && (data.turn_player_id !== userId || data.turn_phase !== 'main' || data.status !== 'active')) {
+      pendingFestival = null;
+      discardSelections.clear();
+      handSignature = '';
+    }
     userId = seatId;
     if (room.activated_at && !data.activated_at) {
       ++gameRenderSerial; gameState = null; gameLoading = false; gameLoadFailed = false; gameReloadPending = false; handSignature = '';
