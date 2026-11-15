@@ -42,7 +42,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
           <div id="play-game-opponent-hand" class="play-game-opponent-hand" role="group" aria-label="Opponent's five face-down cards" hidden><span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span></div>
         </div>
       </section>
-      <div class="play-game-opponent-footer"><div class="play-game-opponent-identity play-game-player-identity"><strong id="play-game-opponent-name"></strong><span id="play-game-opponent-presence" class="play-away-pill" hidden></span></div><div class="play-game-actions"><details class="play-table-menu"><summary class="play-menu-toggle" aria-label="Table actions" title="Table actions"><svg class="play-menu-bars" aria-hidden="true" viewBox="0 0 22 22"><path d="M3 5h16 M3 11h16 M3 17h16"/></svg></summary><div class="play-table-menu-panel"><strong id="play-game-name" class="play-menu-table-name"></strong><button id="play-game-back" class="play-menu-lobby" type="button">Back to Lobby</button><button id="play-game-leave" class="action-delete" type="button">Smash Table</button></div></details></div></div>
+      <div class="play-game-opponent-footer"><div class="play-game-opponent-identity play-game-player-identity"><strong id="play-game-opponent-name"></strong><span id="play-game-opponent-presence" class="play-away-pill" hidden></span></div><div class="play-game-actions"><details class="play-table-menu"><summary class="play-menu-toggle" aria-label="Table actions" title="Table actions"><svg class="play-menu-bars" aria-hidden="true" viewBox="0 0 22 22"><path d="M3 5h16 M3 11h16 M3 17h16"/></svg></summary><div class="play-table-menu-panel"><strong id="play-game-name" class="play-menu-table-name"></strong><button id="play-game-back" class="play-menu-lobby" type="button">Back to Lobby</button><button id="play-game-restart" type="button">Restart</button><button id="play-game-leave" class="action-delete" type="button">Smash Table</button></div></details></div></div>
       </div>
       <div class="play-game-board-wrap">
       <p id="play-game-event-notice" class="play-game-event-notice" role="status" aria-live="polite" hidden></p>
@@ -948,6 +948,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (!room || room.status !== 'active') return;
     $('game-name').textContent = room.name || 'Table';
     $('game-leave').textContent = room.host_id === userId ? 'Smash Table' : 'Abandon Table';
+    $('game-restart').hidden = room.host_id !== userId;
     gamePlayerCard(room.host_id === userId ? room.guest_id : room.host_id,
       room.host_id === userId ? room.guest_deck_id : room.host_deck_id, false);
     gamePlayerCard(userId, ownDeckId(), true);
@@ -1292,6 +1293,19 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     await refreshRoom();
     if (visible) await listTables();
   }
+  async function restartGame() {
+    if (!room || room.status !== 'active' || room.host_id !== userId) return;
+    $('game-restart').closest('details').open = false;
+    if (!window.confirm('Restart this match with the same players and decks? The current board, hands, and Archives will be cleared.')) return;
+    const id = room.id, expected = epoch;
+    await rpc('play_restart_game', { p_room_id: id, p_expected_revision: room.revision });
+    if (expected !== epoch || room?.id !== id) return;
+    gameState = null; gameLoadFailed = false; handSignature = '';
+    pendingEvent = null; pendingFestival = null; discardSelections.clear();
+    hideCardPreview();
+    await refreshRoom();
+    if (expected === epoch && room?.id === id) await loadGameState(true);
+  }
   async function leaveTable() {
     if (!room) return;
     const id = room.id;
@@ -1377,6 +1391,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }));
   $('back').addEventListener('click', () => run(leaveTable));
   $('game-back').addEventListener('click', () => run(leaveTable));
+  $('game-restart').addEventListener('click', () => void run(restartGame));
   $('leave').addEventListener('click', () => run(leaveTable));
   $('game-leave').addEventListener('click', () => run(leaveTable));
   $('deck').addEventListener('change', () => {

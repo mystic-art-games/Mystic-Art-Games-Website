@@ -188,7 +188,9 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
 #play-game #play-game-opponent { padding-top: 1.75rem; }
 #play-game-opponent .play-game-hand-count { top: .25rem; right: .65rem; transform: none; }
 .play-game-hand-count[hidden] { display: none; }
-#play-game .play-menu-toggle { border-color: #123c2d; border-radius: 12px; background: #1b352bd9; box-shadow: inset 0 1px 0 #fff2cf36, 0 4px 12px #130b0a55; }
+#play-game .play-menu-toggle,
+#play-game .play-menu-toggle:hover { width: 2.5rem; height: 2.5rem; padding: 0; border-color: rgba(231, 248, 235, .55); border-radius: 10px; background: linear-gradient(145deg, rgba(255, 255, 255, .22), rgba(175, 215, 189, .12)); color: #fff8e8; box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .3), 0 3px 12px rgba(0, 25, 16, .16); backdrop-filter: blur(12px); }
+#play-game .play-table-menu[open] .play-menu-toggle { border-color: #f2c96b; color: #f2c96b; }
 #play-game .play-menu-toggle:focus-visible { outline-color: #e0e3e3; }
 #play-game .play-game-player-block { min-height: 0; }
 #play-game .play-game-opponent-hand span { flex-basis: clamp(67px, 11.5vh, 100px); }
