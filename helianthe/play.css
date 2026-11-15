@@ -140,7 +140,9 @@ body.dark-mode #play-back { color: #e5eee0; }
 .play-game-event-notice { position: absolute; z-index: 12; top: .25rem; left: 50%; width: max-content; max-width: min(38rem, 65vw); margin: 0; padding: .45rem .7rem; transform: translateX(-50%); border: 1px solid #8bb4a2; border-radius: 8px; background: #1b352bf2; color: #f5f2e8; font-size: .78rem; font-weight: 700; text-align: center; box-shadow: 0 4px 12px #130b0a55; }
 .play-game-event-notice[hidden] { display: none; }
 .play-game-zone .play-deck-stack, .play-game-zone .play-game-archive-card { position: relative; overflow: visible; }
-.play-game-zone [data-count]:not([data-count=""])::after { content: attr(data-count); position: absolute; z-index: 3; right: .2rem; bottom: .2rem; display: grid; place-items: center; min-width: 1.4rem; height: 1.4rem; padding: 0 .16rem; border: 1px solid #b9d4c1; border-radius: 999px; background: #1b352b; color: #fff; font-size: .72rem; font-weight: 800; line-height: 1; box-shadow: 0 2px 7px #0e241a88; }
+.play-game-zone [data-count]:not([data-count=""])::after { content: attr(data-count); position: absolute; z-index: 3; top: 50%; display: grid; place-items: center; min-width: 1.4rem; height: 1.4rem; padding: 0 .16rem; transform: translateY(-50%); border: 1px solid #b9d4c1; border-radius: 999px; background: #1b352b; color: #fff; font-size: .72rem; font-weight: 800; line-height: 1; box-shadow: 0 2px 7px #0e241a88; }
+.play-game-zone-pair-opponent .play-game-zone [data-count]::after { left: calc(100% + .25rem); }
+.play-game-zone-pair-self .play-game-zone [data-count]::after { right: calc(100% + .25rem); }
 #play-game-counts { font-size: .85rem; }
 .play-game-hand { display: flex; justify-content: safe center; gap: 1.2rem; overflow-x: auto; padding: .6rem .15rem .8rem; }
 .play-hand-item { position: relative; flex: 0 0 clamp(72px, 9vw, 92px); min-width: 0; }
@@ -265,7 +267,7 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
   #play-game .play-game-table { width: 100%; grid-template-columns: repeat(3, minmax(0,1fr)); grid-template-rows: minmax(0,1fr) minmax(0,3fr) minmax(0,1fr); justify-items: center; gap: .25rem; }
   #play-game .play-game-card-preview { left: 50%; transform: translate(-50%, -50%); width: min(295px, 76vw, 56vh); }
   .play-game-zones-left, .play-game-zones-right { display: contents; }
-  .play-game-zone-pair { flex-direction: row; width: auto; height: 100%; gap: .85rem; }
+  .play-game-zone-pair { flex-direction: row; width: auto; height: 100%; gap: 1.85rem; }
   .play-game-zone-opponent-patron { grid-column: 1; grid-row: 1; }
   .play-game-zone-pair-opponent { grid-column: 2 / -1; grid-row: 1; }
   #play-game .play-game-board { grid-column: 1 / -1; grid-row: 2; width: auto; height: 100%; max-width: 100%; }

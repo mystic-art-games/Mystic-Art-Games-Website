@@ -958,14 +958,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const nodes = [];
     for (let row = 0; row < 4; row++) for (let column = 0; column < 5; column++) {
       const isCenter = column === 2 && (row === 1 || row === 2);
-      const node = isCenter ? null : room.board?.[`${column},${row}`];
+      const node = room.board?.[`${column},${row}`];
       const cell = document.createElement('div'); cell.className = 'play-game-node';
-      if (isCenter) {
-        cell.classList.add('terrain-center');
-        cell.setAttribute('aria-label', `Center card at row ${row + 1}, column ${column + 1}`);
-        nodes.push(cell);
-        continue;
-      }
+      if (isCenter && !node?.terrain) cell.classList.add('terrain-center');
       cell.dataset.key = `${column},${row}`;
       if (node?.terrain) {
         cell.classList.add(`terrain-${node.terrain.toLowerCase()}`);
@@ -994,7 +989,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       }
       cell.setAttribute('aria-label', node?.terrain ? `${node.terrain} Terrain at row ${row + 1}, column ${column + 1}, ${node.lumens || 0} Lumens${node.protected ? ', Protected' : ''}${node.crisis ? ', Crisis' : ''}`
         : node?.fertilize ? `${node.fertilize.owner_id === userId ? 'Your' : "Opponent's"} Fertilize marker on empty space at row ${row + 1}, column ${column + 1}`
-          : `Empty space at row ${row + 1}, column ${column + 1}`);
+          : `${isCenter ? 'Center empty space' : 'Empty space'} at row ${row + 1}, column ${column + 1}`);
       cell.addEventListener('click', () => chooseEventTarget(column, row));
       cell.addEventListener('keydown', event => {
         if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); chooseEventTarget(column, row); }
