@@ -123,10 +123,14 @@ body.dark-mode #play-back { color: #e5eee0; }
 .play-game-patron-slot canvas { display: block; width: 100%; height: 100%; object-fit: fill; }
 .play-game-patron-slot canvas[hidden], .play-game-patron-fallback[hidden] { display: none; }
 .play-game-patron-fallback { position: relative; display: block; width: 100%; height: 100%; box-sizing: border-box; padding: 8% 5% 0; overflow: hidden; background-color: #eeeae6; background-position: center 50%, center; background-size: 44% auto, 100% 100%; background-repeat: no-repeat; color: #302b27; font-size: 7px; font-weight: 800; line-height: 1; text-align: center; text-shadow: 0 1px #fff; }
-.play-game-archive-card { display: flex; align-items: center; justify-content: center; padding: .3rem; border: 1px solid #9fb7aa; background: #e7ede3; color: #567063; font-size: .72rem; font-weight: 700; overflow-wrap: anywhere; box-shadow: 0 4px 12px #183a2c22; }
+.play-game-archive-card { display: flex; align-items: center; justify-content: center; padding: 0; border: 1px solid #9fb7aa; background: #e7ede3; color: #567063; font-size: .72rem; font-weight: 700; overflow-wrap: anywhere; box-shadow: 0 4px 12px #183a2c22; }
+.play-game-archive-card.has-stack { box-shadow: 4px -4px 0 #e7ede3, 5px -5px 0 #123c2d, 0 4px 12px #183a2c22; }
+.play-game-archive-card canvas { display: block; width: 100%; height: 100%; border-radius: inherit; object-fit: fill; }
+.play-game-archive-card canvas[hidden], .play-game-archive-card span[hidden] { display: none; }
+.play-game-archive-card span { padding: .3rem; }
 .play-game-node { position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: .15rem; min-width: 0; min-height: 0; padding: .2rem; overflow: hidden; border: 1px dashed #d5b88a9c; border-radius: 6px; background: #f8e8c814; text-align: center; }
 .play-game-node.has-entity { z-index: 2; overflow: visible; }
-.play-node-entity-card { position: absolute; z-index: 2; top: 7%; left: 7%; box-sizing: border-box; width: 100%; height: 100%; overflow: hidden; border: 1px solid #e5d9bb; border-radius: 5px; background: #e9ece1; box-shadow: 0 5px 10px #0b251bbb; pointer-events: none; }
+.play-node-entity-card { position: absolute; z-index: 2; top: 10%; left: 10%; box-sizing: border-box; width: 100%; height: 100%; overflow: hidden; border: 1px solid #e5d9bb; border-radius: 5px; background: #e9ece1; box-shadow: 0 5px 10px #0b251bbb; pointer-events: none; }
 .play-node-entity-card.is-arriving { visibility: hidden; }
 .play-node-entity-card canvas { display: block; width: 100%; height: 100%; object-fit: fill; }
 .play-node-entity-card canvas[hidden], .play-node-entity-card span[hidden] { display: none; }
@@ -144,7 +148,7 @@ body.dark-mode #play-back { color: #e5eee0; }
 .play-game-node .play-node-markers { position: absolute; z-index: 3; bottom: .15rem; left: .15rem; background: #153c32ed; color: #fff9e8; font-size: clamp(.48rem, .95vw, .68rem); font-weight: 800; }
 .play-game-node.is-event-target { border: 2px solid #87e1d5; box-shadow: inset 0 0 0 2px #173d37, 0 0 0 3px #87e1d5a8; cursor: pointer; }
 .play-game-node.is-event-target:hover, .play-game-node.is-event-target:focus-visible { outline: 2px solid #fff; outline-offset: 2px; filter: brightness(1.15); }
-.play-game-event-notice { position: absolute; z-index: 12; top: .25rem; left: 50%; display: flex; align-items: center; gap: .5rem; width: max-content; max-width: min(38rem, 65vw); margin: 0; padding: .45rem .7rem; transform: translateX(-50%); border: 1px solid #8bb4a2; border-radius: 8px; background: #1b352bf2; color: #f5f2e8; font-size: .78rem; font-weight: 700; text-align: center; box-shadow: 0 4px 12px #130b0a55; }
+.play-game-event-notice { position: absolute; z-index: 12; top: -.5rem; left: 50%; display: flex; align-items: center; gap: .5rem; width: max-content; max-width: min(38rem, 65vw); margin: 0; padding: .45rem .7rem; transform: translateX(-50%); border: 1px solid #8bb4a2; border-radius: 8px; background: #1b352bf2; color: #f5f2e8; font-size: .78rem; font-weight: 700; text-align: center; box-shadow: 0 4px 12px #130b0a55; }
 .play-game-event-notice.error { border-color: #dd876a; background: #4e2723f2; color: #fff1e8; }
 .play-game-event-notice button { flex: 0 0 auto; width: 1.3rem; height: 1.3rem; padding: 0; border: 0; background: transparent; color: inherit; box-shadow: none; font-size: 1.25rem; line-height: 1; }
 .play-game-event-notice button:hover { background: transparent; box-shadow: none; opacity: .7; }

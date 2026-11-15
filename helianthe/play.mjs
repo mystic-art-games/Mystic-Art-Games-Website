@@ -17,6 +17,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   const discardSelections = new Set();
   const gameDeckPatrons = new Map(), gamePlayerPatrons = new Map();
   const patronPreviews = { self: { key: '', serial: 0 }, opponent: { key: '', serial: 0 } };
+  const archivePreviews = { self: { key: null, serial: 0 }, opponent: { key: null, serial: 0 } };
   root.innerHTML = `
     <div class="play-heading"><h1>Lobby</h1></div>
     <div id="play-message" role="status" aria-live="polite" hidden><span id="play-message-text"></span><button id="play-message-close" type="button" aria-label="Dismiss message">×</button></div>
@@ -50,11 +51,11 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       <div class="play-game-table">
         <div class="play-game-zones-left">
           <div class="play-game-zone play-game-zone-opponent-patron"><button id="play-game-opponent-patron-slot" class="play-game-patron-slot" type="button" aria-label="Preview opponent's Patron"><canvas id="play-game-opponent-patron" hidden></canvas><span id="play-game-opponent-patron-fallback" class="play-game-patron-fallback" aria-hidden="true"></span></button></div>
-          <div class="play-game-zone-pair play-game-zone-pair-self" aria-label="Your card zones"><div class="play-game-zone play-game-zone-horizon"><div id="play-game-self-horizon" class="play-deck-stack" role="img" aria-label="Your Horizon, draw deck"></div></div><div class="play-game-zone play-game-zone-archive"><div id="play-game-self-archive" class="play-game-archive-card is-empty" role="img" aria-label="Your Archive"><span id="play-game-archive-top"></span></div></div></div>
+          <div class="play-game-zone-pair play-game-zone-pair-self" aria-label="Your card zones"><div class="play-game-zone play-game-zone-horizon"><div id="play-game-self-horizon" class="play-deck-stack" role="img" aria-label="Your Horizon, draw deck"></div></div><div class="play-game-zone play-game-zone-archive"><div id="play-game-self-archive" class="play-game-archive-card is-empty" role="img" aria-label="Your Archive"><canvas id="play-game-self-archive-canvas" aria-hidden="true" hidden></canvas><span id="play-game-archive-top"></span></div></div></div>
         </div>
         <div id="play-game-board" class="play-game-board" role="group" aria-label="Shared five-column, four-row Terrain board"></div>
         <div class="play-game-zones-right">
-          <div class="play-game-zone-pair play-game-zone-pair-opponent" aria-label="Opponent's card zones"><div class="play-game-zone play-game-zone-archive"><div id="play-game-opponent-archive" class="play-game-archive-card is-empty" role="img" aria-label="Opponent's Archive"><span id="play-game-opponent-archive-top"></span></div></div><div class="play-game-zone play-game-zone-horizon"><div id="play-game-opponent-horizon" class="play-deck-stack" role="img" aria-label="Opponent's Horizon, draw deck"></div></div></div>
+          <div class="play-game-zone-pair play-game-zone-pair-opponent" aria-label="Opponent's card zones"><div class="play-game-zone play-game-zone-archive"><div id="play-game-opponent-archive" class="play-game-archive-card is-empty" role="img" aria-label="Opponent's Archive"><canvas id="play-game-opponent-archive-canvas" aria-hidden="true" hidden></canvas><span id="play-game-opponent-archive-top"></span></div></div><div class="play-game-zone play-game-zone-horizon"><div id="play-game-opponent-horizon" class="play-deck-stack" role="img" aria-label="Opponent's Horizon, draw deck"></div></div></div>
           <div class="play-game-zone play-game-zone-self-patron"><button id="play-game-self-patron-slot" class="play-game-patron-slot" type="button" aria-label="Preview your Patron"><canvas id="play-game-self-patron" hidden></canvas><span id="play-game-self-patron-fallback" class="play-game-patron-fallback" aria-hidden="true"></span></button></div>
         </div>
       </div>
@@ -84,10 +85,13 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   function syncZoneCardSize() {
     const cell = $('game-board').firstElementChild;
     if (!cell) return;
-    const { width, height } = cell.getBoundingClientRect();
+    const bounds = cell.getBoundingClientRect();
+    const { width, height } = bounds;
     if (!width || !height) return;
     root.style.setProperty('--play-map-card-width', `${width}px`);
     root.style.setProperty('--play-map-card-height', `${height}px`);
+    const boardWrap = root.querySelector('.play-game-board-wrap');
+    $('game-event-notice').style.top = `${bounds.top - boardWrap.getBoundingClientRect().top - 8}px`;
   }
   if (typeof ResizeObserver === 'function') {
     new ResizeObserver(syncZoneCardSize).observe($('game-board'));
@@ -599,6 +603,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     selectedHandIndex = handIndex;
     const support = card.card_type === 'Event' ? eventSupport(card) : null;
     eventNotice(pendingEntity ? 'Choose matching Terrain to Place, or a legal empty space to Shape. Press Esc to cancel.'
+      : card.card_type === 'Entity' && handIndex !== null && room?.turn_player_id === userId
+        && room?.turn_phase === 'main' && room.main_played_entity
+        ? 'You have already played an Entity this turn.'
       : card.card_type === 'Event' && !support
         ? 'This Event effect is not available in online play yet.' : '');
     const serial = ++cardPreviewSerial;
@@ -792,6 +799,28 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       || catalog.find(item => title && item.title?.trim().toLocaleLowerCase() === title);
     return full ? { ...card, ...full } : card;
   }
+  function renderArchiveCard(seat, raw, count) {
+    const preview = archivePreviews[seat];
+    const card = count && raw ? resolveGameCard(raw) : null;
+    const key = card ? JSON.stringify([card.id, card.title, card.card_type, card.terrain, card.effect, card.artwork_id]) : '';
+    if (preview.key === key) return;
+    preview.key = key;
+    const serial = ++preview.serial;
+    const canvas = $(`game-${seat}-archive-canvas`);
+    const fallback = $(seat === 'self' ? 'game-archive-top' : 'game-opponent-archive-top');
+    canvas.hidden = true;
+    fallback.hidden = false;
+    fallback.textContent = card?.title || 'ARCHIVE';
+    if (!card) return;
+    void (async () => {
+      const artwork = card.artwork_id ? await getArtworkUrl(card.artwork_id).catch(() => '') : '';
+      const result = await renderCard(canvas, card, artwork, () => serial === preview.serial);
+      if (serial === preview.serial && result && !result.cancelled) {
+        canvas.hidden = false;
+        fallback.hidden = true;
+      }
+    })().catch(() => { if (serial === preview.serial) preview.key = ''; });
+  }
   function captureEntityFlight(handIndex) {
     const source = $('game-hand').children[handIndex]?.querySelector('.play-hand-card');
     if (!source || $('game').hidden) return null;
@@ -828,7 +857,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     try {
       await flight.animate([
         { left: `${bounds.left}px`, top: `${bounds.top}px`, width: `${bounds.width}px`, height: `${bounds.height}px`, transform: 'rotate(-5deg)' },
-        { left: `${terrain.left + terrain.width * .07}px`, top: `${terrain.top + terrain.height * .07}px`, width: `${terrain.width}px`, height: `${terrain.height}px`, transform: 'rotate(0deg)' },
+        { left: `${terrain.left + terrain.width * .1}px`, top: `${terrain.top + terrain.height * .1}px`, width: `${terrain.width}px`, height: `${terrain.height}px`, transform: 'rotate(0deg)' },
       ], { duration: 460, easing: 'cubic-bezier(.2,.8,.2,1)' }).finished;
     } catch { /* The table may have been left while the card was moving. */ }
     finally { flight.remove(); }
@@ -1201,7 +1230,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     $('game-self-archive').setAttribute('aria-label', gameState ? `Your Archive, ${archive.length} cards` : 'Your Archive');
     $('game-self-archive').dataset.count = gameState ? String(archive.length) : '';
     $('game-self-archive').classList.toggle('is-empty', archive.length === 0);
-    $('game-archive-top').textContent = archive.length ? archive.at(-1)?.title || '' : 'ARCHIVE';
+    $('game-self-archive').classList.toggle('has-stack', archive.length > 1);
+    renderArchiveCard('self', archive.at(-1), archive.length);
     const opponentSeat = room.host_id === userId ? 'guest' : 'host';
     const opponentArchiveCount = room[`${opponentSeat}_archive_count`] || 0;
     const opponentHorizonCount = zoneCounts?.[opponentSeat]?.horizon_count;
@@ -1210,8 +1240,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     $('game-opponent-archive').setAttribute('aria-label', `Opponent's Archive, ${opponentArchiveCount} cards`);
     $('game-opponent-archive').dataset.count = String(opponentArchiveCount);
     $('game-opponent-archive').classList.toggle('is-empty', opponentArchiveCount === 0);
-    $('game-opponent-archive-top').textContent = opponentArchiveCount
-      ? room[`${opponentSeat}_archive_top`]?.title || '' : 'ARCHIVE';
+    $('game-opponent-archive').classList.toggle('has-stack', opponentArchiveCount > 1);
+    renderArchiveCard('opponent', room[`${opponentSeat}_archive_top`], opponentArchiveCount);
     updateAwayDisplays();
     renderGameHand();
     renderTurnPhase();
