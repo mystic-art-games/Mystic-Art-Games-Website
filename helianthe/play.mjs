@@ -1047,8 +1047,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       cell.dataset.key = `${column},${row}`;
       if (node?.terrain) {
         cell.classList.add(`terrain-${node.terrain.toLowerCase()}`);
-        const terrain = document.createElement('strong'); terrain.textContent = node.terrain;
-        cell.append(terrain);
         if (node.entity) {
           const entity = document.createElement('span'); entity.textContent = node.entity.title || 'Entity';
           cell.append(entity);
