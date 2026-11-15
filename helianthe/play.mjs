@@ -817,7 +817,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     try {
       await flight.animate([
         { left: `${bounds.left}px`, top: `${bounds.top}px`, width: `${bounds.width}px`, height: `${bounds.height}px`, transform: 'rotate(-5deg)' },
-        { left: `${terrain.left + terrain.width * .12}px`, top: `${terrain.top + terrain.height * .1}px`, width: `${terrain.width * .88}px`, height: `${terrain.width * .88 * 88 / 63}px`, transform: 'rotate(0deg)' },
+        { left: `${terrain.left + terrain.width * .07}px`, top: `${terrain.top + terrain.height * .07}px`, width: `${terrain.width}px`, height: `${terrain.height}px`, transform: 'rotate(0deg)' },
       ], { duration: 460, easing: 'cubic-bezier(.2,.8,.2,1)' }).finished;
     } catch { /* The table may have been left while the card was moving. */ }
     finally { flight.remove(); }
