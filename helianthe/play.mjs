@@ -111,6 +111,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     'Festival of New Canopies': ['draw 2 cards, then discard 1 card.', 'draw_two_discard_one', ''],
   };
   function eventSupport(card) {
+    if (card?.card_type === 'Event' && !String(card.effect || '').trim()) return ['', 'none', ''];
     const rule = eventEffects[card?.title];
     return rule && String(card?.effect || '').replace(/\s+/g, ' ').trim().toLowerCase() === rule[0] ? rule : null;
   }
@@ -589,7 +590,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const support = card.card_type === 'Event' ? eventSupport(card) : null;
     eventNotice(pendingEntity ? 'Choose matching Terrain to Place, or an empty space to Shape. Press Esc to cancel.'
       : card.card_type === 'Event' && !support
-        ? (card.effect ? 'This Event effect is not available in online play yet.' : 'This Event has no effect text yet.') : '');
+        ? 'This Event effect is not available in online play yet.' : '');
     const serial = ++cardPreviewSerial;
     selectedCardElement?.classList.remove('is-selected');
     selectedCardElement?.removeAttribute('aria-pressed');
@@ -840,7 +841,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       return;
     }
     if (targetX === null && targetY === null && !targetCells
-      && !['draw_from_lumens', 'clear_lumens_draw'].includes(rule[1])) {
+      && !['none', 'draw_from_lumens', 'clear_lumens_draw'].includes(rule[1])) {
       const legalCells = Array.from($('game-board').children).filter(cell => cell.dataset.key
         && legalEventTarget(rule[1], room?.board?.[cell.dataset.key]));
       if (legalCells.length) {
