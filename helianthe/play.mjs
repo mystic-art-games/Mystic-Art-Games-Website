@@ -136,16 +136,26 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     return node.terrain === 'Radiance';
   }
   const terrainTypes = ['Symbiosis', 'Flow', 'Verdant', 'Radiance'];
+  function canCreateTerrainAt(key) {
+    if (!key) return false;
+    const [x, y] = key.split(',').map(Number);
+    if (!Number.isInteger(x) || !Number.isInteger(y) || x < 0 || x > 4 || y < 0 || y > 3) return false;
+    const board = room?.board || {};
+    const hasTerrain = Object.entries(board).some(([position, node]) => /^[0-4],[0-3]$/.test(position) && node?.terrain);
+    return !hasTerrain || [[x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]]
+      .some(([column, row]) => Boolean(board[`${column},${row}`]?.terrain));
+  }
   function entityShapeTerrain(card) {
     const effect = String(card?.effect || '').replace(/\s+/g, ' ').toLowerCase();
     const override = effect.match(/when shaped: create (symbiosis|flow|verdant|radiance) terrain instead\b/)
       || effect.match(/shape this entity (?:into|to create) (symbiosis|flow|verdant|radiance) terrain instead\b/);
     return override ? terrainTypes.find(type => type.toLowerCase() === override[1]) : card?.terrain;
   }
-  function legalEntityAction(card, node) {
+  function legalEntityAction(card, node, key) {
     if (room?.turn_player_id !== userId || room?.turn_phase !== 'main' || room?.main_played_entity
       || !terrainTypes.includes(card?.terrain)) return null;
-    if (!node?.terrain) return node?.entity ? null : (terrainTypes.includes(entityShapeTerrain(card)) ? 'shape' : null);
+    if (!node?.terrain) return node?.entity || !canCreateTerrainAt(key)
+      ? null : (terrainTypes.includes(entityShapeTerrain(card)) ? 'shape' : null);
     if (node.entity) return null;
     if (!terrainTypes.includes(node.terrain)) return null;
     const effect = String(card.effect || '').replace(/\s+/g, ' ').toLowerCase();
@@ -162,7 +172,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       const node = room?.board?.[cell.dataset.key];
       const legal = Boolean(cell.dataset.key && (
         (pendingEvent && legalEventTarget(pendingEvent.rule[1], node))
-        || (pendingEntity && legalEntityAction(pendingEntity.card, node))));
+        || (pendingEntity && legalEntityAction(pendingEntity.card, node, cell.dataset.key))));
       cell.classList.toggle('is-event-target', legal);
       if (legal) { cell.tabIndex = 0; cell.setAttribute('role', 'button'); }
       else { cell.removeAttribute('tabindex'); cell.removeAttribute('role'); }
@@ -588,7 +598,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     selectedGameCard = card;
     selectedHandIndex = handIndex;
     const support = card.card_type === 'Event' ? eventSupport(card) : null;
-    eventNotice(pendingEntity ? 'Choose matching Terrain to Place, or an empty space to Shape. Press Esc to cancel.'
+    eventNotice(pendingEntity ? 'Choose matching Terrain to Place, or a legal empty space to Shape. Press Esc to cancel.'
       : card.card_type === 'Event' && !support
         ? 'This Event effect is not available in online play yet.' : '');
     const serial = ++cardPreviewSerial;
@@ -888,7 +898,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (!room || room.status !== 'active' || room.turn_player_id !== userId
       || room.turn_phase !== 'main' || room.main_played_entity || phaseBusy || pendingFestival
       || !Array.isArray(gameState?.hand)) return;
-    const action = legalEntityAction(card, room.board?.[`${targetX},${targetY}`]);
+    const action = legalEntityAction(card, room.board?.[`${targetX},${targetY}`], `${targetX},${targetY}`);
     if (!action) { eventNotice('Choose an empty space or an unoccupied compatible Terrain.', true); return; }
     const cardId = card.card_id || card.id;
     if (!cardId) return;
@@ -953,7 +963,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   function chooseBoardTarget(column, row) {
     if (pendingEvent) { chooseEventTarget(column, row); return; }
     const entity = pendingEntity;
-    if (!entity || !legalEntityAction(entity.card, room?.board?.[`${column},${row}`])) return;
+    if (!entity || !legalEntityAction(entity.card, room?.board?.[`${column},${row}`], `${column},${row}`)) return;
     pendingEntity = null;
     syncEventTargets();
     void playEntity(entity.card, entity.handIndex, column, row);
@@ -1012,7 +1022,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       drag.ghost.style.top = `${drag.bounds.top + dy}px`;
       clearDragTarget();
       const target = targetAt(event.clientX, event.clientY);
-      if (target && (isEntity ? legalEntityAction(card, room?.board?.[target.dataset.key])
+      if (target && (isEntity ? legalEntityAction(card, room?.board?.[target.dataset.key], target.dataset.key)
         : rule && legalEventTarget(rule[1], room?.board?.[target.dataset.key]))) {
         target.classList.add('is-event-drag-target');
       }
@@ -1037,7 +1047,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         && pointInside(table, event.clientX, event.clientY);
       if (!droppedOnTable) return;
       const target = targetAt(event.clientX, event.clientY);
-      if (target && (isEntity ? legalEntityAction(card, room?.board?.[target.dataset.key])
+      if (target && (isEntity ? legalEntityAction(card, room?.board?.[target.dataset.key], target.dataset.key)
         : rule && legalEventTarget(rule[1], room?.board?.[target.dataset.key]))) {
         const [x, y] = target.dataset.key.split(',').map(Number);
         if (isEntity) void playEntity(card, handIndex, x, y, draggedFlight);
