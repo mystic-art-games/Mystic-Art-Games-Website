@@ -10,10 +10,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   let userId = null, room = null, channel = null, timer = null, awayTicker = null, visible = false, inLobby = false;
   let lobbyTimer = null, directoryChannel = null, directoryUserId = null, listSerial = 0, tableListSignature = '';
   let busy = false, epoch = 0, fetchSerial = 0, live = false, lastHeartbeat = 0, autoDeckPending = false;
-  let gameState = null, gameLoading = false, gameLoadFailed = false, gameReloadPending = false, handSignature = '', gameRenderSerial = 0, cardPreviewSerial = 0;
+  let gameState = null, gameLoading = false, gameLoadFailed = false, gameReloadPending = false, handSignature = '', gameRenderSerial = 0, boardRenderSerial = 0, cardPreviewSerial = 0;
   let phaseBusy = false, selectedCardElement = null, patronDeckRequest = '', patronDeckLoadedAt = 0;
   let drawRetryAt = 0, activeDrawFlight = null, activeHandShifts = [];
-  let selectedGameCard = null, selectedHandIndex = null, pendingEvent = null, pendingEntity = null, pendingFestival = null, zoneCounts = null, zoneCountsRevision = null, zoneCountsRequest = null, eventNoticeTimer = null;
+  let selectedGameCard = null, selectedHandIndex = null, pendingEvent = null, pendingEntity = null, pendingFestival = null, arrivingEntityKey = null, zoneCounts = null, zoneCountsRevision = null, zoneCountsRequest = null, eventNoticeTimer = null;
   const discardSelections = new Set();
   const gameDeckPatrons = new Map(), gamePlayerPatrons = new Map();
   const patronPreviews = { self: { key: '', serial: 0 }, opponent: { key: '', serial: 0 } };
@@ -448,7 +448,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   async function disconnect() {
     ++epoch; ++fetchSerial;
     ++gameRenderSerial; gameState = null; gameLoading = false; gameLoadFailed = false; gameReloadPending = false; handSignature = '';
-    phaseBusy = false; drawRetryAt = 0; clearDrawFlight(); discardSelections.clear(); pendingFestival = null;
+    phaseBusy = false; drawRetryAt = 0; clearDrawFlight(); discardSelections.clear(); pendingFestival = null; arrivingEntityKey = null;
     patronDeckRequest = ''; patronDeckLoadedAt = 0; gameDeckPatrons.clear(); gamePlayerPatrons.clear();
     zoneCounts = null; zoneCountsRevision = null; zoneCountsRequest = null;
     for (const seat of ['self', 'opponent']) {
@@ -781,6 +781,47 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       || catalog.find(item => title && item.title?.trim().toLocaleLowerCase() === title);
     return full ? { ...card, ...full } : card;
   }
+  function captureEntityFlight(handIndex) {
+    const source = $('game-hand').children[handIndex]?.querySelector('.play-hand-card');
+    if (!source || $('game').hidden) return null;
+    const bounds = source.getBoundingClientRect();
+    if (!bounds.width || !bounds.height) return null;
+    const flight = source.cloneNode(true);
+    flight.classList.remove('is-selected', 'is-drag-source');
+    flight.classList.add('play-entity-flight');
+    flight.removeAttribute('aria-label');
+    flight.setAttribute('aria-hidden', 'true');
+    const sourceCanvas = source.querySelector('canvas');
+    const flightCanvas = flight.querySelector('canvas');
+    if (sourceCanvas && flightCanvas && !sourceCanvas.hidden && sourceCanvas.width) {
+      flightCanvas.width = sourceCanvas.width;
+      flightCanvas.height = sourceCanvas.height;
+      flightCanvas.getContext('2d').drawImage(sourceCanvas, 0, 0);
+    }
+    return { flight, bounds };
+  }
+  async function animateEntityPlacement(snapshot, targetX, targetY) {
+    if (!snapshot || $('game').hidden || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const target = Array.from($('game-board').children).find(cell => cell.dataset.key === `${targetX},${targetY}`);
+    if (!target) return;
+    const terrain = target.getBoundingClientRect();
+    if (!terrain.width || !terrain.height) return;
+    const { flight, bounds } = snapshot;
+    flight.classList.remove('play-event-drag-ghost');
+    flight.classList.add('play-entity-flight');
+    flight.style.left = `${bounds.left}px`;
+    flight.style.top = `${bounds.top}px`;
+    flight.style.width = `${bounds.width}px`;
+    flight.style.height = `${bounds.height}px`;
+    document.body.append(flight);
+    try {
+      await flight.animate([
+        { left: `${bounds.left}px`, top: `${bounds.top}px`, width: `${bounds.width}px`, height: `${bounds.height}px`, transform: 'rotate(-5deg)' },
+        { left: `${terrain.left + terrain.width * .12}px`, top: `${terrain.top + terrain.height * .1}px`, width: `${terrain.width * .88}px`, height: `${terrain.width * .88 * 88 / 63}px`, transform: 'rotate(0deg)' },
+      ], { duration: 460, easing: 'cubic-bezier(.2,.8,.2,1)' }).finished;
+    } catch { /* The table may have been left while the card was moving. */ }
+    finally { flight.remove(); }
+  }
   async function evokeEvent(card, handIndex, targetX = null, targetY = null, targetCells = null) {
     if (!room || room.status !== 'active' || room.turn_player_id !== userId
       || room.turn_phase !== 'main' || phaseBusy || pendingFestival || !Array.isArray(gameState?.hand)) return;
@@ -842,7 +883,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       renderTurnPhase();
     }
   }
-  async function playEntity(card, handIndex, targetX, targetY) {
+  async function playEntity(card, handIndex, targetX, targetY, draggedFlight = null) {
     if (!room || room.status !== 'active' || room.turn_player_id !== userId
       || room.turn_phase !== 'main' || room.main_played_entity || phaseBusy || pendingFestival
       || !Array.isArray(gameState?.hand)) return;
@@ -850,6 +891,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (!action) { eventNotice('Choose an empty space or an unoccupied compatible Terrain.', true); return; }
     const cardId = card.card_id || card.id;
     if (!cardId) return;
+    const flight = action === 'place' ? draggedFlight || captureEntityFlight(handIndex) : null;
+    if (action === 'place') arrivingEntityKey = `${targetX},${targetY}`;
     const expected = epoch, roomId = room.id;
     phaseBusy = true;
     renderTurnPhase();
@@ -865,6 +908,11 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       });
       if (expected !== epoch || room?.id !== roomId) return;
       pendingEntity = null;
+      if (result?.action === 'place') await animateEntityPlacement(flight, targetX, targetY);
+      arrivingEntityKey = null;
+      Array.from($('game-board').children).find(cell => cell.dataset.key === `${targetX},${targetY}`)
+        ?.querySelector('.play-node-entity-card')?.classList.remove('is-arriving');
+      if (expected !== epoch || room?.id !== roomId) return;
       await refreshRoom();
       if (expected === epoch && room?.id === roomId) await loadGameState(true);
       if (expected === epoch && room?.id === roomId) eventNotice(result?.action === 'shape'
@@ -877,6 +925,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         message(friendly(error), true);
       }
     } finally {
+      arrivingEntityKey = null;
+      $('game-board').querySelector('.play-node-entity-card.is-arriving')?.classList.remove('is-arriving');
       phaseBusy = false;
       renderTurnPhase();
     }
@@ -969,6 +1019,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const finish = (event, cancelled = false) => {
       if (!drag || event.pointerId !== drag.pointerId) return;
       const moved = Boolean(drag.ghost);
+      const draggedFlight = isEntity && drag.ghost
+        ? { flight: drag.ghost, bounds: drag.ghost.getBoundingClientRect() } : null;
       drag.ghost?.remove();
       button.classList.remove('is-drag-source');
       boardWrap.classList.remove('is-event-drop-zone');
@@ -987,7 +1039,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       if (target && (isEntity ? legalEntityAction(card, room?.board?.[target.dataset.key])
         : rule && legalEventTarget(rule[1], room?.board?.[target.dataset.key]))) {
         const [x, y] = target.dataset.key.split(',').map(Number);
-        if (isEntity) void playEntity(card, handIndex, x, y);
+        if (isEntity) void playEntity(card, handIndex, x, y, draggedFlight);
         else void evokeEvent(card, handIndex, x, y);
       } else if (isEntity) eventNotice('Choose an empty space or an unoccupied compatible Terrain.', true);
       else void evokeEvent(card, handIndex);
@@ -1048,6 +1100,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       room.host_id === userId ? room.guest_deck_id : room.host_deck_id, false);
     gamePlayerCard(userId, ownDeckId(), true);
     const nodes = [];
+    const boardSerial = ++boardRenderSerial;
     for (let row = 0; row < 4; row++) for (let column = 0; column < 5; column++) {
       const isCenter = column === 2 && (row === 1 || row === 2);
       const node = room.board?.[`${column},${row}`];
@@ -1057,8 +1110,23 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       if (node?.terrain) {
         cell.classList.add(`terrain-${node.terrain.toLowerCase()}`);
         if (node.entity) {
-          const entity = document.createElement('span'); entity.textContent = node.entity.title || 'Entity';
+          cell.classList.add('has-entity');
+          const entityCard = resolveGameCard(node.entity);
+          const entity = document.createElement('div'); entity.className = 'play-node-entity-card';
+          if (arrivingEntityKey === cell.dataset.key) entity.classList.add('is-arriving');
+          entity.setAttribute('aria-hidden', 'true');
+          const canvas = document.createElement('canvas'); canvas.hidden = true;
+          const fallback = document.createElement('span'); fallback.textContent = entityCard.title || 'Entity';
+          entity.append(canvas, fallback);
           cell.append(entity);
+          void (async () => {
+            const artwork = entityCard.artwork_id ? await getArtworkUrl(entityCard.artwork_id).catch(() => '') : '';
+            const result = await renderCard(canvas, entityCard, artwork,
+              () => boardSerial === boardRenderSerial && entity.isConnected);
+            if (boardSerial === boardRenderSerial && entity.isConnected && result && !result.cancelled) {
+              canvas.hidden = false; fallback.hidden = true;
+            }
+          })().catch(() => {});
         }
         const markers = [];
         if (Number(node.lumens || 0) > 0) markers.push(`${node.lumens} ✦`);
@@ -1077,7 +1145,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         token.alt = '';
         cell.append(token);
       }
-      cell.setAttribute('aria-label', node?.terrain ? `${node.terrain} Terrain at row ${row + 1}, column ${column + 1}, ${node.lumens || 0} Lumens${node.protected ? ', Protected' : ''}${node.crisis ? ', Crisis' : ''}`
+      cell.setAttribute('aria-label', node?.terrain ? `${node.terrain} Terrain at row ${row + 1}, column ${column + 1}${node.entity ? `, ${node.entity.title || 'Entity'} placed here` : ''}, ${node.lumens || 0} Lumens${node.protected ? ', Protected' : ''}${node.crisis ? ', Crisis' : ''}`
         : node?.fertilize ? `${node.fertilize.owner_id === userId ? 'Your' : "Opponent's"} Fertilize marker on empty space at row ${row + 1}, column ${column + 1}`
           : `${isCenter ? 'Center empty space' : 'Empty space'} at row ${row + 1}, column ${column + 1}`);
       cell.addEventListener('click', () => chooseBoardTarget(column, row));

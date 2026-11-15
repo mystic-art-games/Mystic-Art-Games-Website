@@ -124,7 +124,14 @@ body.dark-mode #play-back { color: #e5eee0; }
 .play-game-patron-slot canvas[hidden], .play-game-patron-fallback[hidden] { display: none; }
 .play-game-patron-fallback { position: relative; display: block; width: 100%; height: 100%; box-sizing: border-box; padding: 8% 5% 0; overflow: hidden; background-color: #eeeae6; background-position: center 50%, center; background-size: 44% auto, 100% 100%; background-repeat: no-repeat; color: #302b27; font-size: 7px; font-weight: 800; line-height: 1; text-align: center; text-shadow: 0 1px #fff; }
 .play-game-archive-card { display: flex; align-items: center; justify-content: center; padding: .3rem; border: 1px solid #9fb7aa; background: #e7ede3; color: #567063; font-size: .72rem; font-weight: 700; overflow-wrap: anywhere; box-shadow: 0 4px 12px #183a2c22; }
-.play-game-node { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: .15rem; min-width: 0; min-height: 0; padding: .2rem; overflow: hidden; border: 1px dashed #d5b88a9c; border-radius: 6px; background: #f8e8c814; text-align: center; }
+.play-game-node { position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: .15rem; min-width: 0; min-height: 0; padding: .2rem; overflow: hidden; border: 1px dashed #d5b88a9c; border-radius: 6px; background: #f8e8c814; text-align: center; }
+.play-game-node.has-entity { z-index: 2; overflow: visible; }
+.play-node-entity-card { position: absolute; z-index: 2; top: 10%; left: 12%; box-sizing: border-box; width: 88%; aspect-ratio: 63 / 88; overflow: hidden; border: 1px solid #e5d9bb; border-radius: 5px; background: #e9ece1; box-shadow: 0 5px 10px #0b251bbb; pointer-events: none; }
+.play-node-entity-card.is-arriving { visibility: hidden; }
+.play-node-entity-card canvas { display: block; width: 100%; height: 100%; object-fit: fill; }
+.play-node-entity-card canvas[hidden], .play-node-entity-card span[hidden] { display: none; }
+.play-game-node .play-node-entity-card span { display: grid; place-items: center; box-sizing: border-box; width: 100%; height: 100%; max-width: none; padding: .2rem; border-radius: 0; background: #e9ece1; font-size: clamp(.5rem, 1vw, .75rem); font-weight: 800; }
+.play-game-node .play-node-entity-card span[hidden] { display: none; }
 .play-game-node span { max-width: 95%; padding: .08rem .2rem; border-radius: 4px; overflow-wrap: anywhere; background: #fffdf3d9; color: #163a2b; font-size: clamp(.45rem,1vw,.7rem); line-height: 1.1; }
 .play-game-node[class*="terrain-"] { border-style: solid; border-color: #8da79a; }
 .play-game-node.terrain-center { background: url('./assets/Center_Card.png') center / 100% 100% no-repeat; }
@@ -134,7 +141,7 @@ body.dark-mode #play-back { color: #e5eee0; }
 .play-game-node.terrain-radiance { background: url('./assets/Terrain_Radiance_Full_Art.png') center / cover; }
 .play-game-node.is-fertilized { background: #17523a38; }
 .play-fertilize-token { display: block; width: 72%; max-width: 68px; aspect-ratio: 1; object-fit: contain; filter: drop-shadow(0 4px 7px #09251799); }
-.play-game-node .play-node-markers { background: #153c32ed; color: #fff9e8; font-size: clamp(.48rem, .95vw, .68rem); font-weight: 800; }
+.play-game-node .play-node-markers { position: absolute; z-index: 3; bottom: .15rem; left: .15rem; background: #153c32ed; color: #fff9e8; font-size: clamp(.48rem, .95vw, .68rem); font-weight: 800; }
 .play-game-node.is-event-target { border: 2px solid #87e1d5; box-shadow: inset 0 0 0 2px #173d37, 0 0 0 3px #87e1d5a8; cursor: pointer; }
 .play-game-node.is-event-target:hover, .play-game-node.is-event-target:focus-visible { outline: 2px solid #fff; outline-offset: 2px; filter: brightness(1.15); }
 .play-game-event-notice { position: absolute; z-index: 12; top: .25rem; left: 50%; display: flex; align-items: center; gap: .5rem; width: max-content; max-width: min(38rem, 65vw); margin: 0; padding: .45rem .7rem; transform: translateX(-50%); border: 1px solid #8bb4a2; border-radius: 8px; background: #1b352bf2; color: #f5f2e8; font-size: .78rem; font-weight: 700; text-align: center; box-shadow: 0 4px 12px #130b0a55; }
@@ -155,6 +162,7 @@ body.dark-mode #play-back { color: #e5eee0; }
 .play-event-drag-ghost { position: fixed; z-index: 80; box-sizing: border-box; margin: 0; pointer-events: none; transform: rotate(-4deg) scale(1.05); box-shadow: 0 12px 28px #0c1f1ba8; }
 .play-game-board-wrap.is-event-drop-zone .play-game-board { filter: brightness(1.12); }
 .play-game-node.is-event-drag-target { outline: 3px solid #87e1d5; outline-offset: 2px; filter: brightness(1.25); }
+.play-entity-flight { position: fixed; z-index: 85; box-sizing: border-box; margin: 0; pointer-events: none; box-shadow: 0 12px 28px #0c1f1ba8; }
 .play-discard-flight { position: fixed; z-index: 85; box-sizing: border-box; margin: 0; pointer-events: none; transform-origin: center; box-shadow: 0 12px 28px #0c1f1ba8; }
 .play-draw-flight { position: fixed; z-index: 85; box-sizing: border-box; margin: 0; pointer-events: none; perspective: 1000px; }
 .play-draw-flight-inner { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; }
