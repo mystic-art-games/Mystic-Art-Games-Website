@@ -675,8 +675,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     $(`game-${seat}-name`).textContent = `${profile?.display_name || 'Player'}${own ? ' · You' : ''}`;
     if (!own) $('game-opponent-horizon').setAttribute('aria-label', `Opponent's Horizon, ${deck?.name || 'selected deck'}`);
     const savedPatron = room[`${roomSeat}_patron_name`];
-    const selectedPatron = gamePlayerPatrons.get(String(id)) || gameDeckPatrons.get(String(deckId))
-      || deck?.patron_name || (own ? gameState?.patron_name : null) || savedPatron || getDefaultPatronName();
+    const selectedPatron = gamePlayerPatrons.get(String(id)) || (own ? gameState?.patron_name : null)
+      || savedPatron || gameDeckPatrons.get(String(deckId)) || deck?.patron_name || getDefaultPatronName();
     renderGamePatron(seat, selectedPatron);
   }
   async function loadGamePatrons() {
@@ -1603,7 +1603,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     await disconnect();
     room = null; inLobby = false;
     const expected = epoch;
-    const { data, error } = await client.from('play_rooms').select('*').eq('id', id).maybeSingle();
+    let { data, error } = await client.from('play_rooms').select('*').eq('id', id).maybeSingle();
     if (expected !== epoch) return;
     if (error) throw error;
     if (!data || data.status === 'closed') { remember(null); throw new Error('Table not found or closed.'); }
@@ -1617,7 +1617,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (data.status === 'active' && ownDeadline && !stayInLobby) {
       const returned = await rpc('play_set_away', { p_room_id: id, p_away: false });
       if (!returned) { remember(null); throw new Error('The away timer expired. The table closed.'); }
-      data[`${seat}_away_until`] = null;
+      ({ data, error } = await client.from('play_rooms').select('*').eq('id', id).maybeSingle());
+      if (error) throw error;
+      if (!data || data.status !== 'active') { remember(null); throw new Error('This table is no longer active.'); }
     }
     if (!stayInLobby) rememberAwayLobby(null);
     inLobby = stayInLobby;
