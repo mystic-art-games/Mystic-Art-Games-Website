@@ -18,6 +18,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   let archiveBrowserSeat = null, archiveBrowserCards = [], archiveBrowserIndex = 0;
   let archiveBrowserRequestSerial = 0, archiveBrowserCardSerial = 0, archiveBrowserOpener = null;
   let archiveBrowserLoading = false, archiveBrowserError = '';
+  let archiveGalleryObserver = null;
   let selectedGameCard = null, selectedHandIndex = null, pendingEvent = null, pendingEntity = null, pendingFestival = null, arrivingEntityKey = null, zoneCounts = null, zoneCountsRevision = null, zoneCountsRequest = null, eventNoticeTimer = null;
   const discardSelections = new Set();
   const gameDeckPatrons = new Map(), gamePlayerPatrons = new Map();
@@ -1029,27 +1030,71 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       || catalog.find(item => title && item.title?.trim().toLocaleLowerCase() === title);
     return full ? { ...card, ...full } : card;
   }
+  function renderArchiveGallery() {
+    archiveGalleryObserver?.disconnect();
+    archiveGalleryObserver = null;
+    const list = $('game-archive-browser-list');
+    const serial = archiveBrowserRequestSerial;
+    const entries = archiveBrowserCards.map((item, index) => {
+      const row = document.createElement('li');
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.setAttribute('aria-label', `Preview ${item.title || 'card'} in Archive`);
+      const canvas = document.createElement('canvas');
+      canvas.hidden = true;
+      canvas.setAttribute('aria-hidden', 'true');
+      const fallback = document.createElement('span');
+      fallback.className = 'play-archive-gallery-fallback';
+      fallback.textContent = item.title || 'Card';
+      const caption = document.createElement('small');
+      caption.textContent = item.title || 'Card';
+      button.append(canvas, fallback, caption);
+      button.addEventListener('click', () => { archiveBrowserIndex = index; renderArchiveBrowser(); });
+      row.append(button);
+      return { row, button, canvas, fallback, item };
+    });
+    list.replaceChildren(...entries.map(entry => entry.row));
+    const drawThumbnail = entry => {
+      void (async () => {
+        const { button, canvas, fallback, item } = entry;
+        const artwork = item.artwork_id ? await getArtworkUrl(item.artwork_id).catch(() => '') : '';
+        const staged = document.createElement('canvas');
+        const current = () => serial === archiveBrowserRequestSerial && list.contains(button);
+        const result = await renderCard(staged, item, artwork, current);
+        if (!current() || !result || result.cancelled) return;
+        canvas.width = 189;
+        canvas.height = 264;
+        canvas.getContext('2d').drawImage(staged, 0, 0, canvas.width, canvas.height);
+        canvas.hidden = false;
+        fallback.hidden = true;
+      })().catch(() => {});
+    };
+    if (typeof IntersectionObserver === 'function') {
+      const galleryEntries = new Map(entries.map(entry => [entry.button, entry]));
+      archiveGalleryObserver = new IntersectionObserver(entries => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          archiveGalleryObserver?.unobserve(entry.target);
+          const item = galleryEntries.get(entry.target);
+          if (item) drawThumbnail(item);
+        }
+      }, { root: list, rootMargin: '120px' });
+      for (const entry of entries) archiveGalleryObserver.observe(entry.button);
+    } else {
+      for (const entry of entries) drawThumbnail(entry);
+    }
+  }
   function renderArchiveBrowser() {
     if ($('game-archive-browser').hidden) return;
     const card = archiveBrowserCards[archiveBrowserIndex];
     const status = $('game-archive-browser-status');
     status.textContent = archiveBrowserError || (archiveBrowserLoading ? 'Loading cards…'
       : `${archiveBrowserCards.length} card${archiveBrowserCards.length === 1 ? '' : 's'} · newest first`);
-    const list = $('game-archive-browser-list');
-    list.replaceChildren(...archiveBrowserCards.map((item, index) => {
-      const row = document.createElement('li');
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = index === archiveBrowserIndex ? 'is-current' : '';
+    Array.from($('game-archive-browser-list').children).forEach((row, index) => {
+      const button = row.firstElementChild;
+      button.classList.toggle('is-current', index === archiveBrowserIndex);
       button.setAttribute('aria-current', index === archiveBrowserIndex ? 'true' : 'false');
-      const title = document.createElement('strong'); title.textContent = item.title || 'Card';
-      const details = document.createElement('span');
-      details.textContent = [item.card_type, item.terrain].filter(Boolean).join(' · ');
-      button.append(title, details);
-      button.addEventListener('click', () => { archiveBrowserIndex = index; renderArchiveBrowser(); });
-      row.append(button);
-      return row;
-    }));
+    });
     $('game-archive-browser-position').textContent = card
       ? `${archiveBrowserIndex + 1} of ${archiveBrowserCards.length}` : '';
     $('game-archive-browser-previous').disabled = !card || archiveBrowserIndex === 0;
@@ -1073,11 +1118,14 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   function closeArchiveBrowser(restoreFocus = true) {
     if ($('game-archive-browser').hidden) return;
+    archiveGalleryObserver?.disconnect();
+    archiveGalleryObserver = null;
     ++archiveBrowserRequestSerial;
     ++archiveBrowserCardSerial;
     $('game-archive-browser').hidden = true;
     archiveBrowserSeat = null;
     archiveBrowserCards = [];
+    $('game-archive-browser-list').replaceChildren();
     archiveBrowserLoading = false;
     archiveBrowserError = '';
     if (restoreFocus && archiveBrowserOpener?.isConnected) archiveBrowserOpener.focus();
@@ -1088,6 +1136,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     hideCardPreview();
     archiveBrowserSeat = seat;
     archiveBrowserCards = [];
+    $('game-archive-browser-list').replaceChildren();
     archiveBrowserIndex = 0;
     archiveBrowserLoading = true;
     archiveBrowserError = '';
@@ -1109,6 +1158,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       }
       if (serial !== archiveBrowserRequestSerial || room?.id !== roomId) return;
       archiveBrowserCards = (Array.isArray(cards) ? cards : []).slice().reverse().map(resolveGameCard);
+      renderArchiveGallery();
     } catch (error) {
       if (serial !== archiveBrowserRequestSerial || room?.id !== roomId) return;
       archiveBrowserError = friendly(error);
