@@ -557,7 +557,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   document.addEventListener('keydown', event => {
     if (event.key === 'Escape') {
       for (const menu of root.querySelectorAll('.play-table-menu[open]')) menu.open = false;
-      if (pendingFestival && !phaseBusy) cancelFestival();
+      if (beginningTargetSource) {
+        beginningTargetSource = null;
+        eventNotice(''); renderBeginningEffects(); syncEventTargets();
+      } else if (pendingFestival && !phaseBusy) cancelFestival();
       else hideCardPreview();
     }
   });
@@ -625,6 +628,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     ++epoch; ++fetchSerial;
     ++gameRenderSerial; gameState = null; gameLoading = false; gameLoadFailed = false; gameReloadPending = false; handSignature = '';
     phaseBusy = false; drawRetryAt = 0; clearDrawFlight(); discardSelections.clear(); pendingFestival = null; arrivingEntityKey = null;
+    beginningTurnKey = ''; beginningOrder = []; beginningTargetSource = null; beginningTargets.clear();
     patronDeckRequest = ''; patronDeckLoadedAt = 0; gameDeckPatrons.clear(); gamePlayerPatrons.clear();
     zoneCounts = null; zoneCountsRevision = null; zoneCountsRequest = null;
     for (const seat of ['self', 'opponent']) {
