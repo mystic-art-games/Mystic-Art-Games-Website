@@ -268,7 +268,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const fallback = document.createElement('span'); fallback.textContent = rawCard?.title || 'Card';
     front.append(canvas, fallback); inner.append(back, front); flight.append(inner); document.body.append(flight);
     activeDrawFlight = flight;
-    const frontReady = rawCard ? (async () => {
+    if (rawCard) void (async () => {
       const card = resolveGameCard(rawCard);
       fallback.textContent = card.title || 'Card';
       try {
@@ -276,7 +276,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         const result = await renderCard(canvas, card, artwork, () => activeDrawFlight === flight);
         if (result && !result.cancelled) { canvas.hidden = false; fallback.hidden = true; }
       } catch { /* The title remains visible if card art cannot load. */ }
-    })() : Promise.resolve();
+    })();
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     activeHandShifts = items.map((item, index) => {
       const current = item.getBoundingClientRect();
@@ -287,18 +287,20 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const dx = destinationX - source.left - source.width / 2;
     const dy = destinationY - source.top - source.height / 2;
     const scale = cardWidth / source.width;
+    const duration = reducedMotion ? 100 : 850;
     const motion = flight.animate([
       { transform: 'translate(0, 0) rotate(0deg) scale(1)' },
       { transform: `translate(${dx * .65}px, ${dy * .65}px) rotate(-7deg) scale(${1 + (scale - 1) * .65})`, offset: .7 },
       { transform: `translate(${dx}px, ${dy}px) rotate(0deg) scale(${scale})` },
-    ], { duration: reducedMotion ? 100 : 850, easing: 'cubic-bezier(.22,.7,.18,1)', fill: 'forwards' });
+    ], { duration, easing: 'cubic-bezier(.22,.7,.18,1)', fill: 'forwards' });
+    const flip = inner.animate([
+      { transform: 'rotateY(0deg)' },
+      { transform: 'rotateY(0deg)', offset: .25 },
+      { transform: 'rotateY(180deg)', offset: .7 },
+      { transform: 'rotateY(180deg)' },
+    ], { duration, easing: 'ease-in-out', fill: 'forwards' });
     try {
-      await motion.finished;
-      if (activeDrawFlight !== flight) return;
-      await frontReady;
-      if (activeDrawFlight !== flight) return;
-      await inner.animate([{ transform: 'rotateY(0deg)' }, { transform: 'rotateY(180deg)' }],
-        { duration: reducedMotion ? 80 : 360, easing: 'ease-in-out', fill: 'forwards' }).finished;
+      await Promise.all([motion.finished, flip.finished]);
     } catch { /* Leaving the table cancels the flight. */ }
   }
   async function finishDrawPhase(drawnCard = undefined) {
