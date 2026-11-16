@@ -15,6 +15,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   let drawRetryAt = 0, activeDrawFlight = null, activeHandShifts = [];
   let beginningTurnKey = '', beginningOrder = [], beginningTargetSource = null;
   const beginningTargets = new Map();
+  let archiveBrowserSeat = null, archiveBrowserCards = [], archiveBrowserIndex = 0;
+  let archiveBrowserRequestSerial = 0, archiveBrowserCardSerial = 0, archiveBrowserOpener = null;
+  let archiveBrowserLoading = false, archiveBrowserError = '';
   let selectedGameCard = null, selectedHandIndex = null, pendingEvent = null, pendingEntity = null, pendingFestival = null, arrivingEntityKey = null, zoneCounts = null, zoneCountsRevision = null, zoneCountsRequest = null, eventNoticeTimer = null;
   const discardSelections = new Set();
   const gameDeckPatrons = new Map(), gamePlayerPatrons = new Map();
@@ -55,11 +58,11 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       <div class="play-game-table">
         <div class="play-game-zones-left">
           <div class="play-game-zone play-game-zone-opponent-patron"><button id="play-game-opponent-patron-slot" class="play-game-patron-slot" type="button" aria-label="Preview opponent's Patron"><canvas id="play-game-opponent-patron" hidden></canvas><span id="play-game-opponent-patron-fallback" class="play-game-patron-fallback" aria-hidden="true"></span></button></div>
-          <div class="play-game-zone-pair play-game-zone-pair-self" aria-label="Your card zones"><div class="play-game-zone play-game-zone-horizon"><div id="play-game-self-horizon" class="play-deck-stack" role="img" aria-label="Your Horizon, draw deck"></div></div><div class="play-game-zone play-game-zone-archive"><div id="play-game-self-archive" class="play-game-archive-card is-empty" role="img" aria-label="Your Archive"><canvas id="play-game-self-archive-canvas" aria-hidden="true" hidden></canvas><span id="play-game-archive-top"></span></div></div></div>
+          <div class="play-game-zone-pair play-game-zone-pair-self" aria-label="Your card zones"><div class="play-game-zone play-game-zone-horizon"><div id="play-game-self-horizon" class="play-deck-stack" role="img" aria-label="Your Horizon, draw deck"></div></div><div class="play-game-zone play-game-zone-archive"><button id="play-game-self-archive" class="play-game-archive-card is-empty" type="button" aria-label="Browse your Archive"><canvas id="play-game-self-archive-canvas" aria-hidden="true" hidden></canvas><span id="play-game-archive-top"></span></button></div></div>
         </div>
         <div id="play-game-board" class="play-game-board" role="group" aria-label="Shared five-column, four-row Terrain board"></div>
         <div class="play-game-zones-right">
-          <div class="play-game-zone-pair play-game-zone-pair-opponent" aria-label="Opponent's card zones"><div class="play-game-zone play-game-zone-archive"><div id="play-game-opponent-archive" class="play-game-archive-card is-empty" role="img" aria-label="Opponent's Archive"><canvas id="play-game-opponent-archive-canvas" aria-hidden="true" hidden></canvas><span id="play-game-opponent-archive-top"></span></div></div><div class="play-game-zone play-game-zone-horizon"><div id="play-game-opponent-horizon" class="play-deck-stack" role="img" aria-label="Opponent's Horizon, draw deck"></div></div></div>
+          <div class="play-game-zone-pair play-game-zone-pair-opponent" aria-label="Opponent's card zones"><div class="play-game-zone play-game-zone-archive"><button id="play-game-opponent-archive" class="play-game-archive-card is-empty" type="button" aria-label="Browse opponent's Archive"><canvas id="play-game-opponent-archive-canvas" aria-hidden="true" hidden></canvas><span id="play-game-opponent-archive-top"></span></button></div></div><div class="play-game-zone play-game-zone-horizon"><div id="play-game-opponent-horizon" class="play-deck-stack" role="img" aria-label="Opponent's Horizon, draw deck"></div></div></div>
           <div class="play-game-zone play-game-zone-self-patron"><button id="play-game-self-patron-slot" class="play-game-patron-slot" type="button" aria-label="Preview your Patron"><canvas id="play-game-self-patron" hidden></canvas><span id="play-game-self-patron-fallback" class="play-game-patron-fallback" aria-hidden="true"></span></button></div>
         </div>
       </div>
@@ -76,6 +79,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
           <button id="play-game-next-phase" class="play-game-next-phase" type="button">Next Phase</button>
         </div>
       </aside></div>
+      <div id="play-game-archive-browser" class="play-archive-browser" hidden><div class="play-archive-browser-backdrop"></div><section class="play-archive-browser-panel" role="dialog" aria-modal="true" aria-labelledby="play-game-archive-browser-title"><header><div><h2 id="play-game-archive-browser-title">Archive</h2><p id="play-game-archive-browser-status" role="status" aria-live="polite"></p></div><button id="play-game-archive-browser-close" class="play-archive-browser-close" type="button" aria-label="Close Archive">×</button></header><div class="play-archive-browser-body"><div class="play-archive-browser-view"><div class="play-archive-browser-card"><canvas id="play-game-archive-browser-canvas" hidden></canvas><span id="play-game-archive-browser-fallback"></span></div><div class="play-archive-browser-navigation"><button id="play-game-archive-browser-previous" type="button">Previous</button><span id="play-game-archive-browser-position"></span><button id="play-game-archive-browser-next" type="button">Next</button></div></div><ol id="play-game-archive-browser-list" class="play-archive-browser-list" aria-label="Cards in Archive"></ol></div></section></div>
       <div class="play-game-player-block">
       <div class="play-game-self-identity play-game-player-identity"><strong id="play-game-self-name"></strong><span id="play-game-self-presence" class="play-away-pill" hidden></span></div>
       <section id="play-game-self" class="play-surface play-game-seat" aria-label="Your area">
@@ -600,6 +604,22 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     hideCardPreview();
   });
   document.addEventListener('keydown', event => {
+    if (!$('game-archive-browser').hidden) {
+      if (event.key === 'Escape') { event.preventDefault(); closeArchiveBrowser(); }
+      else if (event.key === 'ArrowLeft' && archiveBrowserIndex > 0) {
+        event.preventDefault(); --archiveBrowserIndex; renderArchiveBrowser();
+      } else if (event.key === 'ArrowRight' && archiveBrowserIndex < archiveBrowserCards.length - 1) {
+        event.preventDefault(); ++archiveBrowserIndex; renderArchiveBrowser();
+      } else if (event.key === 'Tab') {
+        const buttons = Array.from($('game-archive-browser').querySelectorAll('button:not(:disabled)'));
+        if (event.shiftKey && document.activeElement === buttons[0]) {
+          event.preventDefault(); buttons.at(-1)?.focus();
+        } else if (!event.shiftKey && document.activeElement === buttons.at(-1)) {
+          event.preventDefault(); buttons[0]?.focus();
+        }
+      }
+      return;
+    }
     if (event.key === 'Escape') {
       for (const menu of root.querySelectorAll('.play-table-menu[open]')) menu.open = false;
       if (beginningTargetSource) {
@@ -1009,6 +1029,108 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       || catalog.find(item => title && item.title?.trim().toLocaleLowerCase() === title);
     return full ? { ...card, ...full } : card;
   }
+  function renderArchiveBrowser() {
+    if ($('game-archive-browser').hidden) return;
+    const card = archiveBrowserCards[archiveBrowserIndex];
+    const status = $('game-archive-browser-status');
+    status.textContent = archiveBrowserError || (archiveBrowserLoading ? 'Loading cards…'
+      : `${archiveBrowserCards.length} card${archiveBrowserCards.length === 1 ? '' : 's'} · newest first`);
+    const list = $('game-archive-browser-list');
+    list.replaceChildren(...archiveBrowserCards.map((item, index) => {
+      const row = document.createElement('li');
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = index === archiveBrowserIndex ? 'is-current' : '';
+      button.setAttribute('aria-current', index === archiveBrowserIndex ? 'true' : 'false');
+      const title = document.createElement('strong'); title.textContent = item.title || 'Card';
+      const details = document.createElement('span');
+      details.textContent = [item.card_type, item.terrain].filter(Boolean).join(' · ');
+      button.append(title, details);
+      button.addEventListener('click', () => { archiveBrowserIndex = index; renderArchiveBrowser(); });
+      row.append(button);
+      return row;
+    }));
+    $('game-archive-browser-position').textContent = card
+      ? `${archiveBrowserIndex + 1} of ${archiveBrowserCards.length}` : '';
+    $('game-archive-browser-previous').disabled = !card || archiveBrowserIndex === 0;
+    $('game-archive-browser-next').disabled = !card || archiveBrowserIndex === archiveBrowserCards.length - 1;
+    const canvas = $('game-archive-browser-canvas');
+    const fallback = $('game-archive-browser-fallback');
+    const serial = ++archiveBrowserCardSerial;
+    canvas.hidden = true;
+    fallback.hidden = false;
+    fallback.textContent = card?.title || (archiveBrowserLoading ? 'Loading…' : 'No cards in this Archive.');
+    if (!card) return;
+    void (async () => {
+      const artwork = card.artwork_id ? await getArtworkUrl(card.artwork_id).catch(() => '') : '';
+      const result = await renderCard(canvas, card, artwork,
+        () => serial === archiveBrowserCardSerial && !$('game-archive-browser').hidden);
+      if (serial === archiveBrowserCardSerial && result && !result.cancelled) {
+        canvas.hidden = false;
+        fallback.hidden = true;
+      }
+    })().catch(() => {});
+  }
+  function closeArchiveBrowser(restoreFocus = true) {
+    if ($('game-archive-browser').hidden) return;
+    ++archiveBrowserRequestSerial;
+    ++archiveBrowserCardSerial;
+    $('game-archive-browser').hidden = true;
+    archiveBrowserSeat = null;
+    archiveBrowserCards = [];
+    archiveBrowserLoading = false;
+    archiveBrowserError = '';
+    if (restoreFocus && archiveBrowserOpener?.isConnected) archiveBrowserOpener.focus();
+    archiveBrowserOpener = null;
+  }
+  async function openArchiveBrowser(seat) {
+    if (room?.status !== 'active' || !userId) return;
+    hideCardPreview();
+    archiveBrowserSeat = seat;
+    archiveBrowserCards = [];
+    archiveBrowserIndex = 0;
+    archiveBrowserLoading = true;
+    archiveBrowserError = '';
+    archiveBrowserOpener = $(`game-${seat}-archive`);
+    $('game-archive-browser-title').textContent = seat === 'self' ? 'Your Archive' : "Opponent's Archive";
+    $('game-archive-browser').hidden = false;
+    renderArchiveBrowser();
+    $('game-archive-browser-close').focus();
+    const serial = ++archiveBrowserRequestSerial, roomId = room.id;
+    try {
+      let cards;
+      if (seat === 'self') {
+        if (!gameState) await loadGameState(true);
+        if (!gameState) throw new Error('Your Archive is unavailable right now.');
+        cards = gameState.archive;
+      } else {
+        const opponentId = room.host_id === userId ? room.guest_id : room.host_id;
+        cards = await rpc('play_archive_cards', { p_room_id: roomId, p_player_id: opponentId });
+      }
+      if (serial !== archiveBrowserRequestSerial || room?.id !== roomId) return;
+      archiveBrowserCards = (Array.isArray(cards) ? cards : []).slice().reverse().map(resolveGameCard);
+    } catch (error) {
+      if (serial !== archiveBrowserRequestSerial || room?.id !== roomId) return;
+      archiveBrowserError = friendly(error);
+    } finally {
+      if (serial === archiveBrowserRequestSerial && room?.id === roomId) {
+        archiveBrowserLoading = false;
+        renderArchiveBrowser();
+      }
+    }
+  }
+  for (const seat of ['self', 'opponent']) {
+    $(`game-${seat}-archive`).addEventListener('click', () => void openArchiveBrowser(seat));
+  }
+  $('game-archive-browser-close').addEventListener('click', () => closeArchiveBrowser());
+  $('game-archive-browser').querySelector('.play-archive-browser-backdrop')
+    .addEventListener('click', () => closeArchiveBrowser());
+  $('game-archive-browser-previous').addEventListener('click', () => {
+    if (archiveBrowserIndex > 0) { --archiveBrowserIndex; renderArchiveBrowser(); }
+  });
+  $('game-archive-browser-next').addEventListener('click', () => {
+    if (archiveBrowserIndex < archiveBrowserCards.length - 1) { ++archiveBrowserIndex; renderArchiveBrowser(); }
+  });
   function renderArchiveCard(seat, raw, count) {
     const preview = archivePreviews[seat];
     const card = count && raw ? resolveGameCard(raw) : null;
@@ -1752,7 +1874,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     syncLobbyRefresh();
     root.classList.toggle('is-at-table', Boolean(userId && room && !inLobby));
     const playing = Boolean(userId && room?.status === 'active' && !inLobby);
-    if (!playing) hideCardPreview();
+    if (!playing) { hideCardPreview(); closeArchiveBrowser(false); }
     $('signin').hidden = Boolean(userId);
     $('lobby').hidden = !userId || Boolean(room && !inLobby);
     $('session').hidden = !userId || !room || playing || inLobby;
