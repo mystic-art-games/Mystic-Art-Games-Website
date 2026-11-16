@@ -50,7 +50,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       <div class="play-game-board-wrap">
       <div id="play-game-event-notice" class="play-game-event-notice" role="status" aria-live="polite" hidden><span id="play-game-event-notice-text"></span><button id="play-game-event-notice-close" type="button" aria-label="Dismiss message" hidden>×</button></div>
       <div id="play-game-discard-bar" class="play-game-discard-bar" hidden><strong id="play-game-discard-text" role="status" aria-live="polite"></strong><button id="play-game-confirm-discard" type="button" disabled>Confirm Discard</button></div>
-      <aside id="play-game-beginning-effects" class="play-beginning-effects" aria-label="Beginning of Turn Entity effects" hidden><strong>Beginning of Turn effects</strong><p>Drag effects into the order you want. Choose an adjacent empty Node for each effect.</p><ol id="play-game-beginning-list"></ol><button id="play-game-resolve-beginning" type="button">Resolve effects in this order</button></aside>
+      <aside id="play-game-beginning-effects" class="play-beginning-effects" aria-label="Beginning of Turn Entity effects" hidden><strong>Beginning of Turn effects</strong><p id="play-game-beginning-instructions"></p><ol id="play-game-beginning-list"></ol><button id="play-game-resolve-beginning" type="button">Resolve effects in this order</button></aside>
       <aside id="play-game-card-preview" class="play-game-card-preview" aria-label="Card preview" hidden><button id="play-game-card-preview-close" class="play-game-card-preview-close action-delete" type="button" aria-label="Close card preview">×</button><canvas id="play-game-card-preview-canvas" hidden></canvas><span id="play-game-card-preview-fallback" class="play-hand-fallback"></span></aside>
       <div class="play-game-table">
         <div class="play-game-zones-left">
@@ -183,9 +183,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   function beginningEffects() {
     if (room?.status !== 'active' || room.turn_phase !== 'beginning'
-      || room.turn_player_id !== userId || room.beginning_effects_resolved_turn === room.turn_number) return [];
+      || room.beginning_effects_resolved_turn === room.turn_number) return [];
     return Object.entries(room.board || {}).filter(([key, node]) => /^[0-4],[0-3]$/.test(key)
-      && node?.entity?.owner_id === userId && beginningEffectKind(node.entity))
+      && node?.entity?.owner_id === room.turn_player_id && beginningEffectKind(node.entity))
       .map(([source, node]) => ({ source, card: { ...resolveGameCard(node.entity),
         title: node.entity.title, effect: node.entity.effect } }))
       .sort((a, b) => Number(a.source.split(',')[1]) - Number(b.source.split(',')[1])
@@ -278,6 +278,15 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const panel = $('game-beginning-effects');
     panel.hidden = effects.length === 0;
     if (!effects.length) { beginningTargetSource = null; return; }
+    const own = room.turn_player_id === userId;
+    panel.classList.toggle('is-read-only', !own);
+    const saved = room.beginning_effects_plan;
+    const shared = saved?.turn === room.turn_number && saved?.player_id === room.turn_player_id
+      && Array.isArray(saved.effects) ? saved.effects : null;
+    $('game-beginning-instructions').textContent = own
+      ? 'Drag effects into the order you want. Choose an adjacent empty Node for each effect.'
+      : 'Opponent is choosing the order and targets.';
+    $('game-resolve-beginning').hidden = !own;
     const turnKey = `${room.id}:${room.turn_number}`;
     const sources = new Set(effects.map(effect => effect.source));
     if (turnKey !== beginningTurnKey) {
@@ -285,27 +294,44 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       beginningOrder = effects.map(effect => effect.source);
       beginningTargets.clear();
       beginningTargetSource = null;
+      if (shared) {
+        beginningOrder = shared.map(entry => entry.source).filter(source => sources.has(source));
+        for (const entry of shared) if (sources.has(entry.source) && entry.target) beginningTargets.set(entry.source, entry.target);
+      }
     } else {
       beginningOrder = beginningOrder.filter(source => sources.has(source));
       for (const effect of effects) if (!beginningOrder.includes(effect.source)) beginningOrder.push(effect.source);
       for (const source of beginningTargets.keys()) if (!sources.has(source)) beginningTargets.delete(source);
       if (beginningTargetSource && !sources.has(beginningTargetSource)) beginningTargetSource = null;
+      if (!own && shared) {
+        beginningOrder = shared.map(entry => entry.source).filter(source => sources.has(source));
+        beginningTargets.clear();
+        for (const entry of shared) if (sources.has(entry.source) && entry.target) beginningTargets.set(entry.source, entry.target);
+      }
     }
+    for (const effect of effects) if (!beginningOrder.includes(effect.source)) beginningOrder.push(effect.source);
     const bySource = new Map(effects.map(effect => [effect.source, effect]));
     const plan = beginningPlan();
     const rows = beginningOrder.map((source, index) => {
       const effect = bySource.get(source);
       const row = document.createElement('li');
       row.className = `play-beginning-effect${beginningTargetSource === source ? ' is-choosing' : ''}`;
-      row.draggable = !phaseBusy;
+      row.draggable = own && !phaseBusy;
       const heading = document.createElement('div'); heading.className = 'play-beginning-effect-heading';
-      const handle = document.createElement('span'); handle.textContent = '⋮⋮'; handle.setAttribute('aria-hidden', 'true');
       const title = document.createElement('strong'); title.textContent = `${effect.card.title} · ${source}`;
-      heading.append(handle, title);
+      if (own) {
+        const handle = document.createElement('span'); handle.textContent = '⋮⋮'; handle.setAttribute('aria-hidden', 'true');
+        heading.append(handle);
+      }
+      heading.append(title);
       const description = document.createElement('p'); description.textContent = effect.card.effect || '';
       const controls = document.createElement('div'); controls.className = 'play-beginning-effect-controls';
       const { options, target, valid } = plan.get(source);
-      if (options.length) {
+      if (!own) {
+        const status = document.createElement('span');
+        status.textContent = target && valid ? `Target: Node ${target}` : options.length ? 'Waiting for target' : 'No adjacent empty Node';
+        controls.append(status);
+      } else if (options.length) {
         const choose = document.createElement('button'); choose.type = 'button';
         choose.textContent = target && valid ? `Node ${target}` : 'Choose Node';
         choose.disabled = phaseBusy;
@@ -318,31 +344,31 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       } else if (target) {
         const clear = document.createElement('button'); clear.type = 'button'; clear.textContent = 'Clear Node';
         clear.disabled = phaseBusy;
-        clear.addEventListener('click', () => { beginningTargets.delete(source); renderBeginningEffects(); });
+        clear.addEventListener('click', () => { beginningTargets.delete(source); renderBeginningEffects(); void saveBeginningPlan(); });
         controls.append(clear);
       } else {
         const unavailable = document.createElement('span'); unavailable.textContent = 'No adjacent empty Node';
         controls.append(unavailable);
       }
-      for (const [direction, label] of [[-1, 'Move up'], [1, 'Move down']]) {
+      for (const [direction, label] of own ? [[-1, 'Move up'], [1, 'Move down']] : []) {
         const move = document.createElement('button'); move.type = 'button';
         move.textContent = direction < 0 ? '↑' : '↓'; move.setAttribute('aria-label', `${label}: ${effect.card.title}`);
         move.disabled = phaseBusy || index + direction < 0 || index + direction >= beginningOrder.length;
         move.addEventListener('click', () => {
           [beginningOrder[index], beginningOrder[index + direction]] = [beginningOrder[index + direction], beginningOrder[index]];
-          renderBeginningEffects();
+          renderBeginningEffects(); void saveBeginningPlan();
         });
         controls.append(move);
       }
       row.append(heading, description, controls);
-      row.addEventListener('dragstart', event => {
+      if (own) row.addEventListener('dragstart', event => {
         event.dataTransfer.effectAllowed = 'move';
         event.dataTransfer.setData('text/plain', source);
         row.classList.add('is-dragging');
       });
-      row.addEventListener('dragend', () => row.classList.remove('is-dragging'));
-      row.addEventListener('dragover', event => { event.preventDefault(); event.dataTransfer.dropEffect = 'move'; });
-      row.addEventListener('drop', event => {
+      if (own) row.addEventListener('dragend', () => row.classList.remove('is-dragging'));
+      if (own) row.addEventListener('dragover', event => { event.preventDefault(); event.dataTransfer.dropEffect = 'move'; });
+      if (own) row.addEventListener('drop', event => {
         event.preventDefault();
         const dragged = event.dataTransfer.getData('text/plain');
         const from = beginningOrder.indexOf(dragged);
@@ -350,12 +376,32 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         if (from < 0 || to < 0 || from === to) return;
         beginningOrder.splice(from, 1);
         beginningOrder.splice(to, 0, dragged);
-        renderBeginningEffects();
+        renderBeginningEffects(); void saveBeginningPlan();
       });
       return row;
     });
     $('game-beginning-list').replaceChildren(...rows);
     $('game-resolve-beginning').disabled = phaseBusy || beginningOrder.some(source => !plan.get(source)?.valid);
+  }
+  async function saveBeginningPlan() {
+    if (phaseBusy || room?.turn_player_id !== userId || room.turn_phase !== 'beginning') return;
+    const expected = epoch, roomId = room.id, turn = room.turn_number;
+    const entries = beginningOrder.map(source => ({ source, target: beginningTargets.get(source) || null }));
+    phaseBusy = true;
+    renderBeginningEffects();
+    try {
+      await rpc('play_save_beginning_entity_plan', { p_room_id: roomId, p_expected_turn: turn, p_effects: entries });
+      if (expected === epoch && room?.id === roomId) await refreshRoom();
+    } catch (error) {
+      if (expected === epoch && room?.id === roomId) {
+        beginningTurnKey = '';
+        await refreshRoom().catch(() => {});
+        message(friendly(error), true);
+      }
+    } finally {
+      phaseBusy = false;
+      renderBeginningEffects();
+    }
   }
   async function resolveBeginningEffects() {
     if (phaseBusy || room?.turn_player_id !== userId || room.turn_phase !== 'beginning') return;
@@ -1160,7 +1206,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       beginningTargets.set(beginningTargetSource, target);
       beginningTargetSource = null;
       eventNotice('');
-      renderBeginningEffects(); syncEventTargets();
+      renderBeginningEffects(); syncEventTargets(); void saveBeginningPlan();
       return;
     }
     if (pendingEvent) { chooseEventTarget(column, row); return; }

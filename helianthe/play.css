@@ -228,6 +228,7 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
 .play-beginning-effects > p { margin: .35rem 0 .6rem; font-size: .7rem; line-height: 1.3; }
 .play-beginning-effects ol { display: grid; gap: .4rem; margin: 0 0 .6rem; padding: 0; list-style: none; }
 .play-beginning-effect { padding: .45rem; border: 1px solid #8a9b80; border-radius: 7px; background: #264638; cursor: grab; }
+.play-beginning-effects.is-read-only .play-beginning-effect { cursor: default; }
 .play-beginning-effect.is-choosing { border-color: #f2c96b; }
 .play-beginning-effect.is-dragging { opacity: .5; }
 .play-beginning-effect-heading { display: flex; align-items: center; gap: .35rem; font-size: .76rem; }
@@ -239,6 +240,7 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
 #play-game .play-beginning-effects button:hover:not(:disabled) { background: #477452; color: #fff; }
 #play-game .play-beginning-effect-controls button:first-child { flex: 1; }
 #play-game .play-beginning-effects > button { width: 100%; padding: .5rem; background: #477452; }
+.play-beginning-effects > button[hidden] { display: none; }
 #play-game .play-beginning-effects button:disabled { cursor: default; opacity: .5; }
 .play-game-phases { align-self: center; min-width: 0; padding: .6rem; overflow: visible; border: 1px solid #123c2d; border-radius: 12px; background: #1b352bd9; color: #f5f2e8; box-shadow: inset 0 1px 0 #fff2cf36, 0 4px 12px #130b0a55; }
 #play-game .play-game-phases { grid-column: 3; grid-row: 1; justify-self: end; width: max-content; max-width: 100%; }
