@@ -63,7 +63,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         </div>
       </div>
       <aside id="play-game-phases" class="play-game-phases" aria-label="Turn phases">
-        <span class="play-eyebrow">TURN PHASE</span>
         <p id="play-game-turn-owner" class="play-game-turn-owner" aria-live="polite"></p>
         <ol class="play-game-phase-list">
           <li data-phase="0"><span class="play-game-phase-marker" aria-hidden="true"></span>Beginning of Turn</li>
