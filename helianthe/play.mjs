@@ -13,6 +13,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   let gameState = null, gameLoading = false, gameLoadFailed = false, gameReloadPending = false, handSignature = '', gameRenderSerial = 0, boardRenderSerial = 0, cardPreviewSerial = 0;
   let phaseBusy = false, selectedCardElement = null, patronDeckRequest = '', patronDeckLoadedAt = 0;
   let drawRetryAt = 0, activeDrawFlight = null, activeHandShifts = [];
+  let beginningTurnKey = '', beginningOrder = [], beginningTargetSource = null;
+  const beginningTargets = new Map();
   let selectedGameCard = null, selectedHandIndex = null, pendingEvent = null, pendingEntity = null, pendingFestival = null, arrivingEntityKey = null, zoneCounts = null, zoneCountsRevision = null, zoneCountsRequest = null, eventNoticeTimer = null;
   const discardSelections = new Set();
   const gameDeckPatrons = new Map(), gamePlayerPatrons = new Map();
@@ -47,6 +49,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       </div>
       <div class="play-game-board-wrap">
       <div id="play-game-event-notice" class="play-game-event-notice" role="status" aria-live="polite" hidden><span id="play-game-event-notice-text"></span><button id="play-game-event-notice-close" type="button" aria-label="Dismiss message" hidden>×</button></div>
+      <aside id="play-game-beginning-effects" class="play-beginning-effects" aria-label="Beginning of Turn Entity effects" hidden><strong>Beginning of Turn effects</strong><p>Drag effects into the order you want. Choose an adjacent empty Node for each effect.</p><ol id="play-game-beginning-list"></ol><button id="play-game-resolve-beginning" type="button">Resolve effects in this order</button></aside>
       <aside id="play-game-card-preview" class="play-game-card-preview" aria-label="Card preview" hidden><button id="play-game-card-preview-close" class="play-game-card-preview-close action-delete" type="button" aria-label="Close card preview">×</button><canvas id="play-game-card-preview-canvas" hidden></canvas><span id="play-game-card-preview-fallback" class="play-hand-fallback"></span></aside>
       <div class="play-game-table">
         <div class="play-game-zones-left">
@@ -171,12 +174,50 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       || new RegExp(`${prefix}non-${String(card.terrain).toLowerCase()} terrain\\b`).test(effect);
     return allowed ? 'place' : null;
   }
+  function beginningEffectKind(card) {
+    const effect = String(card?.effect || '').replace(/\s+/g, ' ').trim().toLowerCase();
+    if (card?.title === 'Orchard Warden'
+      && effect === 'at the beginning of your turn fertilize 1 on adjacent node.') return 'orchard_warden';
+    if (card?.title === 'Expansive Ivy'
+      && effect === 'at the beginning of your every turn fertilize an adjacent node with no terrain. then if there are 4 or more adjacent verdant terrains, draw a card.') return 'expansive_ivy';
+    return null;
+  }
+  function beginningEffects() {
+    if (room?.status !== 'active' || room.turn_phase !== 'beginning'
+      || room.turn_player_id !== userId || room.beginning_effects_resolved_turn === room.turn_number) return [];
+    return Object.entries(room.board || {}).filter(([key, node]) => /^[0-4],[0-3]$/.test(key)
+      && node?.entity?.owner_id === userId && beginningEffectKind(node.entity))
+      .map(([source, node]) => ({ source, card: { ...resolveGameCard(node.entity),
+        title: node.entity.title, effect: node.entity.effect } }))
+      .sort((a, b) => Number(a.source.split(',')[1]) - Number(b.source.split(',')[1])
+        || Number(a.source.split(',')[0]) - Number(b.source.split(',')[0]));
+  }
+  function beginningPlan() {
+    const terrain = new Set(Object.entries(room?.board || {}).filter(([, node]) => node?.terrain).map(([key]) => key));
+    const fertilized = new Set(Object.entries(room?.board || {}).filter(([, node]) => node?.fertilize).map(([key]) => key));
+    const plan = new Map();
+    for (const source of beginningOrder) {
+      const [x, y] = source.split(',').map(Number);
+      const options = [[x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]]
+        .filter(([column, row]) => column >= 0 && column <= 4 && row >= 0 && row <= 3)
+        .map(([column, row]) => `${column},${row}`).filter(key => !terrain.has(key));
+      const target = beginningTargets.get(source);
+      const valid = target ? options.includes(target) : options.length === 0;
+      plan.set(source, { options, target, valid });
+      if (target && valid) {
+        if (fertilized.has(target)) { fertilized.delete(target); terrain.add(target); }
+        else fertilized.add(target);
+      }
+    }
+    return plan;
+  }
   function syncEventTargets() {
     for (const cell of $('game-board').children) {
       const node = room?.board?.[cell.dataset.key];
       const legal = Boolean(cell.dataset.key && (
         (pendingEvent && legalEventTarget(pendingEvent.rule[1], node))
-        || (pendingEntity && legalEntityAction(pendingEntity.card, node, cell.dataset.key))));
+        || (pendingEntity && legalEntityAction(pendingEntity.card, node, cell.dataset.key))
+        || (beginningTargetSource && beginningPlan().get(beginningTargetSource)?.options.includes(cell.dataset.key))));
       cell.classList.toggle('is-event-target', legal);
       if (legal || node?.entity) { cell.tabIndex = 0; cell.setAttribute('role', 'button'); }
       else { cell.removeAttribute('tabindex'); cell.removeAttribute('role'); }
@@ -226,12 +267,127 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     next.hidden = phase === 'draw' || (phase === 'main' && (!own || !room?.main_played_card))
       || (own && phase === 'end' && (!gameState || excess > 0));
     next.disabled = !room || room.status !== 'active' || !own || phaseBusy || pendingFestival || phaseIndex < 0
+      || (phase === 'beginning' && beginningEffects().length > 0)
       || (phase === 'beginning' && !gameState);
     syncDiscardBar();
     const extra = $('game-extra-draw');
     extra.hidden = !own || phase !== 'main' || Boolean(room?.main_played_card);
     extra.disabled = phaseBusy || pendingFestival || !Array.isArray(gameState?.horizon) || gameState.horizon.length === 0;
   }
+  function renderBeginningEffects() {
+    const effects = beginningEffects();
+    const panel = $('game-beginning-effects');
+    panel.hidden = effects.length === 0;
+    if (!effects.length) { beginningTargetSource = null; return; }
+    const turnKey = `${room.id}:${room.turn_number}`;
+    const sources = new Set(effects.map(effect => effect.source));
+    if (turnKey !== beginningTurnKey) {
+      beginningTurnKey = turnKey;
+      beginningOrder = effects.map(effect => effect.source);
+      beginningTargets.clear();
+      beginningTargetSource = null;
+    } else {
+      beginningOrder = beginningOrder.filter(source => sources.has(source));
+      for (const effect of effects) if (!beginningOrder.includes(effect.source)) beginningOrder.push(effect.source);
+      for (const source of beginningTargets.keys()) if (!sources.has(source)) beginningTargets.delete(source);
+      if (beginningTargetSource && !sources.has(beginningTargetSource)) beginningTargetSource = null;
+    }
+    const bySource = new Map(effects.map(effect => [effect.source, effect]));
+    const plan = beginningPlan();
+    const rows = beginningOrder.map((source, index) => {
+      const effect = bySource.get(source);
+      const row = document.createElement('li');
+      row.className = `play-beginning-effect${beginningTargetSource === source ? ' is-choosing' : ''}`;
+      row.draggable = !phaseBusy;
+      const heading = document.createElement('div'); heading.className = 'play-beginning-effect-heading';
+      const handle = document.createElement('span'); handle.textContent = '⋮⋮'; handle.setAttribute('aria-hidden', 'true');
+      const title = document.createElement('strong'); title.textContent = `${effect.card.title} · ${source}`;
+      heading.append(handle, title);
+      const description = document.createElement('p'); description.textContent = effect.card.effect || '';
+      const controls = document.createElement('div'); controls.className = 'play-beginning-effect-controls';
+      const { options, target, valid } = plan.get(source);
+      if (options.length) {
+        const choose = document.createElement('button'); choose.type = 'button';
+        choose.textContent = target && valid ? `Node ${target}` : 'Choose Node';
+        choose.disabled = phaseBusy;
+        choose.addEventListener('click', () => {
+          beginningTargetSource = beginningTargetSource === source ? null : source;
+          eventNotice(beginningTargetSource ? `Choose an adjacent empty Node for ${effect.card.title}.` : '');
+          renderBeginningEffects(); syncEventTargets();
+        });
+        controls.append(choose);
+      } else if (target) {
+        const clear = document.createElement('button'); clear.type = 'button'; clear.textContent = 'Clear Node';
+        clear.disabled = phaseBusy;
+        clear.addEventListener('click', () => { beginningTargets.delete(source); renderBeginningEffects(); });
+        controls.append(clear);
+      } else {
+        const unavailable = document.createElement('span'); unavailable.textContent = 'No adjacent empty Node';
+        controls.append(unavailable);
+      }
+      for (const [direction, label] of [[-1, 'Move up'], [1, 'Move down']]) {
+        const move = document.createElement('button'); move.type = 'button';
+        move.textContent = direction < 0 ? '↑' : '↓'; move.setAttribute('aria-label', `${label}: ${effect.card.title}`);
+        move.disabled = phaseBusy || index + direction < 0 || index + direction >= beginningOrder.length;
+        move.addEventListener('click', () => {
+          [beginningOrder[index], beginningOrder[index + direction]] = [beginningOrder[index + direction], beginningOrder[index]];
+          renderBeginningEffects();
+        });
+        controls.append(move);
+      }
+      row.append(heading, description, controls);
+      row.addEventListener('dragstart', event => {
+        event.dataTransfer.effectAllowed = 'move';
+        event.dataTransfer.setData('text/plain', source);
+        row.classList.add('is-dragging');
+      });
+      row.addEventListener('dragend', () => row.classList.remove('is-dragging'));
+      row.addEventListener('dragover', event => { event.preventDefault(); event.dataTransfer.dropEffect = 'move'; });
+      row.addEventListener('drop', event => {
+        event.preventDefault();
+        const dragged = event.dataTransfer.getData('text/plain');
+        const from = beginningOrder.indexOf(dragged);
+        const to = beginningOrder.indexOf(source);
+        if (from < 0 || to < 0 || from === to) return;
+        beginningOrder.splice(from, 1);
+        beginningOrder.splice(to, 0, dragged);
+        renderBeginningEffects();
+      });
+      return row;
+    });
+    $('game-beginning-list').replaceChildren(...rows);
+    $('game-resolve-beginning').disabled = phaseBusy || beginningOrder.some(source => !plan.get(source)?.valid);
+  }
+  async function resolveBeginningEffects() {
+    if (phaseBusy || room?.turn_player_id !== userId || room.turn_phase !== 'beginning') return;
+    const effects = beginningEffects();
+    if (!effects.length || beginningOrder.length !== effects.length) return;
+    const entries = beginningOrder.map(source => ({ source, target: beginningTargets.get(source) || null }));
+    const plan = beginningPlan();
+    if (entries.some(({ source }) => !plan.get(source)?.valid)) return;
+    const expected = epoch, roomId = room.id, turn = room.turn_number;
+    phaseBusy = true;
+    beginningTargetSource = null;
+    renderBeginningEffects(); renderTurnPhase(); syncEventTargets();
+    try {
+      const result = await rpc('play_resolve_beginning_entity_effects', {
+        p_room_id: roomId, p_expected_turn: turn, p_effects: entries,
+      });
+      if (expected !== epoch || room?.id !== roomId) return;
+      await refreshRoom();
+      if (expected === epoch && room?.id === roomId) await loadGameState(true);
+      eventNotice(`${effects.length} Entity effect${effects.length === 1 ? '' : 's'} resolved${result?.drawn ? `; drew ${result.drawn} card${result.drawn === 1 ? '' : 's'}` : ''}.`, true);
+    } catch (error) {
+      if (expected === epoch && room?.id === roomId) {
+        await refreshRoom().catch(() => {});
+        message(friendly(error), true);
+      }
+    } finally {
+      phaseBusy = false;
+      renderBeginningEffects(); renderTurnPhase(); syncEventTargets();
+    }
+  }
+  $('game-resolve-beginning').addEventListener('click', () => void resolveBeginningEffects());
   function clearDrawFlight() {
     activeDrawFlight?.remove();
     activeDrawFlight = null;
@@ -995,6 +1151,15 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     void evokeEvent(event.card, event.handIndex, column, row);
   }
   function chooseBoardTarget(column, row, source) {
+    if (beginningTargetSource) {
+      const target = `${column},${row}`;
+      if (!beginningPlan().get(beginningTargetSource)?.options.includes(target)) return;
+      beginningTargets.set(beginningTargetSource, target);
+      beginningTargetSource = null;
+      eventNotice('');
+      renderBeginningEffects(); syncEventTargets();
+      return;
+    }
     if (pendingEvent) { chooseEventTarget(column, row); return; }
     const entity = pendingEntity;
     if (!entity) {
@@ -1205,6 +1370,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       nodes.push(cell);
     }
     $('game-board').replaceChildren(...nodes);
+    renderBeginningEffects();
     syncEventTargets();
     requestAnimationFrame(syncZoneCardSize);
     $('game-loading').hidden = Boolean(gameState) || gameLoadFailed;
