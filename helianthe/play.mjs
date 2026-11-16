@@ -49,6 +49,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       </div>
       <div class="play-game-board-wrap">
       <div id="play-game-event-notice" class="play-game-event-notice" role="status" aria-live="polite" hidden><span id="play-game-event-notice-text"></span><button id="play-game-event-notice-close" type="button" aria-label="Dismiss message" hidden>×</button></div>
+      <div id="play-game-discard-bar" class="play-game-discard-bar" hidden><strong id="play-game-discard-text" role="status" aria-live="polite"></strong><button id="play-game-confirm-discard" type="button" disabled>Confirm Discard</button></div>
       <aside id="play-game-beginning-effects" class="play-beginning-effects" aria-label="Beginning of Turn Entity effects" hidden><strong>Beginning of Turn effects</strong><p>Drag effects into the order you want. Choose an adjacent empty Node for each effect.</p><ol id="play-game-beginning-list"></ol><button id="play-game-resolve-beginning" type="button">Resolve effects in this order</button></aside>
       <aside id="play-game-card-preview" class="play-game-card-preview" aria-label="Card preview" hidden><button id="play-game-card-preview-close" class="play-game-card-preview-close action-delete" type="button" aria-label="Close card preview">×</button><canvas id="play-game-card-preview-canvas" hidden></canvas><span id="play-game-card-preview-fallback" class="play-hand-fallback"></span></aside>
       <div class="play-game-table">
@@ -77,7 +78,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       </aside></div>
       <div class="play-game-player-block">
       <div class="play-game-self-identity play-game-player-identity"><strong id="play-game-self-name"></strong><span id="play-game-self-presence" class="play-away-pill" hidden></span></div>
-      <div id="play-game-discard-bar" class="play-game-discard-bar" hidden><strong id="play-game-discard-text" role="status" aria-live="polite"></strong><button id="play-game-confirm-discard" type="button" disabled>Confirm Discard</button></div>
       <section id="play-game-self" class="play-surface play-game-seat" aria-label="Your area">
         <span id="play-game-hand-count" class="play-game-hand-count" aria-live="polite" hidden></span>
         <div class="play-game-hand-wrap"><p id="play-game-loading" role="status">Preparing the opening hands…</p><div id="play-game-hand" class="play-game-hand"></div></div>
@@ -93,7 +93,11 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     root.style.setProperty('--play-map-card-width', `${width}px`);
     root.style.setProperty('--play-map-card-height', `${height}px`);
     const boardWrap = root.querySelector('.play-game-board-wrap');
-    $('game-event-notice').style.top = `${bounds.top - boardWrap.getBoundingClientRect().top - 8}px`;
+    const wrapBounds = boardWrap.getBoundingClientRect();
+    const boardBounds = $('game-board').getBoundingClientRect();
+    $('game-event-notice').style.top = `${bounds.top - wrapBounds.top - 8}px`;
+    $('game-discard-bar').style.left = `${boardBounds.left + boardBounds.width / 2 - wrapBounds.left}px`;
+    $('game-discard-bar').style.top = `${boardBounds.top + boardBounds.height / 2 - wrapBounds.top}px`;
   }
   if (typeof ResizeObserver === 'function') {
     new ResizeObserver(syncZoneCardSize).observe($('game-board'));
