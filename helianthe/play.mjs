@@ -43,13 +43,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     </section>
     <section id="play-game" hidden>
       <div class="play-game-player-block">
-      <section id="play-game-opponent" class="play-surface play-game-seat" aria-label="Opponent's area">
-        <span id="play-game-opponent-hand-count" class="play-game-hand-count" aria-live="polite" hidden></span>
-        <div class="play-game-opponent-row">
-          <div id="play-game-opponent-hand" class="play-game-opponent-hand" role="group" aria-label="Opponent's five face-down cards" hidden><span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span></div>
-        </div>
-      </section>
-      <div class="play-game-opponent-footer"><div class="play-game-opponent-identity play-game-player-identity"><strong id="play-game-opponent-name"></strong><span id="play-game-opponent-presence" class="play-away-pill" hidden></span></div><div class="play-game-actions"><details class="play-table-menu"><summary class="play-menu-toggle" aria-label="Table actions" title="Table actions"><svg class="play-menu-bars" aria-hidden="true" viewBox="0 0 22 22"><path d="M3 5h16 M3 11h16 M3 17h16"/></svg></summary><div class="play-table-menu-panel"><strong id="play-game-name" class="play-menu-table-name"></strong><button id="play-game-back" class="play-menu-lobby" type="button">Back to Lobby</button><button id="play-game-restart" type="button">Restart</button><button id="play-game-leave" type="button">Smash Table</button></div></details></div></div>
+      <div class="play-game-opponent-footer"><div class="play-game-opponent-identity play-game-player-identity"><div class="play-game-identity-name"><strong id="play-game-opponent-name"></strong><span id="play-game-opponent-presence" class="play-away-pill" hidden></span></div><span id="play-game-opponent-hand-count" class="play-game-hand-count" aria-live="polite" hidden></span></div><div class="play-game-actions"><details class="play-table-menu"><summary class="play-menu-toggle" aria-label="Table actions" title="Table actions"><svg class="play-menu-bars" aria-hidden="true" viewBox="0 0 22 22"><path d="M3 5h16 M3 11h16 M3 17h16"/></svg></summary><div class="play-table-menu-panel"><strong id="play-game-name" class="play-menu-table-name"></strong><button id="play-game-back" class="play-menu-lobby" type="button">Back to Lobby</button><button id="play-game-restart" type="button">Restart</button><button id="play-game-leave" type="button">Smash Table</button></div></details></div></div>
       </div>
       <div class="play-game-board-wrap">
       <div id="play-game-event-notice" class="play-game-event-notice" role="status" aria-live="polite" hidden><span id="play-game-event-notice-text"></span><button id="play-game-event-notice-close" type="button" aria-label="Dismiss message" hidden>×</button></div>
@@ -82,9 +76,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       </aside></div>
       <div id="play-game-archive-browser" class="play-archive-browser" hidden><div class="play-archive-browser-backdrop"></div><section class="play-archive-browser-panel" role="dialog" aria-modal="true" aria-labelledby="play-game-archive-browser-title"><header><div><h2 id="play-game-archive-browser-title">Archive</h2><p id="play-game-archive-browser-status" role="status" aria-live="polite"></p></div><button id="play-game-archive-browser-close" class="play-archive-browser-close" type="button" aria-label="Close Archive">×</button></header><div class="play-archive-browser-body"><div class="play-archive-browser-view"><div class="play-archive-browser-card"><canvas id="play-game-archive-browser-canvas" hidden></canvas><span id="play-game-archive-browser-fallback"></span></div><div class="play-archive-browser-navigation"><button id="play-game-archive-browser-previous" type="button">Previous</button><span id="play-game-archive-browser-position"></span><button id="play-game-archive-browser-next" type="button">Next</button></div></div><ol id="play-game-archive-browser-list" class="play-archive-browser-list" aria-label="Cards in Archive"></ol></div></section></div>
       <div class="play-game-player-block">
-      <div class="play-game-self-identity play-game-player-identity"><strong id="play-game-self-name"></strong><span id="play-game-self-presence" class="play-away-pill" hidden></span></div>
+      <div class="play-game-self-identity play-game-player-identity"><div class="play-game-identity-name"><strong id="play-game-self-name"></strong><span id="play-game-self-presence" class="play-away-pill" hidden></span></div><span id="play-game-hand-count" class="play-game-hand-count" aria-live="polite" hidden></span></div>
       <section id="play-game-self" class="play-surface play-game-seat" aria-label="Your area">
-        <span id="play-game-hand-count" class="play-game-hand-count" aria-live="polite" hidden></span>
         <div class="play-game-hand-wrap"><p id="play-game-loading" role="status">Preparing the opening hands…</p><div id="play-game-hand" class="play-game-hand"></div></div>
       </section>
       </div>
@@ -604,7 +597,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       if (!menu.contains(event.target)) menu.open = false;
     }
     if (event.button !== 0 || $('game').hidden || !selectedGameCard) return;
-    if (event.target.closest('.play-hand-card, .play-game-patron-slot, .play-game-card-preview, .play-game-archive-card, .play-deck-stack, .play-game-opponent-hand span, .play-game-node.has-entity, .play-game-node.is-event-target')) return;
+    if (event.target.closest('.play-hand-card, .play-game-patron-slot, .play-game-card-preview, .play-game-archive-card, .play-deck-stack, .play-game-node.has-entity, .play-game-node.is-event-target')) return;
     hideCardPreview();
   });
   document.addEventListener('keydown', event => {
@@ -1598,7 +1591,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     syncEventTargets();
     requestAnimationFrame(syncZoneCardSize);
     $('game-loading').hidden = Boolean(gameState) || gameLoadFailed;
-    const opponentHand = $('game-opponent-hand');
     const reportedCount = room.host_id === userId ? room.guest_hand_count : room.host_hand_count;
     const opponentHandCount = Number.isInteger(reportedCount) ? Math.max(0, Math.min(reportedCount, 100)) : 5;
     const opponentBadge = $('game-opponent-hand-count');
@@ -1607,15 +1599,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       opponentBadge.textContent = `Hand Size: ${opponentHandCount}`;
       opponentBadge.setAttribute('aria-label', `${opponentHandCount} cards in the opponent's hand`);
     }
-    if (opponentHand.childElementCount !== opponentHandCount) {
-      opponentHand.replaceChildren(...Array.from({ length: opponentHandCount }, () => {
-        const back = document.createElement('span');
-        back.setAttribute('aria-hidden', 'true');
-        return back;
-      }));
-    }
-    opponentHand.setAttribute('aria-label', `Opponent's ${opponentHandCount} face-down cards`);
-    opponentHand.hidden = !gameState;
     const horizon = Array.isArray(gameState?.horizon) ? gameState.horizon : [];
     const archive = Array.isArray(gameState?.archive) ? gameState.archive : [];
     const handCount = pendingFestival?.hand.length ?? (Array.isArray(gameState?.hand) ? gameState.hand.length : null);
