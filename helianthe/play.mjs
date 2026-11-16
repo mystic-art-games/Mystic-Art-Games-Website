@@ -12,6 +12,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   let busy = false, epoch = 0, fetchSerial = 0, live = false, lastHeartbeat = 0, autoDeckPending = false;
   let gameState = null, gameLoading = false, gameLoadFailed = false, gameReloadPending = false, handSignature = '', gameRenderSerial = 0, boardRenderSerial = 0, cardPreviewSerial = 0;
   let phaseBusy = false, selectedCardElement = null, patronDeckRequest = '', patronDeckLoadedAt = 0;
+  let openingRollBusy = false, openingRollError = '', openingMatchKey = '', openingWasRolling = false;
+  let openingRevealTimer = null, openingTieTimer = null, openingTieRound = 0, openingPanelAnimatedKey = '';
+  const openingAnimatedValues = { host: null, guest: null };
   let drawRetryAt = 0, activeDrawFlight = null, activeHandShifts = [];
   let beginningTurnKey = '', beginningOrder = [], beginningTargetSource = null;
   const beginningTargets = new Map();
@@ -24,6 +27,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   const gameDeckPatrons = new Map(), gamePlayerPatrons = new Map();
   const patronPreviews = { self: { key: '', serial: 0 }, opponent: { key: '', serial: 0 } };
   const archivePreviews = { self: { key: null, serial: 0 }, opponent: { key: null, serial: 0 } };
+  const diePips = Array.from({ length: 9 }, () => '<span></span>').join('');
   root.innerHTML = `
     <div class="play-heading"><h1>Lobby</h1></div>
     <div id="play-message" role="status" aria-live="polite" hidden><span id="play-message-text"></span><button id="play-message-close" type="button" aria-label="Dismiss message">×</button></div>
@@ -61,7 +65,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
           <div class="play-game-zone play-game-zone-self-patron"><button id="play-game-self-patron-slot" class="play-game-patron-slot" type="button" aria-label="Preview your Patron"><canvas id="play-game-self-patron" hidden></canvas><span id="play-game-self-patron-fallback" class="play-game-patron-fallback" aria-hidden="true"></span></button></div>
         </div>
       </div>
-      <aside id="play-game-phases" class="play-game-phases" aria-label="Turn phases">
+      <aside id="play-game-phases" class="play-game-phases" aria-label="Turn phases" hidden>
         <p id="play-game-turn-owner" class="play-game-turn-owner" aria-live="polite"></p>
         <ol class="play-game-phase-list">
           <li data-phase="0"><span class="play-game-phase-marker" aria-hidden="true"></span>Beginning of Turn</li>
@@ -74,6 +78,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
           <button id="play-game-next-phase" class="play-game-next-phase" type="button">Next Phase</button>
         </div>
       </aside></div>
+      <div id="play-opening-roll" class="play-opening-roll" role="dialog" aria-modal="true" aria-labelledby="play-opening-roll-title" hidden><div class="play-opening-roll-panel"><p class="play-eyebrow">WHO GOES FIRST?</p><h2 id="play-opening-roll-title">Opening Dice</h2><p id="play-opening-roll-status" class="play-opening-roll-status" role="status" aria-live="polite"></p><div class="play-opening-dice"><div class="play-opening-die-seat"><strong id="play-opening-host-name"></strong><div id="play-opening-host-die" class="play-opening-die" aria-label="Host has not rolled">${diePips}</div></div><div class="play-opening-die-seat"><strong id="play-opening-guest-name"></strong><div id="play-opening-guest-die" class="play-opening-die" aria-label="Guest has not rolled">${diePips}</div></div></div><button id="play-opening-roll-button" type="button">Roll a Dice</button><p id="play-opening-roll-error" class="play-opening-roll-error" role="alert" hidden></p></div></div>
       <div id="play-game-archive-browser" class="play-archive-browser" hidden><div class="play-archive-browser-backdrop"></div><section class="play-archive-browser-panel" role="dialog" aria-modal="true" aria-labelledby="play-game-archive-browser-title"><header><div><h2 id="play-game-archive-browser-title">Archive</h2><p id="play-game-archive-browser-status" role="status" aria-live="polite"></p></div><button id="play-game-archive-browser-close" class="play-archive-browser-close" type="button" aria-label="Close Archive">×</button></header><div class="play-archive-browser-body"><div class="play-archive-browser-view"><div class="play-archive-browser-card"><canvas id="play-game-archive-browser-canvas" hidden></canvas><span id="play-game-archive-browser-fallback"></span></div><div class="play-archive-browser-navigation"><button id="play-game-archive-browser-previous" type="button">Previous</button><span id="play-game-archive-browser-position"></span><button id="play-game-archive-browser-next" type="button">Next</button></div></div><ol id="play-game-archive-browser-list" class="play-archive-browser-list" aria-label="Cards in Archive"></ol></div></section></div>
       <div class="play-game-player-block">
       <div class="play-game-self-identity play-game-player-identity"><div class="play-game-identity-name"><strong id="play-game-self-name"></strong><span id="play-game-self-presence" class="play-away-pill" hidden></span></div><span id="play-game-hand-count" class="play-game-hand-count" aria-live="polite" hidden></span></div>
@@ -274,6 +279,106 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     extra.hidden = !own || phase !== 'main' || Boolean(room?.main_played_card);
     extra.disabled = phaseBusy || pendingFestival || !Array.isArray(gameState?.horizon) || gameState.horizon.length === 0;
   }
+  function renderOpeningRoll() {
+    const overlay = $('opening-roll');
+    const phases = $('game-phases');
+    const key = room?.status === 'active' ? `${room.id}:${room.activated_at || ''}` : '';
+    if (key !== openingMatchKey) {
+      openingMatchKey = key;
+      openingWasRolling = false;
+      openingRollBusy = false;
+      openingRollError = '';
+      openingTieRound = 0;
+      openingAnimatedValues.host = null;
+      openingAnimatedValues.guest = null;
+      clearTimeout(openingRevealTimer);
+      clearTimeout(openingTieTimer);
+      openingRevealTimer = openingTieTimer = null;
+    }
+    const rolling = room?.status === 'active' && room.turn_phase === 'roll' && room.opening_roll_round > 0;
+    if (rolling) openingWasRolling = true;
+    const revealing = !rolling && openingWasRolling && room?.turn_number === 1;
+    overlay.hidden = !rolling && !revealing;
+    phases.hidden = rolling || revealing;
+    if (!overlay.hidden && revealing && !openingRevealTimer) {
+      openingRevealTimer = setTimeout(() => {
+        openingRevealTimer = null;
+        openingWasRolling = false;
+        renderOpeningRoll();
+      }, 1800);
+    }
+    if (overlay.hidden) {
+      if (!phases.hidden && key && openingPanelAnimatedKey !== key && room?.turn_number === 1) {
+        openingPanelAnimatedKey = key;
+        phases.classList.add('is-appearing');
+        setTimeout(() => phases.classList.remove('is-appearing'), 650);
+      }
+      return;
+    }
+    const tie = room.opening_last_tie;
+    if (rolling && tie?.round === room.opening_roll_round - 1 && tie.round !== openingTieRound) {
+      openingTieRound = tie.round;
+      openingTieTimer = setTimeout(() => { openingTieTimer = null; renderOpeningRoll(); }, 1600);
+    }
+    const showTie = rolling && tie?.round === openingTieRound && Boolean(openingTieTimer);
+    const hostRoll = showTie ? tie.host : room.opening_host_roll;
+    const guestRoll = showTie ? tie.guest : room.opening_guest_roll;
+    const hostName = getProfiles().find(person => person.id === room.host_id)?.display_name || 'Host';
+    const guestName = getProfiles().find(person => person.id === room.guest_id)?.display_name || 'Guest';
+    $('opening-host-name').textContent = `${hostName}${room.host_id === userId ? ' · You' : ''}`;
+    $('opening-guest-name').textContent = `${guestName}${room.guest_id === userId ? ' · You' : ''}`;
+    for (const [seat, value] of [['host', hostRoll], ['guest', guestRoll]]) {
+      const die = $(`opening-${seat}-die`);
+      const previous = openingAnimatedValues[seat];
+      die.dataset.value = String(value || 0);
+      die.setAttribute('aria-label', value ? `${seat === 'host' ? hostName : guestName} rolled ${value}` : `${seat === 'host' ? hostName : guestName} has not rolled`);
+      if (!value) die.classList.remove('is-landing');
+      die.classList.toggle('is-rolling', rolling && openingRollBusy && room[`${seat}_id`] === userId);
+      if (value && value !== previous) {
+        die.classList.remove('is-landing');
+        void die.offsetWidth;
+        die.classList.add('is-landing');
+      }
+      openingAnimatedValues[seat] = value;
+    }
+    const ownSeat = room.host_id === userId ? 'host' : 'guest';
+    const ownRolled = room[`opening_${ownSeat}_roll`] != null;
+    const button = $('opening-roll-button');
+    button.hidden = !rolling || ownRolled || showTie;
+    button.disabled = openingRollBusy;
+    $('opening-roll-status').textContent = revealing
+      ? room.turn_player_id === userId ? 'You rolled higher. Your Main Phase begins!' : `${room.turn_player_id === room.host_id ? hostName : guestName} rolled higher and begins.`
+      : showTie ? `Tie: ${tie.host}–${tie.guest}. Roll again!`
+      : ownRolled ? 'Your die is down. Waiting for the other player.'
+      : room.opening_host_roll || room.opening_guest_roll ? 'The other player has rolled. Roll your die!' : 'Each player rolls one die. Higher result starts.';
+    $('opening-roll-error').hidden = !openingRollError;
+    $('opening-roll-error').textContent = openingRollError;
+  }
+  async function rollOpeningDie() {
+    if (openingRollBusy || !room || room.turn_phase !== 'roll') return;
+    const seat = room.host_id === userId ? 'host' : 'guest';
+    if (room[`opening_${seat}_roll`] != null || openingTieTimer) return;
+    const expected = epoch, roomId = room.id, round = room.opening_roll_round;
+    openingRollBusy = true;
+    openingRollError = '';
+    renderOpeningRoll();
+    try {
+      await Promise.all([
+        rpc('play_roll_dice', { p_room_id: roomId, p_expected_round: round }),
+        new Promise(resolve => setTimeout(resolve, 850)),
+      ]);
+      if (expected === epoch && room?.id === roomId) await refreshRoom();
+    } catch (error) {
+      if (expected === epoch && room?.id === roomId) {
+        openingRollError = friendly(error);
+        await refreshRoom().catch(() => {});
+      }
+    } finally {
+      openingRollBusy = false;
+      if (expected === epoch && room?.id === roomId) renderOpeningRoll();
+    }
+  }
+  $('opening-roll-button').addEventListener('click', () => void rollOpeningDie());
   function renderBeginningEffects() {
     const effects = beginningEffects();
     const panel = $('game-beginning-effects');
@@ -1628,6 +1733,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     updateAwayDisplays();
     renderGameHand();
     renderTurnPhase();
+    renderOpeningRoll();
     if (gameState && room.turn_player_id === userId && room.turn_phase === 'draw' && !phaseBusy) {
       queueMicrotask(() => void finishDrawPhase());
     }
