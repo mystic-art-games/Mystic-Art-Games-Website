@@ -394,6 +394,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     for (const menu of root.querySelectorAll('.play-table-menu[open]')) {
       if (!menu.contains(event.target)) menu.open = false;
     }
+    if (event.button !== 0 || $('game').hidden || !selectedGameCard) return;
+    if (event.target.closest('.play-hand-card, .play-game-patron-slot, .play-game-card-preview, .play-game-archive-card, .play-deck-stack, .play-game-opponent-hand span, .play-game-node.has-entity, .play-game-node.is-event-target')) return;
+    hideCardPreview();
   });
   document.addEventListener('keydown', event => {
     if (event.key === 'Escape') {
