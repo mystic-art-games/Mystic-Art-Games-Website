@@ -841,7 +841,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   function controls() {
     $('create').disabled = busy;
     for (const b of $('room-list').querySelectorAll('button')) b.disabled = busy || b.dataset.full === 'true';
-    $('deck').disabled = !canAct() || ownReady() || !getDecks().length;
+    const deckLocked = Boolean(ownReady());
+    $('deck').disabled = !canAct() || deckLocked || !getDecks().length;
+    $('deck').title = deckLocked ? 'Click Not ready to change your deck.' : '';
+    deckField.classList.toggle('is-locked', deckLocked);
     $('ready').disabled = !canAct() || (!ownReady() && !$('deck').value);
     $('edit-name').disabled = !canAct() || room?.host_id !== userId;
     $('back').disabled = busy || !room;

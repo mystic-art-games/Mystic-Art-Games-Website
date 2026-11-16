@@ -74,6 +74,10 @@ body.dark-mode #play-session .play-menu-toggle:hover, body.dark-mode #play-sessi
 .play-player-controls { display: flex; align-items: end; gap: .75rem; min-width: 0; }
 .play-deck-field { display: block; flex: 1 1 220px; min-width: 0; max-width: 310px; margin-top: .45rem; font-size: .8rem; font-weight: 700; }
 .play-deck-field select { display: block; width: 100%; margin-top: .25rem; }
+.play-deck-field.is-locked { color: #6c786f; }
+.play-deck-field.is-locked select { border-color: #a6b1a8; background: #dfe3dd; color: #6c786f; opacity: .7; filter: grayscale(1); cursor: not-allowed; }
+body.dark-mode .play-deck-field.is-locked { color: #9caa9d; }
+body.dark-mode .play-deck-field.is-locked select { border-color: #596d5d; background: #243b2f; color: #9caa9d; }
 #play-ready { flex: 0 0 auto; margin: 0; }
 #play-room-status { margin: 1rem 0 0; font-size: .85rem; }
 #play-game[hidden], #play-game-loading[hidden], #play-game-card-detail[hidden] { display: none; }
