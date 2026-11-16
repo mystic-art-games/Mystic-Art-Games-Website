@@ -130,7 +130,7 @@ body.dark-mode #play-back { color: #e5eee0; }
 .play-game-archive-card span { padding: .3rem; }
 .play-game-node { position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: .15rem; min-width: 0; min-height: 0; padding: .2rem; overflow: hidden; border: 1px dashed #d5b88a9c; border-radius: 6px; background: #f8e8c814; text-align: center; }
 .play-game-node.has-entity { z-index: 2; overflow: visible; }
-.play-node-entity-card { position: absolute; z-index: 2; top: 10%; left: 10%; box-sizing: border-box; width: 100%; height: 100%; overflow: hidden; border: 1px solid #e5d9bb; border-radius: 5px; background: #e9ece1; box-shadow: 0 5px 10px #0b251bbb; pointer-events: none; }
+.play-node-entity-card { position: absolute; z-index: 2; top: 10%; left: 10%; box-sizing: border-box; width: 100%; height: 100%; overflow: hidden; border: 1px solid #e5d9bb; border-radius: 5px; background: #e9ece1; box-shadow: 0 5px 10px #0b251bbb; cursor: pointer; }
 .play-node-entity-card.is-arriving { visibility: hidden; }
 .play-node-entity-card canvas { display: block; width: 100%; height: 100%; object-fit: fill; }
 .play-node-entity-card canvas[hidden], .play-node-entity-card span[hidden] { display: none; }

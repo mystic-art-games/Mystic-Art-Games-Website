@@ -178,7 +178,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         (pendingEvent && legalEventTarget(pendingEvent.rule[1], node))
         || (pendingEntity && legalEntityAction(pendingEntity.card, node, cell.dataset.key))));
       cell.classList.toggle('is-event-target', legal);
-      if (legal) { cell.tabIndex = 0; cell.setAttribute('role', 'button'); }
+      if (legal || node?.entity) { cell.tabIndex = 0; cell.setAttribute('role', 'button'); }
       else { cell.removeAttribute('tabindex'); cell.removeAttribute('role'); }
     }
   }
@@ -989,10 +989,15 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     syncEventTargets();
     void evokeEvent(event.card, event.handIndex, column, row);
   }
-  function chooseBoardTarget(column, row) {
+  function chooseBoardTarget(column, row, source) {
     if (pendingEvent) { chooseEventTarget(column, row); return; }
     const entity = pendingEntity;
-    if (!entity || !legalEntityAction(entity.card, room?.board?.[`${column},${row}`], `${column},${row}`)) return;
+    if (!entity) {
+      const placed = room?.board?.[`${column},${row}`]?.entity;
+      if (placed) toggleCardPreview(resolveGameCard(placed), source);
+      return;
+    }
+    if (!legalEntityAction(entity.card, room?.board?.[`${column},${row}`], `${column},${row}`)) return;
     pendingEntity = null;
     syncEventTargets();
     void playEntity(entity.card, entity.handIndex, column, row);
@@ -1188,9 +1193,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       cell.setAttribute('aria-label', node?.terrain ? `${node.terrain} Terrain at row ${row + 1}, column ${column + 1}${node.entity ? `, ${node.entity.title || 'Entity'} placed here` : ''}, ${node.lumens || 0} Lumens${node.protected ? ', Protected' : ''}${node.crisis ? ', Crisis' : ''}`
         : node?.fertilize ? `${node.fertilize.owner_id === userId ? 'Your' : "Opponent's"} Fertilize marker on empty space at row ${row + 1}, column ${column + 1}`
           : `${isCenter ? 'Center empty space' : 'Empty space'} at row ${row + 1}, column ${column + 1}`);
-      cell.addEventListener('click', () => chooseBoardTarget(column, row));
+      cell.addEventListener('click', () => chooseBoardTarget(column, row, cell));
       cell.addEventListener('keydown', event => {
-        if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); chooseBoardTarget(column, row); }
+        if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); chooseBoardTarget(column, row, cell); }
       });
       nodes.push(cell);
     }
