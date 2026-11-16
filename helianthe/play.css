@@ -80,7 +80,7 @@ body.dark-mode #play-session .play-menu-toggle:hover, body.dark-mode #play-sessi
 .play-table-menu-panel .play-menu-lobby { margin-bottom: .4rem; border: 1px solid #a4b6a5; background: #fff; color: #214b38; box-shadow: none; }
 .play-table-menu-panel .play-menu-lobby:hover { background: #eaf2e9; box-shadow: none; }
 .play-menu-table-name { display: block; margin: .15rem .3rem .6rem; padding-bottom: .55rem; border-bottom: 1px solid #d2dfd1; font-size: .95rem; line-height: 1.25; overflow-wrap: anywhere; }
-#play-game .play-table-menu-panel { padding: .55rem; border-color: #123c2d; border-radius: 12px; background: #1b352bd9; color: #f5f2e8; box-shadow: inset 0 1px 0 #fff2cf36, 0 4px 12px #130b0a55; backdrop-filter: none; }
+#play-game .play-table-menu-panel { padding: .55rem; border-color: #123c2d; border-radius: 12px; background: #1b352b; color: #f5f2e8; box-shadow: inset 0 1px 0 #fff2cf36, 0 4px 12px #130b0a55; backdrop-filter: none; }
 #play-game .play-menu-table-name { border-bottom-color: rgba(132, 177, 139, .55); color: #fff8e8; }
 #play-game .play-table-menu-panel button { padding: .7rem .85rem; border-color: transparent; border-radius: 8px; background: transparent; color: #fff8e8; box-shadow: none; text-align: center; }
 #play-game .play-table-menu-panel button:hover:not(:disabled), #play-game .play-table-menu-panel button:focus-visible { border-color: transparent; background: transparent; color: #f2c96b; box-shadow: none; }
