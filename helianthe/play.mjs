@@ -817,7 +817,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   function controls() {
     $('create').disabled = busy;
     for (const b of $('room-list').querySelectorAll('button')) b.disabled = busy || b.dataset.full === 'true';
-    $('deck').disabled = !canAct() || !getDecks().length;
+    $('deck').disabled = !canAct() || ownReady() || !getDecks().length;
     $('ready').disabled = !canAct() || (!ownReady() && !$('deck').value);
     $('edit-name').disabled = !canAct() || room?.host_id !== userId;
     $('back').disabled = busy || !room;
@@ -832,7 +832,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   function maybeAutoSelectDeck() {
     const first = getDecks()[0];
-    if (!room || !userId || room.status === 'closed' || room.activated_at || (room.host_id !== userId && room.guest_id !== userId)
+    if (!room || !userId || room.status === 'closed' || room.activated_at || ownReady() || (room.host_id !== userId && room.guest_id !== userId)
       || !first || getDecks().some(deck => deck.id === ownDeckId())) { autoDeckPending = false; return; }
     if (busy) { autoDeckPending = true; return; }
     autoDeckPending = false;
@@ -2083,6 +2083,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   $('leave').addEventListener('click', () => run(leaveTable));
   $('game-leave').addEventListener('click', () => run(leaveTable));
   $('deck').addEventListener('change', () => {
+    if (busy || ownReady()) { $('deck').value = ownDeckId() || ''; return; }
     if ($('deck').value) void run(() => action('deck', { deck_id: $('deck').value }));
   });
   $('ready').addEventListener('click', () => {
