@@ -261,7 +261,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     $('game-turn-owner').textContent = !room?.turn_player_id ? 'Turn setup pending' : own ? 'Your turn' : "Opponent's turn";
     for (const step of root.querySelectorAll('.play-game-phase-list li')) {
       const active = Number(step.dataset.phase) === phaseIndex;
+      const skipped = room?.turn_number === 1 && phaseIndex >= 2 && Number(step.dataset.phase) < 2;
       step.classList.toggle('is-current', active);
+      step.classList.toggle('is-skipped', skipped);
+      step.title = skipped ? 'Skipped on the first turn' : '';
       if (active) step.setAttribute('aria-current', 'step');
       else step.removeAttribute('aria-current');
     }

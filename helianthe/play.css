@@ -277,6 +277,7 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
 .play-game-phase-list { display: grid; gap: .35rem; margin: .65rem 0 0; padding: 0; list-style: none; }
 .play-game-phase-list li { display: flex; align-items: center; gap: .4rem; min-height: 2rem; padding: .35rem .4rem; border: 1px solid #8a9b80; border-radius: 7px; background: #264638; color: #f5f2e8; font-size: .75rem; font-weight: 700; line-height: 1.15; }
 .play-game-phase-list li.is-current { border-color: var(--play-phase-color); background: #305443; }
+.play-game-phase-list li.is-skipped { opacity: .42; filter: grayscale(1); }
 .play-game-discard-bar { position: absolute; z-index: 22; top: 50%; left: 50%; display: flex; align-items: center; justify-content: space-between; gap: .65rem; box-sizing: border-box; width: min(28rem, calc(100% - 1rem)); margin: 0; padding: .45rem .65rem; transform: translate(-50%, -50%); border: 1px solid #c07770; border-radius: 9px; background: #713e3bef; color: #fff; box-shadow: 0 4px 12px #130b0a55; }
 .play-game-discard-bar[hidden] { display: none; }
 .play-game-discard-bar strong { font-size: .82rem; line-height: 1.25; }
