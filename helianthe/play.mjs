@@ -149,11 +149,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   function canCreateTerrainAt(key) {
     if (!key) return false;
     const [x, y] = key.split(',').map(Number);
-    if (!Number.isInteger(x) || !Number.isInteger(y) || x < 0 || x > 4 || y < 0 || y > 3) return false;
-    const board = room?.board || {};
-    const hasTerrain = Object.entries(board).some(([position, node]) => /^[0-4],[0-3]$/.test(position) && node?.terrain);
-    return !hasTerrain || [[x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]]
-      .some(([column, row]) => Boolean(board[`${column},${row}`]?.terrain));
+    return Number.isInteger(x) && Number.isInteger(y) && x >= 0 && x <= 4 && y >= 0 && y <= 3;
   }
   function entityShapeTerrain(card) {
     const effect = String(card?.effect || '').replace(/\s+/g, ' ').toLowerCase();
