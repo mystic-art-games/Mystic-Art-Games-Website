@@ -233,14 +233,15 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
 #play-view:has(#play-game:not([hidden])) { display: flex; flex-direction: column; width: 100%; max-width: none; height: 100dvh; margin: 0; padding: clamp(.3rem, 1vh, .7rem); border: 0; border-radius: 0; background: transparent; box-shadow: none; }
 #play-game:not([hidden]) { --play-preview-gutter: clamp(170px, 22vw, 330px); display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: .25rem; flex: 1; min-height: 0; color: #fff7e8; }
 #play-game .play-game-seat { padding: .2rem .65rem; border-color: #effff048; background: #effff01c; color: #fff7e8; backdrop-filter: blur(10px) saturate(1.15); -webkit-backdrop-filter: blur(10px) saturate(1.15); box-shadow: inset 0 1px 0 #ffffff47, 0 5px 16px #0e241a2e; }
-.play-game-hand-count { color: #fff7e8; font-size: .76rem; font-weight: 800; line-height: 1.2; white-space: nowrap; }
+.play-game-hand-count { display: inline-flex; align-items: center; gap: .5rem; width: max-content; color: #fff7e8; font-size: .76rem; font-weight: 800; line-height: 1.2; white-space: nowrap; }
+.play-game-hand-count::after { content: attr(data-count); display: grid; place-items: center; min-width: 1.4rem; height: 1.4rem; box-sizing: border-box; padding: 0 .16rem; border: 1px solid #b9d4c1; border-radius: 999px; background: #1b352b; color: #fff; font-size: .72rem; font-weight: 800; line-height: 1; box-shadow: 0 2px 7px #0e241a88; }
 .play-game-hand-count[hidden] { display: none; }
 #play-game .play-menu-toggle { width: 2.5rem; height: 2.5rem; padding: 0; border-color: #123c2d; border-radius: 10px; background: #1b352bd9; color: #f5f2e8; box-shadow: inset 0 1px 0 #fff2cf36, 0 4px 12px #130b0a55; backdrop-filter: none; }
 #play-game .play-menu-toggle:hover, #play-game .play-table-menu[open] .play-menu-toggle { border-color: #123c2d; background: #305443; color: #f2c96b; }
 #play-game .play-menu-toggle:focus-visible { outline-color: #e0e3e3; }
 #play-game .play-game-player-block { min-height: 0; }
 #play-game .play-game-hand { gap: 1.1rem; padding: .4rem .3rem; }
-#play-game .play-hand-item { flex-basis: clamp(80px, min(15.5vh, 12vw), 140px); }
+#play-game .play-hand-item { flex-basis: clamp(96px, min(19vh, 14vw), 180px); }
 #play-game .play-hand-card { transition: filter .16s ease; }
 #play-game .play-hand-card.is-selected { outline: 2px solid #17372b; outline-offset: 1px; filter: brightness(.8); box-shadow: 0 4px 12px #0d171766; }
 #play-game .play-hand-card.is-discard-selected { outline: 2px solid #e88b81; outline-offset: 1px; filter: brightness(.72); box-shadow: 0 0 0 3px #5d2727aa, 0 4px 12px #0d171766; }
