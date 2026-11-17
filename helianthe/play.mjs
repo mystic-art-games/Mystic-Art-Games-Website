@@ -12,7 +12,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   let busy = false, epoch = 0, fetchSerial = 0, live = false, lastHeartbeat = 0, autoDeckPending = false;
   let gameState = null, gameLoading = false, gameLoadFailed = false, gameReloadPending = false, handSignature = '', gameRenderSerial = 0, boardRenderSerial = 0, cardPreviewSerial = 0;
   let phaseBusy = false, selectedCardElement = null, patronDeckRequest = '', patronDeckLoadedAt = 0;
-  let openingRollBusy = false, openingRollError = '', openingMatchKey = '', openingWasRolling = false;
+  let openingRollBusy = false, openingChoiceBusy = false, openingRollError = '', openingMatchKey = '', openingWasRolling = false;
   let openingRevealTimer = null, openingTieTimer = null, openingTieRound = 0, openingPanelAnimatedKey = '';
   let openingShuffleTimer = null, openingVisualDice = [1, 1];
   const openingAnimatedValues = { host: null, guest: null };
@@ -51,6 +51,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       <div class="play-game-opponent-footer"><div class="play-game-opponent-identity play-game-player-identity"><div class="play-game-identity-name"><strong id="play-game-opponent-name"></strong><span id="play-game-opponent-presence" class="play-away-pill" hidden></span></div><span id="play-game-opponent-hand-count" class="play-game-hand-count" aria-live="polite" hidden></span></div><div class="play-game-actions"><details class="play-table-menu"><summary class="play-menu-toggle" aria-label="Table actions" title="Table actions"><svg class="play-menu-bars" aria-hidden="true" viewBox="0 0 22 22"><path d="M3 5h16 M3 11h16 M3 17h16"/></svg></summary><div class="play-table-menu-panel"><strong id="play-game-name" class="play-menu-table-name"></strong><button id="play-game-back" class="play-menu-lobby" type="button">Back to Lobby</button><button id="play-game-restart" type="button">Restart</button><button id="play-game-leave" type="button">Smash Table</button></div></details></div></div>
       </div>
       <div class="play-game-board-wrap">
+      <div id="play-opening-choice" class="play-opening-choice" role="status" hidden><strong id="play-opening-choice-message"></strong><div id="play-opening-choice-actions"><button id="play-opening-choose-self" type="button">I start</button><button id="play-opening-choose-opponent" type="button">Opponent starts</button></div></div>
       <div id="play-game-event-notice" class="play-game-event-notice" role="status" aria-live="polite" hidden><span id="play-game-event-notice-text"></span><button id="play-game-event-notice-close" type="button" aria-label="Dismiss message" hidden>×</button></div>
       <div id="play-game-discard-bar" class="play-game-discard-bar" hidden><strong id="play-game-discard-text" role="status" aria-live="polite"></strong><button id="play-game-confirm-discard" type="button" disabled>Confirm Discard</button></div>
       <aside id="play-game-beginning-effects" class="play-beginning-effects" aria-label="Beginning of Turn Entity effects" hidden><strong>Beginning of Turn effects</strong><p id="play-game-beginning-instructions"></p><ol id="play-game-beginning-list"></ol><button id="play-game-resolve-beginning" type="button">Resolve effects in this order</button></aside>
@@ -79,7 +80,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
           <button id="play-game-next-phase" class="play-game-next-phase" type="button">Next Phase</button>
         </div>
       </aside></div>
-      <div id="play-opening-roll" class="play-opening-roll" role="dialog" aria-modal="true" aria-labelledby="play-opening-roll-title" hidden><div class="play-opening-roll-panel"><p class="play-eyebrow">WHO GOES FIRST?</p><h2 id="play-opening-roll-title">Opening Dice</h2><p id="play-opening-roll-status" class="play-opening-roll-status" role="status" aria-live="polite"></p><div id="play-opening-dice" class="play-opening-dice" hidden><div class="play-opening-die-seat"><strong id="play-opening-host-name"></strong><div id="play-opening-host-pair" class="play-opening-die-pair" hidden><div id="play-opening-host-die-1" class="play-opening-die" aria-label="Host's first die">${diePips}</div><div id="play-opening-host-die-2" class="play-opening-die" aria-label="Host's second die">${diePips}</div></div><span id="play-opening-host-total" class="play-opening-total" hidden></span></div><div class="play-opening-die-seat"><strong id="play-opening-guest-name"></strong><div id="play-opening-guest-pair" class="play-opening-die-pair" hidden><div id="play-opening-guest-die-1" class="play-opening-die" aria-label="Guest's first die">${diePips}</div><div id="play-opening-guest-die-2" class="play-opening-die" aria-label="Guest's second die">${diePips}</div></div><span id="play-opening-guest-total" class="play-opening-total" hidden></span></div></div><button id="play-opening-roll-button" type="button">Roll a Dice</button><p id="play-opening-roll-error" class="play-opening-roll-error" role="alert" hidden></p></div></div>
+      <div id="play-opening-roll" class="play-opening-roll" role="dialog" aria-modal="true" aria-labelledby="play-opening-roll-title" hidden><div class="play-opening-roll-panel"><p class="play-eyebrow">WHO WINS THE ROLL?</p><h2 id="play-opening-roll-title">Opening Dice</h2><p id="play-opening-roll-status" class="play-opening-roll-status" role="status" aria-live="polite"></p><div id="play-opening-dice" class="play-opening-dice" hidden><div id="play-opening-die-seat-host" class="play-opening-die-seat"><strong id="play-opening-host-name"></strong><div id="play-opening-host-pair" class="play-opening-die-pair" hidden><div id="play-opening-host-die-1" class="play-opening-die" aria-label="Host's first die">${diePips}</div><div id="play-opening-host-die-2" class="play-opening-die" aria-label="Host's second die">${diePips}</div></div><span id="play-opening-host-total" class="play-opening-total" hidden></span></div><div id="play-opening-die-seat-guest" class="play-opening-die-seat"><strong id="play-opening-guest-name"></strong><div id="play-opening-guest-pair" class="play-opening-die-pair" hidden><div id="play-opening-guest-die-1" class="play-opening-die" aria-label="Guest's first die">${diePips}</div><div id="play-opening-guest-die-2" class="play-opening-die" aria-label="Guest's second die">${diePips}</div></div><span id="play-opening-guest-total" class="play-opening-total" hidden></span></div></div><button id="play-opening-roll-button" type="button">Roll two dice</button><p id="play-opening-roll-error" class="play-opening-roll-error" role="alert" hidden></p></div></div>
       <div id="play-game-archive-browser" class="play-archive-browser" hidden><div class="play-archive-browser-backdrop"></div><section class="play-archive-browser-panel" role="dialog" aria-modal="true" aria-labelledby="play-game-archive-browser-title"><header><div><h2 id="play-game-archive-browser-title">Archive</h2><p id="play-game-archive-browser-status" role="status" aria-live="polite"></p></div><button id="play-game-archive-browser-close" class="play-archive-browser-close" type="button" aria-label="Close Archive">×</button></header><div class="play-archive-browser-body"><div class="play-archive-browser-view"><div class="play-archive-browser-card"><canvas id="play-game-archive-browser-canvas" hidden></canvas><span id="play-game-archive-browser-fallback"></span></div><div class="play-archive-browser-navigation"><button id="play-game-archive-browser-previous" type="button">Previous</button><span id="play-game-archive-browser-position"></span><button id="play-game-archive-browser-next" type="button">Next</button></div></div><ol id="play-game-archive-browser-list" class="play-archive-browser-list" aria-label="Cards in Archive"></ol></div></section></div>
       <div class="play-game-player-block">
       <div class="play-game-self-identity play-game-player-identity"><div class="play-game-identity-name"><strong id="play-game-self-name"></strong><span id="play-game-self-presence" class="play-away-pill" hidden></span></div><span id="play-game-hand-count" class="play-game-hand-count" aria-live="polite" hidden></span></div>
@@ -288,6 +289,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       openingMatchKey = key;
       openingWasRolling = false;
       openingRollBusy = false;
+      openingChoiceBusy = false;
       openingRollError = '';
       openingTieRound = 0;
       openingAnimatedValues.host = null;
@@ -300,15 +302,28 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     }
     const rolling = room?.status === 'active' && room.turn_phase === 'roll' && room.opening_roll_round > 0;
     if (rolling) openingWasRolling = true;
-    const revealing = !rolling && openingWasRolling && room?.turn_number === 1;
+    const choosing = room?.status === 'active' && room.turn_phase === 'choose_first';
+    const revealing = !rolling && openingWasRolling && room?.opening_roll_winner_id && room.turn_number <= 1;
     overlay.hidden = !rolling && !revealing;
-    phases.hidden = rolling || revealing;
+    phases.hidden = rolling || revealing || choosing;
+    const choice = $('opening-choice');
+    choice.hidden = !choosing || revealing;
+    if (choosing) {
+      const winnerName = getProfiles().find(person => person.id === room.opening_roll_winner_id)?.display_name || 'The dice winner';
+      const ownWin = room.opening_roll_winner_id === userId;
+      $('opening-choice-message').textContent = ownWin
+        ? 'You won the roll. Review your hand, then choose who starts.'
+        : `${winnerName} won the roll and is choosing who starts.`;
+      $('opening-choice-actions').hidden = !ownWin;
+      $('opening-choose-self').disabled = openingChoiceBusy || !gameState;
+      $('opening-choose-opponent').disabled = openingChoiceBusy || !gameState;
+    }
     if (!overlay.hidden && revealing && !openingRevealTimer && !openingRollBusy) {
       openingRevealTimer = setTimeout(() => {
         openingRevealTimer = null;
         openingWasRolling = false;
         renderOpeningRoll();
-      }, 2200);
+      }, 3000);
     }
     if (overlay.hidden) {
       if (!phases.hidden && key && openingPanelAnimatedKey !== key && room?.turn_number === 1) {
@@ -362,12 +377,13 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const button = $('opening-roll-button');
     button.hidden = !rolling || ownRolled || showTie;
     button.disabled = openingRollBusy;
+    $('opening-roll-status').classList.toggle('is-result', Boolean(revealing));
     $('opening-roll-status').textContent = openingRollBusy ? 'Rolling two dice…'
       : revealing
-      ? room.turn_player_id === userId ? 'You rolled higher. Your Main Phase begins!' : `${room.turn_player_id === room.host_id ? hostName : guestName} rolled higher and begins.`
+      ? room.opening_roll_winner_id === userId ? 'You won the roll!' : `${room.opening_roll_winner_id === room.host_id ? hostName : guestName} won the roll!`
       : showTie ? `Tie: ${tie.host}–${tie.guest}. Roll again!`
       : ownRolled ? `You rolled ${room[`opening_${ownSeat}_roll`]}. Waiting for the opponent to roll.`
-      : room.opening_host_roll || room.opening_guest_roll ? 'The other player has rolled. Roll your dice!' : 'Roll two dice. Higher total starts.';
+      : room.opening_host_roll || room.opening_guest_roll ? 'The other player has rolled. Roll your dice!' : 'Roll two dice. Higher total chooses who starts.';
     $('opening-roll-error').hidden = !openingRollError;
     $('opening-roll-error').textContent = openingRollError;
   }
@@ -403,6 +419,24 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     }
   }
   $('opening-roll-button').addEventListener('click', () => void rollOpeningDie());
+  async function chooseFirstPlayer(firstPlayerId) {
+    if (openingChoiceBusy || !gameState || room?.status !== 'active' || room.turn_phase !== 'choose_first'
+      || room.opening_roll_winner_id !== userId) return;
+    const expected = epoch, roomId = room.id;
+    openingChoiceBusy = true;
+    renderOpeningRoll();
+    try {
+      await rpc('play_choose_first_player', { p_room_id: roomId, p_first_player_id: firstPlayerId });
+      if (expected === epoch && room?.id === roomId) await refreshRoom();
+    } catch (error) {
+      if (expected === epoch && room?.id === roomId) message(friendly(error), true);
+    } finally {
+      openingChoiceBusy = false;
+      if (expected === epoch && room?.id === roomId) renderOpeningRoll();
+    }
+  }
+  $('opening-choose-self').addEventListener('click', () => void chooseFirstPlayer(userId));
+  $('opening-choose-opponent').addEventListener('click', () => void chooseFirstPlayer(room?.host_id === userId ? room?.guest_id : room?.host_id));
   function renderBeginningEffects() {
     const effects = beginningEffects();
     const panel = $('game-beginning-effects');

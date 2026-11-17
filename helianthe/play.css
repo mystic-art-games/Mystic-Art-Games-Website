@@ -281,6 +281,14 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
 .play-opening-roll-panel { box-sizing: border-box; width: min(50rem, 100%); padding: clamp(1.25rem, 4vw, 2.25rem); color: #fff7e8; text-align: center; text-shadow: 0 2px 8px #221308bb; }
 .play-opening-roll-panel h2 { margin: .35rem 0 .5rem; font-family: Nunito, sans-serif; font-size: clamp(1.4rem, 4vw, 2rem); }
 .play-opening-roll-status { min-height: 2.5rem; margin: .5rem 0 1.2rem; font-weight: 800; }
+.play-opening-roll-status.is-result { color: #fff1a9; font-size: clamp(1.5rem, 4.5vw, 2.5rem); }
+.play-opening-choice { position: absolute; z-index: 30; top: 50%; left: 50%; box-sizing: border-box; width: min(26rem, calc(100% - 1rem)); padding: 1rem; transform: translate(-50%, -50%); border: 1px solid #b9d4c1; border-radius: 12px; background: #1b352bf2; color: #fff7e8; text-align: center; box-shadow: 0 8px 28px #07191099; }
+.play-opening-choice[hidden], #play-opening-choice-actions[hidden] { display: none; }
+.play-opening-choice strong { display: block; line-height: 1.35; }
+#play-opening-choice-actions { display: flex; justify-content: center; flex-wrap: wrap; gap: .6rem; margin-top: .85rem; }
+#play-opening-choice-actions button { margin: 0; padding: .6rem .85rem; border: 1px solid #83b58c; border-radius: 8px; background: #477452; color: #fff; font: 800 .9rem Nunito, sans-serif; cursor: pointer; }
+#play-opening-choice-actions button:hover:not(:disabled) { background: #568a61; }
+#play-opening-choice-actions button:disabled { opacity: .55; cursor: wait; }
 .play-opening-dice { display: flex; justify-content: center; gap: clamp(1.5rem, 6vw, 4rem); margin: 1rem 0 1.5rem; }
 .play-opening-die-seat { display: grid; justify-items: center; align-content: start; gap: .7rem; min-width: 0; flex: 1; }
 .play-opening-die-seat strong { max-width: 100%; overflow-wrap: anywhere; }
