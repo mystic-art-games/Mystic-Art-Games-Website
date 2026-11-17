@@ -305,6 +305,15 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const choosing = room?.status === 'active' && room.turn_phase === 'choose_first';
     const revealing = !rolling && openingWasRolling && room?.opening_roll_winner_id && room.turn_number <= 1;
     overlay.hidden = !rolling && !revealing;
+    const gameActions = $('game').querySelector('.play-game-actions');
+    const gameFooter = $('game').querySelector('.play-game-opponent-footer');
+    if (!overlay.hidden && gameActions.parentElement !== overlay) {
+      gameActions.querySelector('details').open = false;
+      overlay.append(gameActions);
+    } else if (overlay.hidden && gameActions.parentElement === overlay) {
+      gameActions.querySelector('details').open = false;
+      gameFooter.append(gameActions);
+    }
     phases.hidden = rolling || revealing || choosing;
     const choice = $('opening-choice');
     choice.hidden = !choosing || revealing;
