@@ -2084,7 +2084,13 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         const controls = document.createElement('div'); controls.className = 'play-player-controls';
         controls.append(deckField, readyButton); details.append(controls);
       }
-      else { const deckName = document.createElement('span'); deckName.textContent = deck?.name || 'No deck selected'; details.append(deckName); }
+      else {
+        const patronName = document.createElement('span');
+        patronName.textContent = room[`${seat}_deck_id`]
+          ? room[`${seat}_patron_name`] || deck?.patron_name || 'Patron unavailable'
+          : 'No deck selected';
+        details.append(patronName);
+      }
       row.append(avatar, details);
       const state = room.status === 'closed' ? 'Closed' : room[`${seat}_ready`] ? 'Ready' : '';
       if (id && state && !(id === userId && state === 'Ready')) {
