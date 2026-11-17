@@ -41,7 +41,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       <button id="play-back" class="back-to-decks" type="button"><span aria-hidden="true">←</span> Back to Lobby</button>
       <div class="play-room-bar"><div class="play-room-identity"><div class="play-room-name-line"><strong id="play-room-name"></strong><button id="play-edit-name" class="action-cancel" type="button">Edit name</button></div><form id="play-name-form" hidden><input id="play-name-input" aria-label="Table name" maxlength="60" required><button type="submit">Save</button><button id="play-cancel-name" type="button">Cancel</button></form><span class="play-room-code-line">Code: <strong id="play-room-code"></strong></span></div><div class="play-room-actions"><details class="play-table-menu"><summary class="play-menu-toggle" aria-label="Table actions" title="Table actions"><svg class="play-menu-bars" aria-hidden="true" viewBox="0 0 22 22"><path d="M3 5h16 M3 11h16 M3 17h16"/></svg></summary><div class="play-table-menu-panel"><button id="play-leave" class="action-delete" type="button">Concede &amp; Walk Out</button></div></details></div></div>
       <div id="play-players" class="play-players"></div>
-      <label id="play-deck-field" class="play-deck-field" for="play-deck">Your deck<select id="play-deck"><option value="">No decks available</option></select></label>
+      <label id="play-deck-field" class="play-deck-field" for="play-deck">Your deck<div class="play-deck-choice"><img id="play-deck-cover" class="play-deck-cover" alt="" hidden><select id="play-deck"><option value="">No decks available</option></select></div></label>
       <button id="play-ready" class="action-add-save" type="button">Ready</button>
       <div id="play-controls-parking" hidden></div>
       <p id="play-room-status" role="status"></p>
@@ -2035,9 +2035,22 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const value = room ? ownDeckId() : $('deck').value;
     $('deck').replaceChildren(...(decks.length ? decks.map(deck => new Option(deck.name, deck.id)) : [new Option('No decks available', '')]));
     $('deck').value = decks.some(deck => deck.id === value) ? value : (decks[0]?.id || '');
+    updateDeckCover();
     controls();
     maybeAutoSelectDeck();
     if (room?.status === 'active' && !inLobby) renderGame();
+  }
+  function updateDeckCover() {
+    const deck = getDecks().find(item => String(item.id) === $('deck').value);
+    const image = $('deck-cover');
+    image.hidden = !deck;
+    if (!deck) return;
+    image.src = './assets/site-background.jpg';
+    if (!deck.cover_artwork_id) return;
+    const artworkId = deck.cover_artwork_id;
+    void getArtworkUrl(artworkId).then(url => {
+      if ($('deck').value === String(deck.id) && getDecks().some(item => String(item.id) === String(deck.id) && item.cover_artwork_id === artworkId)) image.src = url;
+    }).catch(() => {});
   }
   function render() {
     syncLobbyRefresh();
@@ -2086,6 +2099,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const mine = room.host_id === userId ? 'host' : 'guest';
     $('deck').value = getDecks().some(deck => deck.id === room[`${mine}_deck_id`])
       ? room[`${mine}_deck_id`] : (getDecks()[0]?.id || '');
+    updateDeckCover();
     const isReady = room[`${mine}_ready`];
     $('ready').textContent = isReady ? 'Not ready' : 'Ready';
     $('ready').classList.toggle('action-add-save', !isReady);
@@ -2110,7 +2124,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   $('leave').addEventListener('click', () => run(leaveTable));
   $('game-leave').addEventListener('click', () => run(leaveTable));
   $('deck').addEventListener('change', () => {
-    if (busy || ownReady()) { $('deck').value = ownDeckId() || ''; return; }
+    if (busy || ownReady()) { $('deck').value = ownDeckId() || ''; updateDeckCover(); return; }
+    updateDeckCover();
     if ($('deck').value) void run(() => action('deck', { deck_id: $('deck').value }));
   });
   $('ready').addEventListener('click', () => {

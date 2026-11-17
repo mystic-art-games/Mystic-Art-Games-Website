@@ -73,7 +73,10 @@ body.dark-mode #play-session .play-menu-toggle:hover, body.dark-mode #play-sessi
 .play-workspace .play-avatar { width: 36px; height: 36px; font-size: .85rem; }
 .play-player-controls { display: flex; align-items: end; gap: .75rem; min-width: 0; }
 .play-deck-field { display: block; flex: 1 1 220px; min-width: 0; max-width: 310px; margin-top: .45rem; font-size: .8rem; font-weight: 700; }
-.play-deck-field select { display: block; width: 100%; margin-top: .25rem; }
+.play-deck-choice { display: flex; align-items: center; gap: .5rem; margin-top: .25rem; }
+.play-deck-cover { display: block; flex: 0 0 68px; width: 68px; aspect-ratio: 1.9 / 1; object-fit: cover; border-radius: 6px; background: #d9e5d7; }
+.play-deck-cover[hidden] { display: none; }
+.play-deck-field select { display: block; flex: 1 1 auto; min-width: 0; width: 100%; }
 .play-deck-field.is-locked { color: #6c786f; }
 .play-deck-field.is-locked select { border-color: #a6b1a8; background: #dfe3dd; color: #6c786f; opacity: .7; filter: grayscale(1); cursor: not-allowed; }
 body.dark-mode .play-deck-field.is-locked { color: #9caa9d; }
