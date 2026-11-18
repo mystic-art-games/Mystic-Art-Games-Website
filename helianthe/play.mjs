@@ -16,6 +16,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   let openingRollBusy = false, openingChoiceBusy = false, openingRollError = '', openingMatchKey = '';
   let mulliganBusy = false, mulliganStepKey = '';
   const mulliganOrder = [];
+  const mulliganFlights = new Set(), mulliganHiddenCards = new Set(), mulliganAnimations = new Set();
   let openingRevealTimer = null, openingPanelAnimatedKey = '', openingRevealDoneKey = '';
   let openingShuffleTimer = null, openingVisualDice = [1, 1];
   const openingAnimatedValues = { host: null, guest: null };
@@ -333,7 +334,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       gameFooter.append(gameActions);
     }
     const mulligan = room?.status === 'active' && ['mulligan_first', 'mulligan_second'].includes(room.turn_phase);
-    phases.hidden = rolling || revealing || choosing || mulligan;
+    phases.hidden = rolling || revealing || choosing || mulligan || mulliganBusy;
     const choice = $('opening-choice');
     choice.hidden = !choosing || revealing;
     renderMulligan();
@@ -468,7 +469,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   function renderMulligan() {
     const active = room?.status === 'active' && ['mulligan_first', 'mulligan_second'].includes(room.turn_phase);
     const stepKey = active ? `${room.id}:${room.activated_at}:${room.turn_phase}` : '';
-    if (stepKey !== mulliganStepKey) {
+    if (stepKey !== mulliganStepKey && !mulliganBusy) {
       mulliganStepKey = stepKey;
       mulliganOrder.length = 0;
       mulliganBusy = false;
@@ -498,6 +499,130 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     $('opening-mulligan-keep').disabled = mulliganBusy;
     $('opening-mulligan-confirm').disabled = mulliganBusy;
   }
+  function clearMulliganFlights() {
+    for (const animation of mulliganAnimations) animation.cancel();
+    mulliganAnimations.clear();
+    for (const flight of mulliganFlights) flight.remove();
+    mulliganFlights.clear();
+    for (const card of mulliganHiddenCards) card.style.visibility = '';
+    mulliganHiddenCards.clear();
+  }
+  function mulliganFlight(bounds, front) {
+    const flight = document.createElement('div');
+    flight.className = 'play-draw-flight play-mulligan-flight';
+    flight.setAttribute('aria-hidden', 'true');
+    Object.assign(flight.style, {
+      left: `${bounds.left}px`, top: `${bounds.top}px`,
+      width: `${bounds.width}px`, height: `${bounds.height}px`,
+    });
+    const inner = document.createElement('div'); inner.className = 'play-draw-flight-inner';
+    const back = document.createElement('div'); back.className = 'play-draw-flight-face play-draw-flight-back';
+    const face = document.createElement('div'); face.className = 'play-draw-flight-face play-draw-flight-front';
+    face.append(front); inner.append(back, face); flight.append(inner);
+    document.body.append(flight);
+    mulliganFlights.add(flight);
+    return { flight, inner };
+  }
+  function animateMulliganBottom(indices) {
+    const destination = $('game-self-horizon').getBoundingClientRect();
+    if ($('game').hidden || !destination.width || !destination.height) return Promise.resolve();
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const flights = indices.map((index, order) => {
+      const source = $('game-hand').children[index]?.querySelector('.play-hand-card');
+      const bounds = source?.getBoundingClientRect();
+      if (!bounds?.width || !bounds.height) return null;
+      const front = source.cloneNode(true);
+      front.classList.remove('is-selected', 'is-mulligan-selected');
+      front.removeAttribute('aria-pressed');
+      const sourceCanvas = source.querySelector('canvas');
+      const flightCanvas = front.querySelector('canvas');
+      if (sourceCanvas && flightCanvas && !sourceCanvas.hidden && sourceCanvas.width) {
+        flightCanvas.width = sourceCanvas.width;
+        flightCanvas.height = sourceCanvas.height;
+        flightCanvas.getContext('2d').drawImage(sourceCanvas, 0, 0);
+      }
+      const { flight, inner } = mulliganFlight(bounds, front);
+      source.style.visibility = 'hidden';
+      mulliganHiddenCards.add(source);
+      const dx = destination.left + destination.width / 2 - bounds.left - bounds.width / 2;
+      const dy = destination.top + destination.height / 2 - bounds.top - bounds.height / 2;
+      const scale = Math.min(destination.width / bounds.width, destination.height / bounds.height);
+      const timing = { duration: reduced ? 100 : 790, delay: reduced ? 0 : order * 145,
+        easing: 'cubic-bezier(.22,.7,.18,1)', fill: 'forwards' };
+      const motion = flight.animate([
+        { transform: 'translate(0, 0) rotate(0deg) scale(1)', opacity: 1 },
+        { transform: `translate(${dx * .62}px, ${dy * .62}px) rotate(-8deg) scale(${1 + (scale - 1) * .62})`, opacity: 1, offset: .65 },
+        { transform: `translate(${dx}px, ${dy}px) rotate(0deg) scale(${scale})`, opacity: .3 },
+      ], timing);
+      const flip = inner.animate([
+        { transform: 'rotateY(180deg)' },
+        { transform: 'rotateY(180deg)', offset: .3 },
+        { transform: 'rotateY(0deg)', offset: .82 },
+        { transform: 'rotateY(0deg)' },
+      ], timing);
+      mulliganAnimations.add(motion); mulliganAnimations.add(flip);
+      return { flight, motion, flip };
+    }).filter(Boolean);
+    return Promise.allSettled(flights.flatMap(({ motion, flip }) => [motion.finished, flip.finished]))
+      .then(() => { for (const { flight } of flights) { flight.remove(); mulliganFlights.delete(flight); } });
+  }
+  async function animateMulliganDraw(cards, indices) {
+    const source = $('game-self-horizon').getBoundingClientRect();
+    const hand = $('game-hand');
+    const items = Array.from(hand.children);
+    const first = items[0]?.getBoundingClientRect();
+    if ($('game').hidden || !source.width || !source.height || !first?.width) return;
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const selected = new Set(indices);
+    const gap = parseFloat(getComputedStyle(hand).columnGap) || 0;
+    const step = first.width + gap;
+    const remaining = items.filter((_, index) => !selected.has(index));
+    const shifts = remaining.map((item, index) => {
+      const bounds = item.getBoundingClientRect();
+      const dx = first.left + index * step - bounds.left;
+      const animation = item.animate([{ transform: 'translateX(0)' }, { transform: `translateX(${dx}px)` }],
+        { duration: reduced ? 80 : 480, easing: 'ease-in-out', fill: 'forwards' });
+      mulliganAnimations.add(animation);
+      return animation;
+    });
+    const flights = cards.map((rawCard, index) => {
+      const card = resolveGameCard(rawCard);
+      const canvas = document.createElement('canvas'); canvas.hidden = true;
+      const fallback = document.createElement('span'); fallback.textContent = card.title || 'Card';
+      const front = document.createElement('div'); front.className = 'play-mulligan-drawn-card';
+      front.append(canvas, fallback);
+      const { flight, inner } = mulliganFlight(source, front);
+      void (async () => {
+        try {
+          const artwork = card.artwork_id ? await getArtworkUrl(card.artwork_id) : '';
+          const result = await renderCard(canvas, card, artwork, () => mulliganFlights.has(flight));
+          if (mulliganFlights.has(flight) && result && !result.cancelled) { canvas.hidden = false; fallback.hidden = true; }
+        } catch { /* The card title remains visible if art cannot load. */ }
+      })();
+      const targetX = first.left + (remaining.length + index) * step + first.width / 2;
+      const targetY = first.top + first.height / 2;
+      const dx = targetX - source.left - source.width / 2;
+      const dy = targetY - source.top - source.height / 2;
+      const scale = first.width / source.width;
+      const timing = { duration: reduced ? 100 : 830, delay: reduced ? 0 : index * 160,
+        easing: 'cubic-bezier(.22,.7,.18,1)', fill: 'forwards' };
+      const motion = flight.animate([
+        { transform: 'translate(0, 0) rotate(0deg) scale(1)' },
+        { transform: `translate(${dx * .65}px, ${dy * .65}px) rotate(-7deg) scale(${1 + (scale - 1) * .65})`, offset: .7 },
+        { transform: `translate(${dx}px, ${dy}px) rotate(0deg) scale(${scale})` },
+      ], timing);
+      const flip = inner.animate([
+        { transform: 'rotateY(0deg)' },
+        { transform: 'rotateY(0deg)', offset: .25 },
+        { transform: 'rotateY(180deg)', offset: .72 },
+        { transform: 'rotateY(180deg)' },
+      ], timing);
+      mulliganAnimations.add(motion); mulliganAnimations.add(flip);
+      return { motion, flip };
+    });
+    await Promise.allSettled([...shifts.map(animation => animation.finished),
+      ...flights.flatMap(({ motion, flip }) => [motion.finished, flip.finished])]);
+  }
   async function finishMulligan(indices) {
     if (mulliganBusy || !gameState || room?.status !== 'active'
       || !['mulligan_first', 'mulligan_second'].includes(room.turn_phase)) return;
@@ -505,11 +630,15 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       : room.turn_player_id === room.host_id ? room.guest_id : room.host_id;
     if (actorId !== userId || indices.length > gameState.horizon.length) return;
     const expected = epoch, roomId = room.id, phase = room.turn_phase;
+    const drawnCards = gameState.horizon.slice(0, indices.length);
     mulliganBusy = true;
     renderMulligan();
     try {
+      if (indices.length) await animateMulliganBottom(indices);
+      if (expected !== epoch || room?.id !== roomId || room.status !== 'active') return;
       await rpc('play_finish_mulligan', { p_room_id: roomId, p_expected_phase: phase, p_hand_indices: indices });
       if (expected === epoch && room?.id === roomId) {
+        if (indices.length) await animateMulliganDraw(drawnCards, indices);
         await refreshRoom();
         await loadGameState(true);
       }
@@ -520,6 +649,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         await loadGameState(true).catch(() => {});
       }
     } finally {
+      clearMulliganFlights();
       mulliganBusy = false;
       if (expected === epoch && room?.id === roomId) renderOpeningRoll();
     }
@@ -942,7 +1072,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     ++epoch; ++fetchSerial;
     pendingDeckId = null;
     ++gameRenderSerial; gameState = null; gameLoading = false; gameLoadFailed = false; gameReloadPending = false; handSignature = '';
-    phaseBusy = false; drawRetryAt = 0; clearDrawFlight(); discardSelections.clear(); pendingFestival = null; arrivingEntityKey = null;
+    phaseBusy = false; drawRetryAt = 0; clearDrawFlight(); clearMulliganFlights(); discardSelections.clear(); pendingFestival = null; arrivingEntityKey = null;
     beginningTurnKey = ''; beginningOrder = []; beginningTargetSource = null; beginningTargets.clear();
     patronDeckRequest = ''; patronDeckLoadedAt = 0; gameDeckPatrons.clear(); gamePlayerPatrons.clear();
     zoneCounts = null; zoneCountsRevision = null; zoneCountsRequest = null;
@@ -2144,7 +2274,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     }
     room = data; render();
     if (room.status === 'active') {
-      void loadGameState(turnChanged && !phaseBusy);
+      void loadGameState(turnChanged && !phaseBusy && !mulliganBusy);
       void loadGamePatrons().catch(() => { patronDeckRequest = ''; });
     }
     if (room.status === 'closed' && !room.conceded_by) {

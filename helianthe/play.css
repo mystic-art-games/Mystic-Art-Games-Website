@@ -209,6 +209,10 @@ body.dark-mode .play-deck-field.is-locked select { border-color: #596d5d; backgr
 .play-draw-flight-front canvas { display: block; width: 100%; height: 100%; }
 .play-draw-flight-front canvas[hidden], .play-draw-flight-front span[hidden] { display: none; }
 .play-draw-flight-front span { padding: .35rem; font-size: .8rem; font-weight: 800; text-align: center; }
+.play-mulligan-flight .play-draw-flight-front { padding: 0; }
+.play-mulligan-flight .play-hand-card, .play-mulligan-drawn-card { width: 100%; height: 100%; border: 0; border-radius: 0; }
+.play-mulligan-drawn-card { display: grid; place-items: center; }
+.play-mulligan-drawn-card canvas { width: 100%; height: 100%; object-fit: fill; }
 .play-hand-card canvas { display: block; width: 100%; height: 100%; object-fit: fill; }
 .play-hand-card canvas[hidden], .play-hand-fallback[hidden] { display: none; }
 .play-hand-fallback { padding: .6rem; color: #234536; font-size: .9rem; font-weight: 700; text-align: center; }
