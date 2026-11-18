@@ -1027,6 +1027,27 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const source = selectedHandIndex === null ? null : $('game-hand').children[selectedHandIndex]?.querySelector('.play-hand-card');
     showHandDetails(selectedGameCard, source);
   }
+  function selectedCardNotice(card, handIndex, support) {
+    if (handIndex === null) return '';
+    if (room?.turn_player_id !== userId) return "You can play cards only on your turn.";
+    if (room?.turn_phase !== 'main') return 'You can play cards only during your Main Phase.';
+    if (card.card_type === 'Entity') {
+      if (room.main_played_entity) return 'You have already played an Entity this turn.';
+      const hasTarget = Array.from($('game-board').children).some(cell => cell.dataset.key
+        && legalEntityAction(card, room?.board?.[cell.dataset.key], cell.dataset.key));
+      return hasTarget ? 'Choose matching Terrain to Place, or a legal empty space to Shape. Press Esc to cancel.'
+        : 'There is no matching unoccupied Terrain or legal empty space to Shape.';
+    }
+    if (card.card_type !== 'Event') return '';
+    if (!support) return unavailableEventReason(card);
+    if (['fertilize_two', 'fertilize_draw', 'fertilize_existing_draw'].includes(support[1])) {
+      const hasTarget = Array.from($('game-board').children).some(cell => cell.dataset.key
+        && legalEventTarget(support[1], room?.board?.[cell.dataset.key]));
+      if (!hasTarget) return support[1] === 'fertilize_existing_draw'
+        ? 'There is no fertilized empty space to choose.' : 'There is no legal empty space to Fertilize.';
+    }
+    return '';
+  }
   function queueRestoreHandDetails() {
     clearTimeout(handDetailsHideTimer);
     handDetailsHideTimer = setTimeout(restoreSelectedHandDetails, 120);
@@ -1043,12 +1064,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     selectedHandIndex = handIndex;
     showHandDetails(handIndex === null ? null : card, source);
     const support = card.card_type === 'Event' ? eventSupport(card) : null;
-    eventNotice(pendingEntity ? 'Choose matching Terrain to Place, or a legal empty space to Shape. Press Esc to cancel.'
-      : card.card_type === 'Entity' && handIndex !== null && room?.turn_player_id === userId
-        && room?.turn_phase === 'main' && room.main_played_entity
-        ? 'You have already played an Entity this turn.'
-      : card.card_type === 'Event' && !support
-        ? unavailableEventReason(card) : '');
+    eventNotice(selectedCardNotice(card, handIndex, support));
     const serial = ++cardPreviewSerial;
     selectedCardElement?.classList.remove('is-selected');
     selectedCardElement?.removeAttribute('aria-pressed');
