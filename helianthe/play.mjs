@@ -860,13 +860,14 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     clearDrawFlight();
     const items = Array.from(handElement.children);
     const first = items[0]?.getBoundingClientRect();
-    const cardWidth = first?.width || Math.min(source.width, 100);
-    const cardHeight = first?.height || cardWidth * 88 / 63;
     const style = getComputedStyle(handElement);
     const gap = parseFloat(style.columnGap) || 0;
     const paddingLeft = parseFloat(style.paddingLeft) || 0;
     const paddingRight = parseFloat(style.paddingRight) || 0;
     const available = hand.width - paddingLeft - paddingRight;
+    const cardWidth = Math.min(first?.width || Math.min(source.width, 100),
+      Math.max(1, (available - items.length * gap) / (items.length + 1)));
+    const cardHeight = cardWidth * 88 / 63;
     const total = (items.length + 1) * cardWidth + items.length * gap;
     const startX = hand.left + paddingLeft + Math.max(0, (available - total) / 2) - handElement.scrollLeft;
     const destinationX = startX + items.length * (cardWidth + gap) + cardWidth / 2;
@@ -891,7 +892,11 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     activeHandShifts = items.map((item, index) => {
       const current = item.getBoundingClientRect();
       const delta = startX + index * (cardWidth + gap) - current.left;
-      return item.animate([{ transform: 'translateX(0)' }, { transform: `translateX(${delta}px)` }],
+      const ratio = cardWidth / current.width;
+      return item.animate([
+        { transform: 'translateX(0) scale(1)', transformOrigin: 'top left' },
+        { transform: `translateX(${delta}px) scale(${ratio})`, transformOrigin: 'top left' },
+      ],
         { duration: reducedMotion ? 80 : 470, easing: 'ease-in-out', fill: 'forwards' });
     });
     const dx = destinationX - source.left - source.width / 2;
