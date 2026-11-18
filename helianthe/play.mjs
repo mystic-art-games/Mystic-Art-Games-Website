@@ -389,7 +389,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     $('opening-roll-status').classList.toggle('is-result', Boolean(revealing));
     $('opening-roll-status').textContent = openingRollBusy ? 'Rolling two dice…'
       : revealing
-      ? room.opening_roll_winner_id === userId ? 'You won the roll!' : `${room.opening_roll_winner_id === room.host_id ? hostName : guestName} won the roll!`
+      ? room.opening_roll_winner_id === userId ? 'You decide who plays first' : 'Opponent decides who plays first'
       : showTie ? `Tie: ${tie.host}–${tie.guest}. Roll again!`
       : ownRolled ? `You rolled ${room[`opening_${ownSeat}_roll`]}. Waiting for the opponent to roll.`
       : room.opening_host_roll || room.opening_guest_roll ? 'The other player has rolled. Roll your dice!' : 'Roll two dice. Higher total chooses who starts.';
