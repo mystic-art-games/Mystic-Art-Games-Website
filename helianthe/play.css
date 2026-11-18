@@ -106,8 +106,8 @@ body.dark-mode .play-deck-field.is-locked select { border-color: #596d5d; backgr
 .play-game-hand-wrap #play-game-loading { margin: 0; text-align: center; }
 .play-deck-stack { display: block; flex: 0 0 auto; width: 62px; aspect-ratio: 63 / 88; border: 1px solid #123c2d; border-radius: 9px; background: url('../images/helianthe-logo.png') center / 62% no-repeat, #294b3ddf; box-shadow: inset 0 1px 0 #fff2cf36, 4px -4px 0 #294b3ddf, 5px -5px 0 #123c2d, 0 4px 12px #130b0a55; }
 .play-game-board-wrap { width: 100%; max-width: 1000px; margin: 0 auto; }
-.play-game-table { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 5fr) minmax(0, 1fr); align-items: stretch; justify-content: center; gap: clamp(8px, 1.4vw, 18px); }
-.play-game-board { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); grid-template-rows: repeat(4, minmax(0, 1fr)); align-self: center; gap: clamp(9px, 1.4cqh, 14px); min-width: 0; width: 100%; aspect-ratio: 334 / 352; }
+.play-game-table { --play-map-card-gap: clamp(9px, 1.4cqh, 14px); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 5fr) minmax(0, 1fr); align-items: stretch; justify-content: center; gap: clamp(8px, 1.4vw, 18px); }
+.play-game-board { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); grid-template-rows: repeat(4, minmax(0, 1fr)); align-self: center; gap: var(--play-map-card-gap); min-width: 0; width: 100%; aspect-ratio: 334 / 352; }
 .play-game-card-preview { position: fixed; z-index: 30; top: 50%; left: clamp(.75rem, 1.5vw, 1.25rem); transform: translateY(-50%); width: min(240px, 21vw, 40vh); aspect-ratio: 63 / 88; overflow: hidden; border: 1px solid #8da79a; border-radius: 7px; background: #e9ece1; box-shadow: 0 8px 24px #183a2c55; }
 .play-game-card-preview canvas, .play-game-card-preview img { display: block; width: 100%; height: 100%; object-fit: fill; }
 .play-game-card-preview canvas[hidden], .play-game-card-preview img[hidden], .play-game-card-preview .play-hand-fallback[hidden] { display: none; }
@@ -140,8 +140,8 @@ body.dark-mode .play-deck-field.is-locked select { border-color: #596d5d; backgr
 .play-archive-browser-list canvas[hidden], .play-archive-gallery-fallback[hidden] { display: none; }
 .play-archive-gallery-fallback { display: grid; place-items: center; padding: .4rem; color: #173b2d; font-size: .72rem; }
 .play-archive-browser-list small { overflow: hidden; color: #f5f2e8; font-size: .65rem; line-height: 1.2; text-overflow: ellipsis; white-space: nowrap; }
-.play-game-zones-left, .play-game-zones-right { display: grid; grid-template-rows: repeat(4, minmax(0, 1fr)); justify-items: center; align-items: center; min-height: 0; }
-.play-game-zone-pair { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: clamp(.35rem, .8cqh, .65rem); width: 100%; height: 100%; }
+.play-game-zones-left, .play-game-zones-right { display: grid; grid-template-rows: repeat(4, minmax(0, 1fr)); gap: var(--play-map-card-gap); justify-items: center; align-items: center; align-self: center; height: var(--play-map-board-height, 100%); min-height: 0; }
+.play-game-zone-pair { display: grid; grid-template-rows: repeat(2, minmax(0, 1fr)); gap: var(--play-map-card-gap); justify-items: center; align-items: center; width: 100%; height: 100%; }
 .play-game-zone-pair-opponent { grid-row: 1 / 3; }
 .play-game-zone-pair-self { grid-row: 3 / 5; }
 .play-game-zone { display: flex; flex-direction: column; align-items: center; gap: .15rem; width: var(--play-map-card-width, 100%); max-width: 100%; min-width: 0; text-align: center; }

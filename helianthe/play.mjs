@@ -106,6 +106,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const boardWrap = root.querySelector('.play-game-board-wrap');
     const wrapBounds = boardWrap.getBoundingClientRect();
     const boardBounds = $('game-board').getBoundingClientRect();
+    root.style.setProperty('--play-map-board-height', `${boardBounds.height}px`);
     $('game-event-notice').style.top = `${bounds.top - wrapBounds.top - 8}px`;
     $('game-discard-bar').style.left = `${boardBounds.left + boardBounds.width / 2 - wrapBounds.left}px`;
     $('game-discard-bar').style.top = `${boardBounds.top + boardBounds.height / 2 - wrapBounds.top}px`;
