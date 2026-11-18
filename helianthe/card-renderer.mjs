@@ -189,8 +189,7 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
     ctx.font = `700 ${size}px ${cardFont}`;
     if (ctx.measureText(title).width <= 410) { titleSize = size; break; }
   }
-  // Alegreya's visible letterforms need a slight downward optical correction in the nameplate.
-  const titleCenterY = titlePlateCenters[terrain || 'Neutral'] * 1050 / frame.naturalHeight + 5;
+  const titleCenterY = titlePlateCenters[terrain || 'Neutral'] * 1050 / frame.naturalHeight;
   // Frame and icons share the inset transform already applied to the context.
   const framePoint = (x, y) => ({
     x: x * 750 / frame.naturalWidth,
