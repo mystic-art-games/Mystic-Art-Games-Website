@@ -272,8 +272,11 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const phase = room?.turn_phase;
     const phaseIndex = phaseOrder.indexOf(phase);
     const own = Boolean(room?.turn_player_id && room.turn_player_id === userId);
+    const phases = $('game-phases');
     const patron = patronPreviews[own ? 'self' : 'opponent'].card;
-    $('game-phases').style.setProperty('--play-phase-color', patronMarkerColors[patron?.terrain] || '#7ba98a');
+    phases.style.setProperty('--play-phase-color', patronMarkerColors[patron?.terrain] || '#7ba98a');
+    phases.classList.toggle('is-your-turn', own);
+    phases.classList.toggle('is-opponent-turn', Boolean(room?.turn_player_id) && !own);
     $('game-turn-owner').textContent = !room?.turn_player_id ? 'Turn setup pending' : own ? 'Your turn' : "Opponent's turn";
     for (const step of root.querySelectorAll('.play-game-phase-list li')) {
       const active = Number(step.dataset.phase) === phaseIndex;
