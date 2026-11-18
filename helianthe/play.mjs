@@ -18,7 +18,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   const mulliganOrder = [];
   let openingRevealTimer = null, openingPanelAnimatedKey = '', openingRevealDoneKey = '';
   let openingShuffleTimer = null, openingVisualDice = [1, 1];
-  let handDetailsHideTimer = null;
   const openingAnimatedValues = { host: null, guest: null };
   let drawRetryAt = 0, activeDrawFlight = null, activeHandShifts = [];
   let beginningTurnKey = '', beginningOrder = [], beginningTargetSource = null;
@@ -93,7 +92,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         <div class="play-game-hand-wrap"><p id="play-game-loading" role="status">Preparing the opening hands…</p><div id="play-game-hand" class="play-game-hand"></div></div>
       </section>
       </div>
-      <aside id="play-game-hand-details" class="play-game-hand-details" hidden><strong id="play-game-hand-details-title"></strong><p id="play-game-hand-details-effect"></p></aside>
       <div id="play-game-result" class="play-game-result" role="status" aria-live="polite" hidden><div class="play-game-result-panel"><h2 id="play-game-result-title"></h2><button id="play-game-result-back" type="button">Back to Lobby</button></div></div>
     </section>`;
   function syncZoneCardSize() {
@@ -1076,7 +1074,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     selectedCardElement?.classList.remove('is-selected');
     selectedCardElement?.removeAttribute('aria-pressed');
     selectedCardElement = null;
-    $('game-hand-details').hidden = true;
     requestAnimationFrame(syncHoveredCardPreview);
   }
   function hideHoveredCardPreview() {
@@ -1148,25 +1145,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     }
   });
   window.addEventListener('blur', hideHoveredCardPreview);
-  function showHandDetails(card, source) {
-    clearTimeout(handDetailsHideTimer);
-    const details = $('game-hand-details');
-    if (!card || !source) { details.hidden = true; return; }
-    $('game-hand-details-title').textContent = card.title || 'Card';
-    const effect = $('game-hand-details-effect');
-    effect.textContent = card.effect?.trim() || '';
-    effect.hidden = !effect.textContent;
-    const bounds = source.getBoundingClientRect();
-    details.style.maxHeight = `${Math.max(80, bounds.top - 16)}px`;
-    details.hidden = false;
-    const width = details.getBoundingClientRect().width;
-    details.style.left = `${Math.max(8, Math.min(bounds.left + bounds.width / 2 - width / 2, window.innerWidth - width - 8))}px`;
-    details.style.bottom = `${window.innerHeight - bounds.top + 8}px`;
-  }
-  function restoreSelectedHandDetails() {
-    const source = selectedHandIndex === null ? null : $('game-hand').children[selectedHandIndex]?.querySelector('.play-hand-card');
-    showHandDetails(selectedGameCard, source);
-  }
   function selectedCardNotice(card, handIndex, support) {
     if (handIndex === null) return '';
     if (['mulligan_first', 'mulligan_second'].includes(room?.turn_phase)) return '';
@@ -1189,12 +1167,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     }
     return '';
   }
-  function queueRestoreHandDetails() {
-    clearTimeout(handDetailsHideTimer);
-    handDetailsHideTimer = setTimeout(restoreSelectedHandDetails, 120);
-  }
-  $('game-hand-details').addEventListener('pointerenter', () => clearTimeout(handDetailsHideTimer));
-  $('game-hand-details').addEventListener('pointerleave', restoreSelectedHandDetails);
   function showCardPreview(card, source, handIndex = null) {
     pendingEvent = null;
     pendingEntity = card.card_type === 'Entity' && handIndex !== null && !pendingFestival
@@ -1203,7 +1175,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     syncEventTargets();
     selectedGameCard = card;
     selectedHandIndex = handIndex;
-    showHandDetails(handIndex === null ? null : card, source);
     const support = card.card_type === 'Event' ? eventSupport(card) : null;
     eventNotice(selectedCardNotice(card, handIndex, support));
     selectedCardElement?.classList.remove('is-selected');
@@ -1893,10 +1864,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       mulliganBadge.className = 'play-mulligan-order'; mulliganBadge.hidden = true;
       item.append(mulliganBadge);
       button.addEventListener('click', () => chooseHandCard(card, button, index));
-      button.addEventListener('pointerenter', () => showHandDetails(card, button));
-      button.addEventListener('pointerleave', queueRestoreHandDetails);
-      button.addEventListener('focus', () => showHandDetails(card, button));
-      button.addEventListener('blur', queueRestoreHandDetails);
       button.addEventListener('contextmenu', event => {
         event.preventDefault();
         chooseHandCard(card, button, index);
@@ -2322,7 +2289,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     $('session').hidden = !userId || !room || playing || inLobby;
     $('game').hidden = !playing;
     $('game-result').hidden = !finished;
-    if (finished) $('game-result-title').textContent = room.conceded_by === userId ? 'Przegrałeś' : 'Wygrałeś';
+    if (finished) $('game-result-title').textContent = room.conceded_by === userId ? 'You Lost' : 'You Won';
     if (!room) { controls(); return; }
     if (inLobby) { updateAwayDisplays(); controls(); return; }
     $('room-code').textContent = room.code;
