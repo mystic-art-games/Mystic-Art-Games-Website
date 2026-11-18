@@ -10,6 +10,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   let userId = null, room = null, channel = null, timer = null, awayTicker = null, visible = false, inLobby = false;
   let lobbyTimer = null, directoryChannel = null, directoryUserId = null, listSerial = 0, tableListSignature = '';
   let busy = false, epoch = 0, fetchSerial = 0, live = false, lastHeartbeat = 0, autoDeckPending = false;
+  let pendingDeckId = null, deckSaveInFlight = false;
   let gameState = null, gameLoading = false, gameLoadFailed = false, gameReloadPending = false, handSignature = '', gameRenderSerial = 0, boardRenderSerial = 0, cardPreviewSerial = 0;
   let phaseBusy = false, selectedCardElement = null, patronDeckRequest = '', patronDeckLoadedAt = 0;
   let openingRollBusy = false, openingChoiceBusy = false, openingRollError = '', openingMatchKey = '', openingWasRolling = false;
@@ -872,6 +873,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   async function disconnect() {
     ++epoch; ++fetchSerial;
+    pendingDeckId = null;
     ++gameRenderSerial; gameState = null; gameLoading = false; gameLoadFailed = false; gameReloadPending = false; handSignature = '';
     phaseBusy = false; drawRetryAt = 0; clearDrawFlight(); discardSelections.clear(); pendingFestival = null; arrivingEntityKey = null;
     beginningTurnKey = ''; beginningOrder = []; beginningTargetSource = null; beginningTargets.clear();
@@ -900,7 +902,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     $('deck').disabled = !canAct() || deckLocked || !getDecks().length;
     $('deck').title = deckLocked ? 'Click Not ready to change your deck.' : '';
     deckField.classList.toggle('is-locked', deckLocked);
-    $('ready').disabled = !canAct() || (!ownReady() && !$('deck').value);
+    $('ready').disabled = !canAct() || deckSaveInFlight || (!ownReady() && !$('deck').value);
     $('edit-name').disabled = !canAct() || room?.host_id !== userId;
     $('back').disabled = busy || !room;
     $('leave').disabled = busy || !room;
@@ -2136,8 +2138,11 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   function refreshCollections() {
     const decks = getDecks();
-    const value = room ? ownDeckId() : $('deck').value;
-    $('deck').replaceChildren(...(decks.length ? decks.map(deck => new Option(deck.name, deck.id)) : [new Option('No decks available', '')]));
+    const value = pendingDeckId || (deckSaveInFlight ? $('deck').value : room ? ownDeckId() : $('deck').value);
+    if (decks.length !== $('deck').options.length || decks.some((deck, index) =>
+      String(deck.id) !== $('deck').options[index]?.value || deck.name !== $('deck').options[index]?.text)) {
+      $('deck').replaceChildren(...(decks.length ? decks.map(deck => new Option(deck.name, deck.id)) : [new Option('No decks available', '')]));
+    }
     $('deck').value = decks.some(deck => deck.id === value) ? value : (decks[0]?.id || '');
     updateDeckCover();
     controls();
@@ -2172,43 +2177,53 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     $('edit-name').hidden = room.host_id !== userId || room.status === 'closed';
     $('leave').textContent = room.host_id === userId ? 'Smash Table' : 'Concede & Walk Out';
     let hasSeat = false;
+    const playerRows = $('players');
     const rows = ['host', 'guest'].map(seat => {
       const id = room[`${seat}_id`];
       const deck = getDecks().find(d => d.id === room[`${seat}_deck_id`]);
       const profile = getProfiles().find(p => p.id === id);
-      const row = document.createElement('div'); row.className = 'play-player';
-      const avatar = id ? makeAvatar(profile || { display_name: 'Player' }, 'play-avatar') : document.createElement('span');
-      if (!id) { avatar.className = 'user-avatar play-avatar'; avatar.textContent = '?'; }
-      avatar.setAttribute('aria-hidden', 'true');
-      const details = document.createElement('div'); details.className = 'play-player-details';
-      const name = document.createElement('strong'); name.textContent = id ? `${profile?.display_name || 'Player'}${id === userId ? ' · You' : ''}` : 'Waiting for someone to bring a chair.';
-      details.append(name);
-      if (id === userId) {
-        hasSeat = true;
-        const controls = document.createElement('div'); controls.className = 'play-player-controls';
-        controls.append(deckField, readyButton); details.append(controls);
+      const own = id === userId;
+      let row = Array.from(playerRows.children).find(item => item.dataset.seat === seat
+        && item.dataset.playerId === String(id || '') && item.dataset.own === String(own));
+      if (!row) {
+        row = document.createElement('div'); row.className = 'play-player';
+        row.dataset.seat = seat; row.dataset.playerId = String(id || ''); row.dataset.own = String(own);
+        const avatar = id ? makeAvatar(profile || { display_name: 'Player' }, 'play-avatar') : document.createElement('span');
+        if (!id) { avatar.className = 'user-avatar play-avatar'; avatar.textContent = '?'; }
+        avatar.setAttribute('aria-hidden', 'true');
+        const details = document.createElement('div'); details.className = 'play-player-details';
+        details.append(document.createElement('strong'));
+        if (own) {
+          const controls = document.createElement('div'); controls.className = 'play-player-controls';
+          controls.append(deckField, readyButton); details.append(controls);
+        } else details.append(document.createElement('span'));
+        row.append(avatar, details);
       }
-      else {
-        const patronName = document.createElement('span');
-        patronName.textContent = room[`${seat}_deck_id`]
-          ? room[`${seat}_patron_name`] || deck?.patron_name || 'Patron unavailable'
-          : 'No deck selected';
-        details.append(patronName);
-      }
-      row.append(avatar, details);
+      row.querySelector('.play-player-details > strong').textContent = id
+        ? `${profile?.display_name || 'Player'}${own ? ' · You' : ''}` : 'Waiting for someone to bring a chair.';
+      if (own) hasSeat = true;
+      else row.querySelector('.play-player-details > span').textContent = room[`${seat}_deck_id`]
+        ? room[`${seat}_patron_name`] || deck?.patron_name || 'Patron unavailable' : 'No deck selected';
       const state = room.status === 'closed' ? 'Closed' : room[`${seat}_ready`] ? 'Ready' : '';
-      if (id && state && !(id === userId && state === 'Ready')) {
-        const status = document.createElement('span'); status.className = `play-pill${state === 'Ready' ? ' is-live' : ''}`;
+      let status = row.querySelector(':scope > .play-pill');
+      if (id && state && !(own && state === 'Ready')) {
+        if (!status) { status = document.createElement('span'); row.append(status); }
+        status.className = `play-pill${state === 'Ready' ? ' is-live' : ''}`;
         status.textContent = state;
-        row.append(status);
-      }
+      } else status?.remove();
       return row;
     });
-    if (!hasSeat) $('controls-parking').append(deckField, readyButton);
-    $('players').replaceChildren(...rows);
+    if (!hasSeat && deckField.parentElement !== $('controls-parking')) $('controls-parking').append(deckField, readyButton);
+    rows.forEach((row, index) => {
+      const current = playerRows.children[index];
+      if (current && current !== row) current.replaceWith(row);
+      else if (!current) playerRows.append(row);
+    });
+    while (playerRows.children.length > rows.length) playerRows.lastElementChild.remove();
     const mine = room.host_id === userId ? 'host' : 'guest';
-    $('deck').value = getDecks().some(deck => deck.id === room[`${mine}_deck_id`])
-      ? room[`${mine}_deck_id`] : (getDecks()[0]?.id || '');
+    const selectedDeckId = pendingDeckId || (deckSaveInFlight ? $('deck').value : room[`${mine}_deck_id`]);
+    $('deck').value = getDecks().some(deck => String(deck.id) === String(selectedDeckId))
+      ? selectedDeckId : (getDecks()[0]?.id || '');
     updateDeckCover();
     const isReady = room[`${mine}_ready`];
     $('ready').textContent = isReady ? 'Not ready' : 'Ready';
@@ -2233,10 +2248,33 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   $('game-restart').addEventListener('click', () => void run(restartGame));
   $('leave').addEventListener('click', () => run(leaveTable));
   $('game-leave').addEventListener('click', () => run(leaveTable));
+  async function saveDeckSelection() {
+    if (deckSaveInFlight) return;
+    deckSaveInFlight = true;
+    controls();
+    const expected = epoch, roomId = room?.id;
+    try {
+      while (pendingDeckId && expected === epoch && room?.id === roomId && !ownReady()) {
+        const deckId = pendingDeckId;
+        pendingDeckId = null;
+        if (String(ownDeckId()) !== String(deckId)) await action('deck', { deck_id: deckId });
+      }
+    } catch (error) {
+      pendingDeckId = null;
+      message(friendly(error), true);
+      await refreshRoom().catch(() => {});
+    } finally {
+      deckSaveInFlight = false;
+      controls();
+    }
+  }
   $('deck').addEventListener('change', () => {
     if (busy || ownReady()) { $('deck').value = ownDeckId() || ''; updateDeckCover(); return; }
     updateDeckCover();
-    if ($('deck').value) void run(() => action('deck', { deck_id: $('deck').value }));
+    if ($('deck').value) {
+      pendingDeckId = $('deck').value;
+      void saveDeckSelection();
+    }
   });
   $('ready').addEventListener('click', () => {
     const deckId = $('deck').value;
