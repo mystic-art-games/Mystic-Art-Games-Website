@@ -354,15 +354,15 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
 .play-game-discard-bar button:disabled { cursor: default; opacity: .55; }
 .play-game-phase-marker { flex: 0 0 .7rem; width: .7rem; height: .7rem; border: 1px solid #d4cfb6; border-radius: 50%; background: transparent; }
 .play-game-phase-list li.is-current .play-game-phase-marker { border-color: var(--play-turn-accent, #7ba98a); background: var(--play-turn-accent, #7ba98a); box-shadow: 0 0 0 2px #fff6d83d; }
-.play-game-phase-actions { position: absolute; top: calc(100% + .5rem); right: 0; left: 0; display: grid; grid-template-rows: 2.25rem; }
+.play-game-phase-actions { position: absolute; top: calc(100% + .5rem); right: 0; left: 0; display: grid; grid-template-rows: 2.5rem; }
 .play-game-phase-actions[hidden] { display: none; }
-.play-game-next-phase { box-sizing: border-box; width: 100%; height: 100%; margin: 0; padding: .5rem .4rem; border: 1px solid #123c2d; border-radius: 7px; background: #477452; color: #fff; font-size: .78rem; font-weight: 800; }
+.play-game-next-phase { box-sizing: border-box; width: 100%; height: 100%; margin: 0; padding: .55rem .8rem; border-radius: 10px; }
 .play-game-next-phase[hidden] { display: none; }
-.play-game-extra-draw { background: #d7b66a; color: #173b2d; }
 .play-game-extra-draw[hidden] { display: none; }
-.play-game-next-phase:hover:not(:disabled) { background: #568a61; }
-.play-game-extra-draw:hover:not(:disabled) { background: #e4c783; }
-.play-game-next-phase:disabled { cursor: default; opacity: .5; }
+body:not(.dark-mode) button.play-game-extra-draw { border-color: #c39645 !important; background: linear-gradient(145deg, #f6dc8b, #e7bd5d 52%, #c9943e) !important; color: #3d2c10 !important; box-shadow: inset 1px 1px 0 #fff6d6, 0 2px 8px #81602044 !important; }
+body.dark-mode button.play-game-extra-draw { border-color: #e2c375 !important; background: linear-gradient(145deg, #e8cb77, #d3ad51 52%, #aa7d31) !important; color: #2d230e !important; box-shadow: inset 1px 1px 0 #fff0b877, 0 6px 16px #1c160b55 !important; }
+body:not(.dark-mode) button.play-game-extra-draw:hover:not(:disabled) { box-shadow: inset 1px 1px 0 #fff9e3, 0 5px 12px #81602055 !important; }
+body.dark-mode button.play-game-extra-draw:hover:not(:disabled) { box-shadow: inset 1px 1px 0 #fff1bf99, 0 6px 16px #1c160b77 !important; }
 @media (min-width: 901px) {
   .play-game-opponent-footer { padding-right: 3.3rem; }
   .play-game-opponent-footer .play-game-actions { position: absolute; z-index: 20; top: clamp(.3rem, 1vh, .7rem); right: 0; margin-top: 0; }
@@ -373,7 +373,7 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
     .play-game-turn-owner { margin: .1rem 0 0; font-size: .72rem; }
     .play-game-phase-list { gap: .18rem; margin: .3rem 0 0; }
     .play-game-phase-list li { min-height: 1.5rem; padding: .18rem .25rem; font-size: .68rem; }
-    .play-game-phase-actions { grid-template-rows: 1.9rem; margin-top: .85rem; }
+    .play-game-phase-actions { grid-template-rows: 1.9rem; }
     .play-game-next-phase { padding: .3rem .2rem; font-size: .72rem; }
   }
   @container (max-height: 230px) {
