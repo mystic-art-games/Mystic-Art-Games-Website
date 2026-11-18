@@ -12,7 +12,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   let busy = false, epoch = 0, fetchSerial = 0, live = false, lastHeartbeat = 0, autoDeckPending = false;
   let pendingDeckId = null, deckSaveInFlight = false;
   let gameState = null, gameLoading = false, gameLoadFailed = false, gameReloadPending = false, handSignature = '', gameRenderSerial = 0, boardRenderSerial = 0, cardPreviewSerial = 0;
-  let phaseBusy = false, selectedCardElement = null, patronDeckRequest = '', patronDeckLoadedAt = 0;
+  let phaseBusy = false, selectedCardElement = null, hoveredCardElement = null, hoveredCardKey = '', mousePosition = null, patronDeckRequest = '', patronDeckLoadedAt = 0;
   let openingRollBusy = false, openingChoiceBusy = false, openingRollError = '', openingMatchKey = '';
   let mulliganBusy = false, mulliganStepKey = '';
   const mulliganOrder = [];
@@ -23,7 +23,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   let drawRetryAt = 0, activeDrawFlight = null, activeHandShifts = [];
   let beginningTurnKey = '', beginningOrder = [], beginningTargetSource = null;
   const beginningTargets = new Map();
-  let archiveBrowserSeat = null, archiveBrowserCards = [], archiveBrowserIndex = 0;
+  let archiveBrowserSeat = null, archiveBrowserCards = [], archiveBrowserIndex = 0, archiveBrowserHoverIndex = null;
   let archiveBrowserRequestSerial = 0, archiveBrowserCardSerial = 0, archiveBrowserOpener = null;
   let archiveBrowserLoading = false, archiveBrowserError = '';
   let archiveGalleryObserver = null;
@@ -60,7 +60,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       <div id="play-game-event-notice" class="play-game-event-notice" role="status" aria-live="polite" hidden><span id="play-game-event-notice-text"></span><button id="play-game-event-notice-close" type="button" aria-label="Dismiss message" hidden>×</button></div>
       <div id="play-game-discard-bar" class="play-game-discard-bar" hidden><strong id="play-game-discard-text" role="status" aria-live="polite"></strong><button id="play-game-confirm-discard" type="button" disabled>Confirm Discard</button></div>
       <aside id="play-game-beginning-effects" class="play-beginning-effects" aria-label="Beginning of Turn Entity effects" hidden><strong>Beginning of Turn effects</strong><p id="play-game-beginning-instructions"></p><ol id="play-game-beginning-list"></ol><button id="play-game-resolve-beginning" type="button">Resolve effects in this order</button></aside>
-      <aside id="play-game-card-preview" class="play-game-card-preview" aria-label="Card preview" hidden><button id="play-game-card-preview-close" class="play-game-card-preview-close action-delete" type="button" aria-label="Close card preview">×</button><canvas id="play-game-card-preview-canvas" hidden></canvas><span id="play-game-card-preview-fallback" class="play-hand-fallback"></span></aside>
+      <aside id="play-game-card-preview" class="play-game-card-preview" aria-label="Card preview" hidden><button id="play-game-card-preview-close" class="play-game-card-preview-close action-delete" type="button" aria-label="Close card preview">×</button><canvas id="play-game-card-preview-canvas" hidden></canvas><img id="play-game-card-preview-image" alt="" hidden><span id="play-game-card-preview-fallback" class="play-hand-fallback"></span></aside>
       <div class="play-game-table">
         <div class="play-game-zones-left">
           <div class="play-game-zone play-game-zone-opponent-patron"><button id="play-game-opponent-patron-slot" class="play-game-patron-slot" type="button" aria-label="Preview opponent's Patron"><canvas id="play-game-opponent-patron" hidden></canvas><span id="play-game-opponent-patron-fallback" class="play-game-patron-fallback" aria-hidden="true"></span></button></div>
@@ -1065,7 +1065,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     })().catch(() => { if (serial === preview.serial) preview.key = ''; });
   }
   function hideCardPreview() {
-    ++cardPreviewSerial;
+    hideHoveredCardPreview();
     pendingEvent = null;
     pendingEntity = null;
     selectedGameCard = null;
@@ -1075,9 +1075,78 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     selectedCardElement?.classList.remove('is-selected');
     selectedCardElement?.removeAttribute('aria-pressed');
     selectedCardElement = null;
-    $('game-card-preview').hidden = true;
     $('game-hand-details').hidden = true;
+    requestAnimationFrame(syncHoveredCardPreview);
   }
+  function hideHoveredCardPreview() {
+    ++cardPreviewSerial;
+    hoveredCardElement = null;
+    hoveredCardKey = '';
+    $('game-card-preview').hidden = true;
+  }
+  function showHoveredCardPreview(card, source) {
+    const key = JSON.stringify([card.id, card.title, card.card_type, card.terrain, card.effect, card.artwork_id, card.fullArtUrl]);
+    if (hoveredCardElement === source && hoveredCardKey === key) return;
+    hoveredCardElement = source;
+    hoveredCardKey = key;
+    const serial = ++cardPreviewSerial;
+    const panel = $('game-card-preview');
+    const canvas = $('game-card-preview-canvas');
+    const image = $('game-card-preview-image');
+    const fallback = $('game-card-preview-fallback');
+    canvas.hidden = true;
+    image.hidden = true;
+    fallback.hidden = false;
+    fallback.textContent = card.title || 'Card';
+    panel.setAttribute('aria-label', `Preview of ${card.title || 'card'}`);
+    panel.hidden = false;
+    if (card.fullArtTerrain && card.fullArtUrl) {
+      image.src = card.fullArtUrl;
+      image.hidden = false;
+      fallback.hidden = true;
+      return;
+    }
+    void (async () => {
+      const artwork = card.artwork_id ? await getArtworkUrl(card.artwork_id).catch(() => '') : '';
+      const result = await renderCard(canvas, card, artwork, () => serial === cardPreviewSerial);
+      if (serial === cardPreviewSerial && result && !result.cancelled) {
+        canvas.hidden = false;
+        fallback.hidden = true;
+      }
+    })().catch(() => {});
+  }
+  function syncHoveredCardPreview() {
+    if (!mousePosition || $('game').hidden || !$('game-archive-browser').hidden
+      || root.querySelector('.play-game-board-wrap.is-event-drop-zone')) {
+      if (hoveredCardElement) hideHoveredCardPreview();
+      return;
+    }
+    const target = document.elementFromPoint(mousePosition.x, mousePosition.y);
+    const source = target?.closest?.('.play-hand-card, .play-game-archive-card, .play-node-entity-card, .play-game-node[class*="terrain-"], .play-game-patron-slot');
+    if (!source || !root.contains(source)) {
+      if (hoveredCardElement) hideHoveredCardPreview();
+      return;
+    }
+    let card = null;
+    if (source.matches('.play-hand-card')) card = (pendingFestival?.hand || gameState?.hand || [])[Number(source.dataset.handIndex)];
+    else if (source.matches('.play-game-archive-card, .play-node-entity-card')) card = source._playCard;
+    else if (source.matches('.play-game-node')) card = source._playTerrain;
+    else card = patronPreviews[source.id.includes('opponent') ? 'opponent' : 'self'].card;
+    if (card) showHoveredCardPreview(resolveGameCard(card), source);
+    else if (hoveredCardElement) hideHoveredCardPreview();
+  }
+  document.addEventListener('pointermove', event => {
+    if (event.pointerType !== 'mouse') return;
+    mousePosition = { x: event.clientX, y: event.clientY };
+    syncHoveredCardPreview();
+  });
+  document.addEventListener('pointerout', event => {
+    if (event.pointerType === 'mouse' && !event.relatedTarget) {
+      mousePosition = null;
+      hideHoveredCardPreview();
+    }
+  });
+  window.addEventListener('blur', hideHoveredCardPreview);
   function showHandDetails(card, source) {
     clearTimeout(handDetailsHideTimer);
     const details = $('game-hand-details');
@@ -1136,32 +1205,15 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     showHandDetails(handIndex === null ? null : card, source);
     const support = card.card_type === 'Event' ? eventSupport(card) : null;
     eventNotice(selectedCardNotice(card, handIndex, support));
-    const serial = ++cardPreviewSerial;
     selectedCardElement?.classList.remove('is-selected');
     selectedCardElement?.removeAttribute('aria-pressed');
     selectedCardElement = source;
     selectedCardElement?.classList.add('is-selected');
     selectedCardElement?.setAttribute('aria-pressed', 'true');
-    const panel = $('game-card-preview');
-    const canvas = $('game-card-preview-canvas');
-    const fallback = $('game-card-preview-fallback');
-    canvas.hidden = true;
-    fallback.hidden = false;
-    fallback.textContent = card.title || 'Card';
-    panel.setAttribute('aria-label', `Preview of ${card.title || 'card'}`);
-    panel.hidden = false;
     renderTurnPhase();
-    void (async () => {
-      const artwork = card.artwork_id ? await getArtworkUrl(card.artwork_id).catch(() => '') : '';
-      const result = await renderCard(canvas, card, artwork, () => serial === cardPreviewSerial);
-      if (serial === cardPreviewSerial && result && !result.cancelled) {
-        canvas.hidden = false;
-        fallback.hidden = true;
-      }
-    })().catch(() => {});
   }
   function toggleCardPreview(card, source, handIndex = null) {
-    if (selectedCardElement === source && !$('game-card-preview').hidden) hideCardPreview();
+    if (selectedCardElement === source) hideCardPreview();
     else showCardPreview(card, source, handIndex);
   }
   function chooseHandCard(card, source, handIndex) {
@@ -1358,6 +1410,16 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       caption.textContent = item.title || 'Card';
       button.append(canvas, fallback, caption);
       button.addEventListener('click', () => { archiveBrowserIndex = index; renderArchiveBrowser(); });
+      button.addEventListener('pointerenter', event => {
+        if (event.pointerType !== 'mouse') return;
+        archiveBrowserHoverIndex = index;
+        renderArchiveBrowser();
+      });
+      button.addEventListener('pointerleave', event => {
+        if (event.pointerType !== 'mouse' || archiveBrowserHoverIndex !== index) return;
+        archiveBrowserHoverIndex = null;
+        renderArchiveBrowser();
+      });
       row.append(button);
       return { row, button, canvas, fallback, item };
     });
@@ -1394,7 +1456,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   function renderArchiveBrowser() {
     if ($('game-archive-browser').hidden) return;
-    const card = archiveBrowserCards[archiveBrowserIndex];
+    const selectedCard = archiveBrowserCards[archiveBrowserIndex];
+    const card = archiveBrowserHoverIndex === null ? null : archiveBrowserCards[archiveBrowserHoverIndex];
     const status = $('game-archive-browser-status');
     status.textContent = archiveBrowserError || (archiveBrowserLoading ? 'Loading cards…'
       : `${archiveBrowserCards.length} card${archiveBrowserCards.length === 1 ? '' : 's'} · newest first`);
@@ -1403,16 +1466,17 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       button.classList.toggle('is-current', index === archiveBrowserIndex);
       button.setAttribute('aria-current', index === archiveBrowserIndex ? 'true' : 'false');
     });
-    $('game-archive-browser-position').textContent = card
+    $('game-archive-browser-position').textContent = selectedCard
       ? `${archiveBrowserIndex + 1} of ${archiveBrowserCards.length}` : '';
-    $('game-archive-browser-previous').disabled = !card || archiveBrowserIndex === 0;
-    $('game-archive-browser-next').disabled = !card || archiveBrowserIndex === archiveBrowserCards.length - 1;
+    $('game-archive-browser-previous').disabled = !selectedCard || archiveBrowserIndex === 0;
+    $('game-archive-browser-next').disabled = !selectedCard || archiveBrowserIndex === archiveBrowserCards.length - 1;
     const canvas = $('game-archive-browser-canvas');
     const fallback = $('game-archive-browser-fallback');
     const serial = ++archiveBrowserCardSerial;
     canvas.hidden = true;
     fallback.hidden = false;
-    fallback.textContent = card?.title || (archiveBrowserLoading ? 'Loading…' : 'No cards in this Archive.');
+    fallback.textContent = card?.title || (archiveBrowserLoading ? 'Loading…'
+      : archiveBrowserCards.length ? 'Hover over a card to preview it.' : 'No cards in this Archive.');
     if (!card) return;
     void (async () => {
       const artwork = card.artwork_id ? await getArtworkUrl(card.artwork_id).catch(() => '') : '';
@@ -1433,6 +1497,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     $('game-archive-browser').hidden = true;
     archiveBrowserSeat = null;
     archiveBrowserCards = [];
+    archiveBrowserHoverIndex = null;
     $('game-archive-browser-list').replaceChildren();
     archiveBrowserLoading = false;
     archiveBrowserError = '';
@@ -1444,6 +1509,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     hideCardPreview();
     archiveBrowserSeat = seat;
     archiveBrowserCards = [];
+    archiveBrowserHoverIndex = null;
     $('game-archive-browser-list').replaceChildren();
     archiveBrowserIndex = 0;
     archiveBrowserLoading = true;
@@ -1492,6 +1558,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   function renderArchiveCard(seat, raw, count) {
     const preview = archivePreviews[seat];
     const card = count && raw ? resolveGameCard(raw) : null;
+    $(`game-${seat}-archive`)._playCard = card;
     const key = card ? JSON.stringify([card.id, card.title, card.card_type, card.terrain, card.effect, card.artwork_id]) : '';
     if (preview.key === key) return;
     preview.key = key;
@@ -1814,6 +1881,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       const item = document.createElement('div'); item.className = 'play-hand-item';
       const button = document.createElement('button');
       button.type = 'button'; button.className = 'play-hand-card';
+      button.dataset.handIndex = String(index);
       button.setAttribute('aria-label', `Preview ${card.title || 'card'}`);
       const canvas = document.createElement('canvas'); canvas.hidden = true;
       const fallback = document.createElement('span'); fallback.className = 'play-hand-fallback';
@@ -1843,6 +1911,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       return item;
     });
     $('game-hand').replaceChildren(...cards);
+    requestAnimationFrame(syncHoveredCardPreview);
   }
   function renderGame() {
     if (!room || room.status !== 'active') return;
@@ -1862,10 +1931,14 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       cell.dataset.key = `${column},${row}`;
       if (node?.terrain) {
         cell.classList.add(`terrain-${node.terrain.toLowerCase()}`);
+        cell._playTerrain = { id: `terrain:${node.terrain.toLowerCase()}`, title: node.terrain,
+          card_type: 'Terrain', terrain: node.terrain, fullArtTerrain: true,
+          fullArtUrl: new URL(`./assets/Terrain_${node.terrain}_Full_Art.png`, import.meta.url).href };
         if (node.entity) {
           cell.classList.add('has-entity');
           const entityCard = resolveGameCard(node.entity);
           const entity = document.createElement('div'); entity.className = 'play-node-entity-card';
+          entity._playCard = entityCard;
           if (arrivingEntityKey === cell.dataset.key) entity.classList.add('is-arriving');
           entity.setAttribute('aria-hidden', 'true');
           const canvas = document.createElement('canvas'); canvas.hidden = true;
@@ -1908,6 +1981,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       nodes.push(cell);
     }
     $('game-board').replaceChildren(...nodes);
+    requestAnimationFrame(syncHoveredCardPreview);
     renderBeginningEffects();
     syncEventTargets();
     requestAnimationFrame(syncZoneCardSize);
