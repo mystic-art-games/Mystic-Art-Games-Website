@@ -14,7 +14,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   let gameState = null, gameLoading = false, gameLoadFailed = false, gameReloadPending = false, handSignature = '', gameRenderSerial = 0, boardRenderSerial = 0, cardPreviewSerial = 0;
   let phaseBusy = false, selectedCardElement = null, patronDeckRequest = '', patronDeckLoadedAt = 0;
   let openingRollBusy = false, openingChoiceBusy = false, openingRollError = '', openingMatchKey = '';
-  let openingRevealTimer = null, openingTieTimer = null, openingTieRound = 0, openingPanelAnimatedKey = '', openingRevealDoneKey = '';
+  let openingRevealTimer = null, openingPanelAnimatedKey = '', openingRevealDoneKey = '';
   let openingShuffleTimer = null, openingVisualDice = [1, 1];
   let handDetailsHideTimer = null;
   const openingAnimatedValues = { host: null, guest: null };
@@ -303,14 +303,12 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       openingRollBusy = false;
       openingChoiceBusy = false;
       openingRollError = '';
-      openingTieRound = 0;
       openingAnimatedValues.host = null;
       openingAnimatedValues.guest = null;
       clearTimeout(openingRevealTimer);
-      clearTimeout(openingTieTimer);
       clearInterval(openingShuffleTimer);
       openingShuffleTimer = null;
-      openingRevealTimer = openingTieTimer = null;
+      openingRevealTimer = null;
     }
     const rolling = room?.status === 'active' && room.turn_phase === 'roll' && room.opening_roll_round > 0;
     const choosing = room?.status === 'active' && room.turn_phase === 'choose_first';
@@ -362,11 +360,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       return;
     }
     const tie = room.opening_last_tie;
-    if (rolling && !openingRollBusy && tie?.round === room.opening_roll_round - 1 && tie.round !== openingTieRound) {
-      openingTieRound = tie.round;
-      openingTieTimer = setTimeout(() => { openingTieTimer = null; renderOpeningRoll(); }, 2200);
-    }
-    const showTie = rolling && tie?.round === openingTieRound && Boolean(openingTieTimer);
+    const reroll = rolling && tie?.round === room.opening_roll_round - 1;
+    const showTie = reroll && !openingRollBusy && room.opening_host_roll == null && room.opening_guest_roll == null;
     const hostRoll = showTie ? tie.host : room.opening_host_roll;
     const guestRoll = showTie ? tie.guest : room.opening_guest_roll;
     const hostDice = showTie ? tie.host_dice : room.opening_host_dice;
@@ -403,22 +398,23 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const ownSeat = room.host_id === userId ? 'host' : 'guest';
     const ownRolled = room[`opening_${ownSeat}_roll`] != null;
     const button = $('opening-roll-button');
-    button.hidden = !rolling || ownRolled || showTie;
+    button.hidden = !rolling || ownRolled;
     button.disabled = openingRollBusy;
+    button.textContent = reroll ? 'Roll Dices Again' : 'Roll Dices';
     $('opening-roll-status').classList.toggle('is-result', Boolean(revealing));
     $('opening-roll-status').textContent = openingRollBusy ? 'Rolling two dice…'
       : revealing
       ? winnerId === userId ? 'You decide who plays first' : 'Opponent decides who plays first'
       : showTie ? `Tie: ${tie.host}–${tie.guest}. Roll again!`
-      : ownRolled ? `You rolled ${room[`opening_${ownSeat}_roll`]}. Waiting for the opponent to roll.`
-      : room.opening_host_roll || room.opening_guest_roll ? 'The other player has rolled. Roll your dice!' : 'Roll two dice. Higher total chooses who starts.';
+      : ownRolled ? `You rolled ${room[`opening_${ownSeat}_roll`]}. Waiting for the opponent to roll${reroll ? ' again' : ''}.`
+      : room.opening_host_roll || room.opening_guest_roll ? `The other player has rolled. Roll your dice${reroll ? ' again' : ''}!` : 'Roll two dice. Higher total chooses who starts.';
     $('opening-roll-error').hidden = !openingRollError;
     $('opening-roll-error').textContent = openingRollError;
   }
   async function rollOpeningDie() {
     if (openingRollBusy || !room || room.turn_phase !== 'roll') return;
     const seat = room.host_id === userId ? 'host' : 'guest';
-    if (room[`opening_${seat}_roll`] != null || openingTieTimer) return;
+    if (room[`opening_${seat}_roll`] != null) return;
     const expected = epoch, roomId = room.id, round = room.opening_roll_round;
     openingRollBusy = true;
     openingRollError = '';
