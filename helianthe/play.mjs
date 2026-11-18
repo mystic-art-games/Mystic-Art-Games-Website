@@ -1300,11 +1300,12 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     }
     if (card.card_type !== 'Event') return '';
     if (!support) return unavailableEventReason(card);
-    if (['fertilize_two', 'fertilize_draw', 'fertilize_existing_draw'].includes(support[1])) {
+    if (card.title === 'Beacon Grid' || ['fertilize_two', 'fertilize_draw', 'fertilize_existing_draw'].includes(support[1])) {
       const hasTarget = Array.from($('game-board').children).some(cell => cell.dataset.key
         && legalEventTarget(support[1], room?.board?.[cell.dataset.key]));
-      if (!hasTarget) return support[1] === 'fertilize_existing_draw'
-        ? 'There is no fertilized empty space to choose.' : 'There is no legal empty space to Fertilize.';
+      if (!hasTarget) return card.title === 'Beacon Grid' ? 'Beacon Grid needs Radiance Terrain.'
+        : support[1] === 'fertilize_existing_draw' ? 'There is no fertilized empty space to choose.'
+          : 'There is no legal empty space to Fertilize.';
     }
     return '';
   }
@@ -1758,6 +1759,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         syncEventTargets();
         eventNotice(`Choose ${rule[2]} on the board. Press Esc to cancel.`);
         return;
+      }
+      if (card.title === 'Beacon Grid' && rule[1] === 'lumens_two') {
+        eventNotice('Beacon Grid needs Radiance Terrain.'); return;
       }
       if (rule[1].startsWith('fertilize')) { eventNotice('There is no valid space to Fertilize.'); return; }
     }
