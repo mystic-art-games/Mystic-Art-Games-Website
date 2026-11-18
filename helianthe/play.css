@@ -235,7 +235,7 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) .masthead { display:
 html:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100%; overflow-y: hidden; }
 body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; min-height: 0; overflow-y: hidden; scrollbar-gutter: auto; background-color: #986845; background-image: linear-gradient(#e6c79859, #e6c79859), url('./assets/table-wood-texture.png'); background-position: center; background-size: cover; background-attachment: fixed; background-blend-mode: screen, normal; }
 #play-view:has(#play-game:not([hidden])) { display: flex; flex-direction: column; width: 100%; max-width: none; height: 100dvh; margin: 0; padding: clamp(.3rem, 1vh, .7rem); border: 0; border-radius: 0; background: transparent; box-shadow: none; }
-#play-game:not([hidden]) { --play-preview-gutter: clamp(170px, 19vw, 300px); display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: .25rem; flex: 1; min-height: 0; color: #fff7e8; }
+#play-game:not([hidden]) { --play-preview-gutter: clamp(160px, 18vw, 280px); display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: .25rem; flex: 1; min-height: 0; color: #fff7e8; }
 #play-game .play-game-seat { padding: .2rem .65rem; border-color: #effff048; background: #effff01c; color: #fff7e8; backdrop-filter: blur(10px) saturate(1.15); -webkit-backdrop-filter: blur(10px) saturate(1.15); box-shadow: inset 0 1px 0 #ffffff47, 0 5px 16px #0e241a2e; }
 .play-game-hand-count { display: inline-flex; align-items: center; width: max-content; padding: .3rem .65rem; border: 1px solid #b9d4c1; border-radius: 999px; background: #1b352b; color: #fff7e8; font-size: .76rem; font-weight: 800; line-height: 1.2; white-space: nowrap; box-shadow: 0 2px 7px #0e241a88; }
 .play-game-hand-count[hidden] { display: none; }
@@ -365,7 +365,7 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
 @media (min-width: 901px) {
   .play-game-opponent-footer { padding-right: 3.3rem; }
   .play-game-opponent-footer .play-game-actions { position: absolute; z-index: 20; top: clamp(.3rem, 1vh, .7rem); right: 0; margin-top: 0; }
-  #play-game .play-game-board-wrap { position: relative; top: -24px; height: calc(100% + 48px); }
+  #play-game .play-game-board-wrap { position: relative; top: -48px; height: calc(100% + 72px); }
   @container (max-height: 380px) {
     .play-game-phases { padding: .35rem; }
     .play-game-phases .play-eyebrow { display: none; }
