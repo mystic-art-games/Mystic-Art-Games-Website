@@ -286,7 +286,7 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
 .play-opening-roll-panel { display: grid; grid-template-rows: 3rem 5rem 13rem 3.5rem 2rem; align-items: center; box-sizing: border-box; width: min(50rem, 100%); max-height: calc(100dvh - 2rem); padding: clamp(1rem, 3vw, 1.5rem); overflow-y: auto; color: #fff7e8; text-align: center; text-shadow: 0 2px 8px #221308bb; }
 .play-opening-roll-panel h2 { grid-row: 1; margin: 0; font-family: Nunito, sans-serif; font-size: clamp(1.4rem, 4vw, 2rem); }
 .play-opening-roll-status { grid-row: 2; display: grid; place-items: center; margin: 0; font-weight: 800; line-height: 1.2; }
-.play-opening-roll-status.is-result { color: #ffe13a; font-size: clamp(1.5rem, 4.5vw, 2.5rem); text-shadow: 0 2px 7px #1b110b, 0 0 18px #ffe13a80; }
+.play-opening-roll-status.is-result { color: #c79500; font-size: clamp(1.5rem, 4.5vw, 2.5rem); font-weight: 900; -webkit-text-stroke: .45px #503400; text-shadow: 0 2px 4px #1b110bcc; }
 .play-opening-choice { position: absolute; z-index: 30; top: 50%; left: 50%; box-sizing: border-box; width: min(26rem, calc(100% - 1rem)); padding: 1rem; transform: translate(-50%, -50%); border: 1px solid #b9d4c1; border-radius: 12px; background: #1b352bf2; color: #fff7e8; text-align: center; box-shadow: 0 8px 28px #07191099; }
 .play-opening-choice[hidden], #play-opening-choice-actions[hidden] { display: none; }
 .play-opening-choice strong { display: block; line-height: 1.35; }
