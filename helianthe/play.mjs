@@ -21,6 +21,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   let openingShuffleTimer = null, openingVisualDice = [1, 1];
   const openingAnimatedValues = { host: null, guest: null };
   let drawRetryAt = 0, activeDrawFlight = null, activeHandShifts = [];
+  const arrivingCardCanvases = new Map();
   let beginningTurnKey = '', beginningOrder = [], beginningTargetSource = null;
   const beginningTargets = new Map();
   let archiveBrowserSeat = null, archiveBrowserCards = [], archiveBrowserIndex = 0, archiveBrowserHoverIndex = null;
@@ -510,6 +511,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     mulliganFlights.clear();
     for (const card of mulliganHiddenCards) card.style.visibility = '';
     mulliganHiddenCards.clear();
+    arrivingCardCanvases.clear();
   }
   function mulliganFlight(bounds, front) {
     const flight = document.createElement('div');
@@ -589,20 +591,16 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       mulliganAnimations.add(animation);
       return animation;
     });
-    const flights = cards.map((rawCard, index) => {
+    const flights = (await Promise.all(cards.map(async (rawCard, index) => {
       const card = resolveGameCard(rawCard);
       const canvas = document.createElement('canvas'); canvas.hidden = true;
       const fallback = document.createElement('span'); fallback.textContent = card.title || 'Card';
       const front = document.createElement('div'); front.className = 'play-mulligan-drawn-card';
       front.append(canvas, fallback);
       const { flight, inner } = mulliganFlight(source, front);
-      void (async () => {
-        try {
-          const artwork = card.artwork_id ? await getArtworkUrl(card.artwork_id) : '';
-          const result = await renderCard(canvas, card, artwork, () => mulliganFlights.has(flight));
-          if (mulliganFlights.has(flight) && result && !result.cancelled) { canvas.hidden = false; fallback.hidden = true; }
-        } catch { /* The card title remains visible if art cannot load. */ }
-      })();
+      if (!await prepareArrivingCard(card, canvas, fallback, () => mulliganFlights.has(flight))) {
+        flight.remove(); mulliganFlights.delete(flight); return null;
+      }
       const targetX = first.left + (remaining.length + index) * step + first.width / 2;
       const targetY = first.top + first.height / 2;
       const dx = targetX - source.left - source.width / 2;
@@ -623,7 +621,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       ], timing);
       mulliganAnimations.add(motion); mulliganAnimations.add(flip);
       return { motion, flip };
-    });
+    }))).filter(Boolean);
     await Promise.allSettled([...shifts.map(animation => animation.finished),
       ...flights.flatMap(({ motion, flip }) => [motion.finished, flip.finished])]);
   }
@@ -825,6 +823,19 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     activeDrawFlight = null;
     for (const animation of activeHandShifts) animation.cancel();
     activeHandShifts = [];
+    arrivingCardCanvases.clear();
+  }
+  async function prepareArrivingCard(card, canvas, fallback, current) {
+    try {
+      const artwork = card.artwork_id ? await getArtworkUrl(card.artwork_id).catch(() => '') : '';
+      const result = await renderCard(canvas, card, artwork, current);
+      if (!current() || !result || result.cancelled) return false;
+      canvas.hidden = false; fallback.hidden = true;
+      const key = JSON.stringify(card);
+      if (!arrivingCardCanvases.has(key)) arrivingCardCanvases.set(key, []);
+      arrivingCardCanvases.get(key).push(canvas);
+      return true;
+    } catch { return false; }
   }
   async function animateDrawToHand(rawCard) {
     const source = $('game-self-horizon').getBoundingClientRect();
@@ -856,15 +867,11 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const fallback = document.createElement('span'); fallback.textContent = rawCard?.title || 'Card';
     front.append(canvas, fallback); inner.append(back, front); flight.append(inner); document.body.append(flight);
     activeDrawFlight = flight;
-    if (rawCard) void (async () => {
-      const card = resolveGameCard(rawCard);
-      fallback.textContent = card.title || 'Card';
-      try {
-        const artwork = card.artwork_id ? await getArtworkUrl(card.artwork_id) : '';
-        const result = await renderCard(canvas, card, artwork, () => activeDrawFlight === flight);
-        if (result && !result.cancelled) { canvas.hidden = false; fallback.hidden = true; }
-      } catch { /* The title remains visible if card art cannot load. */ }
-    })();
+    const card = rawCard && resolveGameCard(rawCard);
+    if (!card || !await prepareArrivingCard(card, canvas, fallback, () => activeDrawFlight === flight)) {
+      if (activeDrawFlight === flight) clearDrawFlight();
+      return;
+    }
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     activeHandShifts = items.map((item, index) => {
       const current = item.getBoundingClientRect();
@@ -1979,19 +1986,37 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const hand = (pendingFestival?.hand || (Array.isArray(gameState?.hand) ? gameState.hand : [])).map(resolveGameCard);
     const signature = JSON.stringify(hand);
     if (signature === handSignature) return;
+    const previousCanvases = new Map();
+    for (const item of $('game-hand').children) {
+      const canvas = item.querySelector('.play-hand-card canvas');
+      if (!item._cardSignature || !canvas || canvas.hidden || !canvas.width) continue;
+      if (!previousCanvases.has(item._cardSignature)) previousCanvases.set(item._cardSignature, []);
+      previousCanvases.get(item._cardSignature).push(canvas);
+    }
     handSignature = signature;
     discardSelections.clear();
     const serial = ++gameRenderSerial;
     hideCardPreview();
     const cards = hand.map((card, index) => {
       const item = document.createElement('div'); item.className = 'play-hand-item';
+      const cardSignature = JSON.stringify(card);
+      item._cardSignature = cardSignature;
       const button = document.createElement('button');
       button.type = 'button'; button.className = 'play-hand-card';
       button.dataset.handIndex = String(index);
       button.setAttribute('aria-label', `Preview ${card.title || 'card'}`);
-      const canvas = document.createElement('canvas'); canvas.hidden = true;
+      const previousCanvas = previousCanvases.get(cardSignature)?.shift();
+      const arrivingCanvas = previousCanvas ? null : arrivingCardCanvases.get(cardSignature)?.shift();
+      const canvas = previousCanvas || document.createElement('canvas');
+      if (arrivingCanvas) {
+        canvas.width = arrivingCanvas.width;
+        canvas.height = arrivingCanvas.height;
+        canvas.getContext('2d').drawImage(arrivingCanvas, 0, 0);
+      }
+      canvas.hidden = !previousCanvas && !arrivingCanvas;
       const fallback = document.createElement('span'); fallback.className = 'play-hand-fallback';
       fallback.textContent = card.title || 'Card';
+      fallback.hidden = !canvas.hidden;
       button.append(canvas, fallback);
       item.append(button);
       const mulliganBadge = document.createElement('span');
@@ -2003,7 +2028,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         chooseHandCard(card, button, index);
       });
       if (card.card_type === 'Event' || card.card_type === 'Entity') enableCardDrag(button, card, index);
-      void (async () => {
+      if (canvas.hidden) void (async () => {
         const artwork = card.artwork_id ? await getArtworkUrl(card.artwork_id).catch(() => '') : '';
         const result = await renderCard(canvas, card, artwork, () => serial === gameRenderSerial);
         if (serial === gameRenderSerial && result && !result.cancelled) {
@@ -2013,6 +2038,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       return item;
     });
     $('game-hand').replaceChildren(...cards);
+    arrivingCardCanvases.clear();
     requestAnimationFrame(syncHoveredCardPreview);
   }
   function renderGame() {
