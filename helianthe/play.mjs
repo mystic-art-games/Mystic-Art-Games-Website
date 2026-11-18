@@ -118,7 +118,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   const deckField = $('deck-field');
   const readyButton = $('ready');
-  const patronMarkerColors = { Flow: '#4b9ab7', Radiance: '#d4a13e', Symbiosis: '#9c71bc', Verdant: '#5d9c69' };
   const phaseOrder = ['beginning', 'draw', 'main', 'end'];
   const eventEffects = {
     'Static Insulation': ['protect any terrain.', 'protect', 'Terrain'],
@@ -276,8 +275,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const phaseIndex = phaseOrder.indexOf(phase);
     const own = Boolean(room?.turn_player_id && room.turn_player_id === userId);
     const phases = $('game-phases');
-    const patron = patronPreviews[own ? 'self' : 'opponent'].card;
-    phases.style.setProperty('--play-phase-color', patronMarkerColors[patron?.terrain] || '#7ba98a');
     phases.classList.toggle('is-your-turn', own);
     phases.classList.toggle('is-opponent-turn', Boolean(room?.turn_player_id) && !own);
     $('game-turn-owner').textContent = !room?.turn_player_id ? 'Turn setup pending' : own ? 'Your turn' : "Opponent's turn";
