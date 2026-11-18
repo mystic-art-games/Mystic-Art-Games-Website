@@ -13,7 +13,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   let pendingDeckId = null, deckSaveInFlight = false;
   let gameState = null, gameLoading = false, gameLoadFailed = false, gameReloadPending = false, handSignature = '', gameRenderSerial = 0, boardRenderSerial = 0, cardPreviewSerial = 0;
   let phaseBusy = false, selectedCardElement = null, patronDeckRequest = '', patronDeckLoadedAt = 0;
-  let openingRollBusy = false, openingChoiceBusy = false, openingRollError = '', openingMatchKey = '', openingWasRolling = false;
+  let openingRollBusy = false, openingChoiceBusy = false, openingRollError = '', openingMatchKey = '';
   let openingRevealTimer = null, openingTieTimer = null, openingTieRound = 0, openingPanelAnimatedKey = '', openingRevealDoneKey = '';
   let openingShuffleTimer = null, openingVisualDice = [1, 1];
   let handDetailsHideTimer = null;
@@ -300,7 +300,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const key = room?.status === 'active' ? `${room.id}:${room.activated_at || ''}` : '';
     if (key !== openingMatchKey) {
       openingMatchKey = key;
-      openingWasRolling = false;
       openingRollBusy = false;
       openingChoiceBusy = false;
       openingRollError = '';
@@ -314,13 +313,15 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       openingRevealTimer = openingTieTimer = null;
     }
     const rolling = room?.status === 'active' && room.turn_phase === 'roll' && room.opening_roll_round > 0;
-    if (rolling) openingWasRolling = true;
     const choosing = room?.status === 'active' && room.turn_phase === 'choose_first';
     const winnerId = room?.opening_roll_winner_id || (room?.opening_host_roll != null && room?.opening_guest_roll != null
       && room.opening_host_roll !== room.opening_guest_roll
       ? room.opening_host_roll > room.opening_guest_roll ? room.host_id : room.guest_id : null);
+    const revealStorageKey = `helianthe-opening-result:${userId}:${key}`;
+    let revealSeen = false;
+    try { revealSeen = sessionStorage.getItem(revealStorageKey) === 'shown'; } catch {}
     const revealing = !rolling && Boolean(winnerId) && room.turn_number <= 1
-      && openingRevealDoneKey !== key && (choosing || openingWasRolling);
+      && (choosing || room.turn_phase === 'main') && openingRevealDoneKey !== key && !revealSeen;
     overlay.hidden = !rolling && !revealing;
     const gameActions = $('game').querySelector('.play-game-actions');
     const gameFooter = $('game').querySelector('.play-game-opponent-footer');
@@ -348,7 +349,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       openingRevealTimer = setTimeout(() => {
         openingRevealTimer = null;
         openingRevealDoneKey = key;
-        openingWasRolling = false;
+        try { sessionStorage.setItem(revealStorageKey, 'shown'); } catch {}
         renderOpeningRoll();
       }, 3000);
     }

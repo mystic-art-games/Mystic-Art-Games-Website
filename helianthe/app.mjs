@@ -4,7 +4,7 @@ import { renderCard, downloadCardPNG } from './card-renderer.mjs?v=patron-labels
 import { CardSheetPDF } from './card-sheet-pdf.mjs';
 import { PATRONS, FACTION_VISIONS, PATRON_RULES_REVISION, updatePatronVision } from './patrons.mjs?v=faction-visions-3';
 import { CARD_TAGS, normalizeCardTags, seedTagsForCard, tagLabel } from './card-tags.mjs?v=tags-3';
-import { createPlayView } from './play.mjs?v=play-96';
+import { createPlayView } from './play.mjs?v=play-97';
 
 const DEFAULT_PATRON_NAME = PATRONS[0].name;
 
