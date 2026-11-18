@@ -124,12 +124,17 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       const horizontalWidth = Math.min(badgeLeft($('game-self-horizon')), badgeLeft($('game-self-archive')))
         - wrapBounds.left - edgeGap;
       const playerBlocks = $('game').querySelectorAll(':scope > .play-game-player-block');
-      const centerY = wrapBounds.top + wrapBounds.height / 2;
-      const verticalHalf = Math.min(centerY - playerBlocks[0].getBoundingClientRect().bottom,
-        playerBlocks[1].getBoundingClientRect().top - centerY) - edgeGap;
-      const verticalWidth = Math.max(0, verticalHalf * 2 * 63 / 88);
+      const topBoundary = Math.max(playerBlocks[0].getBoundingClientRect().bottom,
+        $('game-opponent-hand-count').getBoundingClientRect().bottom);
+      const bottomBoundary = $('game-self-name').getBoundingClientRect().top;
+      const verticalCenter = (topBoundary + bottomBoundary) / 2;
+      const verticalWidth = Math.max(0, (bottomBoundary - topBoundary - edgeGap * 2) * 63 / 88);
       root.style.setProperty('--play-preview-width', `${Math.max(0, Math.floor(Math.min(horizontalWidth, verticalWidth)))}px`);
-    } else root.style.removeProperty('--play-preview-width');
+      root.style.setProperty('--play-preview-offset-y', `${verticalCenter - wrapBounds.top - wrapBounds.height / 2}px`);
+    } else {
+      root.style.removeProperty('--play-preview-width');
+      root.style.removeProperty('--play-preview-offset-y');
+    }
     $('game-event-notice').style.top = `${bounds.top - wrapBounds.top - 8}px`;
     $('game-discard-bar').style.left = `${boardBounds.left + boardBounds.width / 2 - wrapBounds.left}px`;
     $('game-discard-bar').style.top = `${boardBounds.top + boardBounds.height / 2 - wrapBounds.top}px`;
