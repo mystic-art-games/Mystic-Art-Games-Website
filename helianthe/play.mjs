@@ -22,6 +22,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   let openingShuffleTimer = null, openingVisualDice = [1, 1];
   const openingAnimatedValues = { host: null, guest: null };
   let drawRetryAt = 0, activeDrawFlight = null, activeHandShifts = [];
+  const discardHandShifts = [], discardHiddenCards = new Set();
   const arrivingCardCanvases = new Map();
   let beginningTurnKey = '', beginningOrder = [], beginningTargetSource = null;
   const beginningTargets = new Map();
@@ -1139,7 +1140,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     ++epoch; ++fetchSerial;
     pendingDeckId = null;
     ++gameRenderSerial; gameState = null; gameLoading = false; gameLoadFailed = false; gameReloadPending = false; handSignature = '';
-    phaseBusy = false; drawRetryAt = 0; clearDrawFlight(); clearMulliganFlights(); discardSelections.clear(); pendingFestival = null; arrivingEntityKey = null;
+    phaseBusy = false; drawRetryAt = 0; clearDrawFlight(); clearMulliganFlights(); clearDiscardHandMotion(); discardSelections.clear(); pendingFestival = null; arrivingEntityKey = null;
     beginningTurnKey = ''; beginningOrder = []; beginningTargetSource = null; beginningTargets.clear();
     patronDeckRequest = ''; patronDeckLoadedAt = 0; gameDeckPatrons.clear(); gamePlayerPatrons.clear();
     zoneCounts = null; zoneCountsRevision = null; zoneCountsRequest = null;
@@ -1467,16 +1468,33 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         message(friendly(error), true);
       }
     } finally {
+      clearDiscardHandMotion();
       phaseBusy = false;
       renderTurnPhase();
     }
   }
+  function clearDiscardHandMotion() {
+    for (const animation of discardHandShifts) animation.cancel();
+    discardHandShifts.length = 0;
+    for (const card of discardHiddenCards) card.style.visibility = '';
+    discardHiddenCards.clear();
+  }
   async function animateDiscardToArchive(indexes) {
     const destination = $('game-self-archive').getBoundingClientRect();
     if ($('game').hidden || !destination.width || !destination.height) return;
+    clearDiscardHandMotion();
+    const hand = $('game-hand');
+    const items = Array.from(hand.children);
+    const remaining = items.filter((_, index) => !indexes.includes(index));
+    const handBounds = hand.getBoundingClientRect();
+    const handStyle = getComputedStyle(hand);
+    const gap = parseFloat(handStyle.columnGap) || 0;
+    const paddingLeft = parseFloat(handStyle.paddingLeft) || 0;
+    const paddingRight = parseFloat(handStyle.paddingRight) || 0;
+    const available = handBounds.width - paddingLeft - paddingRight;
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const flights = indexes.map((index, order) => {
-      const source = $('game-hand').children[index]?.querySelector('.play-hand-card');
+      const source = items[index]?.querySelector('.play-hand-card');
       const bounds = source?.getBoundingClientRect();
       if (!bounds?.width || !bounds.height) return null;
       const flight = source.cloneNode(true);
@@ -1497,6 +1515,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       }
       document.body.append(flight);
       source.style.visibility = 'hidden';
+      discardHiddenCards.add(source);
       const dx = destination.left + destination.width / 2 - bounds.left - bounds.width / 2;
       const dy = destination.top + destination.height / 2 - bounds.top - bounds.height / 2;
       const scale = Math.min(destination.width / bounds.width, destination.height / bounds.height);
@@ -1508,12 +1527,26 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         easing: 'cubic-bezier(.22,.7,.18,1)', fill: 'forwards' });
       return { source, flight, animation };
     }).filter(Boolean);
+    if (remaining.length) {
+      const preferredWidth = parseFloat(getComputedStyle(items[0]).flexBasis) || items[0].getBoundingClientRect().width;
+      const targetWidth = Math.min(preferredWidth,
+        Math.max(1, (available - (remaining.length - 1) * gap) / remaining.length));
+      const totalWidth = remaining.length * targetWidth + (remaining.length - 1) * gap;
+      const startX = handBounds.left + paddingLeft + Math.max(0, (available - totalWidth) / 2) - hand.scrollLeft;
+      for (const [index, item] of remaining.entries()) {
+        const current = item.getBoundingClientRect();
+        const delta = startX + index * (targetWidth + gap) - current.left;
+        const ratio = targetWidth / current.width;
+        discardHandShifts.push(item.animate([
+          { transform: 'translateX(0) scale(1)', transformOrigin: 'top left' },
+          { transform: `translateX(${delta}px) scale(${ratio})`, transformOrigin: 'top left' },
+        ], { duration: reducedMotion ? 100 : 650 + (indexes.length - 1) * 85,
+          easing: 'ease-in-out', fill: 'forwards' }));
+      }
+    }
     try { await Promise.allSettled(flights.map(({ animation }) => animation.finished)); }
     finally {
-      for (const { source, flight } of flights) {
-        source.style.visibility = '';
-        flight.remove();
-      }
+      for (const { flight } of flights) flight.remove();
     }
   }
   async function confirmDiscardSelection() {
@@ -1546,6 +1579,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         message(friendly(error), true);
       }
     } finally {
+      clearDiscardHandMotion();
       phaseBusy = false;
       renderTurnPhase();
     }
