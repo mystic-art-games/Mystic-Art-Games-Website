@@ -130,6 +130,16 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const rule = eventEffects[card?.title];
     return rule && String(card?.effect || '').replace(/\s+/g, ' ').trim().toLowerCase() === rule[0] ? rule : null;
   }
+  function unavailableEventReason(card) {
+    if (card?.title === 'Skyfire') {
+      const dissolvesTerrain = /dissolve\b[^.]*\bterrain\b/i.test(card.effect || '');
+      const target = dissolvesTerrain ? 'Terrain' : 'Entity';
+      const hasTarget = Object.values(room?.board || {}).some(node => dissolvesTerrain ? node?.terrain : node?.entity);
+      if (!hasTarget) return `There is no legal ${target} to Dissolve. Skyfire's effect is not available in online play yet.`;
+      return `Skyfire's Dissolve effect is not available in online play yet.`;
+    }
+    return 'This Event effect is not available in online play yet.';
+  }
   function eventNotice(text, temporary = false, error = false, dismissible = false) {
     if (eventNoticeTimer) clearTimeout(eventNoticeTimer);
     const notice = $('game-event-notice');
@@ -1009,7 +1019,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         && room?.turn_phase === 'main' && room.main_played_entity
         ? 'You have already played an Entity this turn.'
       : card.card_type === 'Event' && !support
-        ? 'This Event effect is not available in online play yet.' : '');
+        ? unavailableEventReason(card) : '');
     const serial = ++cardPreviewSerial;
     selectedCardElement?.classList.remove('is-selected');
     selectedCardElement?.removeAttribute('aria-pressed');
@@ -1419,7 +1429,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (!room || room.status !== 'active' || room.turn_player_id !== userId
       || room.turn_phase !== 'main' || phaseBusy || pendingFestival || !Array.isArray(gameState?.hand)) return;
     const rule = eventSupport(card);
-    if (!rule) { eventNotice('This Event effect is not available in online play yet.'); return; }
+    if (!rule) { eventNotice(unavailableEventReason(card)); return; }
     if (rule[1] === 'draw_two_discard_one') { stageFestival(card, handIndex); return; }
     if (rule[1] === 'fertilize_two' && !targetCells) {
       const legalCells = Array.from($('game-board').children).filter(cell => cell.dataset.key
