@@ -618,15 +618,14 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const gap = parseFloat(getComputedStyle(hand).columnGap) || 0;
     const step = first.width + gap;
     const remaining = items.filter((_, index) => !selected.has(index));
-    const prepared = (await Promise.all(cards.map(async (_, index) => {
-      const { canvas, fallback, ready } = stagedCards[index];
-      if (!await ready) return null;
+    const prepared = cards.map((_, index) => {
+      const { canvas, fallback } = stagedCards[index];
       const front = document.createElement('div'); front.className = 'play-mulligan-drawn-card';
       front.append(canvas, fallback);
       const { flight, inner } = mulliganFlight(source, front);
       const targetX = first.left + (remaining.length + index) * step + first.width / 2;
-      return { flight, inner, targetX };
-    }))).filter(Boolean);
+      return { flight, inner, targetX, index };
+    });
     const shifts = remaining.map((item, index) => {
       const bounds = item.getBoundingClientRect();
       const dx = first.left + index * step - bounds.left;
@@ -635,7 +634,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       mulliganAnimations.add(animation);
       return animation;
     });
-    const flights = prepared.sort((a, b) => a.targetX - b.targetX).map(({ flight, inner, targetX }, order) => {
+    const flights = prepared.sort((a, b) => a.targetX - b.targetX).map(({ flight, inner, targetX, index }, order) => {
       const targetY = first.top + first.height / 2;
       const dx = targetX - source.left - source.width / 2;
       const dy = targetY - source.top - source.height / 2;
@@ -648,17 +647,22 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         { transform: `translate(${dx * .62}px, ${dy * .62}px) rotate(-8deg) scale(${1 + (scale - 1) * .62})`, offset: .65 },
         { transform: `translate(${dx}px, ${dy}px) rotate(0deg) scale(${scale})` },
       ], timing);
+      mulliganAnimations.add(motion);
+      return { motion, inner, index, order };
+    });
+    const ready = await Promise.all(stagedCards.map(card => card.ready));
+    const flips = flights.map(({ inner, index, order }) => {
+      if (!ready[index]) return null;
       const flip = inner.animate([
         { transform: 'rotateY(0deg)' },
-        { transform: 'rotateY(0deg)', offset: .25 },
-        { transform: 'rotateY(180deg)', offset: .72 },
         { transform: 'rotateY(180deg)' },
-      ], timing);
-      mulliganAnimations.add(motion); mulliganAnimations.add(flip);
-      return { motion, flip };
-    });
+      ], { duration: reduced ? 70 : 380, delay: reduced ? 0 : order * mulliganFlightStagger,
+        easing: 'ease-in-out', fill: 'forwards' });
+      mulliganAnimations.add(flip);
+      return flip;
+    }).filter(Boolean);
     await Promise.allSettled([...shifts.map(animation => animation.finished),
-      ...flights.flatMap(({ motion, flip }) => [motion.finished, flip.finished])]);
+      ...flights.map(({ motion }) => motion.finished), ...flips.map(flip => flip.finished)]);
   }
   async function finishMulligan(indices) {
     if (mulliganBusy || !gameState || room?.status !== 'active'
@@ -905,10 +909,11 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     front.append(canvas, fallback); inner.append(back, front); flight.append(inner); document.body.append(flight);
     activeDrawFlight = flight;
     const card = rawCard && resolveGameCard(rawCard);
-    if (!card || !await prepareArrivingCard(card, canvas, fallback, () => activeDrawFlight === flight)) {
+    if (!card) {
       if (activeDrawFlight === flight) clearDrawFlight();
       return;
     }
+    const artReady = prepareArrivingCard(card, canvas, fallback, () => activeDrawFlight === flight);
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     activeHandShifts = items.map((item, index) => {
       const current = item.getBoundingClientRect();
@@ -924,18 +929,23 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const dy = destinationY - source.top - source.height / 2;
     const scale = cardWidth / source.width;
     const duration = reducedMotion ? 100 : 850;
+    const startedAt = performance.now();
     const motion = flight.animate([
       { transform: 'translate(0, 0) rotate(0deg) scale(1)' },
       { transform: `translate(${dx * .65}px, ${dy * .65}px) rotate(-7deg) scale(${1 + (scale - 1) * .65})`, offset: .7 },
       { transform: `translate(${dx}px, ${dy}px) rotate(0deg) scale(${scale})` },
     ], { duration, easing: 'cubic-bezier(.22,.7,.18,1)', fill: 'forwards' });
-    const flip = inner.animate([
-      { transform: 'rotateY(0deg)' },
-      { transform: 'rotateY(0deg)', offset: .25 },
-      { transform: 'rotateY(180deg)', offset: .7 },
-      { transform: 'rotateY(180deg)' },
-    ], { duration, easing: 'ease-in-out', fill: 'forwards' });
     try {
+      if (!await artReady) {
+        if (activeDrawFlight === flight) clearDrawFlight();
+        return;
+      }
+      const flip = inner.animate([
+        { transform: 'rotateY(0deg)' },
+        { transform: 'rotateY(180deg)' },
+      ], { duration: reducedMotion ? 70 : 380,
+        delay: Math.max(0, duration * .25 - (performance.now() - startedAt)),
+        easing: 'ease-in-out', fill: 'forwards' });
       await Promise.all([motion.finished, flip.finished]);
     } catch { /* Leaving the table cancels the flight. */ }
   }
