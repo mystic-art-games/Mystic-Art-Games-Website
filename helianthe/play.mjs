@@ -14,6 +14,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   let gameState = null, gameLoading = false, gameLoadFailed = false, gameReloadPending = false, handSignature = '', gameRenderSerial = 0, boardRenderSerial = 0, cardPreviewSerial = 0;
   let phaseBusy = false, selectedCardElement = null, patronDeckRequest = '', patronDeckLoadedAt = 0;
   let openingRollBusy = false, openingChoiceBusy = false, openingRollError = '', openingMatchKey = '';
+  let mulliganBusy = false, mulliganStepKey = '';
+  const mulliganOrder = [];
   let openingRevealTimer = null, openingPanelAnimatedKey = '', openingRevealDoneKey = '';
   let openingShuffleTimer = null, openingVisualDice = [1, 1];
   let handDetailsHideTimer = null;
@@ -54,6 +56,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       </div>
       <div class="play-game-board-wrap">
       <div id="play-opening-choice" class="play-opening-choice" role="status" hidden><strong id="play-opening-choice-message"></strong><div id="play-opening-choice-actions"><button id="play-opening-choose-self" type="button">I start</button><button id="play-opening-choose-opponent" type="button">Opponent starts</button></div></div>
+      <div id="play-opening-mulligan" class="play-opening-choice play-opening-mulligan" role="status" aria-live="polite" hidden><strong id="play-opening-mulligan-message"></strong><p id="play-opening-mulligan-instructions" hidden>Select cards in the order they should go to the bottom of your Horizon. Then draw the same number.</p><div id="play-opening-mulligan-actions" hidden><button id="play-opening-mulligan-keep" type="button">Keep</button><button id="play-opening-mulligan-confirm" type="button" hidden>Replace selected cards</button></div></div>
       <div id="play-game-event-notice" class="play-game-event-notice" role="status" aria-live="polite" hidden><span id="play-game-event-notice-text"></span><button id="play-game-event-notice-close" type="button" aria-label="Dismiss message" hidden>×</button></div>
       <div id="play-game-discard-bar" class="play-game-discard-bar" hidden><strong id="play-game-discard-text" role="status" aria-live="polite"></strong><button id="play-game-confirm-discard" type="button" disabled>Confirm Discard</button></div>
       <aside id="play-game-beginning-effects" class="play-beginning-effects" aria-label="Beginning of Turn Entity effects" hidden><strong>Beginning of Turn effects</strong><p id="play-game-beginning-instructions"></p><ol id="play-game-beginning-list"></ol><button id="play-game-resolve-beginning" type="button">Resolve effects in this order</button></aside>
@@ -330,9 +333,11 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       gameActions.querySelector('details').open = false;
       gameFooter.append(gameActions);
     }
-    phases.hidden = rolling || revealing || choosing;
+    const mulligan = room?.status === 'active' && ['mulligan_first', 'mulligan_second'].includes(room.turn_phase);
+    phases.hidden = rolling || revealing || choosing || mulligan;
     const choice = $('opening-choice');
     choice.hidden = !choosing || revealing;
+    renderMulligan();
     if (choosing) {
       const winnerName = getProfiles().find(person => person.id === winnerId)?.display_name || 'The dice winner';
       const ownWin = winnerId === userId;
@@ -461,6 +466,67 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   $('opening-choose-self').addEventListener('click', () => void chooseFirstPlayer(userId));
   $('opening-choose-opponent').addEventListener('click', () => void chooseFirstPlayer(room?.host_id === userId ? room?.guest_id : room?.host_id));
+  function renderMulligan() {
+    const active = room?.status === 'active' && ['mulligan_first', 'mulligan_second'].includes(room.turn_phase);
+    const stepKey = active ? `${room.id}:${room.activated_at}:${room.turn_phase}` : '';
+    if (stepKey !== mulliganStepKey) {
+      mulliganStepKey = stepKey;
+      mulliganOrder.length = 0;
+      mulliganBusy = false;
+    }
+    const panel = $('opening-mulligan');
+    panel.hidden = !active;
+    for (const [index, item] of Array.from($('game-hand').children).entries()) {
+      const position = active ? mulliganOrder.indexOf(index) + 1 : 0;
+      const button = item.querySelector('.play-hand-card');
+      button?.classList.toggle('is-mulligan-selected', position > 0);
+      if (button) button.setAttribute('aria-pressed', String(position > 0));
+      const badge = item.querySelector('.play-mulligan-order');
+      if (badge) { badge.hidden = !position; badge.textContent = String(position); }
+    }
+    if (!active) return;
+    const actorId = room.turn_phase === 'mulligan_first' ? room.turn_player_id
+      : room.turn_player_id === room.host_id ? room.guest_id : room.host_id;
+    const own = actorId === userId;
+    $('opening-mulligan-message').textContent = own
+      ? room.turn_phase === 'mulligan_first' ? 'You start. Choose your mulligan.' : 'Your mulligan decision.'
+      : 'Your opponent is making their mulligan decision.';
+    $('opening-mulligan-instructions').hidden = !own;
+    $('opening-mulligan-actions').hidden = !own || !gameState;
+    $('opening-mulligan-keep').hidden = mulliganOrder.length > 0;
+    $('opening-mulligan-confirm').hidden = mulliganOrder.length === 0;
+    $('opening-mulligan-confirm').textContent = `Replace ${mulliganOrder.length} ${mulliganOrder.length === 1 ? 'card' : 'cards'}`;
+    $('opening-mulligan-keep').disabled = mulliganBusy;
+    $('opening-mulligan-confirm').disabled = mulliganBusy;
+  }
+  async function finishMulligan(indices) {
+    if (mulliganBusy || !gameState || room?.status !== 'active'
+      || !['mulligan_first', 'mulligan_second'].includes(room.turn_phase)) return;
+    const actorId = room.turn_phase === 'mulligan_first' ? room.turn_player_id
+      : room.turn_player_id === room.host_id ? room.guest_id : room.host_id;
+    if (actorId !== userId || indices.length > gameState.horizon.length) return;
+    const expected = epoch, roomId = room.id, phase = room.turn_phase;
+    mulliganBusy = true;
+    renderMulligan();
+    try {
+      await rpc('play_finish_mulligan', { p_room_id: roomId, p_expected_phase: phase, p_hand_indices: indices });
+      if (expected === epoch && room?.id === roomId) {
+        await refreshRoom();
+        await loadGameState(true);
+      }
+    } catch (error) {
+      if (expected === epoch && room?.id === roomId) {
+        message(friendly(error), true);
+        await refreshRoom().catch(() => {});
+        await loadGameState(true).catch(() => {});
+      }
+    } finally {
+      mulliganBusy = false;
+      if (expected === epoch && room?.id === roomId) renderOpeningRoll();
+    }
+  }
+  $('opening-mulligan-keep').addEventListener('click', () => void finishMulligan([]));
+  $('opening-mulligan-confirm').addEventListener('click', () => void finishMulligan([...mulliganOrder]));
   function renderBeginningEffects() {
     const effects = beginningEffects();
     const panel = $('game-beginning-effects');
@@ -1033,6 +1099,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   function selectedCardNotice(card, handIndex, support) {
     if (handIndex === null) return '';
+    if (['mulligan_first', 'mulligan_second'].includes(room?.turn_phase)) return '';
     if (room?.turn_player_id !== userId) return "You can play cards only on your turn.";
     if (room?.turn_phase !== 'main') return 'You can play cards only during your Main Phase.';
     if (card.card_type === 'Entity') {
@@ -1098,6 +1165,17 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     else showCardPreview(card, source, handIndex);
   }
   function chooseHandCard(card, source, handIndex) {
+    if (['mulligan_first', 'mulligan_second'].includes(room?.turn_phase)) {
+      const actorId = room.turn_phase === 'mulligan_first' ? room.turn_player_id
+        : room.turn_player_id === room.host_id ? room.guest_id : room.host_id;
+      if (actorId !== userId || mulliganBusy || !gameState) return;
+      const position = mulliganOrder.indexOf(handIndex);
+      if (position >= 0) mulliganOrder.splice(position, 1);
+      else if (mulliganOrder.length < gameState.horizon.length) mulliganOrder.push(handIndex);
+      showCardPreview(card, source, handIndex);
+      renderMulligan();
+      return;
+    }
     if (pendingFestival) {
       discardSelections.clear();
       discardSelections.add(handIndex);
@@ -1742,6 +1820,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       fallback.textContent = card.title || 'Card';
       button.append(canvas, fallback);
       item.append(button);
+      const mulliganBadge = document.createElement('span');
+      mulliganBadge.className = 'play-mulligan-order'; mulliganBadge.hidden = true;
+      item.append(mulliganBadge);
       button.addEventListener('click', () => chooseHandCard(card, button, index));
       button.addEventListener('pointerenter', () => showHandDetails(card, button));
       button.addEventListener('pointerleave', queueRestoreHandDetails);

@@ -248,6 +248,9 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
 #play-game .play-hand-card { transition: filter .16s ease; }
 #play-game .play-hand-card.is-selected { outline: 2px solid #17372b; outline-offset: 1px; filter: brightness(.8); box-shadow: 0 4px 12px #0d171766; }
 #play-game .play-hand-card.is-discard-selected { outline: 2px solid #e88b81; outline-offset: 1px; filter: brightness(.72); box-shadow: 0 0 0 3px #5d2727aa, 0 4px 12px #0d171766; }
+#play-game .play-hand-card.is-mulligan-selected { outline: 3px solid #f3d67c; outline-offset: 2px; filter: brightness(.8); }
+.play-mulligan-order { position: absolute; z-index: 2; top: .35rem; right: .35rem; display: grid; place-items: center; width: 1.7rem; height: 1.7rem; border-radius: 50%; background: #f3d67c; color: #17372b; font: 900 .85rem Nunito, sans-serif; box-shadow: 0 2px 7px #0d171799; pointer-events: none; }
+.play-mulligan-order[hidden] { display: none; }
 #play-game .play-game-patron-slot.is-selected { outline: 2px solid #17372b; outline-offset: 1px; box-shadow: 0 4px 12px #0d171766; }
 #play-game .play-game-board-wrap { position: relative; display: grid; grid-template-columns: var(--play-preview-gutter) minmax(0, 1fr) var(--play-preview-gutter); grid-template-rows: minmax(0, 1fr); align-items: stretch; gap: clamp(.5rem, 1vw, .9rem); box-sizing: border-box; width: 100%; min-height: 0; max-width: none; height: 100%; margin: 0; container-type: size; }
 #play-game .play-game-card-preview { position: relative; grid-column: 1; grid-row: 1; align-self: center; justify-self: start; top: auto; left: auto; transform: none; width: min(325px, 62cqh, calc(100% - 2.5rem)); max-height: calc(100% - 2rem); }
@@ -290,6 +293,13 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
 .play-opening-choice { position: absolute; z-index: 30; top: 50%; left: 50%; box-sizing: border-box; width: min(26rem, calc(100% - 1rem)); padding: 1rem; transform: translate(-50%, -50%); border: 1px solid #b9d4c1; border-radius: 12px; background: #1b352bf2; color: #fff7e8; text-align: center; box-shadow: 0 8px 28px #07191099; }
 .play-opening-choice[hidden], #play-opening-choice-actions[hidden] { display: none; }
 .play-opening-choice strong { display: block; line-height: 1.35; }
+.play-opening-mulligan { width: min(30rem, calc(100% - 1rem)); }
+.play-opening-mulligan p { margin: .65rem 0 0; font-size: .85rem; line-height: 1.4; }
+.play-opening-mulligan p[hidden], #play-opening-mulligan-actions[hidden], #play-opening-mulligan-actions button[hidden] { display: none; }
+#play-opening-mulligan-actions { display: flex; justify-content: center; gap: .6rem; margin-top: .85rem; }
+#play-opening-mulligan-actions button { margin: 0; padding: .6rem 1rem; border: 1px solid #83b58c; border-radius: 8px; background: #477452; color: #fff; font: 800 .9rem Nunito, sans-serif; cursor: pointer; }
+#play-opening-mulligan-actions button:hover:not(:disabled) { background: #568a61; }
+#play-opening-mulligan-actions button:disabled { opacity: .55; cursor: wait; }
 #play-opening-choice-actions { display: flex; justify-content: center; flex-wrap: wrap; gap: .6rem; margin-top: .85rem; }
 #play-opening-choice-actions button { margin: 0; padding: .6rem .85rem; border: 1px solid #83b58c; border-radius: 8px; background: #477452; color: #fff; font: 800 .9rem Nunito, sans-serif; cursor: pointer; }
 #play-opening-choice-actions button:hover:not(:disabled) { background: #568a61; }
