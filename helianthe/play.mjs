@@ -14,7 +14,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   let gameState = null, gameLoading = false, gameLoadFailed = false, gameReloadPending = false, handSignature = '', gameRenderSerial = 0, boardRenderSerial = 0, cardPreviewSerial = 0;
   let phaseBusy = false, selectedCardElement = null, patronDeckRequest = '', patronDeckLoadedAt = 0;
   let openingRollBusy = false, openingChoiceBusy = false, openingRollError = '', openingMatchKey = '', openingWasRolling = false;
-  let openingRevealTimer = null, openingTieTimer = null, openingTieRound = 0, openingPanelAnimatedKey = '';
+  let openingRevealTimer = null, openingTieTimer = null, openingTieRound = 0, openingPanelAnimatedKey = '', openingRevealDoneKey = '';
   let openingShuffleTimer = null, openingVisualDice = [1, 1];
   let handDetailsHideTimer = null;
   const openingAnimatedValues = { host: null, guest: null };
@@ -316,7 +316,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const rolling = room?.status === 'active' && room.turn_phase === 'roll' && room.opening_roll_round > 0;
     if (rolling) openingWasRolling = true;
     const choosing = room?.status === 'active' && room.turn_phase === 'choose_first';
-    const revealing = !rolling && openingWasRolling && room?.opening_roll_winner_id && room.turn_number <= 1;
+    const revealing = !rolling && Boolean(room?.opening_roll_winner_id) && room.turn_number <= 1
+      && openingRevealDoneKey !== key && (choosing || openingWasRolling);
     overlay.hidden = !rolling && !revealing;
     const gameActions = $('game').querySelector('.play-game-actions');
     const gameFooter = $('game').querySelector('.play-game-opponent-footer');
@@ -343,6 +344,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (!overlay.hidden && revealing && !openingRevealTimer && !openingRollBusy) {
       openingRevealTimer = setTimeout(() => {
         openingRevealTimer = null;
+        openingRevealDoneKey = key;
         openingWasRolling = false;
         renderOpeningRoll();
       }, 3000);
