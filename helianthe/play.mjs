@@ -290,8 +290,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const next = $('game-next-phase');
     next.textContent = phase === 'end' ? 'Pass Turn' : 'Next Phase';
     const excess = requiredDiscards();
-    next.hidden = phase === 'draw' || (phase === 'main' && (!own || !room?.main_played_card))
-      || (own && phase === 'end' && (!gameState || excess > 0));
+    next.hidden = !own || phase === 'draw' || (phase === 'main' && !room?.main_played_card)
+      || (phase === 'end' && (!gameState || excess > 0));
     next.disabled = !room || room.status !== 'active' || !own || phaseBusy || pendingFestival || phaseIndex < 0
       || (phase === 'beginning' && beginningEffects().length > 0)
       || (phase === 'beginning' && !gameState);
@@ -299,6 +299,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const extra = $('game-extra-draw');
     extra.hidden = !own || phase !== 'main' || Boolean(room?.main_played_card);
     extra.disabled = phaseBusy || pendingFestival || !Array.isArray(gameState?.horizon) || gameState.horizon.length === 0;
+    next.parentElement.hidden = next.hidden && extra.hidden;
   }
   function renderOpeningRoll() {
     const overlay = $('opening-roll');

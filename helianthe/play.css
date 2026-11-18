@@ -353,6 +353,7 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
 .play-game-phase-marker { flex: 0 0 .7rem; width: .7rem; height: .7rem; border: 1px solid #d4cfb6; border-radius: 50%; background: transparent; }
 .play-game-phase-list li.is-current .play-game-phase-marker { border-color: var(--play-turn-accent, #7ba98a); background: var(--play-turn-accent, #7ba98a); box-shadow: 0 0 0 2px #fff6d83d; }
 .play-game-phase-actions { display: grid; grid-template-rows: 2.25rem; margin-top: 1.4rem; }
+.play-game-phase-actions[hidden] { display: none; }
 .play-game-next-phase { box-sizing: border-box; width: 100%; height: 100%; margin: 0; padding: .5rem .4rem; border: 1px solid #123c2d; border-radius: 7px; background: #477452; color: #fff; font-size: .78rem; font-weight: 800; }
 .play-game-next-phase[hidden] { display: none; }
 .play-game-extra-draw { background: #d7b66a; color: #173b2d; }
