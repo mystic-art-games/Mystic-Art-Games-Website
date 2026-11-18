@@ -255,7 +255,7 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
 #play-game .play-game-archive-card.is-empty { border-color: #effff048; background: #effff01c; backdrop-filter: blur(10px) saturate(1.15); -webkit-backdrop-filter: blur(10px) saturate(1.15); box-shadow: inset 0 1px 0 #ffffff47, 0 5px 16px #0e241a2e; }
 #play-game .play-game-archive-card.is-empty span { color: #eef7e6cc; font-size: clamp(.42rem, .7vw, .58rem); letter-spacing: .03em; white-space: nowrap; }
 #play-game .play-game-table { grid-column: 2; grid-row: 1; width: min(100%, calc(144cqh + 24px)); height: 100%; margin: 0 auto; }
-#play-game .play-game-board { width: min(100%, 96cqh); max-height: 100%; margin: auto; }
+#play-game .play-game-board { width: min(100%, 98cqh); max-height: 100%; margin: auto; }
 .play-beginning-effects { min-width: 0; padding: .65rem; overflow-y: auto; border: 1px solid #123c2d; border-radius: 12px; background: #1b352bf2; color: #f5f2e8; box-shadow: inset 0 1px 0 #fff2cf36, 0 4px 12px #130b0a55; }
 #play-game .play-beginning-effects { position: relative; z-index: 25; grid-column: 1; grid-row: 1; align-self: center; width: min(325px, 100%); max-height: min(65cqh, 100%); }
 .play-beginning-effects > strong { display: block; font-size: .9rem; }
@@ -341,7 +341,7 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
 @media (min-width: 901px) {
   .play-game-opponent-footer { padding-right: 3.3rem; }
   .play-game-opponent-footer .play-game-actions { position: absolute; z-index: 20; top: clamp(.3rem, 1vh, .7rem); right: 0; margin-top: 0; }
-  #play-game .play-game-board-wrap { position: relative; top: -14px; height: calc(100% + 28px); }
+  #play-game .play-game-board-wrap { position: relative; top: -24px; height: calc(100% + 48px); }
   @container (max-height: 380px) {
     .play-game-phases { padding: .35rem; }
     .play-game-phases .play-eyebrow { display: none; }
