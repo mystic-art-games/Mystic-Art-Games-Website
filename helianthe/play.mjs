@@ -17,6 +17,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   let mulliganBusy = false, mulliganStepKey = '';
   const mulliganOrder = [];
   const mulliganFlights = new Set(), mulliganHiddenCards = new Set(), mulliganAnimations = new Set();
+  const mulliganFlightDuration = 790, mulliganFlightStagger = 145;
   let openingRevealTimer = null, openingPanelAnimatedKey = '', openingRevealDoneKey = '';
   let openingShuffleTimer = null, openingVisualDice = [1, 1];
   const openingAnimatedValues = { host: null, guest: null };
@@ -553,7 +554,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       const dx = destination.left + destination.width / 2 - bounds.left - bounds.width / 2;
       const dy = destination.top + destination.height / 2 - bounds.top - bounds.height / 2;
       const scale = Math.min(destination.width / bounds.width, destination.height / bounds.height);
-      const timing = { duration: reduced ? 100 : 790, delay: reduced ? 0 : order * 145,
+      const timing = { duration: reduced ? 100 : mulliganFlightDuration,
+        delay: reduced ? 0 : order * mulliganFlightStagger,
         easing: 'cubic-bezier(.22,.7,.18,1)', fill: 'forwards' };
       const motion = flight.animate([
         { transform: 'translate(0, 0) rotate(0deg) scale(1)', opacity: 1 },
@@ -583,15 +585,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const gap = parseFloat(getComputedStyle(hand).columnGap) || 0;
     const step = first.width + gap;
     const remaining = items.filter((_, index) => !selected.has(index));
-    const shifts = remaining.map((item, index) => {
-      const bounds = item.getBoundingClientRect();
-      const dx = first.left + index * step - bounds.left;
-      const animation = item.animate([{ transform: 'translateX(0)' }, { transform: `translateX(${dx}px)` }],
-        { duration: reduced ? 80 : 480, easing: 'ease-in-out', fill: 'forwards' });
-      mulliganAnimations.add(animation);
-      return animation;
-    });
-    const flights = (await Promise.all(cards.map(async (rawCard, index) => {
+    const prepared = (await Promise.all(cards.map(async (rawCard, index) => {
       const card = resolveGameCard(rawCard);
       const canvas = document.createElement('canvas'); canvas.hidden = true;
       const fallback = document.createElement('span'); fallback.textContent = card.title || 'Card';
@@ -601,16 +595,28 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       if (!await prepareArrivingCard(card, canvas, fallback, () => mulliganFlights.has(flight))) {
         flight.remove(); mulliganFlights.delete(flight); return null;
       }
+      return { flight, inner, index };
+    }))).filter(Boolean);
+    const shifts = remaining.map((item, index) => {
+      const bounds = item.getBoundingClientRect();
+      const dx = first.left + index * step - bounds.left;
+      const animation = item.animate([{ transform: 'translateX(0)' }, { transform: `translateX(${dx}px)` }],
+        { duration: reduced ? 80 : 480, easing: 'ease-in-out', fill: 'forwards' });
+      mulliganAnimations.add(animation);
+      return animation;
+    });
+    const flights = prepared.map(({ flight, inner, index }) => {
       const targetX = first.left + (remaining.length + index) * step + first.width / 2;
       const targetY = first.top + first.height / 2;
       const dx = targetX - source.left - source.width / 2;
       const dy = targetY - source.top - source.height / 2;
       const scale = first.width / source.width;
-      const timing = { duration: reduced ? 100 : 830, delay: reduced ? 0 : index * 160,
+      const timing = { duration: reduced ? 100 : mulliganFlightDuration,
+        delay: reduced ? 0 : index * mulliganFlightStagger,
         easing: 'cubic-bezier(.22,.7,.18,1)', fill: 'forwards' };
       const motion = flight.animate([
         { transform: 'translate(0, 0) rotate(0deg) scale(1)' },
-        { transform: `translate(${dx * .65}px, ${dy * .65}px) rotate(-7deg) scale(${1 + (scale - 1) * .65})`, offset: .7 },
+        { transform: `translate(${dx * .62}px, ${dy * .62}px) rotate(-8deg) scale(${1 + (scale - 1) * .62})`, offset: .65 },
         { transform: `translate(${dx}px, ${dy}px) rotate(0deg) scale(${scale})` },
       ], timing);
       const flip = inner.animate([
@@ -621,7 +627,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       ], timing);
       mulliganAnimations.add(motion); mulliganAnimations.add(flip);
       return { motion, flip };
-    }))).filter(Boolean);
+    });
     await Promise.allSettled([...shifts.map(animation => animation.finished),
       ...flights.flatMap(({ motion, flip }) => [motion.finished, flip.finished])]);
   }
