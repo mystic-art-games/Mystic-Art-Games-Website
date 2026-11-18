@@ -1834,8 +1834,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const opponentBadge = $('game-opponent-hand-count');
     opponentBadge.hidden = !gameState;
     if (gameState) {
-      opponentBadge.textContent = 'Hand Size';
-      opponentBadge.dataset.count = String(opponentHandCount);
+      opponentBadge.textContent = `Cards in Hand: ${opponentHandCount}`;
       opponentBadge.setAttribute('aria-label', `${opponentHandCount} cards in the opponent's hand`);
     }
     const horizon = Array.isArray(gameState?.horizon) ? gameState.horizon : [];
@@ -1844,8 +1843,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const handBadge = $('game-hand-count');
     handBadge.hidden = handCount === null;
     if (handCount !== null) {
-      handBadge.textContent = 'Hand Size';
-      handBadge.dataset.count = String(handCount);
+      handBadge.textContent = `Cards in Hand: ${handCount}`;
       handBadge.setAttribute('aria-label', `${handCount} cards in your hand`);
     }
     $('game-self-horizon').setAttribute('aria-label', gameState ? `Your Horizon, ${horizon.length} cards` : 'Your Horizon, draw deck');
