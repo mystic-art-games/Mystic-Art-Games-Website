@@ -574,7 +574,17 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     return Promise.allSettled(flights.flatMap(({ motion, flip }) => [motion.finished, flip.finished]))
       .then(() => { for (const { flight } of flights) { flight.remove(); mulliganFlights.delete(flight); } });
   }
-  async function animateMulliganDraw(cards, indices) {
+  function prepareMulliganDraw(cards, expected, roomId) {
+    return cards.map(rawCard => {
+      const card = resolveGameCard(rawCard);
+      const canvas = document.createElement('canvas'); canvas.hidden = true;
+      const fallback = document.createElement('span'); fallback.textContent = card.title || 'Card';
+      const ready = prepareArrivingCard(card, canvas, fallback,
+        () => mulliganBusy && expected === epoch && room?.id === roomId);
+      return { canvas, fallback, ready };
+    });
+  }
+  async function animateMulliganDraw(cards, indices, stagedCards) {
     const source = $('game-self-horizon').getBoundingClientRect();
     const hand = $('game-hand');
     const items = Array.from(hand.children);
@@ -585,16 +595,12 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const gap = parseFloat(getComputedStyle(hand).columnGap) || 0;
     const step = first.width + gap;
     const remaining = items.filter((_, index) => !selected.has(index));
-    const prepared = (await Promise.all(cards.map(async (rawCard, index) => {
-      const card = resolveGameCard(rawCard);
-      const canvas = document.createElement('canvas'); canvas.hidden = true;
-      const fallback = document.createElement('span'); fallback.textContent = card.title || 'Card';
+    const prepared = (await Promise.all(cards.map(async (_, index) => {
+      const { canvas, fallback, ready } = stagedCards[index];
+      if (!await ready) return null;
       const front = document.createElement('div'); front.className = 'play-mulligan-drawn-card';
       front.append(canvas, fallback);
       const { flight, inner } = mulliganFlight(source, front);
-      if (!await prepareArrivingCard(card, canvas, fallback, () => mulliganFlights.has(flight))) {
-        flight.remove(); mulliganFlights.delete(flight); return null;
-      }
       const targetX = first.left + (remaining.length + index) * step + first.width / 2;
       return { flight, inner, targetX };
     }))).filter(Boolean);
@@ -641,12 +647,13 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const drawnCards = gameState.horizon.slice(0, indices.length);
     mulliganBusy = true;
     renderMulligan();
+    const stagedDrawCards = prepareMulliganDraw(drawnCards, expected, roomId);
     try {
       if (indices.length) await animateMulliganBottom(indices);
       if (expected !== epoch || room?.id !== roomId || room.status !== 'active') return;
       await rpc('play_finish_mulligan', { p_room_id: roomId, p_expected_phase: phase, p_hand_indices: indices });
       if (expected === epoch && room?.id === roomId) {
-        if (indices.length) await animateMulliganDraw(drawnCards, indices);
+        if (indices.length) await animateMulliganDraw(drawnCards, indices, stagedDrawCards);
         await refreshRoom();
         await loadGameState(true);
       }
