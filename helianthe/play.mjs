@@ -91,7 +91,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         </div>
       </div></div>
       <div id="play-opening-roll" class="play-opening-roll" role="dialog" aria-modal="true" aria-labelledby="play-opening-roll-title" hidden><div class="play-opening-roll-panel"><h2 id="play-opening-roll-title">Opening Dice</h2><p id="play-opening-roll-status" class="play-opening-roll-status" role="status" aria-live="polite"></p><div id="play-opening-dice" class="play-opening-dice" hidden><div id="play-opening-die-seat-host" class="play-opening-die-seat"><strong id="play-opening-host-name"></strong><div id="play-opening-host-pair" class="play-opening-die-pair" hidden><div id="play-opening-host-die-1" class="play-opening-die" aria-label="Host's first die">${diePips}</div><div id="play-opening-host-die-2" class="play-opening-die" aria-label="Host's second die">${diePips}</div></div><span id="play-opening-host-total" class="play-opening-total" hidden></span></div><div id="play-opening-die-seat-guest" class="play-opening-die-seat"><strong id="play-opening-guest-name"></strong><div id="play-opening-guest-pair" class="play-opening-die-pair" hidden><div id="play-opening-guest-die-1" class="play-opening-die" aria-label="Guest's first die">${diePips}</div><div id="play-opening-guest-die-2" class="play-opening-die" aria-label="Guest's second die">${diePips}</div></div><span id="play-opening-guest-total" class="play-opening-total" hidden></span></div></div><button id="play-opening-roll-button" class="action-add-save" type="button">Roll Dices</button><p id="play-opening-roll-error" class="play-opening-roll-error" role="alert" hidden></p></div></div>
-      <div id="play-game-archive-browser" class="play-archive-browser" hidden><div class="play-archive-browser-backdrop"></div><section class="play-archive-browser-panel" role="dialog" aria-modal="true" aria-labelledby="play-game-archive-browser-title"><header><div><h2 id="play-game-archive-browser-title">Archive</h2><p id="play-game-archive-browser-status" role="status" aria-live="polite"></p></div><button id="play-game-archive-browser-close" class="play-archive-browser-close" type="button" aria-label="Close Archive">×</button></header><div class="play-archive-browser-body"><div class="play-archive-browser-view"><div class="play-archive-browser-card"><canvas id="play-game-archive-browser-canvas" hidden></canvas><span id="play-game-archive-browser-fallback"></span></div><div class="play-archive-browser-navigation"><button id="play-game-archive-browser-previous" type="button">Previous</button><span id="play-game-archive-browser-position"></span><button id="play-game-archive-browser-next" type="button">Next</button></div></div><ol id="play-game-archive-browser-list" class="play-archive-browser-list" aria-label="Cards in Archive"></ol></div></section></div>
+      <div id="play-game-archive-browser" class="play-archive-browser" hidden><div class="play-archive-browser-backdrop"></div><section class="play-archive-browser-panel" role="dialog" aria-modal="true" aria-labelledby="play-game-archive-browser-title"><header><div><h2 id="play-game-archive-browser-title">Archive</h2><p id="play-game-archive-browser-status" role="status" aria-live="polite"></p></div><button id="play-game-archive-browser-close" class="play-archive-browser-close" type="button" aria-label="Close Archive">×</button></header><div class="play-archive-browser-body"><div class="play-archive-browser-view"><div class="play-archive-browser-card"><canvas id="play-game-archive-browser-canvas" hidden></canvas><span id="play-game-archive-browser-fallback"></span></div></div><ol id="play-game-archive-browser-list" class="play-archive-browser-list" aria-label="Cards in Archive"></ol></div></section></div>
       <div class="play-game-player-block">
       <div class="play-game-self-identity play-game-player-identity"><div class="play-game-identity-name"><strong id="play-game-self-name"></strong><span id="play-game-self-presence" class="play-away-pill" hidden></span></div><span id="play-game-hand-count" class="play-game-hand-count" aria-live="polite" hidden></span></div>
       <section id="play-game-self" class="play-surface play-game-seat" aria-label="Your area">
@@ -1660,27 +1660,22 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   function renderArchiveBrowser() {
     if ($('game-archive-browser').hidden) return;
-    const selectedCard = archiveBrowserCards[archiveBrowserIndex];
-    const card = archiveBrowserHoverIndex === null ? null : archiveBrowserCards[archiveBrowserHoverIndex];
+    const card = archiveBrowserCards[archiveBrowserHoverIndex ?? archiveBrowserIndex];
     const status = $('game-archive-browser-status');
     status.textContent = archiveBrowserError || (archiveBrowserLoading ? 'Loading cards…'
-      : `${archiveBrowserCards.length} card${archiveBrowserCards.length === 1 ? '' : 's'} · newest first`);
+      : `${archiveBrowserCards.length} card${archiveBrowserCards.length === 1 ? '' : 's'}`);
     Array.from($('game-archive-browser-list').children).forEach((row, index) => {
       const button = row.firstElementChild;
       button.classList.toggle('is-current', index === archiveBrowserIndex);
       button.setAttribute('aria-current', index === archiveBrowserIndex ? 'true' : 'false');
     });
-    $('game-archive-browser-position').textContent = selectedCard
-      ? `${archiveBrowserIndex + 1} of ${archiveBrowserCards.length}` : '';
-    $('game-archive-browser-previous').disabled = !selectedCard || archiveBrowserIndex === 0;
-    $('game-archive-browser-next').disabled = !selectedCard || archiveBrowserIndex === archiveBrowserCards.length - 1;
     const canvas = $('game-archive-browser-canvas');
     const fallback = $('game-archive-browser-fallback');
     const serial = ++archiveBrowserCardSerial;
     canvas.hidden = true;
     fallback.hidden = false;
     fallback.textContent = card?.title || (archiveBrowserLoading ? 'Loading…'
-      : archiveBrowserCards.length ? 'Hover over a card to preview it.' : 'No cards in this Archive.');
+      : 'No cards in this Archive.');
     if (!card) return;
     void (async () => {
       const artwork = card.artwork_id ? await getArtworkUrl(card.artwork_id).catch(() => '') : '';
@@ -1753,12 +1748,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   $('game-archive-browser-close').addEventListener('click', () => closeArchiveBrowser());
   $('game-archive-browser').querySelector('.play-archive-browser-backdrop')
     .addEventListener('click', () => closeArchiveBrowser());
-  $('game-archive-browser-previous').addEventListener('click', () => {
-    if (archiveBrowserIndex > 0) { --archiveBrowserIndex; renderArchiveBrowser(); }
-  });
-  $('game-archive-browser-next').addEventListener('click', () => {
-    if (archiveBrowserIndex < archiveBrowserCards.length - 1) { ++archiveBrowserIndex; renderArchiveBrowser(); }
-  });
   function renderArchiveCard(seat, raw, count) {
     const preview = archivePreviews[seat];
     const card = count && raw ? resolveGameCard(raw) : null;
