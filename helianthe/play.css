@@ -196,7 +196,7 @@ body.dark-mode .play-deck-field.is-locked select { border-color: #596d5d; backgr
 .play-hand-card { display: flex; align-items: center; justify-content: center; box-sizing: border-box; width: 100%; min-width: 0; aspect-ratio: 63 / 88; margin: 0; padding: 0; overflow: hidden; border: 1px solid #8da79a; border-radius: 6px; background: #e9ece1; box-shadow: 0 4px 12px #183a2c33; }
 .play-hand-card.is-draggable-card { cursor: grab; touch-action: none; }
 .play-hand-card.is-drag-source { opacity: .4; }
-.play-event-drag-ghost { position: fixed; z-index: 80; box-sizing: border-box; margin: 0; pointer-events: none; transform: rotate(-4deg) scale(1.05); box-shadow: 0 12px 28px #0c1f1ba8; }
+.play-event-drag-ghost { position: fixed; z-index: 80; box-sizing: border-box; margin: 0; pointer-events: none; transform: rotate(-3deg); box-shadow: 0 7px 16px #0c1f1ba8; }
 .play-game-board-wrap.is-event-drop-zone .play-game-board { filter: brightness(1.12); }
 .play-game-node.is-event-drag-target { outline: 3px solid #87e1d5; outline-offset: 2px; filter: brightness(1.25); }
 .play-entity-flight { position: fixed; z-index: 85; box-sizing: border-box; margin: 0; pointer-events: none; box-shadow: 0 12px 28px #0c1f1ba8; }

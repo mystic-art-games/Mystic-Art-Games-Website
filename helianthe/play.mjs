@@ -1650,14 +1650,15 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       if (!drag.ghost && Math.hypot(dx, dy) < 8) return;
       if (!drag.ghost) {
         const bounds = button.getBoundingClientRect();
+        const boardCard = $('game-board').firstElementChild?.getBoundingClientRect();
+        const ghostWidth = boardCard?.width || bounds.width;
+        const ghostHeight = boardCard?.height || bounds.height;
         const ghost = button.cloneNode(true);
         ghost.removeAttribute('aria-label');
         ghost.setAttribute('aria-hidden', 'true');
         ghost.classList.add('play-event-drag-ghost');
-        ghost.style.left = `${bounds.left}px`;
-        ghost.style.top = `${bounds.top}px`;
-        ghost.style.width = `${bounds.width}px`;
-        ghost.style.height = `${bounds.height}px`;
+        ghost.style.width = `${ghostWidth}px`;
+        ghost.style.height = `${ghostHeight}px`;
         const sourceCanvas = button.querySelector('canvas');
         const ghostCanvas = ghost.querySelector('canvas');
         if (sourceCanvas && ghostCanvas && !sourceCanvas.hidden && sourceCanvas.width) {
@@ -1667,14 +1668,15 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         }
         document.body.append(ghost);
         drag.ghost = ghost;
-        drag.bounds = bounds;
+        drag.offsetX = (drag.x - bounds.left) * ghostWidth / bounds.width;
+        drag.offsetY = (drag.y - bounds.top) * ghostHeight / bounds.height;
         hideCardPreview();
         button.classList.add('is-drag-source');
         boardWrap.classList.add('is-event-drop-zone');
       }
       event.preventDefault();
-      drag.ghost.style.left = `${drag.bounds.left + dx}px`;
-      drag.ghost.style.top = `${drag.bounds.top + dy}px`;
+      drag.ghost.style.left = `${event.clientX - drag.offsetX}px`;
+      drag.ghost.style.top = `${event.clientY - drag.offsetY}px`;
       clearDragTarget();
       const target = targetAt(event.clientX, event.clientY);
       if (target && (isEntity ? legalEntityAction(card, room?.board?.[target.dataset.key], target.dataset.key)
