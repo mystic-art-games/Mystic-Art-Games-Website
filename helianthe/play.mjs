@@ -74,6 +74,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
           <div class="play-game-zone play-game-zone-self-patron"><button id="play-game-self-patron-slot" class="play-game-patron-slot" type="button" aria-label="Preview your Patron"><canvas id="play-game-self-patron" hidden></canvas><span id="play-game-self-patron-fallback" class="play-game-patron-fallback" aria-hidden="true"></span></button></div>
         </div>
       </div>
+      <div class="play-game-phase-stack" hidden>
       <aside id="play-game-phases" class="play-game-phases" aria-label="Turn phases" hidden>
         <p id="play-game-turn-owner" class="play-game-turn-owner" aria-live="polite"></p>
         <ol class="play-game-phase-list">
@@ -82,11 +83,12 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
           <li data-phase="2"><span class="play-game-phase-marker" aria-hidden="true"></span>Main Phase</li>
           <li data-phase="3"><span class="play-game-phase-marker" aria-hidden="true"></span>End of Turn</li>
         </ol>
+      </aside>
         <div class="play-game-phase-actions">
           <button id="play-game-extra-draw" class="play-game-next-phase play-game-extra-draw" type="button" aria-label="Draw one card instead of playing and go to End of Turn" hidden>Draw Instead</button>
           <button id="play-game-next-phase" class="play-game-next-phase" type="button">Next Phase</button>
         </div>
-      </aside></div>
+      </div></div>
       <div id="play-opening-roll" class="play-opening-roll" role="dialog" aria-modal="true" aria-labelledby="play-opening-roll-title" hidden><div class="play-opening-roll-panel"><h2 id="play-opening-roll-title">Opening Dice</h2><p id="play-opening-roll-status" class="play-opening-roll-status" role="status" aria-live="polite"></p><div id="play-opening-dice" class="play-opening-dice" hidden><div id="play-opening-die-seat-host" class="play-opening-die-seat"><strong id="play-opening-host-name"></strong><div id="play-opening-host-pair" class="play-opening-die-pair" hidden><div id="play-opening-host-die-1" class="play-opening-die" aria-label="Host's first die">${diePips}</div><div id="play-opening-host-die-2" class="play-opening-die" aria-label="Host's second die">${diePips}</div></div><span id="play-opening-host-total" class="play-opening-total" hidden></span></div><div id="play-opening-die-seat-guest" class="play-opening-die-seat"><strong id="play-opening-guest-name"></strong><div id="play-opening-guest-pair" class="play-opening-die-pair" hidden><div id="play-opening-guest-die-1" class="play-opening-die" aria-label="Guest's first die">${diePips}</div><div id="play-opening-guest-die-2" class="play-opening-die" aria-label="Guest's second die">${diePips}</div></div><span id="play-opening-guest-total" class="play-opening-total" hidden></span></div></div><button id="play-opening-roll-button" class="action-add-save" type="button">Roll Dices</button><p id="play-opening-roll-error" class="play-opening-roll-error" role="alert" hidden></p></div></div>
       <div id="play-game-archive-browser" class="play-archive-browser" hidden><div class="play-archive-browser-backdrop"></div><section class="play-archive-browser-panel" role="dialog" aria-modal="true" aria-labelledby="play-game-archive-browser-title"><header><div><h2 id="play-game-archive-browser-title">Archive</h2><p id="play-game-archive-browser-status" role="status" aria-live="polite"></p></div><button id="play-game-archive-browser-close" class="play-archive-browser-close" type="button" aria-label="Close Archive">×</button></header><div class="play-archive-browser-body"><div class="play-archive-browser-view"><div class="play-archive-browser-card"><canvas id="play-game-archive-browser-canvas" hidden></canvas><span id="play-game-archive-browser-fallback"></span></div><div class="play-archive-browser-navigation"><button id="play-game-archive-browser-previous" type="button">Previous</button><span id="play-game-archive-browser-position"></span><button id="play-game-archive-browser-next" type="button">Next</button></div></div><ol id="play-game-archive-browser-list" class="play-archive-browser-list" aria-label="Cards in Archive"></ol></div></section></div>
       <div class="play-game-player-block">
@@ -304,6 +306,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   function renderOpeningRoll() {
     const overlay = $('opening-roll');
     const phases = $('game-phases');
+    const phaseStack = phases.parentElement;
     const key = room?.status === 'active' ? `${room.id}:${room.activated_at || ''}` : '';
     if (key !== openingMatchKey) {
       openingMatchKey = key;
@@ -339,6 +342,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     }
     const mulligan = room?.status === 'active' && ['mulligan_first', 'mulligan_second'].includes(room.turn_phase);
     phases.hidden = rolling || revealing || choosing || mulligan || mulliganBusy;
+    phaseStack.hidden = phases.hidden;
     const choice = $('opening-choice');
     choice.hidden = !choosing || revealing;
     renderMulligan();
@@ -363,8 +367,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (overlay.hidden) {
       if (!phases.hidden && key && openingPanelAnimatedKey !== key && room?.turn_number === 1) {
         openingPanelAnimatedKey = key;
-        phases.classList.add('is-appearing');
-        setTimeout(() => phases.classList.remove('is-appearing'), 650);
+        phaseStack.classList.add('is-appearing');
+        setTimeout(() => phaseStack.classList.remove('is-appearing'), 650);
       }
       return;
     }
