@@ -313,9 +313,7 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
 @keyframes play-die-rolling { 0% { transform: translateX(var(--roll-start)) rotate(-125deg) scale(.78); opacity: .45; } 35% { transform: translateX(var(--roll-rebound)) rotate(65deg) scale(1.05); opacity: 1; } 65% { transform: translateX(var(--land-offset)) rotate(-28deg) scale(.97); } 85% { transform: translateX(0) rotate(9deg) scale(1.02); } 100% { transform: translateX(0) rotate(0) scale(1); opacity: 1; } }
 @keyframes play-die-landing { from { transform: translateX(var(--land-offset)) rotate(12deg) scale(.94); } to { transform: translateX(0) rotate(0) scale(1); } }
 .play-opening-total { grid-row: 3; align-self: center; margin-top: .7rem; padding: .25rem .7rem; border-radius: 999px; background: #1b352bd9; font-weight: 900; }
-#play-game #play-opening-roll-button { grid-row: 4; justify-self: center; min-width: 10rem; margin: 0; padding: .7rem 1.1rem; border: 1px solid #83b58c; border-radius: 9px; background: #477452; color: #fff; font: 800 .95rem Nunito, sans-serif; cursor: pointer; }
-#play-game #play-opening-roll-button:hover:not(:disabled) { background: #568a61; }
-#play-game #play-opening-roll-button:disabled { cursor: wait; opacity: .6; }
+#play-game #play-opening-roll-button { grid-row: 4; justify-self: center; min-width: 10rem; margin: 0; }
 .play-opening-roll-error { grid-row: 5; margin: 0; color: #ffd6ce; }
 @media (prefers-reduced-motion: reduce) { .play-game-phases.is-appearing, .play-opening-die.is-rolling, .play-opening-die.is-landing { animation: none; } }
 #play-game .play-game-phases { grid-column: 3; grid-row: 1; justify-self: end; width: max-content; max-width: 100%; }
