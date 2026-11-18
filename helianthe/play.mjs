@@ -52,7 +52,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     </section>
     <section id="play-game" hidden>
       <div class="play-game-player-block">
-      <div class="play-game-opponent-footer"><div class="play-game-opponent-identity play-game-player-identity"><div class="play-game-identity-name"><strong id="play-game-opponent-name"></strong><span id="play-game-opponent-presence" class="play-away-pill" hidden></span></div><span id="play-game-opponent-hand-count" class="play-game-hand-count" aria-live="polite" hidden></span></div><div class="play-game-actions"><details class="play-table-menu"><summary class="play-menu-toggle" aria-label="Table actions" title="Table actions"><svg class="play-menu-bars" aria-hidden="true" viewBox="0 0 22 22"><path d="M3 5h16 M3 11h16 M3 17h16"/></svg></summary><div class="play-table-menu-panel"><strong id="play-game-name" class="play-menu-table-name"></strong><button id="play-game-back" class="play-menu-lobby" type="button">Back to Lobby</button><button id="play-game-restart" type="button">Restart</button><button id="play-game-leave" type="button">Smash Table</button></div></details></div></div>
+      <div class="play-game-opponent-footer"><div class="play-game-opponent-identity play-game-player-identity"><div class="play-game-identity-name"><strong id="play-game-opponent-name"></strong><span id="play-game-opponent-presence" class="play-away-pill" hidden></span></div><span id="play-game-opponent-hand-count" class="play-game-hand-count" aria-live="polite" hidden></span></div><div class="play-game-actions"><details class="play-table-menu"><summary class="play-menu-toggle" aria-label="Table actions" title="Table actions"><svg class="play-menu-bars" aria-hidden="true" viewBox="0 0 22 22"><path d="M3 5h16 M3 11h16 M3 17h16"/></svg></summary><div class="play-table-menu-panel"><strong id="play-game-name" class="play-menu-table-name"></strong><button id="play-game-back" class="play-menu-lobby" type="button">Back to Lobby</button><button id="play-game-restart" type="button">Restart</button><button id="play-game-leave" type="button">Concede</button></div></details></div></div>
       </div>
       <div class="play-game-board-wrap">
       <div id="play-opening-choice" class="play-opening-choice" role="status" hidden><strong id="play-opening-choice-message"></strong><div id="play-opening-choice-actions"><button id="play-opening-choose-self" type="button">I start</button><button id="play-opening-choose-opponent" type="button">Opponent starts</button></div></div>
@@ -1916,7 +1916,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   function renderGame() {
     if (!room || room.status !== 'active') return;
     $('game-name').textContent = room.name || 'Table';
-    $('game-leave').textContent = room.host_id === userId ? 'Smash Table' : 'Concede';
+    $('game-leave').textContent = 'Concede';
     $('game-restart').hidden = room.host_id !== userId;
     gamePlayerCard(room.host_id === userId ? room.guest_id : room.host_id,
       room.host_id === userId ? room.guest_deck_id : room.host_deck_id, false);
@@ -2332,7 +2332,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     $('room-code').textContent = room.code;
     $('room-name').textContent = room.name || defaultTableName(getProfiles().find(p => p.id === room.host_id)?.display_name);
     $('edit-name').hidden = room.host_id !== userId || room.status === 'closed';
-    $('leave').textContent = room.host_id === userId ? 'Smash Table' : 'Concede';
+    $('leave').textContent = 'Concede';
     let hasSeat = false;
     const playerRows = $('players');
     const rows = ['host', 'guest'].map(seat => {
