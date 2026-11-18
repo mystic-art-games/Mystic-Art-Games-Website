@@ -240,8 +240,8 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
 #play-game .play-menu-toggle:hover, #play-game .play-table-menu[open] .play-menu-toggle { border-color: #123c2d; background: #305443; color: #f2c96b; }
 #play-game .play-menu-toggle:focus-visible { outline-color: #e0e3e3; }
 #play-game .play-game-player-block { min-height: 0; }
-#play-game .play-game-hand { gap: 1.1rem; padding: .4rem .3rem; }
-#play-game .play-hand-item { flex-basis: clamp(96px, min(19vh, 14vw), 180px); }
+#play-game .play-game-hand { gap: .85rem; padding: .4rem .3rem; }
+#play-game .play-hand-item { flex-basis: clamp(115px, min(23vh, 17vw), 215px); }
 #play-game .play-hand-card { transition: filter .16s ease; }
 #play-game .play-hand-card.is-selected { outline: 2px solid #17372b; outline-offset: 1px; filter: brightness(.8); box-shadow: 0 4px 12px #0d171766; }
 #play-game .play-hand-card.is-discard-selected { outline: 2px solid #e88b81; outline-offset: 1px; filter: brightness(.72); box-shadow: 0 0 0 3px #5d2727aa, 0 4px 12px #0d171766; }
