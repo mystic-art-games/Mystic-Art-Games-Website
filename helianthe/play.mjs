@@ -316,7 +316,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const rolling = room?.status === 'active' && room.turn_phase === 'roll' && room.opening_roll_round > 0;
     if (rolling) openingWasRolling = true;
     const choosing = room?.status === 'active' && room.turn_phase === 'choose_first';
-    const revealing = !rolling && Boolean(room?.opening_roll_winner_id) && room.turn_number <= 1
+    const winnerId = room?.opening_roll_winner_id || (room?.opening_host_roll != null && room?.opening_guest_roll != null
+      && room.opening_host_roll !== room.opening_guest_roll
+      ? room.opening_host_roll > room.opening_guest_roll ? room.host_id : room.guest_id : null);
+    const revealing = !rolling && Boolean(winnerId) && room.turn_number <= 1
       && openingRevealDoneKey !== key && (choosing || openingWasRolling);
     overlay.hidden = !rolling && !revealing;
     const gameActions = $('game').querySelector('.play-game-actions');
@@ -332,8 +335,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const choice = $('opening-choice');
     choice.hidden = !choosing || revealing;
     if (choosing) {
-      const winnerName = getProfiles().find(person => person.id === room.opening_roll_winner_id)?.display_name || 'The dice winner';
-      const ownWin = room.opening_roll_winner_id === userId;
+      const winnerName = getProfiles().find(person => person.id === winnerId)?.display_name || 'The dice winner';
+      const ownWin = winnerId === userId;
       $('opening-choice-message').textContent = ownWin
         ? 'You won the roll. Review your hand, then choose who starts.'
         : `${winnerName} won the roll and is choosing who starts.`;
@@ -404,7 +407,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     $('opening-roll-status').classList.toggle('is-result', Boolean(revealing));
     $('opening-roll-status').textContent = openingRollBusy ? 'Rolling two dice…'
       : revealing
-      ? room.opening_roll_winner_id === userId ? 'You decide who plays first' : 'Opponent decides who plays first'
+      ? winnerId === userId ? 'You decide who plays first' : 'Opponent decides who plays first'
       : showTie ? `Tie: ${tie.host}–${tie.guest}. Roll again!`
       : ownRolled ? `You rolled ${room[`opening_${ownSeat}_roll`]}. Waiting for the opponent to roll.`
       : room.opening_host_roll || room.opening_guest_roll ? 'The other player has rolled. Roll your dice!' : 'Roll two dice. Higher total chooses who starts.';
