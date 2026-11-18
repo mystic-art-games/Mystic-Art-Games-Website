@@ -15,6 +15,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   let openingRollBusy = false, openingChoiceBusy = false, openingRollError = '', openingMatchKey = '', openingWasRolling = false;
   let openingRevealTimer = null, openingTieTimer = null, openingTieRound = 0, openingPanelAnimatedKey = '';
   let openingShuffleTimer = null, openingVisualDice = [1, 1];
+  let handDetailsHideTimer = null;
   const openingAnimatedValues = { host: null, guest: null };
   let drawRetryAt = 0, activeDrawFlight = null, activeHandShifts = [];
   let beginningTurnKey = '', beginningOrder = [], beginningTargetSource = null;
@@ -88,6 +89,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         <div class="play-game-hand-wrap"><p id="play-game-loading" role="status">Preparing the opening hands…</p><div id="play-game-hand" class="play-game-hand"></div></div>
       </section>
       </div>
+      <aside id="play-game-hand-details" class="play-game-hand-details" hidden><strong id="play-game-hand-details-title"></strong><p id="play-game-hand-details-effect"></p></aside>
     </section>`;
   function syncZoneCardSize() {
     const cell = $('game-board').firstElementChild;
@@ -1004,7 +1006,33 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     selectedCardElement?.removeAttribute('aria-pressed');
     selectedCardElement = null;
     $('game-card-preview').hidden = true;
+    $('game-hand-details').hidden = true;
   }
+  function showHandDetails(card, source) {
+    clearTimeout(handDetailsHideTimer);
+    const details = $('game-hand-details');
+    if (!card || !source) { details.hidden = true; return; }
+    $('game-hand-details-title').textContent = card.title || 'Card';
+    const effect = $('game-hand-details-effect');
+    effect.textContent = card.effect?.trim() || '';
+    effect.hidden = !effect.textContent;
+    const bounds = source.getBoundingClientRect();
+    details.style.maxHeight = `${Math.max(80, bounds.top - 16)}px`;
+    details.hidden = false;
+    const width = details.getBoundingClientRect().width;
+    details.style.left = `${Math.max(8, Math.min(bounds.left + bounds.width / 2 - width / 2, window.innerWidth - width - 8))}px`;
+    details.style.bottom = `${window.innerHeight - bounds.top + 8}px`;
+  }
+  function restoreSelectedHandDetails() {
+    const source = selectedHandIndex === null ? null : $('game-hand').children[selectedHandIndex]?.querySelector('.play-hand-card');
+    showHandDetails(selectedGameCard, source);
+  }
+  function queueRestoreHandDetails() {
+    clearTimeout(handDetailsHideTimer);
+    handDetailsHideTimer = setTimeout(restoreSelectedHandDetails, 120);
+  }
+  $('game-hand-details').addEventListener('pointerenter', () => clearTimeout(handDetailsHideTimer));
+  $('game-hand-details').addEventListener('pointerleave', restoreSelectedHandDetails);
   function showCardPreview(card, source, handIndex = null) {
     pendingEvent = null;
     pendingEntity = card.card_type === 'Entity' && handIndex !== null && !pendingFestival
@@ -1013,6 +1041,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     syncEventTargets();
     selectedGameCard = card;
     selectedHandIndex = handIndex;
+    showHandDetails(handIndex === null ? null : card, source);
     const support = card.card_type === 'Event' ? eventSupport(card) : null;
     eventNotice(pendingEntity ? 'Choose matching Terrain to Place, or a legal empty space to Shape. Press Esc to cancel.'
       : card.card_type === 'Entity' && handIndex !== null && room?.turn_player_id === userId
@@ -1692,6 +1721,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       button.append(canvas, fallback);
       item.append(button);
       button.addEventListener('click', () => chooseHandCard(card, button, index));
+      button.addEventListener('pointerenter', () => showHandDetails(card, button));
+      button.addEventListener('pointerleave', queueRestoreHandDetails);
+      button.addEventListener('focus', () => showHandDetails(card, button));
+      button.addEventListener('blur', queueRestoreHandDetails);
       button.addEventListener('contextmenu', event => {
         event.preventDefault();
         chooseHandCard(card, button, index);

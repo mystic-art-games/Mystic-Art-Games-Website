@@ -212,6 +212,10 @@ body.dark-mode .play-deck-field.is-locked select { border-color: #596d5d; backgr
 .play-hand-card canvas { display: block; width: 100%; height: 100%; object-fit: fill; }
 .play-hand-card canvas[hidden], .play-hand-fallback[hidden] { display: none; }
 .play-hand-fallback { padding: .6rem; color: #234536; font-size: .9rem; font-weight: 700; text-align: center; }
+.play-game-hand-details { position: fixed; z-index: 45; box-sizing: border-box; width: min(26rem, calc(100vw - 1rem)); padding: .8rem 1rem; overflow-y: auto; border: 1px solid #b9d4c1; border-radius: 10px; background: #15372ff5; color: #fff7e8; font: 600 1rem/1.4 Nunito, sans-serif; box-shadow: 0 10px 28px #071910aa; }
+.play-game-hand-details[hidden], .play-game-hand-details p[hidden] { display: none; }
+.play-game-hand-details strong { display: block; font-size: 1.1rem; line-height: 1.25; }
+.play-game-hand-details p { margin: .45rem 0 0; white-space: pre-line; }
 body.dark-mode .play-workspace { background: linear-gradient(145deg,#153f34,#246047); color: #f0f5e8; border-color: #416853; box-shadow: inset 1px 1px 0 #ffffff30; }
 body.dark-mode .play-workspace .play-surface, body.dark-mode .play-player { background: #12372c90; border-color: #527460; }
 body.dark-mode .play-workspace .play-eyebrow { color: #b2c9b9; }
