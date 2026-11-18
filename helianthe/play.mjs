@@ -111,12 +111,33 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const wrapBounds = boardWrap.getBoundingClientRect();
     const boardBounds = $('game-board').getBoundingClientRect();
     root.style.setProperty('--play-map-board-height', `${boardBounds.height}px`);
+    if (window.matchMedia('(min-width: 901px)').matches) {
+      const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+      const badgeLeft = element => {
+        const badge = getComputedStyle(element, '::after');
+        const badgeWidth = Math.max(parseFloat(badge.width) || 0, 1.4 * rem)
+          + (parseFloat(badge.paddingLeft) || 0) + (parseFloat(badge.paddingRight) || 0)
+          + (parseFloat(badge.borderLeftWidth) || 0) + (parseFloat(badge.borderRightWidth) || 0);
+        return element.getBoundingClientRect().left - .5 * rem - badgeWidth;
+      };
+      const edgeGap = Math.max(8, wrapBounds.left - root.getBoundingClientRect().left);
+      const horizontalWidth = Math.min(badgeLeft($('game-self-horizon')), badgeLeft($('game-self-archive')))
+        - wrapBounds.left - edgeGap;
+      const playerBlocks = $('game').querySelectorAll(':scope > .play-game-player-block');
+      const centerY = wrapBounds.top + wrapBounds.height / 2;
+      const verticalHalf = Math.min(centerY - playerBlocks[0].getBoundingClientRect().bottom,
+        playerBlocks[1].getBoundingClientRect().top - centerY) - edgeGap;
+      const verticalWidth = Math.max(0, verticalHalf * 2 * 63 / 88);
+      root.style.setProperty('--play-preview-width', `${Math.max(0, Math.floor(Math.min(horizontalWidth, verticalWidth)))}px`);
+    } else root.style.removeProperty('--play-preview-width');
     $('game-event-notice').style.top = `${bounds.top - wrapBounds.top - 8}px`;
     $('game-discard-bar').style.left = `${boardBounds.left + boardBounds.width / 2 - wrapBounds.left}px`;
     $('game-discard-bar').style.top = `${boardBounds.top + boardBounds.height / 2 - wrapBounds.top}px`;
   }
   if (typeof ResizeObserver === 'function') {
-    new ResizeObserver(syncZoneCardSize).observe($('game-board'));
+    const zoneResizeObserver = new ResizeObserver(syncZoneCardSize);
+    zoneResizeObserver.observe($('game-board'));
+    zoneResizeObserver.observe(root.querySelector('.play-game-board-wrap'));
   }
   const deckField = $('deck-field');
   const readyButton = $('ready');
