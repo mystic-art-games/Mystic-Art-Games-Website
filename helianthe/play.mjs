@@ -1666,9 +1666,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       const fallback = document.createElement('span');
       fallback.className = 'play-archive-gallery-fallback';
       fallback.textContent = item.title || 'Card';
-      const caption = document.createElement('small');
-      caption.textContent = item.title || 'Card';
-      button.append(canvas, fallback, caption);
+      button.append(canvas, fallback);
       button.addEventListener('click', () => { archiveBrowserIndex = index; renderArchiveBrowser(); });
       button.addEventListener('pointerenter', event => {
         if (event.pointerType !== 'mouse') return;
@@ -1722,7 +1720,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       : `${archiveBrowserCards.length} card${archiveBrowserCards.length === 1 ? '' : 's'}`);
     Array.from($('game-archive-browser-list').children).forEach((row, index) => {
       const button = row.firstElementChild;
-      button.classList.toggle('is-current', index === archiveBrowserIndex);
       button.setAttribute('aria-current', index === archiveBrowserIndex ? 'true' : 'false');
     });
     const canvas = $('game-archive-browser-canvas');

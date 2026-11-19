@@ -116,28 +116,26 @@ body.dark-mode .play-deck-field.is-locked select { border-color: #596d5d; backgr
 .play-archive-browser { position: fixed; z-index: 100; inset: 0; display: grid; place-items: center; box-sizing: border-box; padding: 1rem; font-family: Nunito, sans-serif; }
 .play-archive-browser[hidden] { display: none; }
 .play-archive-browser-backdrop { position: absolute; inset: 0; background: #071a13c9; }
-.play-archive-browser-panel { position: relative; display: grid; grid-template-rows: auto minmax(0, 1fr); box-sizing: border-box; width: min(860px, 100%); max-height: min(85dvh, 760px); overflow: hidden; border: 1px solid #9bbba3; border-radius: 14px; background: #1b352b; color: #f5f2e8; box-shadow: 0 16px 50px #07170fbb; }
+.play-archive-browser-panel { position: relative; display: grid; grid-template-rows: auto minmax(0, 1fr); box-sizing: border-box; width: min(1080px, 100%); max-height: min(85dvh, 760px); overflow: hidden; border: 1px solid #9bbba3; border-radius: 14px; background: #1b352b; color: #f5f2e8; box-shadow: 0 16px 50px #07170fbb; }
 .play-archive-browser-panel header { display: flex; align-items: start; justify-content: space-between; gap: 1rem; padding: .8rem 1rem; border-bottom: 1px solid #6e947b; }
 .play-archive-browser-panel h2 { margin: 0; color: #fff; font-family: Nunito, sans-serif; font-size: 1.2rem; }
 .play-archive-browser-panel header p { margin: .15rem 0 0; color: #d7c9a7; font-size: .78rem; }
 .play-archive-browser-panel button { border: 1px solid #8a9b80; border-radius: 7px; background: #305443; color: #f5f2e8; font-family: Nunito, sans-serif; font-weight: 700; cursor: pointer; }
-.play-archive-browser-panel button:hover:not(:disabled) { background: #477452; }
+.play-archive-browser-panel .play-archive-browser-close:hover:not(:disabled) { background: #477452; }
 .play-archive-browser-panel button:disabled { cursor: default; opacity: .5; }
 .play-archive-browser-panel button:focus-visible { outline: 2px solid #e8d38a; outline-offset: 2px; }
 .play-archive-browser-panel .play-archive-browser-close { flex: 0 0 auto; width: 2rem; height: 2rem; padding: 0; font-size: 1.35rem; line-height: 1; }
-.play-archive-browser-body { display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); gap: 1rem; min-height: 0; padding: 1rem; }
-.play-archive-browser-view { display: grid; justify-items: center; align-content: start; gap: .6rem; min-width: 0; min-height: 0; }
+.play-archive-browser-body { display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.5fr); gap: 1rem; min-height: 0; padding: 1rem; }
+.play-archive-browser-view { display: grid; justify-items: center; align-content: center; gap: .6rem; min-width: 0; min-height: 0; }
 .play-archive-browser-card { display: grid; place-items: center; width: auto; max-width: 100%; height: min(48dvh, 450px); aspect-ratio: 63 / 88; overflow: hidden; border: 1px solid #9bbba3; border-radius: 7px; background: #e9ece1; color: #173b2d; text-align: center; }
 .play-archive-browser-card canvas { display: block; width: 100%; height: 100%; }
 .play-archive-browser-card canvas[hidden], .play-archive-browser-card span[hidden] { display: none; }
 .play-archive-browser-card span { padding: 1rem; font-size: .9rem; font-weight: 800; }
-.play-archive-browser-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-content: start; gap: .6rem; min-height: 0; margin: 0; padding: 0; overflow-y: auto; list-style: none; }
-.play-archive-browser-list button { display: grid; gap: .3rem; width: 100%; padding: .35rem; text-align: center; }
-.play-archive-browser-list button.is-current { border-color: #e8d38a; background: #477452; }
+.play-archive-browser-list { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); align-content: start; gap: .6rem; min-height: 0; margin: 0; padding: 4px; overflow-y: auto; list-style: none; }
+.play-archive-browser-list button, .play-archive-browser-list button:hover:not(:disabled), .play-archive-browser-list button:active { display: block; width: 100%; padding: 0; border: 0; border-radius: 4px; background: transparent; box-shadow: none; text-align: center; }
 .play-archive-browser-list canvas, .play-archive-gallery-fallback { display: block; box-sizing: border-box; width: 100%; aspect-ratio: 63 / 88; border-radius: 4px; background: #e9ece1; }
 .play-archive-browser-list canvas[hidden], .play-archive-gallery-fallback[hidden] { display: none; }
 .play-archive-gallery-fallback { display: grid; place-items: center; padding: .4rem; color: #173b2d; font-size: .72rem; }
-.play-archive-browser-list small { overflow: hidden; color: #f5f2e8; font-size: .65rem; line-height: 1.2; text-overflow: ellipsis; white-space: nowrap; }
 .play-game-zones-left, .play-game-zones-right { display: grid; grid-template-rows: repeat(4, minmax(0, 1fr)); gap: var(--play-map-card-gap); justify-items: center; align-items: center; align-self: center; height: var(--play-map-board-height, 100%); min-height: 0; }
 .play-game-zone-pair { display: grid; grid-template-rows: repeat(2, minmax(0, 1fr)); gap: var(--play-map-card-gap); justify-items: center; align-items: center; width: 100%; height: 100%; }
 .play-game-zone-pair-opponent { grid-row: 1 / 3; }
@@ -404,7 +402,7 @@ body.dark-mode button.play-game-extra-draw:hover:not(:disabled) { box-shadow: in
   .play-archive-browser-panel { max-height: 92dvh; }
   .play-archive-browser-body { grid-template-columns: 1fr; gap: .6rem; overflow-y: auto; }
   .play-archive-browser-card { height: min(35dvh, 300px); }
-  .play-archive-browser-list { grid-template-columns: repeat(2, minmax(0, 1fr)); max-height: 24dvh; }
+  .play-archive-browser-list { max-height: 24dvh; }
   #play-game:not([hidden]) { --play-preview-gutter: 0px; }
   #play-game .play-game-board-wrap { width: 100%; margin-left: 0; }
   #play-game .play-game-table { width: 100%; grid-template-columns: repeat(3, minmax(0,1fr)); grid-template-rows: minmax(0,1fr) minmax(0,3fr) minmax(0,1fr); justify-items: center; gap: .25rem; }
