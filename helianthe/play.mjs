@@ -36,7 +36,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   const arrivingCardCanvases = new Map();
   let beginningTurnKey = '', beginningOrder = [], beginningTargetSource = null;
   const beginningTargets = new Map();
-  let archiveBrowserSeat = null, archiveBrowserCards = [], archiveBrowserIndex = 0, archiveBrowserHoverIndex = null;
+  let archiveBrowserSeat = null, archiveBrowserCards = [], archiveBrowserIndex = 0;
   let archiveBrowserRequestSerial = 0, archiveBrowserCardSerial = 0, archiveBrowserOpener = null;
   let archiveBrowserLoading = false, archiveBrowserError = '';
   const gameLogPageSize = 120;
@@ -1800,16 +1800,14 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       fallback.className = 'play-archive-gallery-fallback';
       fallback.textContent = item.title || 'Card';
       button.append(canvas, fallback);
-      button.addEventListener('click', () => { archiveBrowserIndex = index; renderArchiveBrowser(); });
+      const showCard = () => {
+        if (archiveBrowserIndex === index) return;
+        archiveBrowserIndex = index;
+        renderArchiveBrowser();
+      };
+      button.addEventListener('click', showCard);
       button.addEventListener('pointerenter', event => {
-        if (event.pointerType !== 'mouse') return;
-        archiveBrowserHoverIndex = index;
-        renderArchiveBrowser();
-      });
-      button.addEventListener('pointerleave', event => {
-        if (event.pointerType !== 'mouse' || archiveBrowserHoverIndex !== index) return;
-        archiveBrowserHoverIndex = null;
-        renderArchiveBrowser();
+        if (event.pointerType === 'mouse') showCard();
       });
       row.append(button);
       return { row, button, canvas, fallback, item };
@@ -1843,7 +1841,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   function renderArchiveBrowser() {
     if ($('game-archive-browser').hidden) return;
-    const card = archiveBrowserCards[archiveBrowserHoverIndex ?? archiveBrowserIndex];
+    const card = archiveBrowserCards[archiveBrowserIndex];
     const status = $('game-archive-browser-status');
     status.textContent = archiveBrowserError || (archiveBrowserLoading ? 'Loading cards…'
       : `${archiveBrowserCards.length} card${archiveBrowserCards.length === 1 ? '' : 's'}`);
@@ -1878,7 +1876,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     $('game-archive-browser').hidden = true;
     archiveBrowserSeat = null;
     archiveBrowserCards = [];
-    archiveBrowserHoverIndex = null;
     $('game-archive-browser-list').replaceChildren();
     archiveBrowserLoading = false;
     archiveBrowserError = '';
@@ -1890,7 +1887,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     hideCardPreview();
     archiveBrowserSeat = seat;
     archiveBrowserCards = [];
-    archiveBrowserHoverIndex = null;
     $('game-archive-browser-list').replaceChildren();
     archiveBrowserIndex = 0;
     archiveBrowserLoading = true;
