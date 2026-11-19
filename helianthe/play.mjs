@@ -1,4 +1,4 @@
-import { extendedEventRules, extendedKinds, extendedEventStep } from './play-extended-events.mjs';
+import { extendedEventRules, extendedKinds, extendedEventStep } from './play-extended-events.mjs?v=2';
 
 const defaultTableName = hostName => `${Array.from(String(hostName ?? '').trim() || 'Player').slice(0, 52).join("")}'s Table`;
 
