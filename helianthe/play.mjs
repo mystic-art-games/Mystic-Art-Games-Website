@@ -590,7 +590,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       phaseAdvanceTimer = null;
       phaseAdvanceKey = '';
       if (automaticPhaseKey() === key) void advanceTurnPhase(false, true);
-    }, Math.max(1000, phaseAdvanceRetryAt - Date.now())) : null;
+    }, Math.max(500, phaseAdvanceRetryAt - Date.now())) : null;
   }
   function renderTurnPhase() {
     const phase = room?.turn_phase;
