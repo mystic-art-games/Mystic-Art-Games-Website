@@ -64,7 +64,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     </div>
     <section id="play-session" hidden>
       <button id="play-back" class="back-to-decks" type="button"><span aria-hidden="true">←</span> Back to Lobby</button>
-      <div class="play-room-bar"><div class="play-room-identity"><div class="play-room-name-line"><strong id="play-room-name"></strong><button id="play-edit-name" class="action-cancel" type="button">Edit name</button></div><form id="play-name-form" hidden><input id="play-name-input" aria-label="Table name" maxlength="60" required><button type="submit">Save</button><button id="play-cancel-name" type="button">Cancel</button></form><span class="play-room-code-line">Code: <strong id="play-room-code"></strong></span></div><div class="play-room-actions"><details class="play-table-menu"><summary class="play-menu-toggle" aria-label="Table actions" title="Table actions"><svg class="play-menu-bars" aria-hidden="true" viewBox="0 0 22 22"><path d="M3 5h16 M3 11h16 M3 17h16"/></svg></summary><div class="play-table-menu-panel"><button id="play-leave" class="action-delete" type="button">Concede</button></div></details></div></div>
+      <div class="play-room-bar"><div class="play-room-identity"><div class="play-room-name-line"><strong id="play-room-name"></strong><button id="play-edit-name" class="action-cancel" type="button">Edit name</button></div><form id="play-name-form" hidden><input id="play-name-input" aria-label="Table name" maxlength="60" required><button type="submit">Save</button><button id="play-cancel-name" type="button">Cancel</button></form><span class="play-room-code-line">Code: <strong id="play-room-code"></strong></span></div><div class="play-room-actions"><button id="play-leave" class="action-delete" type="button">Smash Table</button></div></div>
       <div id="play-players" class="play-players"></div>
       <label id="play-deck-field" class="play-deck-field" for="play-deck">Your deck<div class="play-deck-choice"><img id="play-deck-cover" class="play-deck-cover" alt="" hidden><select id="play-deck"><option value="">No decks available</option></select></div></label>
       <button id="play-ready" class="action-add-save" type="button">Ready</button>
@@ -2995,6 +2995,14 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     remember(null); render(); message();
     await listTables();
   }
+  async function smashWaitingTable() {
+    if (!room || room.status !== 'waiting') return;
+    await rpc('play_smash_waiting_table', { p_room_id: room.id });
+    await disconnect();
+    room = null; inLobby = false; tableListSignature = '';
+    remember(null); render(); message();
+    await listTables();
+  }
   function refreshCollections() {
     const decks = getDecks();
     const value = pendingDeckId || (deckSaveInFlight ? $('deck').value : room ? ownDeckId() : $('deck').value);
@@ -3038,7 +3046,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     $('room-code').textContent = room.code;
     $('room-name').textContent = room.name || defaultTableName(getProfiles().find(p => p.id === room.host_id)?.display_name);
     $('edit-name').hidden = room.host_id !== userId || room.status === 'closed';
-    $('leave').textContent = 'Concede';
+    $('leave').textContent = 'Smash Table';
     let hasSeat = false;
     const playerRows = $('players');
     const rows = ['host', 'guest'].map(seat => {
@@ -3107,7 +3115,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     await enter(id, true);
   }));
   $('back').addEventListener('click', () => run(leaveTable));
-  $('leave').addEventListener('click', () => run(leaveTable));
+  $('leave').addEventListener('click', () => run(smashWaitingTable));
   $('game-leave').addEventListener('click', () => run(concedeGame));
   $('game-back').addEventListener('click', () => run(leaveGameForLobby));
   $('game-result-back').addEventListener('click', () => run(returnToLobby));

@@ -55,6 +55,7 @@ body.dark-mode #play-back { color: #e5eee0; }
 .play-room-code-line { display: block; margin-top: .35rem; font-size: .85rem; }
 #play-room-code { letter-spacing: .1em; }
 .play-room-actions, .play-game-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: .65rem; }
+.play-room-actions > #play-leave { width: auto; margin: 0; padding: .6rem .85rem; white-space: nowrap; }
 .play-table-menu { position: relative; z-index: 10; }
 .play-menu-toggle { display: flex; align-items: center; justify-content: center; width: 2.7rem; height: 2.5rem; border: 1px solid #c59b63; border-radius: 10px; background: #1b352bd9; color: #f5f2e8; cursor: pointer; list-style: none; box-shadow: 0 2px 8px #16372724; }
 .play-menu-toggle::-webkit-details-marker { display: none; }
