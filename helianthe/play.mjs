@@ -176,7 +176,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     }
     return 'This Event effect is not available in online play yet.';
   }
-  function eventNotice(text, temporary = false, error = false, dismissible = false) {
+  function eventNotice(text, temporary = false, error = false, dismissible = false, duration = 4500) {
     if (eventNoticeTimer) clearTimeout(eventNoticeTimer);
     const notice = $('game-event-notice');
     $('game-event-notice-text').textContent = text || '';
@@ -184,7 +184,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     notice.classList.toggle('error', Boolean(text && error));
     notice.classList.toggle('is-message', Boolean(text && dismissible));
     $('game-event-notice-close').hidden = !text || !dismissible;
-    if (text && temporary) eventNoticeTimer = setTimeout(() => { notice.hidden = true; eventNoticeTimer = null; }, 4500);
+    if (text && temporary) eventNoticeTimer = setTimeout(() => { notice.hidden = true; eventNoticeTimer = null; }, duration);
+  }
+  function blockedPlayNotice(reason) {
+    eventNotice(reason, true, false, false, 3000);
   }
   $('game-event-notice-close').addEventListener('click', () => eventNotice(''));
   function legalEventTarget(kind, node) {
@@ -1391,7 +1394,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (['mulligan_first', 'mulligan_second'].includes(room?.turn_phase)) {
       const actorId = room.turn_phase === 'mulligan_first' ? room.turn_player_id
         : room.turn_player_id === room.host_id ? room.guest_id : room.host_id;
-      if (actorId !== userId) { eventNotice(cardPlayBlockReason(card), true); return; }
+      if (actorId !== userId) { blockedPlayNotice(cardPlayBlockReason(card)); return; }
       if (mulliganBusy || !gameState) return;
       const position = mulliganOrder.indexOf(handIndex);
       if (position >= 0) mulliganOrder.splice(position, 1);
@@ -1409,7 +1412,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     }
     if (!requiredDiscards()) {
       const reason = cardPlayBlockReason(card);
-      if (reason) eventNotice(reason, true);
+      if (reason) blockedPlayNotice(reason);
       return;
     }
     if (discardSelections.has(handIndex)) {
@@ -1998,7 +2001,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         const reason = cardPlayBlockReason(card);
         if (reason) {
           drag.blocked = true;
-          eventNotice(reason, true);
+          blockedPlayNotice(reason);
           return;
         }
         const bounds = button.getBoundingClientRect();
@@ -2057,14 +2060,14 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         && pointInside(table, event.clientX, event.clientY);
       if (!droppedOnTable) return;
       const reason = cardPlayBlockReason(card);
-      if (reason) { eventNotice(reason, true); return; }
+      if (reason) { blockedPlayNotice(reason); return; }
       const target = targetAt(event.clientX, event.clientY);
       if (target && (isEntity ? legalEntityAction(card, room?.board?.[target.dataset.key], target.dataset.key)
         : rule && legalEventTarget(rule[1], room?.board?.[target.dataset.key]))) {
         const [x, y] = target.dataset.key.split(',').map(Number);
         if (isEntity) void playEntity(card, handIndex, x, y, draggedFlight);
         else void evokeEvent(card, handIndex, x, y);
-      } else if (isEntity) eventNotice('Choose an empty space or an unoccupied compatible Terrain.', true);
+      } else if (isEntity) blockedPlayNotice('Choose an empty space or an unoccupied compatible Terrain.');
       else void evokeEvent(card, handIndex);
     };
     button.addEventListener('pointerup', event => finish(event));
@@ -2076,7 +2079,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       if (isEntity || event.key.toLowerCase() !== 'e') return;
       event.preventDefault();
       const reason = cardPlayBlockReason(card);
-      if (reason) { eventNotice(reason, true); return; }
+      if (reason) { blockedPlayNotice(reason); return; }
       showCardPreview(card, button, handIndex);
       void evokeEvent(card, handIndex);
     });
