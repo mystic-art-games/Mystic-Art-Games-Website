@@ -88,7 +88,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       </div>
       <div class="play-game-phase-stack" hidden>
       <section class="play-game-log" aria-labelledby="play-game-log-title">
-        <h2 id="play-game-log-title">Game Log</h2>
+        <header class="play-game-log-header">
+          <h2 id="play-game-log-title">Game Log</h2>
+          <button id="play-game-log-latest" class="play-game-log-latest" type="button" aria-label="Go to the latest log entry" title="Go to latest entry" aria-controls="play-game-log-scroll" hidden>↓</button>
+        </header>
         <div id="play-game-log-scroll" class="play-game-log-scroll" tabindex="0" aria-label="Game log entries">
           <button id="play-game-log-older" type="button" hidden>Load older</button>
           <p id="play-game-log-status">No activity yet.</p>
@@ -325,12 +328,20 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (followGameLog) scroll.scrollTop = scroll.scrollHeight;
     else if (prepended) scroll.scrollTop = Math.max(0, previousTop + scroll.scrollHeight - previousHeight);
     else scroll.scrollTop = previousTop;
+    $('game-log-latest').hidden = followGameLog;
   }
   const gameLogScroll = $('game-log-scroll');
   gameLogScroll.addEventListener('scroll', () => {
     if (!gameLogScroll.clientHeight) return;
     followGameLog = gameLogScroll.scrollHeight - gameLogScroll.clientHeight - gameLogScroll.scrollTop <= 2;
+    $('game-log-latest').hidden = followGameLog;
   }, { passive: true });
+  $('game-log-latest').addEventListener('click', () => {
+    followGameLog = true;
+    gameLogScroll.scrollTop = gameLogScroll.scrollHeight;
+    gameLogScroll.focus({ preventScroll: true });
+    $('game-log-latest').hidden = true;
+  });
   if (typeof ResizeObserver === 'function') {
     new ResizeObserver(() => {
       if (followGameLog && gameLogScroll.clientHeight) gameLogScroll.scrollTop = gameLogScroll.scrollHeight;

@@ -331,7 +331,11 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
 .play-game-phase-stack { position: relative; display: flex; flex-direction: column; gap: .45rem; min-width: 0; min-height: 0; }
 .play-game-phase-stack[hidden] { display: none !important; }
 .play-game-log { display: flex; flex: 1 1 auto; flex-direction: column; min-height: 0; padding: .45rem; border: 1px solid #739786; border-radius: 10px; background: #1b352be8; color: #f5f2e8; box-shadow: 0 4px 12px #130b0a55; }
-.play-game-log h2 { flex: 0 0 auto; margin: 0 0 .3rem; font-size: .78rem; line-height: 1.25; }
+.play-game-log-header { display: flex; flex: 0 0 auto; align-items: center; justify-content: space-between; min-height: 1.35rem; margin-bottom: .25rem; }
+.play-game-log h2 { margin: 0; font-size: .78rem; line-height: 1.25; }
+.play-game-log-latest { display: grid; place-items: center; box-sizing: border-box; width: 1.35rem; height: 1.35rem; padding: 0; border: 1px solid #739786; border-radius: 5px; background: #305443; color: #f5f2e8; font: 800 .85rem/1 Nunito, sans-serif; }
+.play-game-log-latest:hover:not(:disabled) { background: #477452; }
+.play-game-log-latest[hidden] { display: none; }
 .play-game-log-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-anchor: none; overscroll-behavior: contain; font-size: .72rem; line-height: 1.3; }
 .play-game-log-scroll ol { display: grid; gap: .2rem; margin: 0; padding: 0; list-style: none; }
 .play-game-log-scroll li { display: flex; align-items: start; justify-content: space-between; gap: .25rem; padding: .22rem .28rem; overflow-wrap: anywhere; border-radius: 4px; background: #ffffff0e; }
