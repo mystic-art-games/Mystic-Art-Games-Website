@@ -253,7 +253,7 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
   z-index: 1;
   inset: 0 0 auto;
   height: clamp(2rem, 7dvh, 4.5rem);
-  background: radial-gradient(ellipse 56% 100% at top, #58362999, #784b393d 58%, transparent 100%);
+  background: radial-gradient(ellipse 56% 100% at top, #629fff99, #4378ce3d 58%, transparent 100%);
   pointer-events: none;
 }
 .play-game-hand-count { display: inline-flex; align-items: center; width: max-content; padding: .2rem .45rem; border: 1px solid #b9d4c1; border-radius: 999px; background: #1b352b; color: #fff7e8; font-size: .72rem; font-weight: 800; line-height: 1.2; white-space: nowrap; box-shadow: 0 2px 7px #0e241a88; }
