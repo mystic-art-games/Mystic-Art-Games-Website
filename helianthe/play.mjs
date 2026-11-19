@@ -9,6 +9,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   const $ = id => root.querySelector(`#play-${id}`);
   function renderPlayCard(canvas, card, artwork, current, display = canvas.parentElement) {
     return renderCard(canvas, card, artwork, current, {
+      largerText: true,
       // Spare resolution keeps faces sharp as the hand reflows or cards animate.
       getPixelWidth: () => Math.max(120, display?.clientWidth || 0) * (window.devicePixelRatio || 1) * 1.2,
     });

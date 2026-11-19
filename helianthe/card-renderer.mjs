@@ -190,10 +190,11 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
 
   const title = (card.title || 'New card').replace(/\s+/g, ' ').trim() || 'New card';
   canvas.setAttribute('aria-label', `${title}, ${type} card preview`);
+  const titleWidth = options.largerText ? 425 : 410;
   let titleSize = 12;
-  for (let size = 56; size >= 12; size--) {
+  for (let size = options.largerText ? 62 : 56; size >= 12; size--) {
     ctx.font = `700 ${size}px ${cardFont}`;
-    if (ctx.measureText(title).width <= 410) { titleSize = size; break; }
+    if (ctx.measureText(title).width <= titleWidth) { titleSize = size; break; }
   }
   const titleCenterY = titlePlateCenters[terrain || 'Neutral'] * 1050 / frame.naturalHeight;
   // Frame and icons share the inset transform already applied to the context.
@@ -223,7 +224,7 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
   ctx.fillStyle = '#302b27'; ctx.textAlign = 'center';
   const titleMetrics = ctx.measureText(title);
   const titleBaseline = titleCenterY + (titleMetrics.actualBoundingBoxAscent - titleMetrics.actualBoundingBoxDescent) / 2;
-  ctx.fillText(title, 375, titleBaseline, 410); ctx.textAlign = 'left';
+  ctx.fillText(title, 375, titleBaseline, titleWidth); ctx.textAlign = 'left';
 
   function wrapText(value, maxWidth) {
     const lines = [];
@@ -240,15 +241,16 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
     return lines;
   }
 
+  const effectWidth = options.largerText ? 580 : 560;
   function fitText(value) {
-    for (let size = 34; size >= 18; size--) {
+    for (let size = options.largerText ? 38 : 34; size >= 18; size--) {
       ctx.font = `500 ${size}px ${rulesFont}`;
-      const lines = wrapText(value, 560);
+      const lines = wrapText(value, effectWidth);
       const verticalLimit = Math.floor((885 - 705) / (size * 1.25)) + 1;
       if (lines.length <= Math.min(8, verticalLimit)) return { lines, size, clipped: false };
     }
     ctx.font = `500 18px ${rulesFont}`;
-    return { lines: wrapText(value, 560).slice(0, 8), size: 18, clipped: true };
+    return { lines: wrapText(value, effectWidth).slice(0, 8), size: 18, clipped: true };
   }
 
   const effect = card.effect?.trim() || 'Card effect text…';
@@ -258,7 +260,7 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
   let y = 705;
   let credoItalic = false;
   for (const line of fitted.lines) {
-    let x = 95;
+    let x = (750 - effectWidth) / 2;
     const baseColor = ctx.fillStyle;
     for (const part of line.split(/(Vision:|Credo:|Coredo:|\b\d+\b|Symbiosis|Flow|Verdant|Radiance)/g)) {
       if (!part) continue;
