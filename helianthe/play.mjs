@@ -190,6 +190,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     'Festival of New Canopies': ['draw 2 cards, then discard 1 card.', 'draw_two_discard_one', ''],
   };
   const printedEventEffects = {
+    'Festival of New Canopies': [['draw 2 cards. discard 2 cards.', 'draw_two_discard_two', '']],
     'Spark of Invention': [['recall any event from archive to your hand.', 'recall_event', '']],
     'Grid Reconfiguration': [["transform terrain to different type if there's no entity.", 'reconfigure', 'unoccupied Terrain']],
     'Greenway Advance': [['create verdant terrain on a legal blank node. then create verdant terrain on a legal blank node adjacent to it.', 'greenway', 'empty space adjacent to Terrain']],
@@ -351,12 +352,13 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const bar = $('game-discard-bar');
     bar.hidden = required === 0 && !pendingFestival;
     if (pendingFestival) {
-      const choiceNeeded = pendingFestival.hand.length > 0;
+      const { card, discardCount } = pendingFestival;
+      const choiceNeeded = discardCount > 0;
       $('game-discard-text').textContent = choiceNeeded
-        ? 'Festival of New Canopies: choose 1 card to discard after drawing 2. Press Esc to cancel.'
-        : 'Festival of New Canopies: no card remains to discard.';
+        ? `${card.title}: choose ${discardCount} card${discardCount === 1 ? '' : 's'} to discard. Selected ${discardSelections.size}/${discardCount}. Press Esc to cancel.`
+        : `${card.title}: no card remains to discard.`;
       $('game-confirm-discard').textContent = choiceNeeded ? 'Discard and Resolve' : 'Resolve Event';
-      $('game-confirm-discard').disabled = phaseBusy || (choiceNeeded && discardSelections.size !== 1);
+      $('game-confirm-discard').disabled = phaseBusy || discardSelections.size !== discardCount;
     } else if (required) {
       $('game-discard-text').textContent = `Discard ${required} card${required === 1 ? '' : 's'} so 7 remain. Selected ${discardSelections.size}/${required}.`;
       $('game-confirm-discard').textContent = 'Confirm Discard';
@@ -1396,7 +1398,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (['mulligan_first', 'mulligan_second'].includes(room?.turn_phase)) return 'You can play cards after both players finish their mulligans.';
     if (room?.turn_player_id !== userId) return "You can play cards only on your turn.";
     if (room?.turn_phase !== 'main') return 'You can play cards only during your Main Phase.';
-    if (pendingFestival) return 'Choose a card to discard and finish resolving Festival of New Canopies first.';
+    if (pendingFestival) return `Finish resolving ${pendingFestival.card.title} first.`;
     if (phaseBusy) return 'Wait for the current action to finish.';
     if (card.card_type === 'Entity') {
       if (room.main_played_entity) return 'You have already played an Entity this turn.';
@@ -1447,9 +1449,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       return;
     }
     if (pendingFestival) {
-      discardSelections.clear();
-      discardSelections.add(handIndex);
-      showCardPreview(card, source, handIndex);
+      if (phaseBusy) return;
+      if (discardSelections.has(handIndex)) discardSelections.delete(handIndex);
+      else if (discardSelections.size < pendingFestival.discardCount) discardSelections.add(handIndex);
       syncDiscardBar();
       return;
     }
@@ -1479,35 +1481,42 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     pendingEvent = null;
     const drawn = (gameState.horizon || []).slice(0, 2);
     const hand = gameState.hand.filter((_, index) => index !== handIndex).concat(drawn);
-    pendingFestival = { card, handIndex, drawn, hand, targetX, targetY };
+    const twoDiscards = eventSupport(card)?.[1] === 'draw_two_discard_two';
+    const discardCount = Math.min(twoDiscards ? 2 : 1, hand.length);
+    pendingFestival = { card, handIndex, drawn, hand, targetX, targetY, twoDiscards, discardCount };
     discardSelections.clear();
     handSignature = '';
     renderGame();
-    eventNotice(`${card.title} draws ${drawn.length} card${drawn.length === 1 ? '' : 's'}. Choose one to discard, then resolve the Event.`);
+    eventNotice(`${card.title}: draw ${drawn.length}, then discard ${discardCount}.`);
   }
   async function confirmFestival() {
     const festival = pendingFestival;
     if (!festival || !room || room.status !== 'active' || room.turn_player_id !== userId
-      || room.turn_phase !== 'main' || phaseBusy || (festival.hand.length && discardSelections.size !== 1)) return;
-    const discardIndex = festival.hand.length ? [...discardSelections][0] : null;
-    const discarded = discardIndex === null ? null : festival.hand[discardIndex];
-    if (discardIndex !== null && !discarded) return;
+      || room.turn_phase !== 'main' || phaseBusy || discardSelections.size !== festival.discardCount) return;
+    const indexes = [...discardSelections];
+    const discards = indexes.map(index => {
+      const card = festival.hand[index];
+      return { index, id: card?.card_id || card?.id };
+    });
+    if (discards.some(choice => !choice.id)) return;
     const expected = epoch, roomId = room.id;
     phaseBusy = true;
     renderTurnPhase();
     try {
       const seedCaravan = festival.card.title === 'Seed Caravan';
-      const result = await rpc(seedCaravan ? 'play_evoke_seed_caravan' : 'play_evoke_festival', {
+      const action = seedCaravan ? 'play_evoke_seed_caravan'
+        : festival.twoDiscards ? 'play_evoke_festival_two_discards' : 'play_evoke_festival';
+      const result = await rpc(action, {
         ...(seedCaravan ? { p_target_x: festival.targetX, p_target_y: festival.targetY } : {}),
         p_room_id: roomId, p_expected_turn: room.turn_number,
         p_hand_index: festival.handIndex, p_card_id: festival.card.card_id || festival.card.id,
         p_expected_hand_count: gameState.hand.length,
         p_expected_draw_ids: festival.drawn.map(card => card.card_id || card.id),
-        p_discard_index: discardIndex,
-        p_discard_card_id: discarded?.card_id || discarded?.id || null,
+        ...(festival.twoDiscards ? { p_discards: discards }
+          : { p_discard_index: discards[0]?.index ?? null, p_discard_card_id: discards[0]?.id || null }),
       });
       if (expected !== epoch || room?.id !== roomId) return;
-      if (discardIndex !== null) await animateDiscardToArchive([discardIndex]);
+      if (indexes.length) await animateDiscardToArchive(indexes);
       if (expected !== epoch || room?.id !== roomId) return;
       pendingFestival = null;
       discardSelections.clear();
@@ -1898,7 +1907,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       || room.turn_phase !== 'main' || phaseBusy || pendingFestival || !Array.isArray(gameState?.hand)) return;
     const rule = eventSupport(card);
     if (!rule) { eventNotice(unavailableEventReason(card)); return; }
-    if (rule[1] === 'draw_two_discard_one') { stageFestival(card, handIndex); return; }
+    if (rule[1] === 'draw_two_discard_one' || rule[1] === 'draw_two_discard_two') { stageFestival(card, handIndex); return; }
     if (rule[1] === 'recall_event' && !targetCells) {
       const options = (gameState.archive || []).flatMap((item, archiveIndex) => {
         const cardId = item.card_id || item.id;
@@ -2208,7 +2217,11 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     });
   }
   function renderGameHand() {
-    const hand = (pendingFestival?.hand || (Array.isArray(gameState?.hand) ? gameState.hand : [])).map(resolveGameCard);
+    const hand = (pendingFestival?.hand || (Array.isArray(gameState?.hand) ? gameState.hand : [])).map(raw => {
+      const card = resolveGameCard(raw);
+      return raw.title === 'Festival of New Canopies' && typeof raw.effect === 'string'
+        ? { ...card, effect: raw.effect } : card;
+    });
     const signature = JSON.stringify(hand);
     if (signature === handSignature) return;
     const previousCanvases = new Map();
