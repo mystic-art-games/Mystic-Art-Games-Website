@@ -120,7 +120,7 @@ body.dark-mode .play-deck-field.is-locked select { border-color: #596d5d; backgr
 .play-archive-browser-panel header { display: flex; align-items: start; justify-content: space-between; gap: 1rem; padding: .8rem 1rem; border-bottom: 1px solid #6e947b; }
 .play-archive-browser-panel h2 { margin: 0; color: #fff; font-family: Nunito, sans-serif; font-size: 1.2rem; }
 .play-archive-browser-panel header p { margin: .15rem 0 0; color: #d7c9a7; font-size: .78rem; }
-.play-archive-browser-panel button { border: 1px solid #8a9b80; border-radius: 7px; background: #305443; color: #f5f2e8; font-family: Nunito, sans-serif; font-weight: 700; cursor: pointer; }
+.play-archive-browser-panel .play-archive-browser-close { border: 1px solid #8a9b80; border-radius: 7px; background: #305443; color: #f5f2e8; font-family: Nunito, sans-serif; font-weight: 700; cursor: pointer; }
 .play-archive-browser-panel .play-archive-browser-close:hover:not(:disabled) { background: #477452; }
 .play-archive-browser-panel button:disabled { cursor: default; opacity: .5; }
 .play-archive-browser-panel button:focus-visible { outline: 2px solid #e8d38a; outline-offset: 2px; }
@@ -132,6 +132,9 @@ body.dark-mode .play-deck-field.is-locked select { border-color: #596d5d; backgr
 .play-archive-browser-card canvas[hidden], .play-archive-browser-card span[hidden] { display: none; }
 .play-archive-browser-card span { padding: 1rem; font-size: .9rem; font-weight: 800; }
 .play-archive-browser-list { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); align-content: start; gap: .6rem; min-height: 0; margin: 0; padding: 4px; overflow-y: auto; list-style: none; }
+.play-archive-browser-body > .art-scroll-wrap { display: grid; grid-template-rows: minmax(0, 1fr); min-width: 0; padding-inline-end: 18px; }
+.play-archive-browser-list[data-art-scroll-ready="true"] { scrollbar-width: none; }
+.play-archive-browser-list[data-art-scroll-ready="true"]::-webkit-scrollbar { display: none; }
 .play-archive-browser-list button, .play-archive-browser-list button:hover:not(:disabled), .play-archive-browser-list button:active { display: block; width: 100%; padding: 0; border: 0; border-radius: 4px; background: transparent; box-shadow: none; text-align: center; }
 .play-archive-browser-list canvas, .play-archive-gallery-fallback { display: block; box-sizing: border-box; width: 100%; aspect-ratio: 63 / 88; border-radius: 4px; background: #e9ece1; }
 .play-archive-browser-list canvas[hidden], .play-archive-gallery-fallback[hidden] { display: none; }
@@ -253,7 +256,7 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
 #play-game-result-back:disabled { opacity: .55; cursor: wait; }
 #play-game .play-game-player-block { min-height: 0; }
 #play-game .play-game-hand { align-items: center; gap: .7rem; min-height: clamp(128px, min(25.5vh, 19.5vw), 232px); padding: .25rem .3rem; }
-#play-game .play-hand-item { flex: 0 1 clamp(94px, min(18.2vh, 14vw), 172px); }
+#play-game .play-hand-item { flex: 0 1 clamp(99px, min(19.2vh, 14.8vw), 181px); }
 #play-game .play-hand-card { transition: filter .16s ease; }
 #play-game .play-hand-card.is-selected { outline: 2px solid #17372b; outline-offset: 1px; filter: brightness(.8); box-shadow: 0 4px 12px #0d171766; }
 #play-game .play-hand-card.is-discard-selected { outline: 2px solid #e88b81; outline-offset: 1px; filter: brightness(.72); box-shadow: 0 0 0 3px #5d2727aa, 0 4px 12px #0d171766; }
@@ -266,7 +269,8 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
 #play-game .play-game-card-preview, #play-game .play-hand-card, #play-game .play-game-patron-slot, #play-game .play-game-archive-card { border-color: #123c2d; }
 #play-game .play-game-archive-card.is-empty { border-color: #effff048; background: #effff01c; backdrop-filter: blur(10px) saturate(1.15); -webkit-backdrop-filter: blur(10px) saturate(1.15); box-shadow: inset 0 1px 0 #ffffff47, 0 5px 16px #0e241a2e; }
 #play-game .play-game-archive-card.is-empty span { color: #eef7e6cc; font-size: clamp(.42rem, .7vw, .58rem); letter-spacing: .03em; white-space: nowrap; }
-#play-game .play-game-table { grid-column: 2; grid-row: 1; width: min(100%, calc(144cqh + 24px)); height: 100%; margin: 0 auto; }
+#play-game .play-game-table { grid-column: 2; grid-row: 1; position: relative; top: var(--play-table-offset-y, 0px); width: min(100%, calc(144cqh + 24px)); height: 100%; margin: 0 auto; }
+#play-game .play-game-board-wrap { height: calc(100% + var(--play-extra-hand-height, 0px)); }
 #play-game .play-game-board { width: min(96%, 94cqh); max-height: 96%; margin: auto; }
 .play-beginning-effects { min-width: 0; padding: .65rem; overflow-y: auto; border: 1px solid #123c2d; border-radius: 12px; background: #1b352bf2; color: #f5f2e8; box-shadow: inset 0 1px 0 #fff2cf36, 0 4px 12px #130b0a55; }
 #play-game .play-beginning-effects { position: relative; z-index: 25; grid-column: 1; grid-row: 1; align-self: center; width: min(325px, 100%); max-height: min(65cqh, 100%); }
@@ -368,7 +372,7 @@ body.dark-mode button.play-game-extra-draw:hover:not(:disabled) { box-shadow: in
 @media (min-width: 901px) {
   .play-game-opponent-footer { padding-right: 3.3rem; }
   .play-game-opponent-footer .play-game-actions { position: absolute; z-index: 20; top: clamp(.3rem, 1vh, .7rem); right: 0; margin-top: 0; }
-  #play-game .play-game-board-wrap { position: relative; top: -48px; height: calc(100% + 72px); }
+  #play-game .play-game-board-wrap { position: relative; top: -48px; height: calc(100% + 72px + var(--play-extra-hand-height, 0px)); }
   @container (max-height: 380px) {
     .play-game-phase-stack { --play-phase-inline-inset: .35rem; }
     .play-game-phases { padding: .35rem; }
@@ -402,7 +406,7 @@ body.dark-mode button.play-game-extra-draw:hover:not(:disabled) { box-shadow: in
   .play-archive-browser-panel { max-height: 92dvh; }
   .play-archive-browser-body { grid-template-columns: 1fr; gap: .6rem; overflow-y: auto; }
   .play-archive-browser-card { height: min(35dvh, 300px); }
-  .play-archive-browser-list { max-height: 24dvh; }
+  .play-archive-browser-body > .art-scroll-wrap, .play-archive-browser-list { max-height: 24dvh; }
   #play-game:not([hidden]) { --play-preview-gutter: 0px; }
   #play-game .play-game-board-wrap { width: 100%; margin-left: 0; }
   #play-game .play-game-table { width: 100%; grid-template-columns: repeat(3, minmax(0,1fr)); grid-template-rows: minmax(0,1fr) minmax(0,3fr) minmax(0,1fr); justify-items: center; gap: .25rem; }

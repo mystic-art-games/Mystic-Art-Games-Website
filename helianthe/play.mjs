@@ -111,6 +111,25 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   function syncZoneCardSize() {
     const cell = $('game-board').firstElementChild;
     if (!cell) return;
+    const board = $('game-board');
+    const table = board.closest('.play-game-table');
+    const hand = $('game-hand');
+    const handCard = hand.querySelector('.play-hand-card');
+    const previousHandCardWidth = Math.max(94, Math.min(innerHeight * .182, innerWidth * .14, 172));
+    const handStyle = getComputedStyle(hand);
+    const verticalPadding = parseFloat(handStyle.paddingTop) + parseFloat(handStyle.paddingBottom);
+    const minimumHandHeight = parseFloat(handStyle.minHeight) + (handStyle.boxSizing === 'border-box' ? 0 : verticalPadding);
+    // Keep the table's sizing area independent of the extra height used by the hand.
+    const previousHandHeight = Math.max(minimumHandHeight, previousHandCardWidth * 88 / 63 + verticalPadding);
+    const extraHandHeight = handCard ? Math.max(0, hand.offsetHeight - Math.ceil(previousHandHeight)) : 0;
+    root.style.setProperty('--play-extra-hand-height', `${extraHandHeight}px`);
+    const handTop = $('game-self').getBoundingClientRect().top;
+    const currentOffset = parseFloat(table.style.getPropertyValue('--play-table-offset-y')) || 0;
+    const boardRect = board.getBoundingClientRect();
+    if (boardRect.height) {
+      const centeredOffset = handTop / 2 - (boardRect.top + boardRect.height / 2 - currentOffset);
+      table.style.setProperty('--play-table-offset-y', `${centeredOffset}px`);
+    }
     const bounds = cell.getBoundingClientRect();
     const { width, height } = bounds;
     if (!width || !height) return;
@@ -150,6 +169,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   if (typeof ResizeObserver === 'function') {
     const zoneResizeObserver = new ResizeObserver(syncZoneCardSize);
     zoneResizeObserver.observe($('game-board'));
+    zoneResizeObserver.observe($('game-self'));
     zoneResizeObserver.observe(root.querySelector('.play-game-board-wrap'));
   }
   const deckField = $('deck-field');

@@ -330,6 +330,15 @@ body.dark-mode .patron-picker :is(.patron-picker-trigger, .patron-picker-option)
 .art-scroll-thumb { position: absolute; top: 0; width: 12px; height: 44px; min-width: 12px; min-height: 32px; appearance: none; border: 1px solid rgba(255, 255, 255, .9); border-radius: 6px; padding: 0; background: linear-gradient(135deg, rgba(255, 255, 255, .96), rgba(215, 240, 221, .72) 48%, rgba(78, 135, 104, .42)); box-shadow: 0 3px 8px rgba(20, 49, 38, .34), inset 2px 2px 3px rgba(255, 255, 255, .95), inset -2px -2px 4px rgba(65, 119, 88, .28); cursor: grab; pointer-events: auto; touch-action: none; }
 .art-scroll-thumb:hover:not(:disabled) { background: linear-gradient(135deg, rgba(255, 255, 255, 1), rgba(215, 240, 221, .84) 48%, rgba(78, 135, 104, .5)); filter: none; }
 .art-scroll-thumb:active { cursor: grabbing; }
+/* Native scroll areas share the glass palette used by the About rail. */
+@supports selector(::-webkit-scrollbar) {
+  ::-webkit-scrollbar { width: 12px; height: 12px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { border: 1px solid rgba(255, 255, 255, .9); border-radius: 6px; background: linear-gradient(135deg, rgba(255, 255, 255, .96), rgba(215, 240, 221, .72) 48%, rgba(78, 135, 104, .42)); box-shadow: inset 2px 2px 3px rgba(255, 255, 255, .95), inset -2px -2px 4px rgba(65, 119, 88, .28); }
+}
+@supports not selector(::-webkit-scrollbar) {
+  html { scrollbar-width: thin; scrollbar-color: #a9cbb5 transparent; }
+}
 .favorite-card-menu,
 .card-search-suggestions,
 .auth-modal-card,
@@ -1048,7 +1057,7 @@ body.dark-mode .masthead nav.mobile-menu-open button.active {
     background: linear-gradient(145deg, rgba(185, 220, 200, .22) 0%, rgba(65, 111, 88, .18) 46%, rgba(12, 45, 35, .3) 100%);
     box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .28), inset -1px -1px 0 rgba(210, 239, 222, .06);
   }
-  .art-scroll-rail { display: none !important; }
+  .art-scroll-rail:not(.play-archive-browser-body .art-scroll-rail) { display: none !important; }
   #decks-view .deck-card-table-shell > .art-scroll-wrap > .art-scroll-rail { display: flex !important; }
   .art-scroll-wrap > .item-list,
   .art-scroll-wrap > .deck-cards { width: 100%; padding-right: 0; }

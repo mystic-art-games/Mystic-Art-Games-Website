@@ -4,7 +4,7 @@ import { renderCard, downloadCardPNG } from './card-renderer.mjs?v=play-card-den
 import { CardSheetPDF } from './card-sheet-pdf.mjs';
 import { PATRONS, FACTION_VISIONS, PATRON_RULES_REVISION, updatePatronVision } from './patrons.mjs?v=faction-visions-3';
 import { CARD_TAGS, normalizeCardTags, seedTagsForCard, tagLabel } from './card-tags.mjs?v=tags-3';
-import { createPlayView } from './play.mjs?v=play-122';
+import { createPlayView } from './play.mjs?v=play-123';
 
 const DEFAULT_PATRON_NAME = PATRONS[0].name;
 
@@ -3103,7 +3103,7 @@ document.addEventListener('keydown', event => {
 });
 
 function initArtDecoScrollbars() {
-  for (const element of document.querySelectorAll('.item-list, .deck-cards, .about-content, .card-search-suggestions, .favorite-card-menu')) {
+  for (const element of document.querySelectorAll('.item-list, .deck-cards, .about-content, .card-search-suggestions, .favorite-card-menu, .play-archive-browser-list')) {
     const dropdown = element.matches('.card-search-suggestions, .favorite-card-menu');
     const existingWrapper = dropdown ? element.parentElement : (element.parentElement?.classList.contains('art-scroll-wrap') ? element.parentElement : null);
     if (existingWrapper && element.dataset.artScrollReady === 'true') continue;
@@ -3132,10 +3132,10 @@ function initArtDecoScrollbars() {
         rail.style.top = `${element.offsetTop + 4}px`;
         rail.style.height = `${Math.max(0, element.clientHeight - 8)}px`;
       }
+      rail.style.display = !element.hidden && maxScroll > 0 ? '' : 'none';
       const railHeight = rail.clientHeight;
       const thumbHeight = Math.min(railHeight, 44);
       thumb.style.height = `${thumbHeight}px`;
-      rail.style.display = !element.hidden && maxScroll > 0 ? '' : 'none';
       thumb.style.display = maxScroll > 0 ? '' : 'none';
       thumb.style.transform = `translateY(${maxScroll > 0 ? (element.scrollTop / maxScroll) * (railHeight - thumbHeight) : 0}px)`;
     };
