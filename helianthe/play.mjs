@@ -1353,7 +1353,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     }
     void (async () => {
       const artwork = card.artwork_id ? await getArtworkUrl(card.artwork_id).catch(() => '') : '';
-      const result = await renderCard(canvas, card, artwork, () => serial === cardPreviewSerial);
+      const result = await renderPlayCard(canvas, card, artwork, () => serial === cardPreviewSerial);
       if (serial === cardPreviewSerial && result && !result.cancelled) {
         canvas.hidden = false;
         fallback.hidden = true;
