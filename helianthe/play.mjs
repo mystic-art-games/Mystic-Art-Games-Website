@@ -302,21 +302,29 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       row.classList.toggle('is-private', Boolean(entry.local));
       const name = entry.actor_id === userId ? 'You'
         : profiles.find(person => person.id === entry.actor_id)?.display_name || 'Opponent';
-      const prefix = entry.local ? 'Only you · ' : entry.actor_id ? `${name} ` : '';
+      let prefix = entry.local ? 'Only you · ' : entry.actor_id ? `${name} ` : '';
       const text = document.createElement('span');
       const turn = !entry.local && entry.message.match(/^Turn (\d+)(?: · (.+)| began\.)$/);
       let owner = entry.local ? userId : entry.actor_id;
+      let message = entry.message;
       if (turn && knownTurn && seats.every(Boolean)) {
         const sameSeat = Math.abs(Number(turn[1]) - knownTurn.number) % 2 === 0;
         owner = sameSeat ? knownTurn.player : seats.find(id => id !== knownTurn.player);
         loggedTurnOwner = owner;
         const label = owner === userId ? 'Your turn' : "Opponent’s turn";
-        text.textContent = `Turn ${turn[1]} · ${label}${turn[2] ? ` · ${turn[2]}` : ''}`;
+        prefix = `Turn ${turn[1]} · ${label}${turn[2] ? ' · ' : ''}`;
+        message = turn[2] || '';
       } else {
-        text.textContent = prefix + entry.message;
         if (!owner && /^R[1-4] C[1-5] · /.test(entry.message)) owner = loggedTurnOwner;
       }
       if (owner) row.classList.add(owner === userId ? 'is-own-action' : 'is-opponent-action');
+      if (prefix) {
+        const lead = document.createElement('span');
+        lead.className = 'play-game-log-prefix';
+        lead.textContent = prefix;
+        text.append(lead);
+      }
+      text.append(message);
       row.append(text);
       if (entry.count > 1) {
         const count = document.createElement('span');
