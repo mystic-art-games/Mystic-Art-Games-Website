@@ -248,8 +248,8 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
 #play-game-result-back:hover:not(:disabled) { background: #568a61; }
 #play-game-result-back:disabled { opacity: .55; cursor: wait; }
 #play-game .play-game-player-block { min-height: 0; }
-#play-game .play-game-hand { align-items: center; gap: .85rem; min-height: clamp(153px, min(30vh, 23vw), 272px); padding: .4rem .3rem; }
-#play-game .play-hand-item { flex: 0 1 clamp(100px, min(19.5vh, 15vw), 185px); }
+#play-game .play-game-hand { align-items: center; gap: .7rem; min-height: clamp(122px, min(24vh, 18.4vw), 218px); padding: .32rem .3rem; }
+#play-game .play-hand-item { flex: 0 1 clamp(80px, min(15.6vh, 12vw), 148px); }
 #play-game .play-hand-card { transition: filter .16s ease; }
 #play-game .play-hand-card.is-selected { outline: 2px solid #17372b; outline-offset: 1px; filter: brightness(.8); box-shadow: 0 4px 12px #0d171766; }
 #play-game .play-hand-card.is-discard-selected { outline: 2px solid #e88b81; outline-offset: 1px; filter: brightness(.72); box-shadow: 0 0 0 3px #5d2727aa, 0 4px 12px #0d171766; }
