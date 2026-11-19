@@ -1,3 +1,5 @@
+import { extendedEventRules, extendedKinds, extendedEventStep } from './play-extended-events.mjs';
+
 const defaultTableName = hostName => `${Array.from(String(hostName ?? '').trim() || 'Player').slice(0, 52).join("")}'s Table`;
 
 export function playerOnline(timestamp, now = Date.now()) {
@@ -245,7 +247,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (card?.card_type === 'Event' && !String(card.effect || '').trim()) return ['', 'none', ''];
     const effect = String(card?.effect || '').replace(/\s+/g, ' ').trim().toLowerCase();
     const rule = eventEffects[card?.title];
-    return rule?.[0] === effect ? rule : printedEventEffects[card?.title]?.find(([text]) => text === effect) ?? null;
+    if (rule?.[0] === effect) return rule;
+    return printedEventEffects[card?.title]?.find(([text]) => text === effect)
+      ?? (extendedEventRules[card?.title]?.[0] === effect ? extendedEventRules[card.title] : null);
   }
   function unavailableEventReason(card) {
     if (card?.title === 'Skyfire') {
@@ -444,6 +448,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   function legalEventTarget(kind, node, key) {
     const board = room?.board || {};
+    if (extendedKinds.has(kind)) return Boolean(extendedEventStep(kind, [], { board })?.options
+      .some(option => option.value.type === 'cell' && option.value.key === key));
     if (kind === 'recall_event') return false;
     if (kind === 'greenway') return !node?.terrain && (eventNeighbors(key).some(k => board[k]?.terrain)
       || !Object.values(board).some(entry => entry?.terrain));
@@ -530,8 +536,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     for (const cell of $('game-board').children) {
       const node = room?.board?.[cell.dataset.key];
       const legal = Boolean(cell.dataset.key && (
-        (pendingEvent && (pendingEvent.nextKeys ? pendingEvent.nextKeys.includes(cell.dataset.key)
-          : legalEventTarget(pendingEvent.rule[1], node, cell.dataset.key)))
+        (pendingEvent && (pendingEvent.extended
+          ? pendingEvent.step.options.some(option => option.value.type === 'cell' && option.value.key === cell.dataset.key)
+          : pendingEvent.nextKeys ? pendingEvent.nextKeys.includes(cell.dataset.key)
+            : legalEventTarget(pendingEvent.rule[1], node, cell.dataset.key)))
         || (pendingEntity && legalEntityAction(pendingEntity.card, node, cell.dataset.key))
         || (beginningTargetSource && beginningPlan().get(beginningTargetSource)?.options.includes(cell.dataset.key))));
       cell.classList.toggle('is-event-target', legal);
@@ -1875,7 +1883,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   function resolveHandCard(raw) {
     const card = resolveGameCard(raw);
-    return raw?.title === 'Festival of New Canopies' && typeof raw.effect === 'string'
+    return raw?.card_type === 'Event' && typeof raw.effect === 'string'
       ? { ...card, effect: raw.effect } : card;
   }
   function renderArchiveGallery() {
@@ -2116,11 +2124,89 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     }, { once: true });
     dialog.showModal();
   }
+  function continueExtendedEvent(event) {
+    const step = extendedEventStep(event.rule[1], event.selected, {
+      board: room?.board || {}, archive: gameState?.archive || [], hand: gameState?.hand || [], eventIndex: event.handIndex,
+    });
+    if (!step || !step.options.length) {
+      pendingEvent = null;
+      syncEventTargets();
+      eventNotice('');
+      void resolveExtendedEvent(event);
+      return;
+    }
+    if (step.options.some(option => option.value.type === 'cell')) {
+      event.step = step;
+      pendingEvent = event;
+      syncEventTargets();
+      eventNotice(`${step.label}. Press Esc to cancel.`);
+      return;
+    }
+    pendingEvent = null;
+    syncEventTargets();
+    eventNotice('');
+    chooseEventOption(step.label, step.options, choice => {
+      event.selected.push(choice);
+      continueExtendedEvent(event);
+    });
+  }
+  function startExtendedEvent(card, handIndex, rule, targetX, targetY) {
+    const event = { extended: true, card, handIndex, rule, selected: [] };
+    if (targetX !== null && targetY !== null) {
+      const key = `${targetX},${targetY}`;
+      const first = extendedEventStep(rule[1], [], { board: room?.board || {} });
+      const choice = first?.options.find(option => option.value.type === 'cell' && option.value.key === key);
+      if (!choice) { blockedPlayNotice(`Choose ${rule[2]}.`); return; }
+      event.selected.push(choice.value);
+    }
+    continueExtendedEvent(event);
+  }
+  async function resolveExtendedEvent(event) {
+    if (!room || room.status !== 'active' || room.turn_player_id !== userId || room.turn_phase !== 'main'
+      || phaseBusy || !Array.isArray(gameState?.hand)) return;
+    const cardId = event.card.card_id || event.card.id;
+    if (!cardId) return;
+    const choices = { cells: [] };
+    for (const choice of event.selected) {
+      if (choice.type === 'cell') choices.cells.push(choice.key);
+      else if (choice.type === 'terrain') choices.terrain = choice.terrain;
+      else if (choice.type === 'archive') { choices.archive_index = choice.index; choices.archive_card_id = choice.id; }
+      else if (choice.type === 'discard') { choices.discard_index = choice.index; choices.discard_card_id = choice.id; }
+      else if (choice.type === 'skip') choices.skip = true;
+    }
+    const expected = epoch, roomId = room.id, horizon = gameState.horizon || [];
+    phaseBusy = true;
+    renderTurnPhase();
+    try {
+      const result = await rpc('play_evoke_extended_event', {
+        p_room_id: roomId, p_expected_turn: room.turn_number,
+        p_hand_index: event.handIndex, p_card_id: cardId,
+        p_expected_hand_count: gameState.hand.length, p_choices: choices,
+      });
+      if (expected !== epoch || room?.id !== roomId) return;
+      if (result?.drawn > 0) await animateCardsToHand(horizon.slice(0, result.drawn), [event.handIndex], 110);
+      if (expected !== epoch || room?.id !== roomId) return;
+      await refreshRoom();
+      if (expected === epoch && room?.id === roomId) await loadGameState(true);
+      if (expected === epoch && room?.id === roomId) eventNotice(`${result?.title || event.card.title} evoked${result?.drawn ? ` · drew ${result.drawn}` : ''}.`, true, false, false, 4500, true);
+    } catch (error) {
+      if (expected === epoch && room?.id === roomId) {
+        await refreshRoom().catch(() => {});
+        await loadGameState(true).catch(() => {});
+        message(friendly(error), true);
+      }
+    } finally {
+      clearDrawFlight();
+      phaseBusy = false;
+      renderTurnPhase();
+    }
+  }
   async function evokeEvent(card, handIndex, targetX = null, targetY = null, targetCells = null) {
     if (!room || room.status !== 'active' || room.turn_player_id !== userId
       || room.turn_phase !== 'main' || phaseBusy || pendingFestival || !Array.isArray(gameState?.hand)) return;
     const rule = eventSupport(card);
     if (!rule) { eventNotice(unavailableEventReason(card)); return; }
+    if (extendedKinds.has(rule[1])) return startExtendedEvent(card, handIndex, rule, targetX, targetY);
     if (rule[1] === 'draw_two_discard_one' || rule[1] === 'draw_two_discard_two') return stageFestival(card, handIndex);
     if (rule[1] === 'recall_event' && !targetCells) {
       const options = (gameState.archive || []).flatMap((item, archiveIndex) => {
@@ -2272,6 +2358,15 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const event = pendingEvent;
     if (!event) return;
     const key = `${column},${row}`;
+    if (event.extended) {
+      const choice = event.step.options.find(option => option.value.type === 'cell' && option.value.key === key);
+      if (!choice) return;
+      event.selected.push(choice.value);
+      pendingEvent = null;
+      syncEventTargets();
+      continueExtendedEvent(event);
+      return;
+    }
     if (event.nextKeys) {
       if (!event.nextKeys.includes(key)) return;
       event.targets.push([column, row]);

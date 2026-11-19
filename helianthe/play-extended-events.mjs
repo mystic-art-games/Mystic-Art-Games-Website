@@ -156,7 +156,10 @@ export function extendedEventStep(kind, selected, { board, archive, hand, eventI
       return count ? null : boardStep('Choose Verdant Terrain with an Entity', board, node => node.terrain === 'Verdant' && entity(node));
     case 'poseidons_chosen_one':
       return count ? null : (archive || []).filter(card => card.card_type === 'Entity').length >= 3
-        ? archiveStep('Choose an Entity to Recall, or cancel to skip', archive, 'Entity') : null;
+        ? { label: 'Choose an Entity to Recall', options: [
+          ...archiveStep('Choose an Entity to Recall', archive, 'Entity').options,
+          { label: 'Do not Recall', value: { type: 'skip' } },
+        ] } : null;
     case 'regrow':
       if (count === 0) return boardStep('Choose Verdant Terrain to Dissolve', board, node => node.terrain === 'Verdant');
       if (count === 1) return archiveStep('Choose an Entity to Recall', archive, 'Entity');
@@ -172,7 +175,8 @@ export function extendedEventStep(kind, selected, { board, archive, hand, eventI
       return count ? null : boardStep('Choose Terrain for Crisis', board, terrain);
     case 'spark_discard_recall':
     case 'sunken_archive':
-      if (count === 0) return discardStep(hand, eventIndex);
+      if (count === 0) return (archive || []).some(card => card.card_type ===
+        (kind === 'spark_discard_recall' ? 'Event' : 'Entity')) ? discardStep(hand, eventIndex) : null;
       if (count === 1) return archiveStep('Choose a card to Recall', archive,
         kind === 'spark_discard_recall' ? 'Event' : 'Entity');
       return null;
