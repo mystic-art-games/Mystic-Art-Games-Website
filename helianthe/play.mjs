@@ -68,7 +68,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       <div class="play-game-board-wrap">
       <div id="play-opening-choice" class="play-opening-choice" role="status" hidden><strong id="play-opening-choice-message"></strong><div id="play-opening-choice-actions"><button id="play-opening-choose-self" type="button">I start</button><button id="play-opening-choose-opponent" type="button">Opponent starts</button></div></div>
       <div id="play-opening-mulligan" class="play-opening-choice play-opening-mulligan" role="status" aria-live="polite" hidden><strong id="play-opening-mulligan-message"></strong><p id="play-opening-mulligan-instructions" hidden>Select cards in the order they should go to the bottom of your Horizon. Then draw the same number.</p><div id="play-opening-mulligan-actions" hidden><button id="play-opening-mulligan-keep" type="button">Keep</button><button id="play-opening-mulligan-confirm" type="button" hidden>Replace selected cards</button></div></div>
-      <div id="play-game-discard-bar" class="play-game-discard-bar" hidden><strong id="play-game-discard-text" role="status" aria-live="polite"></strong><button id="play-game-confirm-discard" type="button" disabled>Confirm Discard</button></div>
       <aside id="play-game-beginning-effects" class="play-beginning-effects" aria-label="Beginning of Turn Entity effects" hidden><strong>Beginning of Turn effects</strong><p id="play-game-beginning-instructions"></p><ol id="play-game-beginning-list"></ol><button id="play-game-resolve-beginning" type="button">Resolve effects in this order</button></aside>
       <aside id="play-game-card-preview" class="play-game-card-preview" aria-label="Card preview" hidden><button id="play-game-card-preview-close" class="play-game-card-preview-close action-delete" type="button" aria-label="Close card preview">×</button><canvas id="play-game-card-preview-canvas" hidden></canvas><img id="play-game-card-preview-image" alt="" hidden><span id="play-game-card-preview-fallback" class="play-hand-fallback"></span></aside>
       <div class="play-game-table">
@@ -102,7 +101,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       <div class="play-game-player-block">
       <div class="play-game-self-identity play-game-player-identity"><div class="play-game-identity-name"><strong id="play-game-self-name"></strong><span id="play-game-self-presence" class="play-away-pill" hidden></span></div><span id="play-game-hand-count" class="play-game-hand-count" aria-live="polite" hidden></span></div>
       <section id="play-game-self" class="play-surface play-game-seat" aria-label="Your area">
-        <div id="play-game-event-notice" class="play-game-event-notice" role="status" aria-live="polite" hidden><span id="play-game-event-notice-text"></span><button id="play-game-event-notice-close" type="button" aria-label="Dismiss message" hidden>×</button></div>
+        <div class="play-hand-notices">
+          <div id="play-game-event-notice" class="play-game-event-notice" role="status" aria-live="polite" hidden><span id="play-game-event-notice-text"></span><button id="play-game-event-notice-close" type="button" aria-label="Dismiss message" hidden>×</button></div>
+          <div id="play-game-discard-bar" class="play-game-discard-bar" hidden><strong id="play-game-discard-text" role="status" aria-live="polite"></strong><button id="play-game-confirm-discard" type="button" disabled>Confirm Discard</button></div>
+        </div>
         <div class="play-game-hand-wrap"><p id="play-game-loading" role="status">Preparing the opening hands…</p><div id="play-game-hand" class="play-game-hand"></div></div>
       </section>
       </div>
@@ -163,8 +165,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       root.style.removeProperty('--play-preview-width');
       root.style.removeProperty('--play-preview-offset-y');
     }
-    $('game-discard-bar').style.left = `${boardBounds.left + boardBounds.width / 2 - wrapBounds.left}px`;
-    $('game-discard-bar').style.top = `${boardBounds.top + boardBounds.height / 2 - wrapBounds.top}px`;
   }
   if (typeof ResizeObserver === 'function') {
     const zoneResizeObserver = new ResizeObserver(syncZoneCardSize);
@@ -352,10 +352,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const bar = $('game-discard-bar');
     bar.hidden = required === 0 && !pendingFestival;
     if (pendingFestival) {
-      const { card, discardCount } = pendingFestival;
+      const { card, discardCount, drawn } = pendingFestival;
       const choiceNeeded = discardCount > 0;
       $('game-discard-text').textContent = choiceNeeded
-        ? `${card.title}: choose ${discardCount} card${discardCount === 1 ? '' : 's'} to discard. Selected ${discardSelections.size}/${discardCount}. Press Esc to cancel.`
+        ? `${card.title}: draw ${drawn.length}, then choose ${discardCount} to discard. Selected ${discardSelections.size}/${discardCount}. Press Esc to cancel.`
         : `${card.title}: no card remains to discard.`;
       $('game-confirm-discard').textContent = choiceNeeded ? 'Discard and Resolve' : 'Resolve Event';
       $('game-confirm-discard').disabled = phaseBusy || discardSelections.size !== discardCount;
@@ -1487,7 +1487,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     discardSelections.clear();
     handSignature = '';
     renderGame();
-    eventNotice(`${card.title}: draw ${drawn.length}, then discard ${discardCount}.`);
+    eventNotice('');
   }
   async function confirmFestival() {
     const festival = pendingFestival;
