@@ -2781,7 +2781,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (error) { $('no-rooms').textContent = 'Tables could not be loaded. Retrying automatically…'; $('no-rooms').hidden = false; message(friendly(error), true); return; }
     $('no-rooms').hidden = Boolean(data.length);
     $('no-rooms').textContent = 'People are doing things right now. Nobody is playing cards.';
-    const signature = JSON.stringify(data);
+    const signature = JSON.stringify([data, getProfiles().map(profile => [profile.id, profile.avatar_id])]);
     if (signature === tableListSignature) return;
     tableListSignature = signature;
     $('room-list').replaceChildren();
@@ -2796,7 +2796,13 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       artwork.src = './assets/fantasy-table-helianthe.png';
       artwork.alt = '';
       artwork.loading = 'lazy';
-      scene.append(artwork);
+      const seatedHost = document.createElement('img');
+      seatedHost.className = 'play-table-host-figure';
+      seatedHost.src = './assets/seated-table-host.svg';
+      seatedHost.alt = '';
+      const hostProfile = getProfiles().find(profile => profile.id === entry.host_id);
+      const hostAvatar = makeAvatar(hostProfile || { display_name: entry.host_name }, 'play-table-host-avatar');
+      scene.append(artwork, seatedHost, hostAvatar);
       const details = document.createElement('div'); details.className = 'play-table-details';
       const title = document.createElement('strong'); title.textContent = entry.name || defaultTableName(entry.host_name);
       const summary = document.createElement('span'); summary.textContent = `${entry.host_name} · ${entry.player_count} / 2 players`;
