@@ -53,6 +53,22 @@ const visibleCells = board => {
 
 const verdantNeighbors = (board, key) => visibleCells(board).filter(cell => adjacent(key, cell.key) && cell.node.terrain === 'Verdant').length;
 
+function sameSymbiosisGroup(board, start, finish) {
+  const seen = new Set([start]);
+  const queue = [start];
+  while (queue.length) {
+    const current = queue.shift();
+    const source = board?.[current] || {};
+    for (const { key, node } of visibleCells(board)) {
+      if (seen.has(key) || !adjacent(current, key)) continue;
+      const connected = source.terrain === 'Symbiosis' && node.terrain === 'Symbiosis'
+        || source.entanglements?.includes(key) && node.entanglements?.includes(current);
+      if (connected) { seen.add(key); queue.push(key); }
+    }
+  }
+  return seen.has(finish);
+}
+
 function boardStep(label, board, predicate) {
   return { label, options: visibleCells(board).filter(({ key, node }) => predicate(node, key)).map(({ key, label: text }) => ({ label: text, value: { type: 'cell', key } })) };
 }
@@ -100,15 +116,14 @@ export function extendedEventStep(kind, selected, { board, archive, hand, eventI
       if (count === 0) return boardStep('Choose an unprotected Entity', board, node => entity(node) && !node.protected);
       if (count === 1 && ['Equatorial Forests', 'Garden of Shared Roots'].includes(first.entity?.title))
         return boardStep('Choose an empty Node for its When Placed effect', board,
-          (node, key) => empty(node) && (first.entity?.title !== 'Garden of Shared Roots' || adjacent(source, key)));
-      if (count === 1 && first.entity?.title === 'Lanternhollow')
-        return boardStep('Choose an adjacent non-Symbiosis Terrain to Entangle', board,
-          (node, key) => terrain(node) && node.terrain !== 'Symbiosis' && adjacent(source, key));
+          (node, key) => empty(node) && (first.entity?.title === 'Garden of Shared Roots'
+            ? adjacent(source, key) : visibleCells(board).some(other => terrain(other.node) && adjacent(key, other.key))));
       if (count === 2 && first.entity?.title === 'Garden of Shared Roots') return terrainStep('Choose the created Terrain', null);
       return null;
     case 'fertile_rain_any':
       if (count === 0) return boardStep('Choose Verdant Terrain with an Entity', board, node => node.terrain === 'Verdant' && entity(node));
-      if (count < 3) return boardStep('Choose an adjacent empty Node to Fertilize', board, (node, key) => empty(node) && adjacent(source, key));
+      if (count < 3) return boardStep('Choose an adjacent empty Node to Fertilize', board, (node, key) =>
+        empty(node) && adjacent(source, key) && !(count === 2 && key === cells[1] && node.fertilize));
       return null;
     case 'fungal_rainwood':
       return count ? null : boardStep('Choose an Entity on entangled Terrain', board, node => entity(node) && entangled(node));
@@ -191,6 +206,7 @@ export function extendedEventStep(kind, selected, { board, archive, hand, eventI
         node => node.terrain === 'Symbiosis' && entangled(node));
       if (count === 1) return boardStep('Choose a Symbiosis Terrain for that Entanglement', board,
         (node, key) => node.terrain === 'Symbiosis' && key !== source && !entangled(node)
+          && sameSymbiosisGroup(board, source, key)
           && (first.entanglements || []).some(other => adjacent(other, key)));
       return null;
     case 'waterish_doppelganger':

@@ -1879,7 +1879,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const title = String(card.title || card.name || '').trim().toLocaleLowerCase();
     const full = catalog.find(item => id && String(item.id) === String(id))
       || catalog.find(item => title && item.title?.trim().toLocaleLowerCase() === title);
-    return full ? { ...card, ...full } : card;
+    return full ? { ...card, ...full,
+      ...(card.card_type === 'Entity' && card.terrain ? { terrain: card.terrain } : {}) } : card;
   }
   function resolveHandCard(raw) {
     const card = resolveGameCard(raw);
@@ -2638,6 +2639,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         if (Number(node.lumens || 0) > 0) markers.push(`${node.lumens} ✦`);
         if (node.protected) markers.push('Protected');
         if (node.crisis) markers.push('Crisis');
+        if (node.entanglements?.length) markers.push(`Entangled ${node.entanglements.length}`);
         if (markers.length) {
           const badge = document.createElement('span'); badge.className = 'play-node-markers';
           badge.textContent = markers.join(' · '); cell.append(badge);
@@ -2651,7 +2653,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         token.alt = '';
         cell.append(token);
       }
-      cell.setAttribute('aria-label', node?.terrain ? `${node.terrain} Terrain at row ${row + 1}, column ${column + 1}${node.entity ? `, ${node.entity.title || 'Entity'} placed here` : ''}, ${node.lumens || 0} Lumens${node.protected ? ', Protected' : ''}${node.crisis ? ', Crisis' : ''}`
+      cell.setAttribute('aria-label', node?.terrain ? `${node.terrain} Terrain at row ${row + 1}, column ${column + 1}${node.entity ? `, ${node.entity.title || 'Entity'} placed here` : ''}, ${node.lumens || 0} Lumens${node.protected ? ', Protected' : ''}${node.crisis ? ', Crisis' : ''}${node.entanglements?.length ? `, ${node.entanglements.length} Entanglement${node.entanglements.length === 1 ? '' : 's'}` : ''}`
         : node?.fertilize ? `${node.fertilize.owner_id === userId ? 'Your' : "Opponent's"} Fertilize marker on empty space at row ${row + 1}, column ${column + 1}`
           : `${isCenter ? 'Center empty space' : 'Empty space'} at row ${row + 1}, column ${column + 1}`);
       cell.addEventListener('click', () => chooseBoardTarget(column, row));
