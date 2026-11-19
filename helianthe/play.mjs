@@ -1091,19 +1091,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   $('game-next-phase').addEventListener('click', () => void advanceTurnPhase());
   $('game-extra-draw').addEventListener('click', () => void advanceTurnPhase(true));
-  for (const seat of ['self', 'opponent']) {
-    const slot = $(`game-${seat}-patron-slot`);
-    slot.addEventListener('click', () => {
-      const card = patronPreviews[seat].card;
-      if (card) toggleCardPreview(card, slot);
-    });
-    slot.addEventListener('contextmenu', event => {
-      event.preventDefault();
-      event.stopPropagation();
-      const card = patronPreviews[seat].card;
-      if (card) toggleCardPreview(card, slot);
-    });
-  }
   root.querySelector('.play-game-board-wrap').addEventListener('contextmenu', event => {
     if (event.target.closest('.play-game-card-preview')) return;
     event.preventDefault();
@@ -1450,10 +1437,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     selectedCardElement?.classList.add('is-selected');
     selectedCardElement?.setAttribute('aria-pressed', 'true');
     renderTurnPhase();
-  }
-  function toggleCardPreview(card, source, handIndex = null) {
-    if (selectedCardElement === source) hideCardPreview();
-    else showCardPreview(card, source, handIndex);
   }
   function chooseHandCard(card, source, handIndex) {
     if (['mulligan_first', 'mulligan_second'].includes(room?.turn_phase)) {
@@ -2099,7 +2082,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     syncEventTargets();
     void evokeEvent(event.card, event.handIndex, column, row);
   }
-  function chooseBoardTarget(column, row, source) {
+  function chooseBoardTarget(column, row) {
     if (beginningTargetSource) {
       const target = `${column},${row}`;
       if (!beginningPlan().get(beginningTargetSource)?.options.includes(target)) return;
@@ -2111,11 +2094,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     }
     if (pendingEvent) { chooseEventTarget(column, row); return; }
     const entity = pendingEntity;
-    if (!entity) {
-      const placed = room?.board?.[`${column},${row}`]?.entity;
-      if (placed) toggleCardPreview(resolveGameCard(placed), source);
-      return;
-    }
+    if (!entity) return;
     if (!legalEntityAction(entity.card, room?.board?.[`${column},${row}`], `${column},${row}`)) return;
     pendingEntity = null;
     syncEventTargets();
@@ -2352,9 +2331,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       cell.setAttribute('aria-label', node?.terrain ? `${node.terrain} Terrain at row ${row + 1}, column ${column + 1}${node.entity ? `, ${node.entity.title || 'Entity'} placed here` : ''}, ${node.lumens || 0} Lumens${node.protected ? ', Protected' : ''}${node.crisis ? ', Crisis' : ''}`
         : node?.fertilize ? `${node.fertilize.owner_id === userId ? 'Your' : "Opponent's"} Fertilize marker on empty space at row ${row + 1}, column ${column + 1}`
           : `${isCenter ? 'Center empty space' : 'Empty space'} at row ${row + 1}, column ${column + 1}`);
-      cell.addEventListener('click', () => chooseBoardTarget(column, row, cell));
+      cell.addEventListener('click', () => chooseBoardTarget(column, row));
       cell.addEventListener('keydown', event => {
-        if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); chooseBoardTarget(column, row, cell); }
+        if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); chooseBoardTarget(column, row); }
       });
       nodes.push(cell);
     }
