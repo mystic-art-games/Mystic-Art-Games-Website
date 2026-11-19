@@ -544,7 +544,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const extra = $('game-extra-draw');
     extra.hidden = !own || phase !== 'main' || Boolean(room?.main_played_card);
     extra.disabled = phaseBusy || pendingFestival || !Array.isArray(gameState?.horizon) || gameState.horizon.length === 0;
-    next.parentElement.hidden = phases.hidden || (next.hidden && extra.hidden);
+    next.parentElement.hidden = phases.hidden;
   }
   function renderOpeningRoll() {
     const overlay = $('opening-roll');
