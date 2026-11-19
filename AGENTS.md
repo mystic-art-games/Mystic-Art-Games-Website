@@ -8,4 +8,5 @@ Create local Git commits for completed changes. Do not push to a remote reposito
 When the task is complete, the final reply must contain only `Done.`.
 When the task is incomplete, the final reply must contain only `Not fully done.`.
 Do not report file counts, lines added or removed, or other change statistics in user-facing updates.
+Do not mention which files, paths, or repositories were changed in progress updates or final replies unless the user asks for those details.
 
