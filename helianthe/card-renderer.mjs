@@ -260,12 +260,6 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
   const effect = card.effect?.trim() || 'Card effect text…';
   const fitted = fitText(effect);
   const effectLeft = (750 - effectWidth) / 2;
-  if (options.largerText) {
-    ctx.fillStyle = '#fff9ec';
-    ctx.beginPath();
-    ctx.roundRect(effectLeft - 13, effectTop - 38, effectWidth + 26, effectBottom - effectTop + 62, 14);
-    ctx.fill();
-  }
   ctx.fillStyle = options.largerText ? '#182323' : card.effect?.trim() ? '#112f40' : '#817586';
   ctx.font = `${effectWeight} ${fitted.size}px ${rulesFont}`;
   let y = effectTop;
