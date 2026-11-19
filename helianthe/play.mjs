@@ -7,6 +7,12 @@ export function playerOnline(timestamp, now = Date.now()) {
 export function createPlayView({ client, getUser, getDecks, getCards, getProfiles, makeAvatar, requireSignIn, renderCard, getArtworkUrl, getPatronCard, getDefaultPatronName }) {
   const root = document.querySelector('#play-view');
   const $ = id => root.querySelector(`#play-${id}`);
+  function renderPlayCard(canvas, card, artwork, current, display = canvas.parentElement) {
+    return renderCard(canvas, card, artwork, current, {
+      // Spare resolution keeps faces sharp as the hand reflows or cards animate.
+      getPixelWidth: () => Math.max(120, display?.clientWidth || 0) * (window.devicePixelRatio || 1) * 1.2,
+    });
+  }
   let userId = null, room = null, channel = null, timer = null, awayTicker = null, visible = false, inLobby = false;
   let lobbyTimer = null, directoryChannel = null, directoryUserId = null, listSerial = 0, tableListSignature = '';
   let busy = false, epoch = 0, fetchSerial = 0, live = false, lastHeartbeat = 0, autoDeckPending = false;
@@ -914,7 +920,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   async function prepareArrivingCard(card, canvas, fallback, current) {
     try {
       const artwork = card.artwork_id ? await getArtworkUrl(card.artwork_id).catch(() => '') : '';
-      const result = await renderCard(canvas, card, artwork, current);
+      const result = await renderPlayCard(canvas, card, artwork, current);
       if (!current() || !result || result.cancelled) return false;
       canvas.hidden = false; fallback.hidden = true;
       const key = JSON.stringify(card);
@@ -1290,7 +1296,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     void (async () => {
       const artwork = card.artwork_id ? await getArtworkUrl(card.artwork_id).catch(() => '') : '';
       const stagedCanvas = document.createElement('canvas');
-      const result = await renderCard(stagedCanvas, card, artwork, () => serial === preview.serial);
+      const result = await renderPlayCard(stagedCanvas, card, artwork, () => serial === preview.serial, canvas.parentElement);
       if (serial === preview.serial && result && !result.cancelled) {
         canvas.width = stagedCanvas.width;
         canvas.height = stagedCanvas.height;
@@ -1813,7 +1819,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (!card) return;
     void (async () => {
       const artwork = card.artwork_id ? await getArtworkUrl(card.artwork_id).catch(() => '') : '';
-      const result = await renderCard(canvas, card, artwork, () => serial === preview.serial);
+      const result = await renderPlayCard(canvas, card, artwork, () => serial === preview.serial);
       if (serial === preview.serial && result && !result.cancelled) {
         canvas.hidden = false;
         fallback.hidden = true;
@@ -2257,7 +2263,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       if (card.card_type === 'Event' || card.card_type === 'Entity') enableCardDrag(button, card, index);
       if (canvas.hidden) void (async () => {
         const artwork = card.artwork_id ? await getArtworkUrl(card.artwork_id).catch(() => '') : '';
-        const result = await renderCard(canvas, card, artwork, () => serial === gameRenderSerial);
+        const result = await renderPlayCard(canvas, card, artwork, () => serial === gameRenderSerial);
         if (serial === gameRenderSerial && result && !result.cancelled) {
           canvas.hidden = false; fallback.hidden = true;
         }
@@ -2301,7 +2307,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
           cell.append(entity);
           void (async () => {
             const artwork = entityCard.artwork_id ? await getArtworkUrl(entityCard.artwork_id).catch(() => '') : '';
-            const result = await renderCard(canvas, entityCard, artwork,
+            const result = await renderPlayCard(canvas, entityCard, artwork,
               () => boardSerial === boardRenderSerial && entity.isConnected);
             if (boardSerial === boardRenderSerial && entity.isConnected && result && !result.cancelled) {
               canvas.hidden = false; fallback.hidden = true;

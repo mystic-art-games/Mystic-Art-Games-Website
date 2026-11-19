@@ -1,5 +1,5 @@
-// The hosted editor uses the same 750 × 1050 drawing geometry as the local
-// Card Editor. Preview and exported PNG both render onto a 1500 × 2100 canvas.
+// All cards share the editor's 750 × 1050 drawing geometry. Editor previews
+// and PNG exports use a 1500 × 2100 bitmap.
 const ASSETS = new URL('./assets/', import.meta.url);
 const DEFAULT_ARTWORK = asset('Poseidons_Chosen_One_Comic.png?v=3');
 const DEFAULT_ARTWORK_SCALE = 0.88;
@@ -130,8 +130,9 @@ function artworkWindow(frame) {
 function drawArtwork(ctx, frame, art, scale = 1) {
   const window = artworkWindow(frame);
   const layer = document.createElement('canvas');
-  layer.width = 1500; layer.height = 2100;
+  layer.width = ctx.canvas.width; layer.height = ctx.canvas.height;
   const context = layer.getContext('2d');
+  context.imageSmoothingQuality = ctx.imageSmoothingQuality;
   const scaleX = layer.width / frame.naturalWidth;
   const scaleY = layer.height / frame.naturalHeight;
   const boxWidth = window.width * scaleX, boxHeight = window.height * scaleY;
@@ -165,9 +166,14 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
   ]);
   if (!shouldDraw()) return { cancelled: true };
   if (!frame) throw new Error('The card frame could not be loaded.');
-  canvas.width = 1500; canvas.height = 2100;
+  // Measure at paint time, after the images and fonts have loaded.
+  const pixelWidth = options.getPixelWidth?.();
+  const useDisplaySize = Number.isFinite(pixelWidth) && pixelWidth > 0;
+  canvas.width = useDisplaySize ? Math.min(1500, Math.ceil(pixelWidth)) : 1500;
+  canvas.height = Math.ceil(canvas.width * 1050 / 750);
   const ctx = canvas.getContext('2d');
-  ctx.setTransform(2, 0, 0, 2, 0, 0);
+  if (useDisplaySize) ctx.imageSmoothingQuality = 'high';
+  ctx.setTransform(canvas.width / 750, 0, 0, canvas.height / 1050, 0, 0);
   ctx.clearRect(0, 0, 750, 1050);
   ctx.save();
   ctx.beginPath(); ctx.roundRect(0, 0, 750, 1050, 32); ctx.clip();
