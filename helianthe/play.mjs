@@ -143,7 +143,11 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (handTop > 0) root.style.setProperty('--play-hand-top', `${handTop}px`);
     const boardWrap = root.querySelector('.play-game-board-wrap');
     const desktop = window.matchMedia('(min-width: 901px)').matches;
-    const sidebarGap = Math.max(0, boardWrap.getBoundingClientRect().bottom - handTop + 8);
+    const sidebarBounds = boardWrap.getBoundingClientRect();
+    const menu = $('game').querySelector('.play-game-opponent-footer .play-menu-toggle');
+    const menuBottom = menu?.getBoundingClientRect().bottom ?? sidebarBounds.top;
+    const sidebarGap = Math.max(0, sidebarBounds.bottom - handTop + 8);
+    root.style.setProperty('--play-sidebar-top-gap', `${Math.max(0, menuBottom + 8 - sidebarBounds.top)}px`);
     root.style.setProperty('--play-sidebar-bottom-gap', `${sidebarGap}px`);
     const currentOffset = parseFloat(table.style.getPropertyValue('--play-table-offset-y')) || 0;
     const boardRect = board.getBoundingClientRect();
