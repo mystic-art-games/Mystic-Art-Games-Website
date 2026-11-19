@@ -187,7 +187,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (text && temporary) eventNoticeTimer = setTimeout(() => { notice.hidden = true; eventNoticeTimer = null; }, duration);
   }
   function blockedPlayNotice(reason) {
-    eventNotice(reason, true, false, false, 3000);
+    eventNotice(reason, true, false, false, 2000);
   }
   $('game-event-notice-close').addEventListener('click', () => eventNotice(''));
   function legalEventTarget(kind, node) {
