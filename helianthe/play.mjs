@@ -2776,7 +2776,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   async function listTables() {
     if (!userId || (room && !inLobby)) return;
     const expected = epoch, serial = ++listSerial;
-    const { data, error } = await client.rpc('play_list_tables');
+    const { data, error } = await client.rpc('play_list_tables_with_hosts');
     if (expected !== epoch || serial !== listSerial || (room && !inLobby)) return;
     if (error) { $('no-rooms').textContent = 'Tables could not be loaded. Retrying automatically…'; $('no-rooms').hidden = false; message(friendly(error), true); return; }
     $('no-rooms').hidden = Boolean(data.length);
