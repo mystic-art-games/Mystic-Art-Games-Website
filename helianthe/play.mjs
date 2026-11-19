@@ -734,12 +734,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     button.disabled = openingRollBusy;
     button.textContent = reroll ? 'Roll Dices Again' : 'Roll Dices';
     $('opening-roll-status').classList.toggle('is-result', Boolean(revealing));
-    $('opening-roll-status').textContent = openingRollBusy ? 'Rolling two dice…'
-      : revealing
+    $('opening-roll-status').textContent = revealing
       ? winnerId === userId ? 'You decide who plays first' : 'Opponent decides who plays first'
-      : showTie ? `Tie: ${tie.host}–${tie.guest}. Roll again!`
-      : ownRolled ? `You rolled ${room[`opening_${ownSeat}_roll`]}. Waiting for the opponent to roll${reroll ? ' again' : ''}.`
-      : room.opening_host_roll || room.opening_guest_roll ? `The other player has rolled. Roll your dice${reroll ? ' again' : ''}!` : 'Roll two dice. Higher total chooses who starts.';
+      : '';
     $('opening-roll-error').hidden = !openingRollError;
     $('opening-roll-error').textContent = openingRollError;
   }
