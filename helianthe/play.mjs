@@ -42,6 +42,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   const gameLogPageSize = 120;
   let gameLogKey = '', gameLogRevision = null, gameLogRequest = null, gameLogRetryAt = 0;
   let gameLogEntries = [], localGameLog = [], gameLogHasOlder = false, gameLogError = '';
+  let followGameLog = true;
   let archiveGalleryObserver = null;
   let selectedGameCard = null, selectedHandIndex = null, pendingEvent = null, pendingEntity = null, pendingFestival = null, arrivingEntityKey = null, zoneCounts = null, zoneCountsRevision = null, zoneCountsRequest = null, eventNoticeTimer = null;
   const discardSelections = new Set();
@@ -269,7 +270,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const list = $('game-log-list');
     const previousHeight = scroll.scrollHeight;
     const previousTop = scroll.scrollTop;
-    const atBottom = previousHeight - previousTop - scroll.clientHeight < 24;
+    if (scrollToLatest) followGameLog = true;
     const entries = [...gameLogEntries, ...localGameLog]
       .sort((a, b) => a.time - b.time || Number(a.id || 0) - Number(b.id || 0));
     const groups = [];
@@ -321,9 +322,19 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     status.textContent = gameLogError || (entries.length ? '' : 'No activity yet.');
     status.hidden = !status.textContent;
     $('game-log-older').hidden = !gameLogHasOlder;
-    if (prepended) scroll.scrollTop = previousTop + scroll.scrollHeight - previousHeight;
-    else if (atBottom || scrollToLatest) scroll.scrollTop = scroll.scrollHeight;
+    if (followGameLog) scroll.scrollTop = scroll.scrollHeight;
+    else if (prepended) scroll.scrollTop = Math.max(0, previousTop + scroll.scrollHeight - previousHeight);
     else scroll.scrollTop = previousTop;
+  }
+  const gameLogScroll = $('game-log-scroll');
+  gameLogScroll.addEventListener('scroll', () => {
+    if (!gameLogScroll.clientHeight) return;
+    followGameLog = gameLogScroll.scrollHeight - gameLogScroll.clientHeight - gameLogScroll.scrollTop <= 2;
+  }, { passive: true });
+  if (typeof ResizeObserver === 'function') {
+    new ResizeObserver(() => {
+      if (followGameLog && gameLogScroll.clientHeight) gameLogScroll.scrollTop = gameLogScroll.scrollHeight;
+    }).observe(gameLogScroll);
   }
   function logPrivateNotice(text) {
     if (!text || inLobby || room?.status !== 'active' || !matchLogKey()) return;
