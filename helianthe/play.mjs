@@ -290,7 +290,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         groups.push({ ...entry, count: entry.count || 1 });
       }
     }
-    const profiles = getProfiles();
     const seats = [room?.host_id, room?.guest_id];
     const firstTurn = gameLogEntries.find(entry => entry.message === 'will take the first turn.');
     const knownTurn = seats.includes(room?.turn_player_id) && room?.turn_player_id && room.turn_number > 0
@@ -300,9 +299,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     list.replaceChildren(...groups.map(entry => {
       const row = document.createElement('li');
       row.classList.toggle('is-private', Boolean(entry.local));
-      const name = entry.actor_id === userId ? 'You'
-        : profiles.find(person => person.id === entry.actor_id)?.display_name || 'Opponent';
-      let prefix = entry.local ? 'Only you · ' : entry.actor_id ? `${name} ` : '';
+      let prefix = entry.local ? 'Only you · ' : entry.actor_id ? `${entry.actor_id === userId ? 'You' : 'Opponent'} ` : '';
       const text = document.createElement('span');
       const turn = !entry.local && entry.message.match(/^Turn (\d+)(?: · (.+)| began\.)$/);
       let owner = entry.local ? userId : entry.actor_id;
