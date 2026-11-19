@@ -2204,6 +2204,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         const [x, y] = target.dataset.key.split(',').map(Number);
         if (isEntity) void playEntity(card, handIndex, x, y, draggedFlight);
         else void evokeEvent(card, handIndex, x, y);
+      } else if (target && card.title === 'Verdant Vineroots' && rule?.[1] === 'fertilize_draw') {
+        blockedPlayNotice('Choose an empty space to Fertilize.');
       } else if (isEntity) blockedPlayNotice('Choose an empty space or an unoccupied compatible Terrain.');
       else void evokeEvent(card, handIndex);
     };
