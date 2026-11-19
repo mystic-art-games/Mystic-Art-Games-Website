@@ -26,7 +26,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   let mulliganBusy = false, mulliganStepKey = '';
   const mulliganOrder = [];
   const mulliganFlights = new Set(), mulliganHiddenCards = new Set(), mulliganAnimations = new Set();
-  const mulliganFlightDuration = 790, mulliganFlightStagger = 145;
+  const mulliganFlightDuration = 550, mulliganFlightStagger = 90;
   let openingRevealTimer = null, openingPanelAnimatedKey = '', openingRevealDoneKey = '';
   let openingShuffleTimer = null, openingVisualDice = [1, 1];
   const openingAnimatedValues = { host: null, guest: null };
@@ -667,11 +667,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     choice.hidden = !choosing || revealing;
     renderMulligan();
     if (choosing) {
-      const winnerName = getProfiles().find(person => person.id === winnerId)?.display_name || 'The dice winner';
       const ownWin = winnerId === userId;
       $('opening-choice-message').textContent = ownWin
         ? 'You won the roll. Review your hand, then choose who starts.'
-        : `${winnerName} won the roll and is choosing who starts.`;
+        : 'Opponent won the roll and is choosing who starts.';
       $('opening-choice-actions').hidden = !ownWin;
       $('opening-choose-self').disabled = openingChoiceBusy || !gameState;
       $('opening-choose-opponent').disabled = openingChoiceBusy || !gameState;
