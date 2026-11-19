@@ -372,6 +372,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const phase = room?.turn_phase;
     const phaseIndex = phaseOrder.indexOf(phase);
     const own = Boolean(room?.turn_player_id && room.turn_player_id === userId);
+    const activeTurn = room?.status === 'active' && phaseIndex >= 0 && room.turn_player_id;
+    $('game').dataset.turnAura = activeTurn ? (own ? 'own' : 'opponent') : '';
     const phases = $('game-phases');
     phases.classList.toggle('is-your-turn', own);
     phases.classList.toggle('is-opponent-turn', Boolean(room?.turn_player_id) && !own);

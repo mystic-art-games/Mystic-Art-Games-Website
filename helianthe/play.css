@@ -238,6 +238,24 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
 #play-view:has(#play-game:not([hidden])) { display: flex; flex-direction: column; width: 100%; max-width: none; height: 100dvh; margin: 0; padding: clamp(.3rem, 1vh, .7rem); border: 0; border-radius: 0; background: transparent; box-shadow: none; }
 #play-game:not([hidden]) { --play-preview-gutter: clamp(160px, 18vw, 280px); display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: .25rem; flex: 1; min-height: 0; color: #fff7e8; }
 #play-game .play-game-seat { position: relative; z-index: 12; padding: .2rem .65rem; border-color: #effff048; background: #effff01c; color: #fff7e8; backdrop-filter: blur(10px) saturate(1.15); -webkit-backdrop-filter: blur(10px) saturate(1.15); box-shadow: inset 0 1px 0 #ffffff47, 0 5px 16px #0e241a2e; }
+#play-game[data-turn-aura="own"] #play-game-self::before {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  bottom: 100%;
+  height: clamp(1.6rem, 5dvh, 3.2rem);
+  background: radial-gradient(ellipse 50% 100% at bottom, #ffcf6e72, #e6a63230 55%, transparent 100%);
+  pointer-events: none;
+}
+#play-game[data-turn-aura="opponent"]::before {
+  content: '';
+  position: fixed;
+  z-index: 1;
+  inset: 0 0 auto;
+  height: clamp(2rem, 7dvh, 4.5rem);
+  background: radial-gradient(ellipse 56% 100% at top, #58362999, #784b393d 58%, transparent 100%);
+  pointer-events: none;
+}
 .play-game-hand-count { display: inline-flex; align-items: center; width: max-content; padding: .2rem .45rem; border: 1px solid #b9d4c1; border-radius: 999px; background: #1b352b; color: #fff7e8; font-size: .72rem; font-weight: 800; line-height: 1.2; white-space: nowrap; box-shadow: 0 2px 7px #0e241a88; }
 .play-game-hand-count[hidden] { display: none; }
 .play-game-hand-count svg { width: 1rem; height: 1rem; margin-inline-end: .25rem; }
