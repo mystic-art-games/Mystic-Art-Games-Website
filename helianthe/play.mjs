@@ -1405,7 +1405,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       syncDiscardBar();
       return;
     }
-    if (!requiredDiscards()) { toggleCardPreview(card, source, handIndex); return; }
+    if (!requiredDiscards()) return;
     if (discardSelections.has(handIndex)) {
       discardSelections.delete(handIndex);
       if (selectedCardElement === source) hideCardPreview();
