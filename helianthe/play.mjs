@@ -36,6 +36,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   const patronPreviews = { self: { key: '', serial: 0 }, opponent: { key: '', serial: 0 } };
   const archivePreviews = { self: { key: null, serial: 0 }, opponent: { key: null, serial: 0 } };
   const diePips = Array.from({ length: 9 }, () => '<span></span>').join('');
+  const handCountIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="5" width="11" height="14" rx="1.5" transform="rotate(-19 8 12)" fill="#1b352b"/><rect x="10.5" y="5" width="11" height="14" rx="1.5" transform="rotate(19 16 12)" fill="#1b352b"/><rect x="6.5" y="3.5" width="11" height="16" rx="1.5" fill="#1b352b"/></svg>';
   root.innerHTML = `
     <div class="play-heading"><h1>Lobby</h1></div>
     <div id="play-message" role="status" aria-live="polite" hidden><span id="play-message-text"></span><button id="play-message-close" type="button" aria-label="Dismiss message">×</button></div>
@@ -2234,7 +2235,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const opponentBadge = $('game-opponent-hand-count');
     opponentBadge.hidden = !gameState;
     if (gameState) {
-      opponentBadge.textContent = `Cards in Hand: ${opponentHandCount}`;
+      opponentBadge.innerHTML = handCountIcon + String(opponentHandCount);
       opponentBadge.setAttribute('aria-label', `${opponentHandCount} cards in the opponent's hand`);
     }
     const horizon = Array.isArray(gameState?.horizon) ? gameState.horizon : [];
@@ -2243,7 +2244,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const handBadge = $('game-hand-count');
     handBadge.hidden = handCount === null;
     if (handCount !== null) {
-      handBadge.textContent = `Cards in Hand: ${handCount}`;
+      handBadge.innerHTML = handCountIcon + String(handCount);
       handBadge.setAttribute('aria-label', `${handCount} cards in your hand`);
     }
     $('game-self-horizon').setAttribute('aria-label', gameState ? `Your Horizon, ${horizon.length} cards` : 'Your Horizon, draw deck');
