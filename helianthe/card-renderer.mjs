@@ -287,7 +287,7 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
   }
   if (fitted.clipped) { ctx.font = '700 14px Nunito,Arial,sans-serif'; ctx.fillStyle = '#b34739'; ctx.fillText('TEXT DOES NOT FIT ON CARD', effectLeft, options.largerText ? 920 : 895); }
   if (card.author) {
-    ctx.save(); ctx.font = `italic 500 26px ${rulesFont}`; ctx.fillStyle = '#4d463f'; ctx.textAlign = 'center';
+    ctx.save(); ctx.font = `italic 500 26px ${rulesFont}`; ctx.fillStyle = '#000'; ctx.textAlign = 'center';
     const authorMetrics = ctx.measureText(card.author);
     const authorBaseline = 973 + (authorMetrics.actualBoundingBoxAscent - authorMetrics.actualBoundingBoxDescent) / 2;
     ctx.fillText(card.author, 375, authorBaseline, terrain ? 470 : 340); ctx.restore();
