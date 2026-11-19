@@ -6,5 +6,6 @@ Create local Git commits for completed changes. Do not push to a remote reposito
 # Task completion replies
 
 When the task is complete, the final reply must contain only `Done.`.
-When the task is incomplete, start the final reply with `Not fully done.` and state what remains to be done.
+When the task is incomplete, the final reply must contain only `Not fully done.`.
+Do not report file counts, lines added or removed, or other change statistics in user-facing updates.
 
