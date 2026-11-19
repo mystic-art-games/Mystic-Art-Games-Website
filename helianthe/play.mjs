@@ -2798,7 +2798,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       artwork.loading = 'lazy';
       const seatedHost = document.createElement('img');
       seatedHost.className = 'play-table-host-figure';
-      seatedHost.src = './assets/seated-table-host-arcane.png';
+      seatedHost.src = './assets/seated-table-host-arcane-v2.png';
       seatedHost.alt = '';
       const hostProfile = getProfiles().find(profile => profile.id === entry.host_id);
       const hostAvatar = makeAvatar(hostProfile || { display_name: entry.host_name }, 'play-table-host-avatar');
