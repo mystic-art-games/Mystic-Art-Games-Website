@@ -43,6 +43,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   let gameLogKey = '', gameLogRevision = null, gameLogRequest = null, gameLogRetryAt = 0;
   let gameLogEntries = [], localGameLog = [], gameLogHasOlder = false, gameLogError = '';
   let followGameLog = true;
+  let unreadGameLogCount = 0;
   let archiveGalleryObserver = null;
   let selectedGameCard = null, selectedHandIndex = null, pendingEvent = null, pendingEntity = null, pendingFestival = null, arrivingEntityKey = null, zoneCounts = null, zoneCountsRevision = null, zoneCountsRequest = null, eventNoticeTimer = null;
   const discardSelections = new Set();
@@ -90,7 +91,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       <section class="play-game-log" aria-labelledby="play-game-log-title">
         <header class="play-game-log-header">
           <h2 id="play-game-log-title">Game Log</h2>
-          <button id="play-game-log-latest" class="play-game-log-latest" type="button" aria-label="Go to the latest log entry" title="Go to latest entry" aria-controls="play-game-log-scroll" hidden>↓</button>
+          <button id="play-game-log-latest" class="play-game-log-latest" type="button" aria-label="Go to the latest log entry" title="Go to latest entry" aria-controls="play-game-log-scroll" hidden><span id="play-game-log-unread" class="play-game-log-unread" aria-hidden="true" hidden></span>↓</button>
         </header>
         <div id="play-game-log-scroll" class="play-game-log-scroll" tabindex="0" aria-label="Game log entries">
           <button id="play-game-log-older" type="button" hidden>Load older</button>
@@ -328,19 +329,30 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (followGameLog) scroll.scrollTop = scroll.scrollHeight;
     else if (prepended) scroll.scrollTop = Math.max(0, previousTop + scroll.scrollHeight - previousHeight);
     else scroll.scrollTop = previousTop;
-    $('game-log-latest').hidden = followGameLog;
+    updateGameLogLatest();
+  }
+  function updateGameLogLatest() {
+    if (followGameLog) unreadGameLogCount = 0;
+    const latest = $('game-log-latest');
+    const badge = $('game-log-unread');
+    latest.hidden = followGameLog;
+    badge.hidden = unreadGameLogCount === 0;
+    badge.textContent = unreadGameLogCount ? String(unreadGameLogCount) : '';
+    latest.setAttribute('aria-label', unreadGameLogCount
+      ? `Go to the latest log entry, ${unreadGameLogCount} new ${unreadGameLogCount === 1 ? 'entry' : 'entries'}`
+      : 'Go to the latest log entry');
   }
   const gameLogScroll = $('game-log-scroll');
   gameLogScroll.addEventListener('scroll', () => {
     if (!gameLogScroll.clientHeight) return;
     followGameLog = gameLogScroll.scrollHeight - gameLogScroll.clientHeight - gameLogScroll.scrollTop <= 2;
-    $('game-log-latest').hidden = followGameLog;
+    updateGameLogLatest();
   }, { passive: true });
   $('game-log-latest').addEventListener('click', () => {
     followGameLog = true;
     gameLogScroll.scrollTop = gameLogScroll.scrollHeight;
     gameLogScroll.focus({ preventScroll: true });
-    $('game-log-latest').hidden = true;
+    updateGameLogLatest();
   });
   if (typeof ResizeObserver === 'function') {
     new ResizeObserver(() => {
@@ -357,6 +369,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     } else {
       localGameLog.push({ message: text, local: true, time: Date.now(), seenRevision: room.revision, count: 1 });
     }
+    if (!followGameLog) unreadGameLogCount++;
     renderGameLog();
   }
   async function loadGameLog(older = false) {
@@ -386,6 +399,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (!ascending) rows = rows.reverse();
     if (older || !latest) gameLogHasOlder = rows.length === gameLogPageSize;
     gameLogEntries = older ? [...rows, ...gameLogEntries] : [...gameLogEntries, ...rows];
+    if (!older && latest && !followGameLog) unreadGameLogCount += rows.length;
     if (!older && (!ascending || rows.length < gameLogPageSize)) gameLogRevision = revision;
     renderGameLog(false, older);
     if (gameLogRevision !== room.revision) void loadGameLog();
