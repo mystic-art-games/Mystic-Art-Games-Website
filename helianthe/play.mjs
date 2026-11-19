@@ -2199,15 +2199,23 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       const reason = cardPlayBlockReason(card);
       if (reason) { blockedPlayNotice(reason); return; }
       const target = targetAt(event.clientX, event.clientY);
-      if (target && (isEntity ? legalEntityAction(card, room?.board?.[target.dataset.key], target.dataset.key)
-        : rule && legalEventTarget(rule[1], room?.board?.[target.dataset.key], target.dataset.key))) {
-        const [x, y] = target.dataset.key.split(',').map(Number);
+      const key = target?.dataset.key;
+      const node = key ? room?.board?.[key] : null;
+      const targetDescription = rule?.[2];
+      if (key && (isEntity ? legalEntityAction(card, node, key)
+        : targetDescription && legalEventTarget(rule[1], node, key))) {
+        const [x, y] = key.split(',').map(Number);
         if (isEntity) void playEntity(card, handIndex, x, y, draggedFlight);
         else void evokeEvent(card, handIndex, x, y);
-      } else if (target && card.title === 'Verdant Vineroots' && rule?.[1] === 'fertilize_draw') {
-        blockedPlayNotice('Choose an empty space to Fertilize.');
-      } else if (isEntity) blockedPlayNotice('Choose an empty space or an unoccupied compatible Terrain.');
-      else void evokeEvent(card, handIndex);
+      } else if (isEntity || (key && targetDescription)) {
+        pendingEvent = null;
+        pendingEntity = null;
+        syncEventTargets();
+        blockedPlayNotice(isEntity ? 'Choose an empty space or an unoccupied compatible Terrain.'
+          : `Invalid target. Choose ${targetDescription}.`);
+      } else {
+        void evokeEvent(card, handIndex);
+      }
     };
     button.addEventListener('pointerup', event => finish(event));
     button.addEventListener('pointercancel', event => finish(event, true));
