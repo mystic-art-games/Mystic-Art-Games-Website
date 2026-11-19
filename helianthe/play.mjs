@@ -163,6 +163,13 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     'Festival of New Canopies': ['draw 2 cards, then discard 1 card.', 'draw_two_discard_one', ''],
   };
   const printedEventEffects = {
+    'Spark of Invention': [['recall any event from archive to your hand.', 'recall_event', '']],
+    'Grid Reconfiguration': [['transform terrain to different type if there's no entity.', 'reconfigure', 'unoccupied Terrain']],
+    'Greenway Advance': [['create verdant terrain on a legal blank node. then create verdant terrain on a legal blank node adjacent to it.', 'greenway', 'empty space adjacent to Terrain']],
+    'Greenway Accord': [['choose one connected group of symbiosis fields. remove crisis from one field in that group. if the group contains at least 3 fields, draw 1 card.', 'accord', 'Symbiosis Terrain']],
+    'Tangle': [['choose a node with 2 adjacent verdant terrains. remove all counters from that node, then dissolve the terrain and the entity on that node.', 'tangle', 'Node next to at least two Verdant Terrain cards']],
+    'Fertile Rain': [['dissolve entity from verdant terrain to fertilize 2 on adjacent nodes.', 'fertile_rain', 'Verdant Terrain with an Entity']],
+    'Seed Caravan': [['create verdant terrain on a legal blank node adjacent to a verdant node. draw 2 cards, then discard 1 card.', 'seed_caravan', 'empty space adjacent to Verdant Terrain']],
 +    'Static Insulation': [['create 1 shield token on any terrain.', 'protect', 'Terrain']],
     'Beacon Grid': [['add 2 lumens on radiance terrain.', 'lumens_two', 'Radiance Terrain']],
     'Breachside Repairs': [['add 1 lumen on radiance terrain. draw 1 card.', 'lumen_draw', 'Radiance Terrain']],
@@ -204,7 +211,22 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     eventNotice(reason, true, false, false, 2000);
   }
   $('game-event-notice-close').addEventListener('click', () => eventNotice(''));
-  function legalEventTarget(kind, node) {
+  function eventNeighbors(key) {
+    const [x, y] = key.split(',').map(Number);
+    return [[x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]]
+      .filter(([column, row]) => column >= 0 && column <= 4 && row >= 0 && row <= 3)
+      .map(([column, row]) => `${column},${row}`);
+  }
+  function legalEventTarget(kind, node, key) {
+    const board = room?.board || {};
+    if (kind === 'recall_event') return false;
+    if (kind === 'greenway') return !node?.terrain && (eventNeighbors(key).some(k => board[k]?.terrain)
+      || !Object.values(board).some(entry => entry?.terrain));
+    if (kind === 'seed_caravan') return !node?.terrain && eventNeighbors(key).some(k => board[k]?.terrain === 'Verdant');
+    if (kind === 'tangle') return eventNeighbors(key).filter(k => board[k]?.terrain === 'Verdant').length >= 2;
+    if (kind === 'accord') return node?.terrain === 'Symbiosis';
+    if (kind === 'reconfigure') return Boolean(node?.terrain && !node.entity);
+    if (kind === 'fertile_rain') return node?.terrain === 'Verdant' && Boolean(node.entity);
     if (kind === 'fertilize_two' || kind === 'fertilize_draw') return !node?.terrain;
     if (kind === 'fertilize_existing_draw') return !node?.terrain && Boolean(node?.fertilize);
     if (!node?.terrain) return false;
@@ -283,7 +305,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     for (const cell of $('game-board').children) {
       const node = room?.board?.[cell.dataset.key];
       const legal = Boolean(cell.dataset.key && (
-        (pendingEvent && legalEventTarget(pendingEvent.rule[1], node))
+        (pendingEvent && (pendingEvent.nextKeys ? pendingEvent.nextKeys.includes(cell.dataset.key)
+          : legalEventTarget(pendingEvent.rule[1], node, cell.dataset.key)))
         || (pendingEntity && legalEntityAction(pendingEntity.card, node, cell.dataset.key))
         || (beginningTargetSource && beginningPlan().get(beginningTargetSource)?.options.includes(cell.dataset.key))));
       cell.classList.toggle('is-event-target', legal);
@@ -1376,7 +1399,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (card.card_type !== 'Event') return '';
     const support = eventSupport(card);
     if (!support) return unavailableEventReason(card);
-    if (!['none', 'draw_from_lumens', 'clear_lumens_draw', 'draw_two_discard_one'].includes(support[1])) {
+    if (card.title === 'Beacon Grid' && support[1] === 'lumens_two') {
       const hasTarget = Array.from($('game-board').children).some(cell => cell.dataset.key
         && legalEventTarget(support[1], room?.board?.[cell.dataset.key]));
       if (!hasTarget) return card.title === 'Beacon Grid' ? 'Beacon Grid needs Radiance Terrain.'
@@ -1447,14 +1470,15 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     renderGame();
     eventNotice('');
   }
-  function stageFestival(card, handIndex) {
+  function stageFestival(card, handIndex, targetX = null, targetY = null) {
+    pendingEvent = null;
     const drawn = (gameState.horizon || []).slice(0, 2);
     const hand = gameState.hand.filter((_, index) => index !== handIndex).concat(drawn);
-    pendingFestival = { card, handIndex, drawn, hand };
+    pendingFestival = { card, handIndex, drawn, hand, targetX, targetY };
     discardSelections.clear();
     handSignature = '';
     renderGame();
-    eventNotice(`Festival of New Canopies draws ${drawn.length} card${drawn.length === 1 ? '' : 's'}. Choose one to discard, then resolve the Event.`);
+    eventNotice(`${card.title} draws ${drawn.length} card${drawn.length === 1 ? '' : 's'}. Choose one to discard, then resolve the Event.`);
   }
   async function confirmFestival() {
     const festival = pendingFestival;
@@ -1467,7 +1491,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     phaseBusy = true;
     renderTurnPhase();
     try {
-      const result = await rpc('play_evoke_festival', {
+      const seedCaravan = festival.card.title === 'Seed Caravan';
+      const result = await rpc(seedCaravan ? 'play_evoke_seed_caravan' : 'play_evoke_festival', {
+        ...(seedCaravan ? { p_target_x: festival.targetX, p_target_y: festival.targetY } : {}),
         p_room_id: roomId, p_expected_turn: room.turn_number,
         p_hand_index: festival.handIndex, p_card_id: festival.card.card_id || festival.card.id,
         p_expected_hand_count: gameState.hand.length,
@@ -1482,7 +1508,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       discardSelections.clear();
       await refreshRoom();
       if (expected === epoch && room?.id === roomId) await loadGameState(true);
-      if (expected === epoch && room?.id === roomId) eventNotice(`Festival of New Canopies evoked · drew ${result?.drawn || 0}${result?.discarded ? ` · discarded ${result.discarded}` : ''}.`, true);
+      if (expected === epoch && room?.id === roomId) eventNotice(`${festival.card.title} evoked · drew ${result?.drawn || 0}${result?.discarded ? ` · discarded ${result.discarded}` : ''}.`, true);
     } catch (error) {
       if (expected === epoch && room?.id === roomId) {
         pendingFestival = null;
@@ -1835,27 +1861,93 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     } catch { /* The table may have been left while the card was moving. */ }
     finally { flight.remove(); }
   }
+  function chooseEventOption(title, options, onConfirm) {
+    const dialog = document.createElement('dialog');
+    dialog.className = 'play-event-choice-dialog';
+    dialog.setAttribute('aria-label', title);
+    const form = document.createElement('form');
+    form.method = 'dialog';
+    const label = document.createElement('label');
+    label.textContent = title;
+    const select = document.createElement('select');
+    for (const [index, option] of options.entries()) select.add(new Option(option.label, String(index)));
+    label.append(select);
+    const confirm = document.createElement('button');
+    confirm.value = 'confirm';
+    confirm.textContent = 'Confirm';
+    const cancel = document.createElement('button');
+    cancel.value = 'cancel';
+    cancel.textContent = 'Cancel';
+    form.append(label, confirm, cancel);
+    dialog.append(form);
+    root.append(dialog);
+    const roomId = room.id, turn = room.turn_number;
+    dialog.addEventListener('close', () => {
+      const chosen = options[Number(select.value)];
+      dialog.remove();
+      if (dialog.returnValue === 'confirm' && chosen && room?.id === roomId && room.turn_number === turn) {
+        onConfirm(chosen.value);
+      }
+    }, { once: true });
+    dialog.showModal();
+  }
   async function evokeEvent(card, handIndex, targetX = null, targetY = null, targetCells = null) {
     if (!room || room.status !== 'active' || room.turn_player_id !== userId
       || room.turn_phase !== 'main' || phaseBusy || pendingFestival || !Array.isArray(gameState?.hand)) return;
     const rule = eventSupport(card);
     if (!rule) { eventNotice(unavailableEventReason(card)); return; }
     if (rule[1] === 'draw_two_discard_one') { stageFestival(card, handIndex); return; }
+    if (rule[1] === 'recall_event' && !targetCells) {
+      const options = (gameState.archive || []).flatMap((item, archiveIndex) => {
+        const cardId = item.card_id || item.id;
+        return item.card_type === 'Event' && cardId
+          ? [{ label: item.title, value: { archiveIndex, cardId } }] : [];
+      }).reverse();
+      if (options.length) {
+        chooseEventOption('Choose an Event from your Archive', options,
+          choice => void evokeEvent(card, handIndex, null, null, choice));
+        return;
+      }
+    }
+    if (targetX !== null && targetY !== null && targetCells === null) {
+      const key = `${targetX},${targetY}`;
+      const node = room.board?.[key];
+      if (rule[1] === 'reconfigure') {
+        const options = terrainTypes.filter(type => type !== node?.terrain)
+          .map(type => ({ label: type, value: { terrain: type } }));
+        chooseEventOption('Choose the replacement Terrain', options,
+          choice => void evokeEvent(card, handIndex, targetX, targetY, choice));
+        return;
+      }
+      if (rule[1] === 'greenway' || rule[1] === 'fertile_rain') {
+        const nextKeys = rule[1] === 'fertile_rain' && node?.protected ? []
+          : eventNeighbors(key).filter(k => !room.board?.[k]?.terrain);
+        if (nextKeys.length) {
+          pendingEvent = { card, handIndex, rule, origin: [targetX, targetY], nextKeys, targets: [] };
+          syncEventTargets();
+          eventNotice(rule[1] === 'greenway' ? 'Choose an adjacent empty Node for the second Verdant Terrain.'
+            : 'Choose an adjacent empty Node for the first Fertilize token.');
+          return;
+        }
+        targetCells = [];
+      }
+    }
     if (rule[1] === 'fertilize_two' && !targetCells) {
       const legalCells = Array.from($('game-board').children).filter(cell => cell.dataset.key
-        && legalEventTarget(rule[1], room?.board?.[cell.dataset.key]));
-      if (!legalCells.length) { eventNotice('There is no empty space to Fertilize.'); return; }
-      const targets = targetX !== null && targetY !== null ? [[targetX, targetY]] : [];
-      pendingEvent = { card, handIndex, rule, targets };
-      syncEventTargets();
-      eventNotice(targets.length ? 'Choose an empty space for the second Fertilize token. Press Esc to cancel.'
-        : 'Choose an empty space for the first Fertilize token. Press Esc to cancel.');
-      return;
+        && legalEventTarget(rule[1], room?.board?.[cell.dataset.key], cell.dataset.key));
+      if (legalCells.length) {
+        const targets = targetX !== null && targetY !== null ? [[targetX, targetY]] : [];
+        pendingEvent = { card, handIndex, rule, targets };
+        syncEventTargets();
+        eventNotice(targets.length ? 'Choose an empty space for the second Fertilize token. Press Esc to cancel.'
+          : 'Choose an empty space for the first Fertilize token. Press Esc to cancel.');
+        return;
+      }
     }
     if (targetX === null && targetY === null && !targetCells
       && !['none', 'draw_from_lumens', 'clear_lumens_draw'].includes(rule[1])) {
       const legalCells = Array.from($('game-board').children).filter(cell => cell.dataset.key
-        && legalEventTarget(rule[1], room?.board?.[cell.dataset.key]));
+        && legalEventTarget(rule[1], room?.board?.[cell.dataset.key], cell.dataset.key));
       if (legalCells.length) {
         pendingEvent = { card, handIndex, rule };
         syncEventTargets();
@@ -1865,8 +1957,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       if (card.title === 'Beacon Grid' && rule[1] === 'lumens_two') {
         eventNotice('Beacon Grid needs Radiance Terrain.'); return;
       }
-      if (rule[1].startsWith('fertilize')) { eventNotice('There is no valid space to Fertilize.'); return; }
     }
+    if (rule[1] === 'seed_caravan') { stageFestival(card, handIndex, targetX, targetY); return; }
     const cardId = card.card_id || card.id;
     if (!cardId) return;
     const expected = epoch, roomId = room.id;
@@ -1949,7 +2041,25 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   function chooseEventTarget(column, row) {
     const event = pendingEvent;
-    if (!event || !legalEventTarget(event.rule[1], room?.board?.[`${column},${row}`])) return;
+    if (!event) return;
+    const key = `${column},${row}`;
+    if (event.nextKeys) {
+      if (!event.nextKeys.includes(key)) return;
+      event.targets.push([column, row]);
+      if (event.rule[1] === 'fertile_rain' && event.targets.length === 1) {
+        if (room.board?.[key]?.fertilize) event.nextKeys = event.nextKeys.filter(k => k !== key);
+        if (event.nextKeys.length) {
+          syncEventTargets();
+          eventNotice('Choose an adjacent empty Node for the second Fertilize token.');
+          return;
+        }
+      }
+      pendingEvent = null;
+      syncEventTargets();
+      void evokeEvent(event.card, event.handIndex, ...event.origin, event.targets);
+      return;
+    }
+    if (!legalEventTarget(event.rule[1], room?.board?.[key], key)) return;
     if (event.rule[1] === 'fertilize_two') {
       event.targets.push([column, row]);
       if (event.targets.length < 2) {
@@ -2050,7 +2160,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       clearDragTarget();
       const target = targetAt(event.clientX, event.clientY);
       if (target && (isEntity ? legalEntityAction(card, room?.board?.[target.dataset.key], target.dataset.key)
-        : rule && legalEventTarget(rule[1], room?.board?.[target.dataset.key]))) {
+        : rule && legalEventTarget(rule[1], room?.board?.[target.dataset.key], target.dataset.key))) {
         target.classList.add('is-event-drag-target');
       }
     });
@@ -2078,7 +2188,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       if (reason) { blockedPlayNotice(reason); return; }
       const target = targetAt(event.clientX, event.clientY);
       if (target && (isEntity ? legalEntityAction(card, room?.board?.[target.dataset.key], target.dataset.key)
-        : rule && legalEventTarget(rule[1], room?.board?.[target.dataset.key]))) {
+        : rule && legalEventTarget(rule[1], room?.board?.[target.dataset.key], target.dataset.key))) {
         const [x, y] = target.dataset.key.split(',').map(Number);
         if (isEntity) void playEntity(card, handIndex, x, y, draggedFlight);
         else void evokeEvent(card, handIndex, x, y);

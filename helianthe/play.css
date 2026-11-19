@@ -238,6 +238,11 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
 .play-game-hand-count { display: inline-flex; align-items: center; width: max-content; padding: .3rem .65rem; border: 1px solid #b9d4c1; border-radius: 999px; background: #1b352b; color: #fff7e8; font-size: .76rem; font-weight: 800; line-height: 1.2; white-space: nowrap; box-shadow: 0 2px 7px #0e241a88; }
 .play-game-hand-count[hidden] { display: none; }
 .play-game-hand-count svg { width: 1.2rem; height: 1.2rem; margin-inline-end: .35rem; }
+.play-event-choice-dialog { max-width: calc(100vw - 2rem); padding: 1rem; border: 1px solid #b9d4c1; border-radius: 12px; background: #1b352b; color: #fff7e8; font-family: Nunito, sans-serif; }
+.play-event-choice-dialog::backdrop { background: #07191099; }
+.play-event-choice-dialog form { display: flex; flex-wrap: wrap; align-items: end; gap: .5rem; }
+.play-event-choice-dialog label { display: grid; gap: .35rem; width: 100%; }
+.play-event-choice-dialog select, .play-event-choice-dialog button { font-family: inherit; }
 #play-game .play-menu-toggle { width: 2.5rem; height: 2.5rem; padding: 0; border-color: #123c2d; border-radius: 10px; background: #1b352bd9; color: #f5f2e8; box-shadow: inset 0 1px 0 #fff2cf36, 0 4px 12px #130b0a55; backdrop-filter: none; }
 #play-game .play-menu-toggle:hover, #play-game .play-table-menu[open] .play-menu-toggle { border-color: #123c2d; background: #305443; color: #f2c96b; }
 #play-game .play-menu-toggle:focus-visible { outline-color: #e0e3e3; }
