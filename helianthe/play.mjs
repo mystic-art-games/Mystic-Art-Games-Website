@@ -126,6 +126,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const extraHandHeight = handCard ? Math.max(0, hand.offsetHeight - Math.ceil(previousHandHeight)) : 0;
     root.style.setProperty('--play-extra-hand-height', `${extraHandHeight}px`);
     const handTop = $('game-self').getBoundingClientRect().top;
+    if (handTop > 0) root.style.setProperty('--play-hand-top', `${handTop}px`);
     const currentOffset = parseFloat(table.style.getPropertyValue('--play-table-offset-y')) || 0;
     const boardRect = board.getBoundingClientRect();
     if (boardRect.height) {
