@@ -16,7 +16,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       getPixelWidth: () => Math.max(120, display?.clientWidth || 0) * (window.devicePixelRatio || 1) * 1.2,
     });
   }
-  let userId = null, room = null, channel = null, timer = null, awayTicker = null, visible = false, inLobby = false;
+  let userId = null, room = null, channel = null, timer = null, awayTicker = null, awayExpiryBusy = false, visible = false, inLobby = false;
   let lobbyTimer = null, directoryChannel = null, directoryUserId = null, listSerial = 0, tableListSignature = '';
   let busy = false, epoch = 0, fetchSerial = 0, live = false, lastHeartbeat = 0, autoDeckPending = false;
   let pendingDeckId = null, deckSaveInFlight = false;
@@ -73,7 +73,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     </section>
     <section id="play-game" hidden>
       <div class="play-game-player-block">
-      <div class="play-game-opponent-footer"><div class="play-game-opponent-identity play-game-player-identity"><div class="play-game-identity-name"><strong id="play-game-opponent-name"></strong><span id="play-game-opponent-presence" class="play-away-pill" hidden></span></div><span id="play-game-opponent-hand-count" class="play-game-hand-count" aria-live="polite" hidden></span></div><div class="play-game-actions"><details class="play-table-menu"><summary class="play-menu-toggle" aria-label="Table actions" title="Table actions"><svg class="play-menu-bars" aria-hidden="true" viewBox="0 0 22 22"><path d="M3 5h16 M3 11h16 M3 17h16"/></svg></summary><div class="play-table-menu-panel"><strong id="play-game-name" class="play-menu-table-name"></strong><button id="play-game-leave" type="button">Concede</button></div></details></div></div>
+      <div class="play-game-opponent-footer"><div class="play-game-opponent-identity play-game-player-identity"><div class="play-game-identity-name"><strong id="play-game-opponent-name"></strong><span id="play-game-opponent-presence" class="play-away-pill" hidden></span></div><span id="play-game-opponent-hand-count" class="play-game-hand-count" aria-live="polite" hidden></span></div><div class="play-game-actions"><details class="play-table-menu"><summary class="play-menu-toggle" aria-label="Table actions" title="Table actions"><svg class="play-menu-bars" aria-hidden="true" viewBox="0 0 22 22"><path d="M3 5h16 M3 11h16 M3 17h16"/></svg></summary><div class="play-table-menu-panel"><strong id="play-game-name" class="play-menu-table-name"></strong><button id="play-game-leave" type="button">Concede</button><button id="play-game-back" class="play-menu-lobby" type="button">Back to Lobby</button></div></details></div></div>
       </div>
       <div class="play-game-board-wrap">
       <aside id="play-game-beginning-effects" class="play-beginning-effects" aria-label="Beginning of Turn Entity effects" hidden><strong>Beginning of Turn effects</strong><p id="play-game-beginning-instructions"></p><ol id="play-game-beginning-list"></ol><button id="play-game-resolve-beginning" type="button">Resolve effects in this order</button></aside>
@@ -1343,10 +1343,15 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       const deadline = awayDeadline(own);
       const badge = $(`game-${seat}-presence`);
       badge.hidden = !deadline;
-      if (deadline) badge.textContent = `Away · ${awayTime(deadline)}`;
+      if (deadline) badge.textContent = own ? `Away · ${awayTime(deadline)}` : `Opponent left the table · ${awayTime(deadline)}`;
     }
     const note = $('away-note');
     if (note && inLobby && awayDeadline(true)) note.textContent = `Away · ${awayTime(awayDeadline(true))}`;
+    const expired = [awayDeadline(true), awayDeadline(false)].some(deadline => deadline && Date.now() >= Date.parse(deadline));
+    if (room?.status === 'active' && expired && !awayExpiryBusy) {
+      awayExpiryBusy = true;
+      void rpc('play_expire_away_tables').then(() => refreshRoom()).catch(() => {}).finally(() => { awayExpiryBusy = false; });
+    }
   }
   async function seatedUserId(data) {
     if (!data) return null;
@@ -1395,7 +1400,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     hideCardPreview();
     if (timer) clearInterval(timer);
     if (awayTicker) clearInterval(awayTicker);
-    timer = null; awayTicker = null;
+    timer = null; awayTicker = null; awayExpiryBusy = false;
     const previous = channel; channel = null; live = false;
     if (previous) await client.removeChannel(previous);
   }
@@ -2904,10 +2909,17 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const stayInLobby = !resume && awayLobbyRoom() === id && data.status === 'active' && Boolean(ownDeadline);
     if (data.status === 'active' && ownDeadline && !stayInLobby) {
       const returned = await rpc('play_set_away', { p_room_id: id, p_away: false });
-      if (!returned) { remember(null); throw new Error('The away timer expired. The table closed.'); }
+      if (!returned) {
+        ({ data, error } = await client.from('play_rooms').select('*').eq('id', id).maybeSingle());
+        if (error) throw error;
+        if (!data || data.status !== 'closed' || !data.conceded_by) {
+          remember(null); throw new Error('The away timer expired. The table closed.');
+        }
+      } else {
       ({ data, error } = await client.from('play_rooms').select('*').eq('id', id).maybeSingle());
       if (error) throw error;
       if (!data || data.status !== 'active') { remember(null); throw new Error('This table is no longer active.'); }
+      }
     }
     if (!stayInLobby) rememberAwayLobby(null);
     inLobby = stayInLobby;
@@ -2948,6 +2960,19 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const id = room.id, expected = epoch;
     await rpc('play_concede', { p_room_id: id });
     if (expected === epoch && room?.id === id) await refreshRoom();
+  }
+  async function leaveGameForLobby() {
+    if (!room || room.status !== 'active') return;
+    $('game-back').closest('details').open = false;
+    const id = room.id, expected = epoch;
+    const markedAway = await rpc('play_set_away', { p_room_id: id, p_away: true });
+    if (!markedAway) { await refreshRoom(); return; }
+    if (expected !== epoch || room?.id !== id) return;
+    rememberAwayLobby(id);
+    inLobby = true;
+    tableListSignature = '';
+    await refreshRoom();
+    if (expected === epoch && room?.id === id && inLobby) await listTables();
   }
   async function returnToLobby() {
     if (!room || room.status !== 'closed' || !room.conceded_by) return;
@@ -3081,6 +3106,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   $('back').addEventListener('click', () => run(leaveTable));
   $('leave').addEventListener('click', () => run(leaveTable));
   $('game-leave').addEventListener('click', () => run(concedeGame));
+  $('game-back').addEventListener('click', () => run(leaveGameForLobby));
   $('game-result-back').addEventListener('click', () => run(returnToLobby));
   async function saveDeckSelection() {
     if (deckSaveInFlight) return;
