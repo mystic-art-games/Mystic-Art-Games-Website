@@ -333,8 +333,10 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
 .play-game-log { display: flex; flex: 1 1 auto; flex-direction: column; min-height: 0; padding: .45rem; border: 1px solid #739786; border-radius: 10px; background: #1b352be8; color: #f5f2e8; box-shadow: 0 4px 12px #130b0a55; }
 .play-game-log-header { display: flex; flex: 0 0 auto; align-items: center; justify-content: space-between; min-height: 1.35rem; margin-bottom: .25rem; }
 .play-game-log h2 { margin: 0; font-size: .78rem; line-height: 1.25; }
-.play-game-log-latest { display: inline-flex; align-items: center; justify-content: center; gap: .2rem; box-sizing: border-box; min-width: 1.35rem; height: 1.35rem; padding: 0 .22rem; border: 1px solid #739786; border-radius: 5px; background: #305443; color: #f5f2e8; font: 800 .85rem/1 Nunito, sans-serif; }
-.play-game-log-unread { padding: .15rem .25rem; border-radius: 999px; background: #f8dfac; color: #332713; font-size: .65rem; }
+.play-game-log-jump { display: flex; align-items: center; gap: .3rem; }
+.play-game-log-latest { display: grid; place-items: center; box-sizing: border-box; width: 1.35rem; height: 1.35rem; padding: 0; border: 1px solid #739786; border-radius: 50%; background: #305443; color: #f5f2e8; }
+.play-game-log-latest svg { width: .9rem; height: .9rem; }
+.play-game-log-unread { padding: .15rem .32rem; border-radius: 999px; background: #f8dfac; color: #332713; font: 800 .65rem/1 Nunito, sans-serif; }
 .play-game-log-latest:hover:not(:disabled) { background: #477452; }
 .play-game-log-latest[hidden] { display: none; }
 .play-game-log-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-anchor: none; overscroll-behavior: contain; font-size: .72rem; line-height: 1.3; }

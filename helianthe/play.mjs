@@ -91,7 +91,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       <section class="play-game-log" aria-labelledby="play-game-log-title">
         <header class="play-game-log-header">
           <h2 id="play-game-log-title">Game Log</h2>
-          <button id="play-game-log-latest" class="play-game-log-latest" type="button" aria-label="Go to the latest log entry" title="Go to latest entry" aria-controls="play-game-log-scroll" hidden><span id="play-game-log-unread" class="play-game-log-unread" aria-hidden="true" hidden></span>↓</button>
+          <div class="play-game-log-jump">
+            <span id="play-game-log-unread" class="play-game-log-unread" aria-hidden="true" hidden></span>
+            <button id="play-game-log-latest" class="play-game-log-latest" type="button" aria-label="Go to the latest log entry" title="Go to latest entry" aria-controls="play-game-log-scroll" hidden><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3v9m-4-4 4 4 4-4"/></svg></button>
+          </div>
         </header>
         <div id="play-game-log-scroll" class="play-game-log-scroll" tabindex="0" aria-label="Game log entries">
           <button id="play-game-log-older" type="button" hidden>Load older</button>
