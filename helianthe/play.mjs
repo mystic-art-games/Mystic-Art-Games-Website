@@ -1693,13 +1693,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       void (async () => {
         const { button, canvas, fallback, item } = entry;
         const artwork = item.artwork_id ? await getArtworkUrl(item.artwork_id).catch(() => '') : '';
-        const staged = document.createElement('canvas');
         const current = () => serial === archiveBrowserRequestSerial && list.contains(button);
-        const result = await renderCard(staged, item, artwork, current);
+        const result = await renderPlayCard(canvas, item, artwork, current);
         if (!current() || !result || result.cancelled) return;
-        canvas.width = 189;
-        canvas.height = 264;
-        canvas.getContext('2d').drawImage(staged, 0, 0, canvas.width, canvas.height);
         canvas.hidden = false;
         fallback.hidden = true;
       })().catch(() => {});
@@ -1739,7 +1735,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (!card) return;
     void (async () => {
       const artwork = card.artwork_id ? await getArtworkUrl(card.artwork_id).catch(() => '') : '';
-      const result = await renderCard(canvas, card, artwork,
+      const result = await renderPlayCard(canvas, card, artwork,
         () => serial === archiveBrowserCardSerial && !$('game-archive-browser').hidden);
       if (serial === archiveBrowserCardSerial && result && !result.cancelled) {
         canvas.hidden = false;
