@@ -564,6 +564,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     } else if (overlay.hidden && gameActions.parentElement === overlay) {
       gameActions.querySelector('details').open = false;
       gameFooter.append(gameActions);
+      requestAnimationFrame(syncZoneCardSize);
     }
     const mulligan = room?.status === 'active' && ['mulligan_first', 'mulligan_second'].includes(room.turn_phase);
     phases.hidden = rolling || revealing || choosing || mulligan || mulliganBusy;

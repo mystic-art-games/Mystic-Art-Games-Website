@@ -389,7 +389,7 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
 #play-game #play-opening-roll-button { grid-row: 4; justify-self: center; min-width: 10rem; margin: 0; }
 .play-opening-roll-error { grid-row: 5; margin: 0; color: #ffd6ce; }
 @media (prefers-reduced-motion: reduce) { .play-game-phase-stack.is-appearing, .play-opening-die.is-rolling, .play-opening-die.is-landing { animation: none; } }
-#play-game .play-game-phase-stack { grid-column: 3; grid-row: 1; justify-self: end; align-self: end; width: 100%; height: max(0px, calc(100% - var(--play-sidebar-top-gap, 0px) - var(--play-sidebar-bottom-gap, 0px))); margin-bottom: var(--play-sidebar-bottom-gap, 0px); }
+#play-game .play-game-phase-stack { position: absolute; grid-column: 3; inset-block: var(--play-sidebar-top-gap, 3.5rem) var(--play-sidebar-bottom-gap, 0px); inset-inline: 0; }
 .play-game-phase-stack > .play-game-phases, .play-game-phase-stack > .play-game-phase-actions { flex: 0 0 auto; }
 .play-game-phases .play-eyebrow { color: #d7c9a7; }
 .play-game-turn-owner { display: flex; align-items: center; gap: .4rem; margin: 0; color: var(--play-turn-accent, #f5f2e8); font-size: .8rem; font-weight: 800; }
@@ -441,7 +441,7 @@ body.dark-mode button.play-game-extra-draw:hover:not(:disabled) { box-shadow: in
   #play-game .play-beginning-effects { position: fixed; top: auto; right: .5rem; bottom: .5rem; left: .5rem; width: auto; max-height: min(36dvh, 280px); margin: 0 auto; }
   #play-game .play-game-card-preview { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(325px, 70vw, 56vh); max-height: calc(100dvh - 1rem); }
   #play-game .play-game-table { flex: 1 1 0; min-height: 0; height: auto; }
-  #play-game .play-game-phase-stack { flex: 0 0 auto; align-self: stretch; width: 100%; height: auto; margin-bottom: 0; }
+  #play-game .play-game-phase-stack { position: relative; inset: auto; flex: 0 0 auto; align-self: stretch; width: 100%; }
   .play-game-log { height: clamp(3rem, 14dvh, 7rem); }
   .play-game-phases { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; align-items: center; gap: .5rem; padding: .3rem .5rem; }
   .play-game-turn-owner, .play-game-phase-list { margin: 0; }
