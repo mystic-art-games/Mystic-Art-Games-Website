@@ -308,7 +308,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         const sameSeat = Math.abs(Number(turn[1]) - knownTurn.number) % 2 === 0;
         owner = sameSeat ? knownTurn.player : seats.find(id => id !== knownTurn.player);
         loggedTurnOwner = owner;
-        const label = owner === userId ? 'Your' : "Opp's";
+        const label = owner === userId ? 'Yours' : "Opp's";
         prefix = `Turn ${turn[1]} (${label})${turn[2] ? ' · ' : ''}`;
         message = turn[2] || '';
       } else {
