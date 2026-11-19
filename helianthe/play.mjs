@@ -1342,26 +1342,29 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     }
   });
   window.addEventListener('blur', hideHoveredCardPreview);
-  function selectedCardNotice(card, handIndex, support) {
-    if (handIndex === null) return '';
-    if (['mulligan_first', 'mulligan_second'].includes(room?.turn_phase)) return '';
+  function cardPlayBlockReason(card) {
+    if (['mulligan_first', 'mulligan_second'].includes(room?.turn_phase)) return 'You can play cards after both players finish their mulligans.';
     if (room?.turn_player_id !== userId) return "You can play cards only on your turn.";
     if (room?.turn_phase !== 'main') return 'You can play cards only during your Main Phase.';
+    if (pendingFestival) return 'Choose a card to discard and finish resolving Festival of New Canopies first.';
+    if (phaseBusy) return 'Wait for the current action to finish.';
     if (card.card_type === 'Entity') {
       if (room.main_played_entity) return 'You have already played an Entity this turn.';
       const hasTarget = Array.from($('game-board').children).some(cell => cell.dataset.key
         && legalEntityAction(card, room?.board?.[cell.dataset.key], cell.dataset.key));
-      return hasTarget ? 'Choose matching Terrain to Place, or a legal empty space to Shape. Press Esc to cancel.'
+      return hasTarget ? ''
         : 'There is no matching unoccupied Terrain or legal empty space to Shape.';
     }
     if (card.card_type !== 'Event') return '';
+    const support = eventSupport(card);
     if (!support) return unavailableEventReason(card);
-    if (card.title === 'Beacon Grid' || ['fertilize_two', 'fertilize_draw', 'fertilize_existing_draw'].includes(support[1])) {
+    if (!['none', 'draw_from_lumens', 'clear_lumens_draw', 'draw_two_discard_one'].includes(support[1])) {
       const hasTarget = Array.from($('game-board').children).some(cell => cell.dataset.key
         && legalEventTarget(support[1], room?.board?.[cell.dataset.key]));
       if (!hasTarget) return card.title === 'Beacon Grid' ? 'Beacon Grid needs Radiance Terrain.'
         : support[1] === 'fertilize_existing_draw' ? 'There is no fertilized empty space to choose.'
-          : 'There is no legal empty space to Fertilize.';
+          : support[1].startsWith('fertilize') ? 'There is no legal empty space to Fertilize.'
+            : `There is no legal target. This Event needs ${support[2]}.`;
     }
     return '';
   }
@@ -1373,8 +1376,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     syncEventTargets();
     selectedGameCard = card;
     selectedHandIndex = handIndex;
-    const support = card.card_type === 'Event' ? eventSupport(card) : null;
-    eventNotice(selectedCardNotice(card, handIndex, support));
     selectedCardElement?.classList.remove('is-selected');
     selectedCardElement?.removeAttribute('aria-pressed');
     selectedCardElement = source;
@@ -1390,7 +1391,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (['mulligan_first', 'mulligan_second'].includes(room?.turn_phase)) {
       const actorId = room.turn_phase === 'mulligan_first' ? room.turn_player_id
         : room.turn_player_id === room.host_id ? room.guest_id : room.host_id;
-      if (actorId !== userId || mulliganBusy || !gameState) return;
+      if (actorId !== userId) { eventNotice(cardPlayBlockReason(card), true); return; }
+      if (mulliganBusy || !gameState) return;
       const position = mulliganOrder.indexOf(handIndex);
       if (position >= 0) mulliganOrder.splice(position, 1);
       else if (mulliganOrder.length < gameState.horizon.length) mulliganOrder.push(handIndex);
@@ -1405,7 +1407,11 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       syncDiscardBar();
       return;
     }
-    if (!requiredDiscards()) return;
+    if (!requiredDiscards()) {
+      const reason = cardPlayBlockReason(card);
+      if (reason) eventNotice(reason, true);
+      return;
+    }
     if (discardSelections.has(handIndex)) {
       discardSelections.delete(handIndex);
       if (selectedCardElement === source) hideCardPreview();
@@ -1979,8 +1985,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       ? `Preview ${card.title || 'Entity'}; drag to compatible Terrain to Place or an empty space to Shape`
       : `Preview ${card.title || 'Event'}; drag toward the table to Evoke, or press E`);
     button.addEventListener('pointerdown', event => {
-      if (event.button !== 0 || !event.isPrimary || room?.turn_player_id !== userId
-        || room.turn_phase !== 'main' || phaseBusy || pendingFestival || (isEntity && room.main_played_entity)) return;
+      if (event.button !== 0 || !event.isPrimary) return;
       drag = { pointerId: event.pointerId, x: event.clientX, y: event.clientY, ghost: null };
       button.setPointerCapture(event.pointerId);
     });
@@ -1989,6 +1994,13 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       const dx = event.clientX - drag.x, dy = event.clientY - drag.y;
       if (!drag.ghost && Math.hypot(dx, dy) < 8) return;
       if (!drag.ghost) {
+        if (drag.blocked) return;
+        const reason = cardPlayBlockReason(card);
+        if (reason) {
+          drag.blocked = true;
+          eventNotice(reason, true);
+          return;
+        }
         const bounds = button.getBoundingClientRect();
         const boardCard = $('game-board').firstElementChild?.getBoundingClientRect();
         const ghostWidth = boardCard?.width || bounds.width;
@@ -2026,7 +2038,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     });
     const finish = (event, cancelled = false) => {
       if (!drag || event.pointerId !== drag.pointerId) return;
-      const moved = Boolean(drag.ghost);
+      const moved = Boolean(drag.ghost || drag.blocked);
+      const blocked = drag.blocked;
       const draggedFlight = isEntity && drag.ghost
         ? { flight: drag.ghost, bounds: drag.ghost.getBoundingClientRect() } : null;
       drag.ghost?.remove();
@@ -2037,12 +2050,14 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       if (!moved) return;
       suppressClick = true;
       setTimeout(() => { suppressClick = false; }, 0);
-      if (cancelled) return;
+      if (cancelled || blocked) return;
       const table = boardWrap.getBoundingClientRect();
       const hand = $('game-self').getBoundingClientRect();
       const droppedOnTable = event.clientY < hand.top - 8
         && pointInside(table, event.clientX, event.clientY);
       if (!droppedOnTable) return;
+      const reason = cardPlayBlockReason(card);
+      if (reason) { eventNotice(reason, true); return; }
       const target = targetAt(event.clientX, event.clientY);
       if (target && (isEntity ? legalEntityAction(card, room?.board?.[target.dataset.key], target.dataset.key)
         : rule && legalEventTarget(rule[1], room?.board?.[target.dataset.key]))) {
@@ -2058,8 +2073,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       if (suppressClick) { event.preventDefault(); event.stopImmediatePropagation(); }
     }, true);
     button.addEventListener('keydown', event => {
-      if (isEntity || event.key.toLowerCase() !== 'e' || pendingFestival) return;
+      if (isEntity || event.key.toLowerCase() !== 'e') return;
       event.preventDefault();
+      const reason = cardPlayBlockReason(card);
+      if (reason) { eventNotice(reason, true); return; }
       showCardPreview(card, button, handIndex);
       void evokeEvent(card, handIndex);
     });
