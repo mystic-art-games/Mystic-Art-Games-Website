@@ -1091,11 +1091,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   $('game-next-phase').addEventListener('click', () => void advanceTurnPhase());
   $('game-extra-draw').addEventListener('click', () => void advanceTurnPhase(true));
-  root.querySelector('.play-game-board-wrap').addEventListener('contextmenu', event => {
-    if (event.target.closest('.play-game-card-preview')) return;
-    event.preventDefault();
-    hideCardPreview();
-  });
   document.addEventListener('pointerdown', event => {
     for (const menu of root.querySelectorAll('.play-table-menu[open]')) {
       if (!menu.contains(event.target)) menu.open = false;
@@ -2253,10 +2248,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       mulliganBadge.className = 'play-mulligan-order'; mulliganBadge.hidden = true;
       item.append(mulliganBadge);
       button.addEventListener('click', () => chooseHandCard(card, button, index));
-      button.addEventListener('contextmenu', event => {
-        event.preventDefault();
-        chooseHandCard(card, button, index);
-      });
       if (card.card_type === 'Event' || card.card_type === 'Entity') enableCardDrag(button, card, index);
       if (canvas.hidden) void (async () => {
         const artwork = card.artwork_id ? await getArtworkUrl(card.artwork_id).catch(() => '') : '';
