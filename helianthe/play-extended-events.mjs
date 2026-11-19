@@ -79,8 +79,8 @@ function archiveStep(label, archive, type) {
 }
 
 function discardStep(hand, eventIndex) {
-  return { label: 'Choose a card to discard', options: (hand || []).filter((_, index) => index !== eventIndex)
-    .map((card, index) => ({ label: card.title || 'Card', value: { type: 'discard', index, id: card.card_id || card.id } })) };
+  return { label: 'Choose a card to discard', options: (hand || []).flatMap((card, index) => index === eventIndex
+    ? [] : [{ label: card.title || 'Card', value: { type: 'discard', index: index > eventIndex ? index - 1 : index, id: card.card_id || card.id } }]) };
 }
 
 function terrainStep(label, excluded) {
@@ -109,6 +109,7 @@ export function extendedEventStep(kind, selected, { board, archive, hand, eventI
     case 'compost_front':
     case 'reclamation_pulse':
       if (count === 0) return boardStep('Choose empty Verdant Terrain to Dissolve', board, node => node.terrain === 'Verdant' && !entity(node));
+      if (first.protected) return null;
       if (count === 1) return boardStep(kind === 'compost_front' ? 'Choose an Entity to Dissolve' : 'Choose Verdant Terrain to Protect', board,
         (node, key) => key !== source && (kind === 'compost_front' ? entity(node) : node.terrain === 'Verdant'));
       return null;
@@ -122,6 +123,7 @@ export function extendedEventStep(kind, selected, { board, archive, hand, eventI
       return null;
     case 'fertile_rain_any':
       if (count === 0) return boardStep('Choose Verdant Terrain with an Entity', board, node => node.terrain === 'Verdant' && entity(node));
+      if (first.protected) return null;
       if (count < 3) return boardStep('Choose an adjacent empty Node to Fertilize', board, (node, key) =>
         empty(node) && adjacent(source, key) && !(count === 2 && key === cells[1] && node.fertilize));
       return null;
@@ -129,6 +131,7 @@ export function extendedEventStep(kind, selected, { board, archive, hand, eventI
       return count ? null : boardStep('Choose an Entity on entangled Terrain', board, node => entity(node) && entangled(node));
     case 'glade_surveyor':
       if (count === 0) return boardStep('Choose Verdant Terrain to Dissolve', board, node => node.terrain === 'Verdant');
+      if (first.protected) return null;
       if (count === 1) return boardStep('Choose protected Terrain', board, (node, key) => terrain(node) && node.protected && key !== source);
       if (count === 2) return boardStep('Choose adjacent destination Terrain', board, (node, key) => terrain(node) && adjacent(cells[1], key) && key !== source);
       return null;
@@ -177,6 +180,7 @@ export function extendedEventStep(kind, selected, { board, archive, hand, eventI
         ] } : null;
     case 'regrow':
       if (count === 0) return boardStep('Choose Verdant Terrain to Dissolve', board, node => node.terrain === 'Verdant');
+      if (first.protected) return null;
       if (count === 1) return archiveStep('Choose an Entity to Recall', archive, 'Entity');
       return null;
     case 'skyfire_pair':
