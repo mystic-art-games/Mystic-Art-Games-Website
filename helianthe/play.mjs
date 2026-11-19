@@ -961,69 +961,73 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const hand = handElement.getBoundingClientRect();
     if ($('game').hidden || !source.width || !source.height || !hand.width || !hand.height) return;
     clearDrawFlight();
+    const card = rawCard && resolveGameCard(rawCard);
+    if (!card) return;
     const items = Array.from(handElement.children);
-    const first = items[0]?.getBoundingClientRect();
-    const style = getComputedStyle(handElement);
-    const gap = parseFloat(style.columnGap) || 0;
-    const paddingLeft = parseFloat(style.paddingLeft) || 0;
-    const paddingRight = parseFloat(style.paddingRight) || 0;
-    const available = hand.width - paddingLeft - paddingRight;
-    const cardWidth = Math.min(first?.width || Math.min(source.width, 100),
-      Math.max(1, (available - items.length * gap) / (items.length + 1)));
-    const cardHeight = cardWidth * 88 / 63;
-    const total = (items.length + 1) * cardWidth + items.length * gap;
-    const startX = hand.left + paddingLeft + Math.max(0, (available - total) / 2) - handElement.scrollLeft;
-    const destinationX = startX + items.length * (cardWidth + gap) + cardWidth / 2;
-    const destinationY = first ? first.top + cardHeight / 2 : hand.top + hand.height / 2;
+    const originalBounds = items.map(item => item.getBoundingClientRect());
+    const originalScroll = handElement.scrollLeft;
+    // Let the same flex layout size and position the incoming card before the flight.
+    const placeholder = document.createElement('div');
+    placeholder.className = 'play-hand-item';
+    placeholder.setAttribute('aria-hidden', 'true');
+    placeholder.style.visibility = 'hidden';
+    const placeholderCard = document.createElement('button');
+    placeholderCard.className = 'play-hand-card';
+    placeholderCard.type = 'button';
+    placeholderCard.tabIndex = -1;
+    placeholder.append(placeholderCard);
+    handElement.append(placeholder);
+    const destination = placeholderCard.getBoundingClientRect();
+    const finalBounds = items.map(item => item.getBoundingClientRect());
+    placeholder.remove();
+    handElement.scrollLeft = originalScroll;
+    if (!destination.width || !destination.height) return;
+
     const flight = document.createElement('div');
     flight.className = 'play-draw-flight';
     flight.setAttribute('aria-hidden', 'true');
-    Object.assign(flight.style, { left: `${source.left}px`, top: `${source.top}px`, width: `${source.width}px`, height: `${source.height}px` });
+    Object.assign(flight.style, {
+      left: `${destination.left}px`, top: `${destination.top}px`,
+      width: `${destination.width}px`, height: `${destination.height}px`,
+      visibility: 'hidden',
+    });
     const inner = document.createElement('div'); inner.className = 'play-draw-flight-inner';
     const back = document.createElement('div'); back.className = 'play-draw-flight-face play-draw-flight-back';
     const front = document.createElement('div'); front.className = 'play-draw-flight-face play-draw-flight-front';
     const canvas = document.createElement('canvas'); canvas.hidden = true;
-    const fallback = document.createElement('span'); fallback.textContent = rawCard?.title || 'Card';
+    const fallback = document.createElement('span'); fallback.textContent = card.title || 'Card';
     front.append(canvas, fallback); inner.append(back, front); flight.append(inner); document.body.append(flight);
     activeDrawFlight = flight;
-    const card = rawCard && resolveGameCard(rawCard);
-    if (!card) {
-      if (activeDrawFlight === flight) clearDrawFlight();
-      return;
-    }
-    const artReady = prepareArrivingCard(card, canvas, fallback, () => activeDrawFlight === flight);
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    activeHandShifts = items.map((item, index) => {
-      const current = item.getBoundingClientRect();
-      const delta = startX + index * (cardWidth + gap) - current.left;
-      const ratio = cardWidth / current.width;
-      return item.animate([
-        { transform: 'translateX(0) scale(1)', transformOrigin: 'top left' },
-        { transform: `translateX(${delta}px) scale(${ratio})`, transformOrigin: 'top left' },
-      ],
-        { duration: reducedMotion ? 80 : 470, easing: 'ease-in-out', fill: 'forwards' });
-    });
-    const dx = destinationX - source.left - source.width / 2;
-    const dy = destinationY - source.top - source.height / 2;
-    const scale = cardWidth / source.width;
-    const duration = reducedMotion ? 100 : 850;
-    const startedAt = performance.now();
-    const motion = flight.animate([
-      { transform: 'translate(0, 0) rotate(0deg) scale(1)' },
-      { transform: `translate(${dx * .65}px, ${dy * .65}px) rotate(-7deg) scale(${1 + (scale - 1) * .65})`, offset: .7 },
-      { transform: `translate(${dx}px, ${dy}px) rotate(0deg) scale(${scale})` },
-    ], { duration, easing: 'cubic-bezier(.22,.7,.18,1)', fill: 'forwards' });
+
     try {
-      if (!await artReady) {
-        if (activeDrawFlight === flight) clearDrawFlight();
-        return;
-      }
+      const artReady = await prepareArrivingCard(card, canvas, fallback, () => activeDrawFlight === flight);
+      if (activeDrawFlight !== flight) return;
+      if (!artReady) { clearDrawFlight(); return; }
+
+      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const duration = reducedMotion ? 100 : 850;
+      activeHandShifts = items.map((item, index) => {
+        const from = originalBounds[index];
+        const to = finalBounds[index];
+        return item.animate([
+          { transform: 'translate(0, 0) scale(1)', transformOrigin: 'top left' },
+          { transform: `translate(${to.left - from.left}px, ${to.top - from.top}px) scale(${from.width ? to.width / from.width : 1}, ${from.height ? to.height / from.height : 1})`, transformOrigin: 'top left' },
+        ], { duration: duration * .75, easing: 'ease-in-out', fill: 'forwards' });
+      });
+      const dx = source.left + source.width / 2 - destination.left - destination.width / 2;
+      const dy = source.top + source.height / 2 - destination.top - destination.height / 2;
+      const motion = flight.animate([
+        { transform: `translate(${dx}px, ${dy}px) scale(${source.width / destination.width}, ${source.height / destination.height})` },
+        { transform: `translate(${dx * .45}px, ${dy * .45}px) rotate(-5deg)`, offset: .45 },
+        { transform: 'translate(0, 0) rotate(0deg)' },
+      ], { duration, easing: 'cubic-bezier(.22,.7,.18,1)', fill: 'both' });
       const flip = inner.animate([
-        { transform: 'rotateY(0deg)' },
-        { transform: 'rotateY(180deg)' },
-      ], { duration: reducedMotion ? 70 : 380,
-        delay: Math.max(0, duration * .25 - (performance.now() - startedAt)),
-        easing: 'ease-in-out', fill: 'forwards' });
+        { transform: 'rotateY(0deg)', offset: 0 },
+        { transform: 'rotateY(0deg)', offset: .22 },
+        { transform: 'rotateY(180deg)', offset: .68 },
+        { transform: 'rotateY(180deg)', offset: 1 },
+      ], { duration, easing: 'ease-in-out', fill: 'both' });
+      flight.style.visibility = '';
       await Promise.all([motion.finished, flip.finished]);
     } catch { /* Leaving the table cancels the flight. */ }
   }
