@@ -170,7 +170,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     'Tangle': [['choose a node with 2 adjacent verdant terrains. remove all counters from that node, then dissolve the terrain and the entity on that node.', 'tangle', 'Node next to at least two Verdant Terrain cards']],
     'Fertile Rain': [['dissolve entity from verdant terrain to fertilize 2 on adjacent nodes.', 'fertile_rain', 'Verdant Terrain with an Entity']],
     'Seed Caravan': [['create verdant terrain on a legal blank node adjacent to a verdant node. draw 2 cards, then discard 1 card.', 'seed_caravan', 'empty space adjacent to Verdant Terrain']],
-+    'Static Insulation': [['create 1 shield token on any terrain.', 'protect', 'Terrain']],
+    'Static Insulation': [['create 1 shield token on any terrain.', 'protect', 'Terrain']],
     'Beacon Grid': [['add 2 lumens on radiance terrain.', 'lumens_two', 'Radiance Terrain']],
     'Breachside Repairs': [['add 1 lumen on radiance terrain. draw 1 card.', 'lumen_draw', 'Radiance Terrain']],
     'Grid Stabilization': [['remove crisis from radiance terrain with at least 1 lumen. draw 1 card.', 'restore_radiance_draw', 'Radiance Terrain with at least 1 Lumen']],
