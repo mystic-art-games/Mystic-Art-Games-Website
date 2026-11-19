@@ -242,25 +242,41 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
   }
 
   const effectWidth = options.largerText ? 580 : 560;
+  const effectWeight = options.largerText ? 700 : 500;
+  const effectTop = 705;
+  const effectBottom = options.largerText ? 905 : 885;
+  const effectLineHeight = options.largerText ? 1.16 : 1.25;
   function fitText(value) {
-    for (let size = options.largerText ? 38 : 34; size >= 18; size--) {
-      ctx.font = `500 ${size}px ${rulesFont}`;
+    for (let size = options.largerText ? 41 : 34; size >= 18; size--) {
+      ctx.font = `${effectWeight} ${size}px ${rulesFont}`;
       const lines = wrapText(value, effectWidth);
-      const verticalLimit = Math.floor((885 - 705) / (size * 1.25)) + 1;
+      const verticalLimit = Math.floor((effectBottom - effectTop) / (size * effectLineHeight)) + 1;
       if (lines.length <= Math.min(8, verticalLimit)) return { lines, size, clipped: false };
     }
-    ctx.font = `500 18px ${rulesFont}`;
+    ctx.font = `${effectWeight} 18px ${rulesFont}`;
     return { lines: wrapText(value, effectWidth).slice(0, 8), size: 18, clipped: true };
   }
 
   const effect = card.effect?.trim() || 'Card effect text…';
   const fitted = fitText(effect);
-  ctx.fillStyle = card.effect?.trim() ? '#112f40' : '#817586';
-  ctx.font = `500 ${fitted.size}px ${rulesFont}`;
-  let y = 705;
+  const effectLeft = (750 - effectWidth) / 2;
+  if (options.largerText) {
+    ctx.fillStyle = '#fff9ec';
+    ctx.beginPath();
+    ctx.roundRect(effectLeft - 13, effectTop - 38, effectWidth + 26, effectBottom - effectTop + 62, 14);
+    ctx.fill();
+  }
+  ctx.fillStyle = options.largerText ? '#182323' : card.effect?.trim() ? '#112f40' : '#817586';
+  ctx.font = `${effectWeight} ${fitted.size}px ${rulesFont}`;
+  let y = effectTop;
   let credoItalic = false;
   for (const line of fitted.lines) {
-    let x = (750 - effectWidth) / 2;
+    if (options.largerText) {
+      ctx.fillText(line, effectLeft, Math.round(y), effectWidth);
+      y += fitted.size * effectLineHeight;
+      continue;
+    }
+    let x = effectLeft;
     const baseColor = ctx.fillStyle;
     for (const part of line.split(/(Vision:|Credo:|Coredo:|\b\d+\b|Symbiosis|Flow|Verdant|Radiance)/g)) {
       if (!part) continue;
@@ -273,9 +289,9 @@ export async function renderCard(canvas, card, artworkUrl = '', shouldDraw = () 
       if (/^(Credo:|Coredo:)$/.test(part)) credoItalic = true;
     }
     ctx.fillStyle = baseColor;
-    y += fitted.size * 1.25;
+    y += fitted.size * effectLineHeight;
   }
-  if (fitted.clipped) { ctx.font = '700 14px Nunito,Arial,sans-serif'; ctx.fillStyle = '#b34739'; ctx.fillText('TEXT DOES NOT FIT ON CARD', 95, 895); }
+  if (fitted.clipped) { ctx.font = '700 14px Nunito,Arial,sans-serif'; ctx.fillStyle = '#b34739'; ctx.fillText('TEXT DOES NOT FIT ON CARD', effectLeft, options.largerText ? 920 : 895); }
   if (card.author) {
     ctx.save(); ctx.font = `italic 500 26px ${rulesFont}`; ctx.fillStyle = '#4d463f'; ctx.textAlign = 'center';
     const authorMetrics = ctx.measureText(card.author);
