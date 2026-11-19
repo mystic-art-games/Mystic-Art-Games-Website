@@ -28,7 +28,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   let openingRevealTimer = null, openingPanelAnimatedKey = '', openingRevealDoneKey = '';
   let openingShuffleTimer = null, openingVisualDice = [1, 1];
   const openingAnimatedValues = { host: null, guest: null };
-  let drawRetryAt = 0, activeDrawFlight = null, activeHandShifts = [];
+  let drawRetryAt = 0, activeHandShifts = [];
+  const activeDrawFlights = new Set();
+  const drawHiddenItems = new Set();
+  const discardFlights = new Set();
   const discardHandShifts = [], discardHiddenCards = new Set();
   const arrivingCardCanvases = new Map();
   let beginningTurnKey = '', beginningOrder = [], beginningTargetSource = null;
@@ -166,6 +169,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       root.style.removeProperty('--play-preview-width');
       root.style.removeProperty('--play-preview-offset-y');
     }
+    if (discardFlights.size) syncLandedDiscards();
   }
   if (typeof ResizeObserver === 'function') {
     const zoneResizeObserver = new ResizeObserver(syncZoneCardSize);
@@ -675,73 +679,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     return Promise.allSettled(flights.flatMap(({ motion, flip }) => [motion.finished, flip.finished]))
       .then(() => { for (const { flight } of flights) { flight.remove(); mulliganFlights.delete(flight); } });
   }
-  function prepareMulliganDraw(cards, expected, roomId) {
-    return cards.map(rawCard => {
-      const card = resolveGameCard(rawCard);
-      const canvas = document.createElement('canvas'); canvas.hidden = true;
-      const fallback = document.createElement('span'); fallback.textContent = card.title || 'Card';
-      const ready = prepareArrivingCard(card, canvas, fallback,
-        () => mulliganBusy && expected === epoch && room?.id === roomId);
-      return { canvas, fallback, ready };
-    });
-  }
-  async function animateMulliganDraw(cards, indices, stagedCards) {
-    const source = $('game-self-horizon').getBoundingClientRect();
-    const hand = $('game-hand');
-    const items = Array.from(hand.children);
-    const first = items[0]?.getBoundingClientRect();
-    if ($('game').hidden || !source.width || !source.height || !first?.width) return;
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const selected = new Set(indices);
-    const gap = parseFloat(getComputedStyle(hand).columnGap) || 0;
-    const step = first.width + gap;
-    const remaining = items.filter((_, index) => !selected.has(index));
-    const prepared = cards.map((_, index) => {
-      const { canvas, fallback } = stagedCards[index];
-      const front = document.createElement('div'); front.className = 'play-mulligan-drawn-card';
-      front.append(canvas, fallback);
-      const { flight, inner } = mulliganFlight(source, front);
-      const targetX = first.left + (remaining.length + index) * step + first.width / 2;
-      return { flight, inner, targetX, index };
-    });
-    const shifts = remaining.map((item, index) => {
-      const bounds = item.getBoundingClientRect();
-      const dx = first.left + index * step - bounds.left;
-      const animation = item.animate([{ transform: 'translateX(0)' }, { transform: `translateX(${dx}px)` }],
-        { duration: reduced ? 80 : 480, easing: 'ease-in-out', fill: 'forwards' });
-      mulliganAnimations.add(animation);
-      return animation;
-    });
-    const flights = prepared.sort((a, b) => a.targetX - b.targetX).map(({ flight, inner, targetX, index }, order) => {
-      const targetY = first.top + first.height / 2;
-      const dx = targetX - source.left - source.width / 2;
-      const dy = targetY - source.top - source.height / 2;
-      const scale = first.width / source.width;
-      const timing = { duration: reduced ? 100 : mulliganFlightDuration,
-        delay: reduced ? 0 : order * mulliganFlightStagger,
-        easing: 'cubic-bezier(.22,.7,.18,1)', fill: 'forwards' };
-      const motion = flight.animate([
-        { transform: 'translate(0, 0) rotate(0deg) scale(1)' },
-        { transform: `translate(${dx * .62}px, ${dy * .62}px) rotate(-8deg) scale(${1 + (scale - 1) * .62})`, offset: .65 },
-        { transform: `translate(${dx}px, ${dy}px) rotate(0deg) scale(${scale})` },
-      ], timing);
-      mulliganAnimations.add(motion);
-      return { motion, inner, index, order };
-    });
-    const ready = await Promise.all(stagedCards.map(card => card.ready));
-    const flips = flights.map(({ inner, index, order }) => {
-      if (!ready[index]) return null;
-      const flip = inner.animate([
-        { transform: 'rotateY(0deg)' },
-        { transform: 'rotateY(180deg)' },
-      ], { duration: reduced ? 70 : 380, delay: reduced ? 0 : order * mulliganFlightStagger,
-        easing: 'ease-in-out', fill: 'forwards' });
-      mulliganAnimations.add(flip);
-      return flip;
-    }).filter(Boolean);
-    await Promise.allSettled([...shifts.map(animation => animation.finished),
-      ...flights.map(({ motion }) => motion.finished), ...flips.map(flip => flip.finished)]);
-  }
   async function finishMulligan(indices) {
     if (mulliganBusy || !gameState || room?.status !== 'active'
       || !['mulligan_first', 'mulligan_second'].includes(room.turn_phase)) return;
@@ -752,13 +689,12 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const drawnCards = gameState.horizon.slice(0, indices.length);
     mulliganBusy = true;
     renderMulligan();
-    const stagedDrawCards = prepareMulliganDraw(drawnCards, expected, roomId);
     try {
       if (indices.length) await animateMulliganBottom(indices);
       if (expected !== epoch || room?.id !== roomId || room.status !== 'active') return;
       await rpc('play_finish_mulligan', { p_room_id: roomId, p_expected_phase: phase, p_hand_indices: indices });
       if (expected === epoch && room?.id === roomId) {
-        if (indices.length) await animateMulliganDraw(drawnCards, indices, stagedDrawCards);
+        if (indices.length) await animateCardsToHand(drawnCards, indices, mulliganFlightStagger);
         await refreshRoom();
         await loadGameState(true);
       }
@@ -770,6 +706,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       }
     } finally {
       clearMulliganFlights();
+      clearDrawFlight();
       mulliganBusy = false;
       if (expected === epoch && room?.id === roomId) renderOpeningRoll();
     }
@@ -914,6 +851,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const plan = beginningPlan();
     if (entries.some(({ source }) => !plan.get(source)?.valid)) return;
     const expected = epoch, roomId = room.id, turn = room.turn_number;
+    const horizon = gameState?.horizon || [];
     phaseBusy = true;
     beginningTargetSource = null;
     renderBeginningEffects(); renderTurnPhase(); syncEventTargets();
@@ -921,6 +859,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       const result = await rpc('play_resolve_beginning_entity_effects', {
         p_room_id: roomId, p_expected_turn: turn, p_effects: entries,
       });
+      if (expected !== epoch || room?.id !== roomId) return;
+      if (result?.drawn > 0) await animateCardsToHand(horizon.slice(0, result.drawn));
       if (expected !== epoch || room?.id !== roomId) return;
       await refreshRoom();
       if (expected === epoch && room?.id === roomId) await loadGameState(true);
@@ -931,14 +871,17 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         message(friendly(error), true);
       }
     } finally {
+      clearDrawFlight();
       phaseBusy = false;
       renderBeginningEffects(); renderTurnPhase(); syncEventTargets();
     }
   }
   $('game-resolve-beginning').addEventListener('click', () => void resolveBeginningEffects());
   function clearDrawFlight() {
-    activeDrawFlight?.remove();
-    activeDrawFlight = null;
+    for (const flight of activeDrawFlights) flight.remove();
+    activeDrawFlights.clear();
+    for (const item of drawHiddenItems) item.style.visibility = '';
+    drawHiddenItems.clear();
     for (const animation of activeHandShifts) animation.cancel();
     activeHandShifts = [];
     arrivingCardCanvases.clear();
@@ -955,34 +898,62 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       return true;
     } catch { return false; }
   }
-  async function animateDrawToHand(rawCard) {
+  async function animateCardsToHand(rawCards, removedIndexes = [], stagger = 0) {
     const source = $('game-self-horizon').getBoundingClientRect();
     const handElement = $('game-hand');
     const hand = handElement.getBoundingClientRect();
     if ($('game').hidden || !source.width || !source.height || !hand.width || !hand.height) return;
     clearDrawFlight();
-    const card = rawCard && resolveGameCard(rawCard);
-    if (!card) return;
-    const items = Array.from(handElement.children);
+    if (!rawCards.length) return;
+    const removedItems = removedIndexes.map(index => handElement.children[index]).filter(Boolean);
+    const items = Array.from(handElement.children).filter(item => !removedItems.includes(item));
     const originalBounds = items.map(item => item.getBoundingClientRect());
     const originalScroll = handElement.scrollLeft;
     // Let the same flex layout size and position the incoming card before the flight.
-    const placeholder = document.createElement('div');
-    placeholder.className = 'play-hand-item';
-    placeholder.setAttribute('aria-hidden', 'true');
-    placeholder.style.visibility = 'hidden';
-    const placeholderCard = document.createElement('button');
-    placeholderCard.className = 'play-hand-card';
-    placeholderCard.type = 'button';
-    placeholderCard.tabIndex = -1;
-    placeholder.append(placeholderCard);
-    handElement.append(placeholder);
-    const destination = placeholderCard.getBoundingClientRect();
+    for (const item of removedItems) item.hidden = true;
+    const placeholders = rawCards.map(() => {
+      const item = document.createElement('div');
+      item.className = 'play-hand-item';
+      item.setAttribute('aria-hidden', 'true');
+      item.style.visibility = 'hidden';
+      const card = document.createElement('button');
+      card.className = 'play-hand-card';
+      card.type = 'button';
+      card.tabIndex = -1;
+      item.append(card);
+      handElement.append(item);
+      return item;
+    });
+    const destinations = placeholders.map(item => item.firstElementChild.getBoundingClientRect());
     const finalBounds = items.map(item => item.getBoundingClientRect());
-    placeholder.remove();
+    for (const item of placeholders) item.remove();
+    for (const item of removedItems) item.hidden = false;
     handElement.scrollLeft = originalScroll;
-    if (!destination.width || !destination.height) return;
+    if (destinations.some(bounds => !bounds.width || !bounds.height)) return;
 
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const duration = reduced ? 100 : 850;
+    const flights = rawCards.map((rawCard, index) =>
+      createIncomingCardFlight(resolveHandCard(rawCard), source, destinations[index], duration, reduced ? 0 : index * stagger));
+    const ready = await Promise.all(flights.map(flight => flight.ready));
+    if (flights.some(({ element }) => !activeDrawFlights.has(element))) return;
+    if (ready.some(result => !result)) { clearDrawFlight(); return; }
+
+    for (const item of removedItems) {
+      item.style.visibility = 'hidden';
+      drawHiddenItems.add(item);
+    }
+    activeHandShifts = items.map((item, index) => {
+      const from = originalBounds[index];
+      const to = finalBounds[index];
+      return item.animate([
+        { transform: 'translate(0, 0) scale(1)', transformOrigin: 'top left' },
+        { transform: `translate(${to.left - from.left}px, ${to.top - from.top}px) scale(${from.width ? to.width / from.width : 1}, ${from.height ? to.height / from.height : 1})`, transformOrigin: 'top left' },
+      ], { duration: duration * .75, easing: 'ease-in-out', fill: 'forwards' });
+    });
+    await Promise.allSettled(flights.flatMap(flight => flight.start()));
+  }
+  function createIncomingCardFlight(card, source, destination, duration, delay) {
     const flight = document.createElement('div');
     flight.className = 'play-draw-flight';
     flight.setAttribute('aria-hidden', 'true');
@@ -997,39 +968,28 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const canvas = document.createElement('canvas'); canvas.hidden = true;
     const fallback = document.createElement('span'); fallback.textContent = card.title || 'Card';
     front.append(canvas, fallback); inner.append(back, front); flight.append(inner); document.body.append(flight);
-    activeDrawFlight = flight;
-
-    try {
-      const artReady = await prepareArrivingCard(card, canvas, fallback, () => activeDrawFlight === flight);
-      if (activeDrawFlight !== flight) return;
-      if (!artReady) { clearDrawFlight(); return; }
-
-      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      const duration = reducedMotion ? 100 : 850;
-      activeHandShifts = items.map((item, index) => {
-        const from = originalBounds[index];
-        const to = finalBounds[index];
-        return item.animate([
-          { transform: 'translate(0, 0) scale(1)', transformOrigin: 'top left' },
-          { transform: `translate(${to.left - from.left}px, ${to.top - from.top}px) scale(${from.width ? to.width / from.width : 1}, ${from.height ? to.height / from.height : 1})`, transformOrigin: 'top left' },
-        ], { duration: duration * .75, easing: 'ease-in-out', fill: 'forwards' });
-      });
-      const dx = source.left + source.width / 2 - destination.left - destination.width / 2;
-      const dy = source.top + source.height / 2 - destination.top - destination.height / 2;
-      const motion = flight.animate([
-        { transform: `translate(${dx}px, ${dy}px) scale(${source.width / destination.width}, ${source.height / destination.height})` },
-        { transform: `translate(${dx * .45}px, ${dy * .45}px) rotate(-5deg)`, offset: .45 },
-        { transform: 'translate(0, 0) rotate(0deg)' },
-      ], { duration, easing: 'cubic-bezier(.22,.7,.18,1)', fill: 'both' });
-      const flip = inner.animate([
-        { transform: 'rotateY(0deg)', offset: 0 },
-        { transform: 'rotateY(0deg)', offset: .22 },
-        { transform: 'rotateY(180deg)', offset: .68 },
-        { transform: 'rotateY(180deg)', offset: 1 },
-      ], { duration, easing: 'ease-in-out', fill: 'both' });
-      flight.style.visibility = '';
-      await Promise.all([motion.finished, flip.finished]);
-    } catch { /* Leaving the table cancels the flight. */ }
+    activeDrawFlights.add(flight);
+    const ready = prepareArrivingCard(card, canvas, fallback, () => activeDrawFlights.has(flight));
+    const dx = source.left + source.width / 2 - destination.left - destination.width / 2;
+    const dy = source.top + source.height / 2 - destination.top - destination.height / 2;
+    return {
+      element: flight, ready,
+      start() {
+        const motion = flight.animate([
+          { transform: `translate(${dx}px, ${dy}px) scale(${source.width / destination.width}, ${source.height / destination.height})` },
+          { transform: `translate(${dx * .45}px, ${dy * .45}px) rotate(-5deg)`, offset: .45 },
+          { transform: 'translate(0, 0) rotate(0deg)' },
+        ], { duration, delay, easing: 'cubic-bezier(.22,.7,.18,1)', fill: 'both' });
+        const flip = inner.animate([
+          { transform: 'rotateY(0deg)', offset: 0 },
+          { transform: 'rotateY(0deg)', offset: .22 },
+          { transform: 'rotateY(180deg)', offset: .68 },
+          { transform: 'rotateY(180deg)', offset: 1 },
+        ], { duration, delay, easing: 'ease-in-out', fill: 'both' });
+        flight.style.visibility = '';
+        return [motion.finished, flip.finished];
+      },
+    };
   }
   async function finishDrawPhase(drawnCard = undefined) {
     if (!room || room.status !== 'active' || room.turn_player_id !== userId
@@ -1040,7 +1000,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     try {
       const flightCard = drawnCard === undefined
         ? (gameState?.horizon?.length ? gameState.hand.at(-1) : null) : drawnCard;
-      if (flightCard) await animateDrawToHand(flightCard);
+      if (flightCard) await animateCardsToHand([flightCard]);
       if (expected !== epoch || room?.id !== roomId || room.turn_phase !== 'draw') return;
       await rpc('play_advance_turn_phase', {
         p_room_id: roomId, p_expected_turn: turn, p_expected_phase: 'draw', p_take_extra_card: false,
@@ -1069,7 +1029,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     phaseBusy = true;
     renderTurnPhase();
     try {
-      if (takeExtraCard) await animateDrawToHand(drawnCard);
+      if (takeExtraCard) await animateCardsToHand([drawnCard]);
       if (expected !== epoch || room?.id !== roomId) return;
       await rpc('play_advance_turn_phase', {
         p_room_id: roomId,
@@ -1484,17 +1444,28 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     renderGame();
     eventNotice('');
   }
-  function stageFestival(card, handIndex, targetX = null, targetY = null) {
+  async function stageFestival(card, handIndex, targetX = null, targetY = null) {
     pendingEvent = null;
-    const drawn = (gameState.horizon || []).slice(0, 2);
-    const hand = gameState.hand.filter((_, index) => index !== handIndex).concat(drawn);
+    const originalState = gameState, expected = epoch, roomId = room.id;
+    const drawn = (originalState.horizon || []).slice(0, 2);
+    const hand = originalState.hand.filter((_, index) => index !== handIndex).concat(drawn);
     const twoDiscards = eventSupport(card)?.[1] === 'draw_two_discard_two';
     const discardCount = Math.min(twoDiscards ? 2 : 1, hand.length);
-    pendingFestival = { card, handIndex, drawn, hand, targetX, targetY, twoDiscards, discardCount };
-    discardSelections.clear();
-    handSignature = '';
-    renderGame();
     eventNotice('');
+    phaseBusy = true;
+    renderTurnPhase();
+    try {
+      await animateCardsToHand(drawn, [handIndex], 110);
+      if (expected !== epoch || room?.id !== roomId || room.turn_player_id !== userId || room.turn_phase !== 'main') return;
+      pendingFestival = { card, handIndex, drawn, hand, targetX, targetY, twoDiscards, discardCount };
+      discardSelections.clear();
+      handSignature = '';
+      renderGame();
+    } finally {
+      clearDrawFlight();
+      phaseBusy = false;
+      renderTurnPhase();
+    }
   }
   async function confirmFestival() {
     const festival = pendingFestival;
@@ -1529,6 +1500,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       discardSelections.clear();
       await refreshRoom();
       if (expected === epoch && room?.id === roomId) await loadGameState(true);
+      if (expected === epoch && room?.id === roomId && discardFlights.size) await archivePreviews.self.ready;
       if (expected === epoch && room?.id === roomId) eventNotice(`${festival.card.title} evoked · drew ${result?.drawn || 0}${result?.discarded ? ` · discarded ${result.discarded}` : ''}.`, true);
     } catch (error) {
       if (expected === epoch && room?.id === roomId) {
@@ -1544,13 +1516,26 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     }
   }
   function clearDiscardHandMotion() {
+    for (const flight of discardFlights) flight.remove();
+    discardFlights.clear();
     for (const animation of discardHandShifts) animation.cancel();
     discardHandShifts.length = 0;
     for (const card of discardHiddenCards) card.style.visibility = '';
     discardHiddenCards.clear();
   }
+  function syncLandedDiscards() {
+    const bounds = $('game-self-archive').getBoundingClientRect();
+    for (const flight of discardFlights) {
+      if (flight.dataset.landed !== 'true') continue;
+      Object.assign(flight.style, {
+        left: `${bounds.left}px`, top: `${bounds.top}px`,
+        width: `${bounds.width}px`, height: `${bounds.height}px`,
+      });
+    }
+  }
   async function animateDiscardToArchive(indexes) {
-    const destination = $('game-self-archive').getBoundingClientRect();
+    const archive = $('game-self-archive');
+    const destination = archive.getBoundingClientRect();
     if ($('game').hidden || !destination.width || !destination.height) return;
     clearDiscardHandMotion();
     const hand = $('game-hand');
@@ -1563,6 +1548,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const paddingRight = parseFloat(handStyle.paddingRight) || 0;
     const available = handBounds.width - paddingLeft - paddingRight;
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const archiveStyle = getComputedStyle(archive);
     const flights = indexes.map((index, order) => {
       const source = items[index]?.querySelector('.play-hand-card');
       const bounds = source?.getBoundingClientRect();
@@ -1573,8 +1559,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       flight.setAttribute('aria-hidden', 'true');
       flight.tabIndex = -1;
       Object.assign(flight.style, {
-        left: `${bounds.left}px`, top: `${bounds.top}px`,
-        width: `${bounds.width}px`, height: `${bounds.height}px`,
+        left: `${destination.left}px`, top: `${destination.top}px`,
+        width: `${destination.width}px`, height: `${destination.height}px`,
+        borderColor: archiveStyle.borderColor, borderRadius: archiveStyle.borderRadius,
       });
       const sourceCanvas = source.querySelector('canvas');
       const flightCanvas = flight.querySelector('canvas');
@@ -1584,17 +1571,24 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         flightCanvas.getContext('2d').drawImage(sourceCanvas, 0, 0);
       }
       document.body.append(flight);
+      discardFlights.add(flight);
       source.style.visibility = 'hidden';
       discardHiddenCards.add(source);
-      const dx = destination.left + destination.width / 2 - bounds.left - bounds.width / 2;
-      const dy = destination.top + destination.height / 2 - bounds.top - bounds.height / 2;
-      const scale = Math.min(destination.width / bounds.width, destination.height / bounds.height);
+      const dx = bounds.left + bounds.width / 2 - destination.left - destination.width / 2;
+      const dy = bounds.top + bounds.height / 2 - destination.top - destination.height / 2;
+      const scaleX = bounds.width / destination.width;
+      const scaleY = bounds.height / destination.height;
       const animation = flight.animate([
-        { transform: 'translate(0, 0) rotate(0deg) scale(1)', opacity: 1 },
-        { transform: `translate(${dx * .6}px, ${dy * .6}px) rotate(-8deg) scale(${1 + (scale - 1) * .6})`, opacity: 1, offset: .65 },
-        { transform: `translate(${dx}px, ${dy}px) rotate(0deg) scale(${scale})`, opacity: .15 },
+        { transform: `translate(${dx}px, ${dy}px) scale(${scaleX}, ${scaleY})` },
+        { transform: `translate(${dx * .4}px, ${dy * .4}px) rotate(-8deg)`, offset: .65 },
+        { transform: 'translate(0, 0) rotate(0deg)' },
       ], { duration: reducedMotion ? 100 : 650, delay: reducedMotion ? 0 : order * 85,
-        easing: 'cubic-bezier(.22,.7,.18,1)', fill: 'forwards' });
+        easing: 'cubic-bezier(.22,.7,.18,1)', fill: 'both' });
+      void animation.finished.then(() => {
+        if (!discardFlights.has(flight)) return;
+        flight.dataset.landed = 'true';
+        syncLandedDiscards();
+      }, () => {});
       return { source, flight, animation };
     }).filter(Boolean);
     if (remaining.length) {
@@ -1614,10 +1608,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
           easing: 'ease-in-out', fill: 'forwards' }));
       }
     }
-    try { await Promise.allSettled(flights.map(({ animation }) => animation.finished)); }
-    finally {
-      for (const { flight } of flights) flight.remove();
-    }
+    await Promise.allSettled(flights.map(({ animation }) => animation.finished));
   }
   async function confirmDiscardSelection() {
     if (pendingFestival) { await confirmFestival(); return; }
@@ -1642,6 +1633,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       discardSelections.clear();
       await refreshRoom();
       if (expected === epoch && room?.id === roomId) await loadGameState(true);
+      if (expected === epoch && room?.id === roomId && discardFlights.size) await archivePreviews.self.ready;
     } catch (error) {
       if (expected === epoch && room?.id === roomId) {
         await refreshRoom().catch(() => {});
@@ -1663,6 +1655,11 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const full = catalog.find(item => id && String(item.id) === String(id))
       || catalog.find(item => title && item.title?.trim().toLocaleLowerCase() === title);
     return full ? { ...card, ...full } : card;
+  }
+  function resolveHandCard(raw) {
+    const card = resolveGameCard(raw);
+    return raw?.title === 'Festival of New Canopies' && typeof raw.effect === 'string'
+      ? { ...card, effect: raw.effect } : card;
   }
   function renderArchiveGallery() {
     archiveGalleryObserver?.disconnect();
@@ -1824,8 +1821,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     canvas.hidden = true;
     fallback.hidden = false;
     fallback.textContent = card?.title || 'ARCHIVE';
+    preview.ready = null;
     if (!card) return;
-    void (async () => {
+    preview.ready = (async () => {
       const artwork = card.artwork_id ? await getArtworkUrl(card.artwork_id).catch(() => '') : '';
       const result = await renderPlayCard(canvas, card, artwork, () => serial === preview.serial);
       if (serial === preview.serial && result && !result.cancelled) {
@@ -1910,7 +1908,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       || room.turn_phase !== 'main' || phaseBusy || pendingFestival || !Array.isArray(gameState?.hand)) return;
     const rule = eventSupport(card);
     if (!rule) { eventNotice(unavailableEventReason(card)); return; }
-    if (rule[1] === 'draw_two_discard_one' || rule[1] === 'draw_two_discard_two') { stageFestival(card, handIndex); return; }
+    if (rule[1] === 'draw_two_discard_one' || rule[1] === 'draw_two_discard_two') return stageFestival(card, handIndex);
     if (rule[1] === 'recall_event' && !targetCells) {
       const options = (gameState.archive || []).flatMap((item, archiveIndex) => {
         const cardId = item.card_id || item.id;
@@ -1972,10 +1970,11 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         eventNotice('Beacon Grid needs Radiance Terrain.'); return;
       }
     }
-    if (rule[1] === 'seed_caravan') { stageFestival(card, handIndex, targetX, targetY); return; }
+    if (rule[1] === 'seed_caravan') return stageFestival(card, handIndex, targetX, targetY);
     const cardId = card.card_id || card.id;
     if (!cardId) return;
     const expected = epoch, roomId = room.id;
+    const horizon = gameState.horizon || [];
     phaseBusy = true;
     renderTurnPhase();
     try {
@@ -1991,6 +1990,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       });
       if (expected !== epoch || room?.id !== roomId) return;
       pendingEvent = null;
+      if (result?.drawn > 0) await animateCardsToHand(horizon.slice(0, result.drawn), [handIndex], 110);
+      if (expected !== epoch || room?.id !== roomId) return;
       await refreshRoom();
       if (expected === epoch && room?.id === roomId) await loadGameState(true);
       if (expected === epoch && room?.id === roomId) eventNotice(`${result?.title || card.title} evoked${result?.drawn ? ` · drew ${result.drawn}` : ''}${result?.applied ? ' · board updated' : ''}.`, true);
@@ -2001,6 +2002,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         message(friendly(error), true);
       }
     } finally {
+      clearDrawFlight();
       phaseBusy = false;
       renderTurnPhase();
     }
@@ -2220,11 +2222,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     });
   }
   function renderGameHand() {
-    const hand = (pendingFestival?.hand || (Array.isArray(gameState?.hand) ? gameState.hand : [])).map(raw => {
-      const card = resolveGameCard(raw);
-      return raw.title === 'Festival of New Canopies' && typeof raw.effect === 'string'
-        ? { ...card, effect: raw.effect } : card;
-    });
+    const hand = (pendingFestival?.hand || (Array.isArray(gameState?.hand) ? gameState.hand : [])).map(resolveHandCard);
     const signature = JSON.stringify(hand);
     if (signature === handSignature) return;
     const previousCanvases = new Map();
