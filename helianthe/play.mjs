@@ -281,6 +281,13 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (scrollToLatest) followGameLog = true;
     const entries = [...gameLogEntries, ...localGameLog]
       .sort((a, b) => a.time - b.time || Number(a.id || 0) - Number(b.id || 0));
+    for (let index = 0; index < entries.length - 1; index++) {
+      if (!entries[index].local && entries[index].message === 'drew 1 card.'
+        && /^Turn \d+ · Draw$/.test(entries[index + 1].message)) {
+        [entries[index], entries[index + 1]] = [entries[index + 1], entries[index]];
+        index++;
+      }
+    }
     const groups = [];
     for (const entry of entries) {
       const last = groups.at(-1);
