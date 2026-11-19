@@ -282,6 +282,11 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       }
     }
     const profiles = getProfiles();
+    const seats = [room?.host_id, room?.guest_id];
+    const firstTurn = gameLogEntries.find(entry => entry.message === 'will take the first turn.');
+    const knownTurn = seats.includes(room?.turn_player_id) && room?.turn_player_id && room.turn_number > 0
+      ? { number: room.turn_number, player: room.turn_player_id }
+      : firstTurn ? { number: 1, player: firstTurn.actor_id } : null;
     list.replaceChildren(...groups.map(entry => {
       const row = document.createElement('li');
       row.classList.toggle('is-private', Boolean(entry.local));
@@ -289,7 +294,15 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         : profiles.find(person => person.id === entry.actor_id)?.display_name || 'Opponent';
       const prefix = entry.local ? 'Only you · ' : entry.actor_id ? `${name} ` : '';
       const text = document.createElement('span');
-      text.textContent = prefix + entry.message;
+      const turn = !entry.local && entry.message.match(/^Turn (\d+)(?: · (.+)| began\.)$/);
+      if (turn && knownTurn && seats.every(Boolean)) {
+        const sameSeat = Math.abs(Number(turn[1]) - knownTurn.number) % 2 === 0;
+        const owner = sameSeat ? knownTurn.player : seats.find(id => id !== knownTurn.player);
+        const label = owner === userId ? 'Your turn' : "Opponent’s turn";
+        text.textContent = `Turn ${turn[1]} · ${label}${turn[2] ? ` · ${turn[2]}` : ''}`;
+      } else {
+        text.textContent = prefix + entry.message;
+      }
       row.append(text);
       if (entry.count > 1) {
         const count = document.createElement('span');
