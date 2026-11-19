@@ -161,10 +161,23 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     'Seed Convoy': ['put a fertilize counter on an fertilized node, after that draw a card.', 'fertilize_existing_draw', 'already fertilized empty space'],
     'Festival of New Canopies': ['draw 2 cards, then discard 1 card.', 'draw_two_discard_one', ''],
   };
+  const printedEventEffects = {
++    'Static Insulation': [['create 1 shield token on any terrain.', 'protect', 'Terrain']],
+    'Beacon Grid': [['add 2 lumens on radiance terrain.', 'lumens_two', 'Radiance Terrain']],
+    'Breachside Repairs': [['add 1 lumen on radiance terrain. draw 1 card.', 'lumen_draw', 'Radiance Terrain']],
+    'Grid Stabilization': [['remove crisis from radiance terrain with at least 1 lumen. draw 1 card.', 'restore_radiance_draw', 'Radiance Terrain with at least 1 Lumen']],
+    'Restoration Nursery': [['remove crisis from terrain. draw 1 card.', 'restore_draw', 'Terrain']],
+    'Scatter the Seeds': [['fertilize target node with no terrain on it. draw a card.', 'fertilize_draw', 'empty space to Fertilize']],
+    'Verdant Vineroots': [['fertilize target node with no terrain. draw a card', 'fertilize_draw', 'empty space to Fertilize']],
+    'Controlled Overload': [['add 3 lumens on radiance terrain and mark this terrain with crisis.', 'lumens_three_crisis', 'Radiance Terrain']],
+    'Rootline Breach': [['transform a radiance node into verdant. remove crisis from it.', 'rootline', 'Radiance Terrain']],
+    'Skyfire': [['dissolve any terrain along with entity on it.', 'dissolve_terrain', 'Terrain'], ['dissolve any terrain.', 'dissolve_terrain', 'Terrain'], ['dissolve any entity.', 'dissolve_entity', 'Entity']],
+  };
   function eventSupport(card) {
     if (card?.card_type === 'Event' && !String(card.effect || '').trim()) return ['', 'none', ''];
+    const effect = String(card?.effect || '').replace(/\s+/g, ' ').trim().toLowerCase();
     const rule = eventEffects[card?.title];
-    return rule && String(card?.effect || '').replace(/\s+/g, ' ').trim().toLowerCase() === rule[0] ? rule : null;
+    return rule?.[0] === effect ? rule : printedEventEffects[card?.title]?.find(([text]) => text === effect) ?? null;
   }
   function unavailableEventReason(card) {
     if (card?.title === 'Skyfire') {
@@ -194,9 +207,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (kind === 'fertilize_two' || kind === 'fertilize_draw') return !node?.terrain;
     if (kind === 'fertilize_existing_draw') return !node?.terrain && Boolean(node?.fertilize);
     if (!node?.terrain) return false;
-    if (kind === 'protect') return true;
+    if (kind === 'protect' || kind === 'restore_draw' || kind === 'dissolve_terrain') return true;
+    if (kind === 'dissolve_entity') return Boolean(node.entity);
     if (kind === 'unprotect_entity') return Boolean(node.entity && node.protected);
-    if (kind === 'protect_radiance_draw') return node.terrain === 'Radiance' && Number(node.lumens || 0) >= 1;
+    if (kind === 'protect_radiance_draw' || kind === 'restore_radiance_draw') return node.terrain === 'Radiance' && Number(node.lumens || 0) >= 1;
     return node.terrain === 'Radiance';
   }
   const terrainTypes = ['Symbiosis', 'Flow', 'Verdant', 'Radiance'];
