@@ -734,7 +734,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     button.disabled = openingRollBusy;
     button.textContent = reroll ? 'Roll Dices Again' : 'Roll Dices';
     $('opening-roll-status').classList.toggle('is-result', Boolean(revealing));
-    $('opening-roll-status').textContent = revealing
+    $('opening-roll-status').textContent = openingRollBusy ? 'Rolling dices…' : revealing
       ? winnerId === userId ? 'You decide who plays first' : 'Opponent decides who plays first'
       : '';
     $('opening-roll-error').hidden = !openingRollError;
