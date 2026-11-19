@@ -336,7 +336,9 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
 .play-game-log-scroll ol { display: grid; gap: .2rem; margin: 0; padding: 0; list-style: none; }
 .play-game-log-scroll li { display: flex; align-items: start; justify-content: space-between; gap: .25rem; padding: .22rem .28rem; overflow-wrap: anywhere; border-radius: 4px; background: #ffffff0e; }
 .play-game-log-scroll li.is-private { color: #f8dfac; background: #c58e311d; }
-.play-game-log-count { flex: 0 0 auto; font-weight: 800; color: #f8dfac; }
+.play-game-log-scroll li.is-own-action { color: #ffe2a2; background: #e6a63220; box-shadow: inset 2px 0 #ffcf6e80; padding-inline-start: .45rem; }
+.play-game-log-scroll li.is-opponent-action { color: #c2ddff; background: #4378ce30; box-shadow: inset 2px 0 #629fff90; padding-inline-start: .45rem; }
+.play-game-log-count { flex: 0 0 auto; font-weight: 800; }
 .play-game-log-scroll p { margin: .2rem 0; }
 .play-game-log-scroll button { margin: 0 0 .25rem; padding: .18rem .35rem; border-color: #739786; background: #305443; color: inherit; font: inherit; }
 .play-game-log-scroll button:hover:not(:disabled) { background: #477452; }
@@ -392,10 +394,7 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
 #play-game .play-game-phase-stack { position: absolute; grid-column: 3; inset-block: var(--play-sidebar-top-gap, 3.5rem) var(--play-sidebar-bottom-gap, 0px); inset-inline: 0; }
 .play-game-phase-stack > .play-game-phases, .play-game-phase-stack > .play-game-phase-actions { flex: 0 0 auto; }
 .play-game-phases .play-eyebrow { color: #d7c9a7; }
-.play-game-turn-owner { display: flex; align-items: center; gap: .4rem; margin: 0; color: var(--play-turn-accent, #f5f2e8); font-size: .8rem; font-weight: 800; }
-.play-game-turn-owner::before { content: ''; display: none; flex: 0 0 .55rem; width: .55rem; height: .55rem; border: 2px solid currentColor; border-radius: 50%; }
-.is-your-turn .play-game-turn-owner::before { display: block; background: currentColor; box-shadow: 0 0 0 2px #efd89438; }
-.is-opponent-turn .play-game-turn-owner::before { display: block; }
+.play-game-turn-owner { margin: 0; color: var(--play-turn-accent, #f5f2e8); font-size: .8rem; font-weight: 800; }
 .play-game-phase-list { display: grid; gap: .1rem; margin: .35rem 0 0; padding: 0; list-style: none; }
 .play-game-phase-list li { display: flex; align-items: center; gap: .4rem; min-height: 1.1rem; padding: .08rem .2rem; color: #f5f2e8; font-size: .75rem; font-weight: 700; line-height: 1.15; }
 .play-game-phase-list li.is-current { color: var(--play-turn-accent, #d4eadf); font-weight: 900; }
