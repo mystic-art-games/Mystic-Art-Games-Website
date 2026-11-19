@@ -2793,16 +2793,12 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       scene.setAttribute('aria-hidden', 'true');
       const artwork = document.createElement('img');
       artwork.className = 'play-table-art';
-      artwork.src = './assets/fantasy-table-helianthe.png';
+      artwork.src = './assets/lobby-table-host-wood.png';
       artwork.alt = '';
       artwork.loading = 'lazy';
-      const seatedHost = document.createElement('img');
-      seatedHost.className = 'play-table-host-figure';
-      seatedHost.src = './assets/seated-table-host-arcane-v2.png';
-      seatedHost.alt = '';
       const hostProfile = getProfiles().find(profile => profile.id === entry.host_id);
       const hostAvatar = makeAvatar(hostProfile || { display_name: entry.host_name }, 'play-table-host-avatar');
-      scene.append(artwork, seatedHost, hostAvatar);
+      scene.append(artwork, hostAvatar);
       const details = document.createElement('div'); details.className = 'play-table-details';
       const title = document.createElement('strong'); title.textContent = entry.name || defaultTableName(entry.host_name);
       const summary = document.createElement('span'); summary.textContent = `${entry.host_name} · ${entry.player_count} / 2 players`;
