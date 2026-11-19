@@ -312,8 +312,19 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
 #play-game .play-beginning-effects > button { width: 100%; padding: .5rem; background: #477452; }
 .play-beginning-effects > button[hidden] { display: none; }
 #play-game .play-beginning-effects button:disabled { cursor: default; opacity: .5; }
-.play-game-phase-stack { --play-phase-inline-inset: .6rem; position: relative; min-width: 0; width: max-content; max-width: 100%; }
+.play-game-phase-stack { --play-phase-inline-inset: .6rem; position: relative; display: flex; flex-direction: column; gap: .45rem; min-width: 0; min-height: 0; }
 .play-game-phase-stack[hidden] { display: none !important; }
+.play-game-log { display: flex; flex: 1 1 auto; flex-direction: column; min-height: 0; padding: .45rem; border: 1px solid #739786; border-radius: 10px; background: #1b352be8; color: #f5f2e8; box-shadow: 0 4px 12px #130b0a55; }
+.play-game-log h2 { flex: 0 0 auto; margin: 0 0 .3rem; font-size: .78rem; line-height: 1.25; }
+.play-game-log-scroll { min-height: 0; overflow-y: auto; overscroll-behavior: contain; font-size: .72rem; line-height: 1.3; }
+.play-game-log-scroll ol { display: grid; gap: .2rem; margin: 0; padding: 0; list-style: none; }
+.play-game-log-scroll li { display: flex; align-items: start; justify-content: space-between; gap: .25rem; padding: .22rem .28rem; overflow-wrap: anywhere; border-radius: 4px; background: #ffffff0e; }
+.play-game-log-scroll li.is-private { color: #f8dfac; background: #c58e311d; }
+.play-game-log-count { flex: 0 0 auto; font-weight: 800; color: #f8dfac; }
+.play-game-log-scroll p { margin: .2rem 0; }
+.play-game-log-scroll button { margin: 0 0 .25rem; padding: .18rem .35rem; border-color: #739786; background: #305443; color: inherit; font: inherit; }
+.play-game-log-scroll button:hover:not(:disabled) { background: #477452; }
+.play-game-log-scroll [hidden] { display: none; }
 .play-game-phases { box-sizing: border-box; min-width: 0; width: 100%; padding: .6rem; overflow: visible; border: 2px solid #123c2d; border-radius: 12px; background: #1b352bd9; color: #f5f2e8; box-shadow: inset 0 1px 0 #fff2cf36, 0 4px 12px #130b0a55; }
 .play-game-phases.is-your-turn { --play-turn-accent: #f8e6b5; border-color: #efd894; box-shadow: inset 0 1px 0 #fff2cf36, 0 0 0 2px #efd89438, 0 0 18px #efd89442, 0 4px 12px #130b0a55; }
 .play-game-phases.is-opponent-turn { --play-turn-accent: #c9dbe1; border-color: #7794a1; box-shadow: inset 0 1px 0 #fff2cf36, 0 4px 12px #130b0a55; }
@@ -362,7 +373,8 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
 #play-game #play-opening-roll-button { grid-row: 4; justify-self: center; min-width: 10rem; margin: 0; }
 .play-opening-roll-error { grid-row: 5; margin: 0; color: #ffd6ce; }
 @media (prefers-reduced-motion: reduce) { .play-game-phase-stack.is-appearing, .play-opening-die.is-rolling, .play-opening-die.is-landing { animation: none; } }
-#play-game .play-game-phase-stack { grid-column: 3; grid-row: 1; justify-self: end; align-self: center; }
+#play-game .play-game-phase-stack { grid-column: 3; grid-row: 1; justify-self: end; align-self: end; width: 100%; max-height: calc(100% - var(--play-sidebar-bottom-gap, 0px)); margin-bottom: var(--play-sidebar-bottom-gap, 0px); }
+.play-game-phase-stack > .play-game-phases, .play-game-phase-stack > .play-game-phase-actions { flex: 0 0 auto; }
 .play-game-phases .play-eyebrow { color: #d7c9a7; }
 .play-game-turn-owner { display: flex; align-items: center; gap: .4rem; margin: .4rem 0 0; color: var(--play-turn-accent, #f5f2e8); font-size: .8rem; font-weight: 800; }
 .play-game-turn-owner::before { content: ''; display: none; flex: 0 0 .55rem; width: .55rem; height: .55rem; border: 2px solid currentColor; border-radius: 50%; }
@@ -380,7 +392,7 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
 .play-game-discard-bar button:disabled { cursor: default; opacity: .55; }
 .play-game-phase-marker { flex: 0 0 .7rem; width: .7rem; height: .7rem; border: 1px solid #d4cfb6; border-radius: 50%; background: transparent; }
 .play-game-phase-list li.is-current .play-game-phase-marker { border-color: var(--play-turn-accent, #7ba98a); background: var(--play-turn-accent, #7ba98a); box-shadow: 0 0 0 2px #fff6d83d; }
-.play-game-phase-actions { position: absolute; top: calc(100% + .5rem); right: calc(var(--play-phase-inline-inset) + 2px); left: calc(var(--play-phase-inline-inset) + 2px); display: grid; grid-template-rows: 2.5rem; }
+.play-game-phase-actions { display: grid; grid-template-rows: 2.5rem; margin-inline: calc(var(--play-phase-inline-inset) + 2px); }
 .play-game-phase-actions[hidden] { display: none; }
 .play-game-next-phase { box-sizing: border-box; width: 100%; height: 100%; margin: 0; padding: .55rem .8rem; border-radius: 10px; }
 .play-game-next-phase[hidden] { display: none; }
@@ -414,10 +426,10 @@ body.dark-mode button.play-game-extra-draw:hover:not(:disabled) { box-shadow: in
   #play-game .play-beginning-effects { position: fixed; top: auto; right: .5rem; bottom: .5rem; left: .5rem; width: auto; max-height: min(36dvh, 280px); margin: 0 auto; }
   #play-game .play-game-card-preview { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(325px, 70vw, 56vh); max-height: calc(100dvh - 1rem); }
   #play-game .play-game-table { flex: 1 1 0; min-height: 0; height: auto; }
-  #play-game .play-game-phase-stack { --play-phase-inline-inset: .5rem; order: -1; flex: 0 0 auto; width: 100%; }
+  #play-game .play-game-phase-stack { --play-phase-inline-inset: .5rem; flex: 0 0 auto; align-self: stretch; width: 100%; max-height: none; margin-bottom: 0; }
+  .play-game-log { max-height: clamp(3rem, 11dvh, 6rem); }
   .play-game-phases { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; align-items: center; gap: .5rem; padding: .3rem .5rem; }
   .play-game-turn-owner, .play-game-phase-list { margin: 0; }
-  .play-game-phase-actions { position: static; margin: .35rem calc(var(--play-phase-inline-inset) + 2px) 0; }
   .play-game-phase-list { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .2rem; }
   .play-game-phase-list li { min-height: 1.8rem; padding: .25rem; font-size: .65rem; }
 }

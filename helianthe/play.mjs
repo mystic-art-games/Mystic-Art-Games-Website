@@ -39,6 +39,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   let archiveBrowserSeat = null, archiveBrowserCards = [], archiveBrowserIndex = 0, archiveBrowserHoverIndex = null;
   let archiveBrowserRequestSerial = 0, archiveBrowserCardSerial = 0, archiveBrowserOpener = null;
   let archiveBrowserLoading = false, archiveBrowserError = '';
+  const gameLogPageSize = 120;
+  let gameLogKey = '', gameLogRevision = null, gameLogRequest = null, gameLogRetryAt = 0;
+  let gameLogEntries = [], localGameLog = [], gameLogHasOlder = false, gameLogError = '';
   let archiveGalleryObserver = null;
   let selectedGameCard = null, selectedHandIndex = null, pendingEvent = null, pendingEntity = null, pendingFestival = null, arrivingEntityKey = null, zoneCounts = null, zoneCountsRevision = null, zoneCountsRequest = null, eventNoticeTimer = null;
   const discardSelections = new Set();
@@ -83,6 +86,14 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         </div>
       </div>
       <div class="play-game-phase-stack" hidden>
+      <section class="play-game-log" aria-labelledby="play-game-log-title">
+        <h2 id="play-game-log-title">Game Log</h2>
+        <div id="play-game-log-scroll" class="play-game-log-scroll" tabindex="0" aria-label="Game log entries">
+          <button id="play-game-log-older" type="button" hidden>Load older</button>
+          <p id="play-game-log-status">No activity yet.</p>
+          <ol id="play-game-log-list"></ol>
+        </div>
+      </section>
       <aside id="play-game-phases" class="play-game-phases" aria-label="Turn phases" hidden>
         <p id="play-game-turn-owner" class="play-game-turn-owner" aria-live="polite"></p>
         <ol class="play-game-phase-list">
@@ -130,10 +141,14 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     root.style.setProperty('--play-extra-hand-height', `${extraHandHeight}px`);
     const handTop = $('game-self').getBoundingClientRect().top;
     if (handTop > 0) root.style.setProperty('--play-hand-top', `${handTop}px`);
+    const boardWrap = root.querySelector('.play-game-board-wrap');
+    const desktop = window.matchMedia('(min-width: 901px)').matches;
+    const sidebarGap = Math.max(0, boardWrap.getBoundingClientRect().bottom - handTop + 8);
+    root.style.setProperty('--play-sidebar-bottom-gap', `${sidebarGap}px`);
     const currentOffset = parseFloat(table.style.getPropertyValue('--play-table-offset-y')) || 0;
     const boardRect = board.getBoundingClientRect();
     if (boardRect.height) {
-      const centeredOffset = handTop / 2 - (boardRect.top + boardRect.height / 2 - currentOffset);
+      const centeredOffset = desktop ? handTop / 2 - (boardRect.top + boardRect.height / 2 - currentOffset) : 0;
       table.style.setProperty('--play-table-offset-y', `${centeredOffset}px`);
     }
     const bounds = cell.getBoundingClientRect();
@@ -141,11 +156,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (!width || !height) return;
     root.style.setProperty('--play-map-card-width', `${width}px`);
     root.style.setProperty('--play-map-card-height', `${height}px`);
-    const boardWrap = root.querySelector('.play-game-board-wrap');
     const wrapBounds = boardWrap.getBoundingClientRect();
     const boardBounds = $('game-board').getBoundingClientRect();
     root.style.setProperty('--play-map-board-height', `${boardBounds.height}px`);
-    if (window.matchMedia('(min-width: 901px)').matches) {
+    if (desktop) {
       const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
       const badgeLeft = element => {
         const badge = getComputedStyle(element, '::after');
@@ -230,7 +244,111 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     }
     return 'This Event effect is not available in online play yet.';
   }
-  function eventNotice(text, temporary = false, error = false, dismissible = false, duration = 4500) {
+  function matchLogKey() {
+    return userId && room?.activated_at ? `${userId}:${room.id}:${room.activated_at}` : '';
+  }
+  function syncGameLogScope() {
+    const key = matchLogKey();
+    if (key === gameLogKey) return;
+    gameLogKey = key;
+    gameLogEntries = [];
+    localGameLog = [];
+    gameLogRevision = null;
+    gameLogRequest = null;
+    gameLogRetryAt = 0;
+    gameLogHasOlder = false;
+    gameLogError = '';
+    renderGameLog(true);
+  }
+  function renderGameLog(scrollToLatest = false, prepended = false) {
+    const scroll = $('game-log-scroll');
+    const list = $('game-log-list');
+    const previousHeight = scroll.scrollHeight;
+    const previousTop = scroll.scrollTop;
+    const atBottom = previousHeight - previousTop - scroll.clientHeight < 24;
+    const entries = [...gameLogEntries, ...localGameLog]
+      .sort((a, b) => a.time - b.time || Number(a.id || 0) - Number(b.id || 0));
+    const groups = [];
+    for (const entry of entries) {
+      const last = groups.at(-1);
+      if (last && last.message === entry.message && last.actor_id === entry.actor_id && last.local === entry.local) {
+        last.count += entry.count || 1;
+      } else {
+        groups.push({ ...entry, count: entry.count || 1 });
+      }
+    }
+    const profiles = getProfiles();
+    list.replaceChildren(...groups.map(entry => {
+      const row = document.createElement('li');
+      row.classList.toggle('is-private', Boolean(entry.local));
+      const name = entry.actor_id === userId ? 'You'
+        : profiles.find(person => person.id === entry.actor_id)?.display_name || 'Opponent';
+      const prefix = entry.local ? 'Only you · ' : entry.actor_id ? `${name} ` : '';
+      const text = document.createElement('span');
+      text.textContent = prefix + entry.message;
+      row.append(text);
+      if (entry.count > 1) {
+        const count = document.createElement('span');
+        count.className = 'play-game-log-count';
+        count.textContent = `x${entry.count}`;
+        row.append(count);
+      }
+      return row;
+    }));
+    const status = $('game-log-status');
+    status.textContent = gameLogError || (entries.length ? '' : 'No activity yet.');
+    status.hidden = !status.textContent;
+    $('game-log-older').hidden = !gameLogHasOlder;
+    if (prepended) scroll.scrollTop = previousTop + scroll.scrollHeight - previousHeight;
+    else if (atBottom || scrollToLatest) scroll.scrollTop = scroll.scrollHeight;
+    else scroll.scrollTop = previousTop;
+  }
+  function logPrivateNotice(text) {
+    if (!text || inLobby || room?.status !== 'active' || !matchLogKey()) return;
+    syncGameLogScope();
+    const last = localGameLog.at(-1);
+    if (last?.message === text && last.seenRevision === room.revision
+      && !(gameLogEntries.at(-1)?.time > last.time)) {
+      last.count++;
+    } else {
+      localGameLog.push({ message: text, local: true, time: Date.now(), seenRevision: room.revision, count: 1 });
+    }
+    renderGameLog();
+  }
+  async function loadGameLog(older = false) {
+    syncGameLogScope();
+    if (!gameLogKey || gameLogRequest || Date.now() < gameLogRetryAt) return;
+    const revision = room.revision;
+    if (older ? !gameLogHasOlder : gameLogRevision === revision) return;
+    const request = { key: gameLogKey };
+    gameLogRequest = request;
+    let builder = client.from('play_game_log').select('id,actor_id,message,created_at')
+      .eq('room_id', room.id).eq('match_started_at', room.activated_at);
+    const latest = gameLogEntries.at(-1);
+    if (older) builder = builder.lt('id', gameLogEntries[0].id);
+    else if (latest) builder = builder.gt('id', latest.id);
+    const ascending = !older && Boolean(latest);
+    const { data, error } = await builder.order('id', { ascending }).limit(gameLogPageSize);
+    if (gameLogRequest !== request || matchLogKey() !== request.key) return;
+    gameLogRequest = null;
+    if (error) {
+      gameLogRetryAt = Date.now() + 10000;
+      gameLogError = 'Shared activity is unavailable.';
+      renderGameLog();
+      return;
+    }
+    gameLogError = '';
+    let rows = (data || []).map(row => ({ ...row, time: Date.parse(row.created_at) }));
+    if (!ascending) rows = rows.reverse();
+    if (older || !latest) gameLogHasOlder = rows.length === gameLogPageSize;
+    gameLogEntries = older ? [...rows, ...gameLogEntries] : [...gameLogEntries, ...rows];
+    if (!older && (!ascending || rows.length < gameLogPageSize)) gameLogRevision = revision;
+    renderGameLog(false, older);
+    if (gameLogRevision !== room.revision) void loadGameLog();
+  }
+  $('game-log-older').addEventListener('click', () => void loadGameLog(true));
+  function eventNotice(text, temporary = false, error = false, dismissible = false, duration = 4500, alreadyLogged = false) {
+    if (!alreadyLogged) logPrivateNotice(text);
     if (eventNoticeTimer) clearTimeout(eventNoticeTimer);
     const notice = $('game-event-notice');
     $('game-event-notice-text').textContent = text || '';
@@ -404,7 +522,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const extra = $('game-extra-draw');
     extra.hidden = !own || phase !== 'main' || Boolean(room?.main_played_card);
     extra.disabled = phaseBusy || pendingFestival || !Array.isArray(gameState?.horizon) || gameState.horizon.length === 0;
-    next.parentElement.hidden = next.hidden && extra.hidden;
+    next.parentElement.hidden = phases.hidden || (next.hidden && extra.hidden);
   }
   function renderOpeningRoll() {
     const overlay = $('opening-roll');
@@ -445,7 +563,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     }
     const mulligan = room?.status === 'active' && ['mulligan_first', 'mulligan_second'].includes(room.turn_phase);
     phases.hidden = rolling || revealing || choosing || mulligan || mulliganBusy;
-    phaseStack.hidden = phases.hidden;
+    phaseStack.hidden = !overlay.hidden;
+    renderTurnPhase();
     const choice = $('opening-choice');
     choice.hidden = !choosing || revealing;
     renderMulligan();
@@ -549,6 +668,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     } catch (error) {
       if (expected === epoch && room?.id === roomId) {
         openingRollError = friendly(error);
+        logPrivateNotice(openingRollError);
         await refreshRoom().catch(() => {});
       }
     } finally {
@@ -864,7 +984,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       if (expected !== epoch || room?.id !== roomId) return;
       await refreshRoom();
       if (expected === epoch && room?.id === roomId) await loadGameState(true);
-      eventNotice(`${effects.length} Entity effect${effects.length === 1 ? '' : 's'} resolved${result?.drawn ? `; drew ${result.drawn} card${result.drawn === 1 ? '' : 's'}` : ''}.`, true);
+      eventNotice(`${effects.length} Entity effect${effects.length === 1 ? '' : 's'} resolved${result?.drawn ? `; drew ${result.drawn} card${result.drawn === 1 ? '' : 's'}` : ''}.`, true, false, false, 4500, true);
     } catch (error) {
       if (expected === epoch && room?.id === roomId) {
         await refreshRoom().catch(() => {});
@@ -1156,6 +1276,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   async function disconnect() {
     ++epoch; ++fetchSerial;
+    gameLogKey = '';
+    gameLogRequest = null;
     pendingDeckId = null;
     ++gameRenderSerial; gameState = null; gameLoading = false; gameLoadFailed = false; gameReloadPending = false; handSignature = '';
     phaseBusy = false; drawRetryAt = 0; clearDrawFlight(); clearMulliganFlights(); clearDiscardHandMotion(); discardSelections.clear(); pendingFestival = null; arrivingEntityKey = null;
@@ -1501,7 +1623,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       await refreshRoom();
       if (expected === epoch && room?.id === roomId) await loadGameState(true);
       if (expected === epoch && room?.id === roomId && discardFlights.size) await archivePreviews.self.ready;
-      if (expected === epoch && room?.id === roomId) eventNotice(`${festival.card.title} evoked · drew ${result?.drawn || 0}${result?.discarded ? ` · discarded ${result.discarded}` : ''}.`, true);
+      if (expected === epoch && room?.id === roomId) eventNotice(`${festival.card.title} evoked · drew ${result?.drawn || 0}${result?.discarded ? ` · discarded ${result.discarded}` : ''}.`, true, false, false, 4500, true);
     } catch (error) {
       if (expected === epoch && room?.id === roomId) {
         pendingFestival = null;
@@ -1994,7 +2116,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       if (expected !== epoch || room?.id !== roomId) return;
       await refreshRoom();
       if (expected === epoch && room?.id === roomId) await loadGameState(true);
-      if (expected === epoch && room?.id === roomId) eventNotice(`${result?.title || card.title} evoked${result?.drawn ? ` · drew ${result.drawn}` : ''}${result?.applied ? ' · board updated' : ''}.`, true);
+      if (expected === epoch && room?.id === roomId) eventNotice(`${result?.title || card.title} evoked${result?.drawn ? ` · drew ${result.drawn}` : ''}${result?.applied ? ' · board updated' : ''}.`, true, false, false, 4500, true);
     } catch (error) {
       if (expected === epoch && room?.id === roomId) {
         await refreshRoom().catch(() => {});
@@ -2041,7 +2163,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       if (expected === epoch && room?.id === roomId) await loadGameState(true);
       if (expected === epoch && room?.id === roomId) eventNotice(result?.action === 'shape'
         ? `${result?.title || card.title} shaped ${result?.terrain || entityShapeTerrain(card)} Terrain. Card-specific effects are not automated yet.`
-        : `${result?.title || card.title} placed on ${result?.terrain || room.board?.[`${targetX},${targetY}`]?.terrain} Terrain. Card-specific effects are not automated yet.`, true);
+        : `${result?.title || card.title} placed on ${result?.terrain || room.board?.[`${targetX},${targetY}`]?.terrain} Terrain. Card-specific effects are not automated yet.`, true, false, false, 4500, true);
     } catch (error) {
       if (expected === epoch && room?.id === roomId) {
         await refreshRoom().catch(() => {});
@@ -2694,6 +2816,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     $('session').hidden = !userId || !room || playing || inLobby;
     $('game').hidden = !playing;
     $('game-result').hidden = !finished;
+    if (playing) void loadGameLog();
     if (finished) $('game-result-title').textContent = room.conceded_by === userId ? 'You Lost' : 'You Won';
     if (!room) { controls(); return; }
     if (inLobby) { updateAwayDisplays(); controls(); return; }
