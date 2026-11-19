@@ -164,7 +164,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   };
   const printedEventEffects = {
     'Spark of Invention': [['recall any event from archive to your hand.', 'recall_event', '']],
-    'Grid Reconfiguration': [['transform terrain to different type if there's no entity.', 'reconfigure', 'unoccupied Terrain']],
+    'Grid Reconfiguration': [["transform terrain to different type if there's no entity.", 'reconfigure', 'unoccupied Terrain']],
     'Greenway Advance': [['create verdant terrain on a legal blank node. then create verdant terrain on a legal blank node adjacent to it.', 'greenway', 'empty space adjacent to Terrain']],
     'Greenway Accord': [['choose one connected group of symbiosis fields. remove crisis from one field in that group. if the group contains at least 3 fields, draw 1 card.', 'accord', 'Symbiosis Terrain']],
     'Tangle': [['choose a node with 2 adjacent verdant terrains. remove all counters from that node, then dissolve the terrain and the entity on that node.', 'tangle', 'Node next to at least two Verdant Terrain cards']],
