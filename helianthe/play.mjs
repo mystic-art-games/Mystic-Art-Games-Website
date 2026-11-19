@@ -203,6 +203,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   const deckField = $('deck-field');
   const readyButton = $('ready');
   const phaseOrder = ['beginning', 'draw', 'main', 'end'];
+  let phaseAdvanceTimer = null, phaseAdvanceKey = '', phaseAdvanceRetryAt = 0;
   const eventEffects = {
     'Static Insulation': ['protect any terrain.', 'protect', 'Terrain'],
     'Verdant Faultline': ['unprotect any entity.', 'unprotect_entity', 'protected Entity'],
@@ -549,6 +550,25 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       item.querySelector('.play-hand-card')?.classList.toggle('is-discard-selected', (required > 0 || pendingFestival) && discardSelections.has(index));
     }
   }
+  function automaticPhaseKey() {
+    if (!visible || inLobby || $('game').hidden || room?.status !== 'active'
+      || room.turn_player_id !== userId || !gameState || phaseBusy || pendingFestival) return '';
+    const phase = room.turn_phase;
+    if ((phase === 'beginning' && beginningEffects().length === 0)
+      || (phase === 'end' && requiredDiscards() === 0)) return `${epoch}:${room.id}:${room.turn_number}:${phase}`;
+    return '';
+  }
+  function syncAutomaticPhase() {
+    const key = automaticPhaseKey();
+    if (key === phaseAdvanceKey) return;
+    clearTimeout(phaseAdvanceTimer);
+    phaseAdvanceKey = key;
+    phaseAdvanceTimer = key ? setTimeout(() => {
+      phaseAdvanceTimer = null;
+      phaseAdvanceKey = '';
+      if (automaticPhaseKey() === key) void advanceTurnPhase(false, true);
+    }, Math.max(1000, phaseAdvanceRetryAt - Date.now())) : null;
+  }
   function renderTurnPhase() {
     const phase = room?.turn_phase;
     const phaseIndex = phaseOrder.indexOf(phase);
@@ -569,18 +589,14 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       else step.removeAttribute('aria-current');
     }
     const next = $('game-next-phase');
-    next.textContent = phase === 'end' ? 'Pass Turn' : 'Next Phase';
-    const excess = requiredDiscards();
-    next.hidden = !own || phase === 'draw' || (phase === 'main' && !room?.main_played_card)
-      || (phase === 'end' && (!gameState || excess > 0));
-    next.disabled = !room || room.status !== 'active' || !own || phaseBusy || pendingFestival || phaseIndex < 0
-      || (phase === 'beginning' && beginningEffects().length > 0)
-      || (phase === 'beginning' && !gameState);
+    next.hidden = !own || phase !== 'main' || !room?.main_played_card;
+    next.disabled = !activeTurn || !own || phaseBusy || Boolean(pendingFestival);
     syncDiscardBar();
     const extra = $('game-extra-draw');
     extra.hidden = !own || phase !== 'main' || Boolean(room?.main_played_card);
     extra.disabled = phaseBusy || pendingFestival || !Array.isArray(gameState?.horizon) || gameState.horizon.length === 0;
     next.parentElement.hidden = phases.hidden;
+    syncAutomaticPhase();
   }
   function renderOpeningRoll() {
     const overlay = $('opening-roll');
@@ -1199,7 +1215,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       renderTurnPhase();
     }
   }
-  async function advanceTurnPhase(takeExtraCard = false) {
+  async function advanceTurnPhase(takeExtraCard = false, automatic = false) {
     if (!room || room.status !== 'active' || room.turn_player_id !== userId || phaseBusy) return;
     if (room.turn_phase === 'beginning' && !gameState) return;
     if (takeExtraCard && (room.turn_phase !== 'main' || !gameState?.horizon?.length)) return;
@@ -1228,6 +1244,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       }
     } catch (error) {
       if (expected === epoch && room?.id === roomId) {
+        if (automatic) phaseAdvanceRetryAt = Date.now() + 5000;
         await refreshRoom().catch(() => {});
         message(friendly(error), true);
       }
@@ -1335,6 +1352,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   async function disconnect() {
     ++epoch; ++fetchSerial;
+    clearTimeout(phaseAdvanceTimer);
+    phaseAdvanceTimer = null;
+    phaseAdvanceKey = '';
+    phaseAdvanceRetryAt = 0;
     gameLogKey = '';
     gameLogRequest = null;
     pendingDeckId = null;
