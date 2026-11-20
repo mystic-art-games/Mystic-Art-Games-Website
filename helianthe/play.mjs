@@ -2841,7 +2841,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       const wasAway = inLobby;
       await disconnect(); room = null; inLobby = false; remember(null); render(); await listTables();
       if (data) message('This table belongs to another account. Sign in with the account that joined it.');
-      else if (wasAway) message('This table is no longer available.');
+      else message(wasAway ? 'This table is no longer available.' : 'The table was smashed.');
       return;
     }
     const turnChanged = room.turn_number !== data.turn_number || room.turn_phase !== data.turn_phase
@@ -2938,6 +2938,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     channel = client.channel(`play-room:${id}`)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'play_rooms', filter: `id=eq.${id}` }, () => {
         if (expected === epoch) void refreshRoom().catch(error => message(friendly(error), true));
+      }).on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'play_rooms' }, payload => {
+        if (expected === epoch && payload.old?.id === id) void refreshRoom().catch(error => message(friendly(error), true));
       }).subscribe(status => {
         if (expected !== epoch) return;
         live = status === 'SUBSCRIBED';
