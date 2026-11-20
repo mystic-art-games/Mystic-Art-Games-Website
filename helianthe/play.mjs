@@ -1463,9 +1463,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const shouldPlay = visible && !document.hidden && userId && (!room || inLobby || room.status === 'waiting');
     if (!shouldPlay) {
       if (lobbyAmbient) {
-        const { context, volume, sources } = lobbyAmbient;
+        const { context, volume, timer } = lobbyAmbient;
+        clearInterval(timer);
         volume.gain.setTargetAtTime(0.0001, context.currentTime, 0.2);
-        for (const source of sources) source.stop(context.currentTime + 0.9);
         lobbyAmbient = null;
       }
       return;
@@ -1478,27 +1478,49 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       if (context.state === 'suspended') void context.resume();
       const volume = context.createGain();
       volume.gain.setValueAtTime(0.0001, context.currentTime);
-      volume.gain.setTargetAtTime(0.055, context.currentTime, 1.2);
+      volume.gain.setTargetAtTime(0.16, context.currentTime, 1.2);
       volume.connect(context.destination);
-      const noise = context.createBuffer(1, context.sampleRate * 2, context.sampleRate);
-      const samples = noise.getChannelData(0);
-      for (let i = 0; i < samples.length; i++) samples[i] = Math.random() * 2 - 1;
-      const breeze = context.createBufferSource();
-      const filter = context.createBiquadFilter();
-      breeze.buffer = noise;
-      breeze.loop = true;
-      filter.type = 'lowpass';
-      filter.frequency.value = 320;
-      breeze.connect(filter).connect(volume);
-      const tone = context.createOscillator();
-      const toneVolume = context.createGain();
-      tone.type = 'sine';
-      tone.frequency.value = 130.81;
-      toneVolume.gain.value = 0.08;
-      tone.connect(toneVolume).connect(volume);
-      breeze.start();
-      tone.start();
-      lobbyAmbient = { context, volume, sources: [breeze, tone] };
+      const playNote = (frequency, start, duration, level, type = 'sine') => {
+        const oscillator = context.createOscillator();
+        const envelope = context.createGain();
+        oscillator.type = type;
+        oscillator.frequency.value = frequency;
+        envelope.gain.setValueAtTime(0.0001, start);
+        envelope.gain.linearRampToValueAtTime(level, start + 0.025);
+        envelope.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+        oscillator.connect(envelope).connect(volume);
+        oscillator.start(start);
+        oscillator.stop(start + duration);
+      };
+      const chords = [
+        [130.81, 261.63, 329.63, 392],
+        [110, 220, 261.63, 329.63],
+        [146.83, 293.66, 349.23, 440],
+        [98, 196, 246.94, 349.23],
+      ];
+      const melodies = [
+        [392, 440, 493.88, 392],
+        [329.63, 392, 440, 329.63],
+        [349.23, 440, 523.25, 440],
+        [392, 349.23, 293.66, 246.94],
+      ];
+      const beat = 0.55;
+      let bar = 0;
+      let nextBar = context.currentTime + 0.05;
+      const schedule = () => {
+        while (nextBar < context.currentTime + 2.5) {
+          const chord = chords[bar % chords.length];
+          chord.slice(1).forEach(frequency => playNote(frequency, nextBar, beat * 3.8, 0.035));
+          for (let i = 0; i < 4; i++) {
+            playNote(chord[0], nextBar + i * beat, beat * 0.5, 0.08, 'triangle');
+            playNote(melodies[bar % melodies.length][i], nextBar + i * beat, beat * 0.75, 0.1, 'triangle');
+          }
+          nextBar += beat * 4;
+          bar++;
+        }
+      };
+      schedule();
+      lobbyAmbient = { context, volume, timer: setInterval(schedule, 500) };
     } catch { /* Audio is optional when the browser blocks playback. */ }
   }
   async function run(task) {
