@@ -2992,7 +2992,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     await listTables();
   }
   async function smashWaitingTable() {
-    if (!room || room.status !== 'waiting') return;
+    if (!room || room.status !== 'waiting' || room.host_id !== userId) return;
     await rpc('play_smash_waiting_table', { p_room_id: room.id });
     await disconnect();
     room = null; inLobby = false; tableListSignature = '';
@@ -3042,7 +3042,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     $('room-code').textContent = room.code;
     $('room-name').textContent = room.name || defaultTableName(getProfiles().find(p => p.id === room.host_id)?.display_name);
     $('edit-name').hidden = room.host_id !== userId || room.status === 'closed';
-    $('leave').textContent = 'Smash Table';
+    $('leave').textContent = room.host_id === userId ? 'Smash Table' : 'Leave Table';
     let hasSeat = false;
     const playerRows = $('players');
     const rows = ['host', 'guest'].map(seat => {
@@ -3111,7 +3111,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     await enter(id, true);
   }));
   $('back').addEventListener('click', () => run(leaveTable));
-  $('leave').addEventListener('click', () => run(smashWaitingTable));
+  $('leave').addEventListener('click', () => run(() => room?.host_id === userId ? smashWaitingTable() : leaveTable()));
   $('game-leave').addEventListener('click', () => run(concedeGame));
   $('game-back').addEventListener('click', () => run(leaveGameForLobby));
   $('game-result-back').addEventListener('click', () => run(returnToLobby));
