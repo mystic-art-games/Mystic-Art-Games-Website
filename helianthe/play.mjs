@@ -20,7 +20,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   let lobbyTimer = null, directoryChannel = null, directoryUserId = null, listSerial = 0, tableListSignature = '';
   let busy = false, epoch = 0, fetchSerial = 0, live = false, lastHeartbeat = 0, autoDeckPending = false;
   let buildTableAudioContext = null;
-  let lobbyAmbient = null;
   let pendingDeckId = null, deckSaveInFlight = false;
   let gameState = null, gameLoading = false, gameLoadFailed = false, gameReloadPending = false, handSignature = '', gameRenderSerial = 0, boardRenderSerial = 0, cardPreviewSerial = 0;
   let phaseBusy = false, selectedCardElement = null, hoveredCardElement = null, hoveredCardKey = '', mousePosition = null, patronDeckRequest = '', patronDeckLoadedAt = 0;
@@ -1457,70 +1456,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       knock(0, 0.2, 950);
       knock(0.13, 0.24, 800);
       knock(0.29, 0.35, 650);
-    } catch { /* Audio is optional when the browser blocks playback. */ }
-  }
-  function syncLobbyAmbient() {
-    const shouldPlay = visible && !document.hidden && userId && (!room || inLobby || room.status === 'waiting');
-    if (!shouldPlay) {
-      if (lobbyAmbient) {
-        const { context, volume, timer } = lobbyAmbient;
-        clearInterval(timer);
-        volume.gain.setTargetAtTime(0.0001, context.currentTime, 0.2);
-        lobbyAmbient = null;
-      }
-      return;
-    }
-    if (lobbyAmbient) return;
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContext) return;
-    try {
-      const context = buildTableAudioContext ||= new AudioContext();
-      if (context.state === 'suspended') void context.resume();
-      const volume = context.createGain();
-      volume.gain.setValueAtTime(0.0001, context.currentTime);
-      volume.gain.setTargetAtTime(0.16, context.currentTime, 1.2);
-      volume.connect(context.destination);
-      const playNote = (frequency, start, duration, level, type = 'sine') => {
-        const oscillator = context.createOscillator();
-        const envelope = context.createGain();
-        oscillator.type = type;
-        oscillator.frequency.value = frequency;
-        envelope.gain.setValueAtTime(0.0001, start);
-        envelope.gain.linearRampToValueAtTime(level, start + 0.025);
-        envelope.gain.exponentialRampToValueAtTime(0.0001, start + duration);
-        oscillator.connect(envelope).connect(volume);
-        oscillator.start(start);
-        oscillator.stop(start + duration);
-      };
-      const chords = [
-        [130.81, 261.63, 329.63, 392],
-        [110, 220, 261.63, 329.63],
-        [146.83, 293.66, 349.23, 440],
-        [98, 196, 246.94, 349.23],
-      ];
-      const melodies = [
-        [392, 440, 493.88, 392],
-        [329.63, 392, 440, 329.63],
-        [349.23, 440, 523.25, 440],
-        [392, 349.23, 293.66, 246.94],
-      ];
-      const beat = 0.55;
-      let bar = 0;
-      let nextBar = context.currentTime + 0.05;
-      const schedule = () => {
-        while (nextBar < context.currentTime + 2.5) {
-          const chord = chords[bar % chords.length];
-          chord.slice(1).forEach(frequency => playNote(frequency, nextBar, beat * 3.8, 0.035));
-          for (let i = 0; i < 4; i++) {
-            playNote(chord[0], nextBar + i * beat, beat * 0.5, 0.08, 'triangle');
-            playNote(melodies[bar % melodies.length][i], nextBar + i * beat, beat * 0.75, 0.1, 'triangle');
-          }
-          nextBar += beat * 4;
-          bar++;
-        }
-      };
-      schedule();
-      lobbyAmbient = { context, volume, timer: setInterval(schedule, 500) };
     } catch { /* Audio is optional when the browser blocks playback. */ }
   }
   async function run(task) {
@@ -3138,7 +3073,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     root.classList.toggle('is-at-table', Boolean(userId && room && !inLobby));
     const finished = Boolean(userId && room?.status === 'closed' && room.conceded_by);
     const playing = Boolean(userId && ((room?.status === 'active' && !inLobby) || finished));
-    syncLobbyAmbient();
     if (!playing) { hideCardPreview(); closeArchiveBrowser(false); }
     $('signin').hidden = Boolean(userId);
     $('lobby').hidden = !userId || Boolean(room && !inLobby);
@@ -3297,7 +3231,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   function setVisible(value) {
     const wasVisible = visible;
     visible = value;
-    syncLobbyAmbient();
     syncLobbyRefresh();
     if (!value) {
       if (wasVisible && room?.status === 'active' && !inLobby) void run(goAway);
@@ -3311,10 +3244,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     }
     else { const id = savedRoom(); if (id) void run(() => enter(id)); else void listTables(); }
   }
-  root.addEventListener('pointerdown', () => {
-    if (lobbyAmbient?.context.state === 'suspended') void lobbyAmbient.context.resume();
-  });
-  document.addEventListener('visibilitychange', syncLobbyAmbient);
   render();
   return { refreshIdentity, refreshCollections, setVisible };
 }
