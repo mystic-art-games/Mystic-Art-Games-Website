@@ -2793,7 +2793,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       scene.setAttribute('aria-hidden', 'true');
       const artwork = document.createElement('img');
       artwork.className = 'play-table-art';
-      artwork.src = './assets/lobby-table-host-wood.png';
+      artwork.src = './assets/lobby-table-host-wood-cards.png';
       artwork.alt = '';
       artwork.loading = 'lazy';
       const hostProfile = getProfiles().find(profile => profile.id === entry.host_id);
