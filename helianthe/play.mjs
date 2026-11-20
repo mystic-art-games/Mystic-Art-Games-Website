@@ -20,6 +20,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   let lobbyTimer = null, directoryChannel = null, directoryUserId = null, listSerial = 0, tableListSignature = '';
   let busy = false, epoch = 0, fetchSerial = 0, live = false, lastHeartbeat = 0, autoDeckPending = false;
   let buildTableAudioContext = null;
+  let lobbyAmbient = null;
   let pendingDeckId = null, deckSaveInFlight = false;
   let gameState = null, gameLoading = false, gameLoadFailed = false, gameReloadPending = false, handSignature = '', gameRenderSerial = 0, boardRenderSerial = 0, cardPreviewSerial = 0;
   let phaseBusy = false, selectedCardElement = null, hoveredCardElement = null, hoveredCardKey = '', mousePosition = null, patronDeckRequest = '', patronDeckLoadedAt = 0;
@@ -1456,6 +1457,48 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       knock(0, 0.2, 950);
       knock(0.13, 0.24, 800);
       knock(0.29, 0.35, 650);
+    } catch { /* Audio is optional when the browser blocks playback. */ }
+  }
+  function syncLobbyAmbient() {
+    const shouldPlay = visible && !document.hidden && userId && (!room || inLobby || room.status === 'waiting');
+    if (!shouldPlay) {
+      if (lobbyAmbient) {
+        const { context, volume, sources } = lobbyAmbient;
+        volume.gain.setTargetAtTime(0.0001, context.currentTime, 0.2);
+        for (const source of sources) source.stop(context.currentTime + 0.9);
+        lobbyAmbient = null;
+      }
+      return;
+    }
+    if (lobbyAmbient) return;
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return;
+    try {
+      const context = buildTableAudioContext ||= new AudioContext();
+      if (context.state === 'suspended') void context.resume();
+      const volume = context.createGain();
+      volume.gain.setValueAtTime(0.0001, context.currentTime);
+      volume.gain.setTargetAtTime(0.055, context.currentTime, 1.2);
+      volume.connect(context.destination);
+      const noise = context.createBuffer(1, context.sampleRate * 2, context.sampleRate);
+      const samples = noise.getChannelData(0);
+      for (let i = 0; i < samples.length; i++) samples[i] = Math.random() * 2 - 1;
+      const breeze = context.createBufferSource();
+      const filter = context.createBiquadFilter();
+      breeze.buffer = noise;
+      breeze.loop = true;
+      filter.type = 'lowpass';
+      filter.frequency.value = 320;
+      breeze.connect(filter).connect(volume);
+      const tone = context.createOscillator();
+      const toneVolume = context.createGain();
+      tone.type = 'sine';
+      tone.frequency.value = 130.81;
+      toneVolume.gain.value = 0.08;
+      tone.connect(toneVolume).connect(volume);
+      breeze.start();
+      tone.start();
+      lobbyAmbient = { context, volume, sources: [breeze, tone] };
     } catch { /* Audio is optional when the browser blocks playback. */ }
   }
   async function run(task) {
@@ -3073,6 +3116,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     root.classList.toggle('is-at-table', Boolean(userId && room && !inLobby));
     const finished = Boolean(userId && room?.status === 'closed' && room.conceded_by);
     const playing = Boolean(userId && ((room?.status === 'active' && !inLobby) || finished));
+    syncLobbyAmbient();
     if (!playing) { hideCardPreview(); closeArchiveBrowser(false); }
     $('signin').hidden = Boolean(userId);
     $('lobby').hidden = !userId || Boolean(room && !inLobby);
@@ -3231,6 +3275,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   function setVisible(value) {
     const wasVisible = visible;
     visible = value;
+    syncLobbyAmbient();
     syncLobbyRefresh();
     if (!value) {
       if (wasVisible && room?.status === 'active' && !inLobby) void run(goAway);
@@ -3244,6 +3289,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     }
     else { const id = savedRoom(); if (id) void run(() => enter(id)); else void listTables(); }
   }
+  root.addEventListener('pointerdown', () => {
+    if (lobbyAmbient?.context.state === 'suspended') void lobbyAmbient.context.resume();
+  });
+  document.addEventListener('visibilitychange', syncLobbyAmbient);
   render();
   return { refreshIdentity, refreshCollections, setVisible };
 }
