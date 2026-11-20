@@ -19,6 +19,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   let userId = null, room = null, channel = null, timer = null, awayTicker = null, awayExpiryBusy = false, visible = false, inLobby = false;
   let lobbyTimer = null, directoryChannel = null, directoryUserId = null, listSerial = 0, tableListSignature = '';
   let busy = false, epoch = 0, fetchSerial = 0, live = false, lastHeartbeat = 0, autoDeckPending = false;
+  let buildTableAudioContext = null;
   let pendingDeckId = null, deckSaveInFlight = false;
   let gameState = null, gameLoading = false, gameLoadFailed = false, gameReloadPending = false, handSignature = '', gameRenderSerial = 0, boardRenderSerial = 0, cardPreviewSerial = 0;
   let phaseBusy = false, selectedCardElement = null, hoveredCardElement = null, hoveredCardKey = '', mousePosition = null, patronDeckRequest = '', patronDeckLoadedAt = 0;
@@ -1415,6 +1416,26 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     $('edit-name').disabled = !canAct() || room?.host_id !== userId;
     $('back').disabled = busy || !room;
     $('leave').disabled = busy || !room;
+  }
+  function playBuildTableSound() {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return;
+    try {
+      const context = buildTableAudioContext ||= new AudioContext();
+      if (context.state === 'suspended') void context.resume();
+      const now = context.currentTime;
+      const tone = context.createOscillator();
+      const volume = context.createGain();
+      tone.type = 'triangle';
+      tone.frequency.setValueAtTime(170, now);
+      tone.frequency.exponentialRampToValueAtTime(75, now + 0.16);
+      volume.gain.setValueAtTime(0.0001, now);
+      volume.gain.exponentialRampToValueAtTime(0.09, now + 0.008);
+      volume.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
+      tone.connect(volume).connect(context.destination);
+      tone.start(now);
+      tone.stop(now + 0.18);
+    } catch { /* Audio is optional when the browser blocks playback. */ }
   }
   async function run(task) {
     if (busy) return;
@@ -3106,12 +3127,16 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
 
   $('signin-button').addEventListener('click', requireSignIn);
-  $('create').addEventListener('click', () => run(async () => {
-    await refreshIdentity();
-    if (!userId) throw new Error('Sign in to create a table.');
-    const id = await rpc('play_create_room');
-    await enter(id, true);
-  }));
+  $('create').addEventListener('click', () => {
+    if (busy) return;
+    playBuildTableSound();
+    void run(async () => {
+      await refreshIdentity();
+      if (!userId) throw new Error('Sign in to create a table.');
+      const id = await rpc('play_create_room');
+      await enter(id, true);
+    });
+  });
   $('back').addEventListener('click', () => run(leaveTable));
   $('leave').addEventListener('click', () => run(() => room?.host_id === userId ? smashWaitingTable() : leaveTable()));
   $('game-leave').addEventListener('click', () => run(concedeGame));
