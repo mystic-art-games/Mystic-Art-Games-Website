@@ -1424,17 +1424,38 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       const context = buildTableAudioContext ||= new AudioContext();
       if (context.state === 'suspended') void context.resume();
       const now = context.currentTime;
-      const tone = context.createOscillator();
-      const volume = context.createGain();
-      tone.type = 'triangle';
-      tone.frequency.setValueAtTime(170, now);
-      tone.frequency.exponentialRampToValueAtTime(75, now + 0.16);
-      volume.gain.setValueAtTime(0.0001, now);
-      volume.gain.exponentialRampToValueAtTime(0.09, now + 0.008);
-      volume.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
-      tone.connect(volume).connect(context.destination);
-      tone.start(now);
-      tone.stop(now + 0.18);
+      const knock = (delay, strength, pitch) => {
+        const start = now + delay;
+        const duration = 0.075;
+        const noise = context.createBuffer(1, Math.ceil(context.sampleRate * duration), context.sampleRate);
+        const samples = noise.getChannelData(0);
+        for (let i = 0; i < samples.length; i++) samples[i] = (Math.random() * 2 - 1) * (1 - i / samples.length);
+        const strike = context.createBufferSource();
+        const filter = context.createBiquadFilter();
+        const strikeVolume = context.createGain();
+        strike.buffer = noise;
+        filter.type = 'lowpass';
+        filter.frequency.value = pitch;
+        strikeVolume.gain.setValueAtTime(strength, start);
+        strikeVolume.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+        strike.connect(filter).connect(strikeVolume).connect(context.destination);
+        strike.start(start);
+        strike.stop(start + duration);
+
+        const resonance = context.createOscillator();
+        const resonanceVolume = context.createGain();
+        resonance.type = 'sine';
+        resonance.frequency.setValueAtTime(pitch / 4, start);
+        resonance.frequency.exponentialRampToValueAtTime(pitch / 5, start + 0.11);
+        resonanceVolume.gain.setValueAtTime(strength * 0.18, start);
+        resonanceVolume.gain.exponentialRampToValueAtTime(0.0001, start + 0.11);
+        resonance.connect(resonanceVolume).connect(context.destination);
+        resonance.start(start);
+        resonance.stop(start + 0.11);
+      };
+      knock(0, 0.2, 950);
+      knock(0.13, 0.24, 800);
+      knock(0.29, 0.35, 650);
     } catch { /* Audio is optional when the browser blocks playback. */ }
   }
   async function run(task) {
