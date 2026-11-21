@@ -2944,7 +2944,13 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         }
         const markers = [];
         if (Number(node.lumens || 0) > 0) markers.push(`${node.lumens} ✦`);
-        if (node.protected) markers.push('Protected');
+        if (node.protected) {
+          const token = document.createElement('img');
+          token.className = 'play-protection-token';
+          token.src = './assets/Protection_Simple.png';
+          token.alt = '';
+          cell.append(token);
+        }
         if (node.crisis) markers.push('Crisis');
         if (node.entanglements?.length) markers.push(`Entangled ${node.entanglements.length}`);
         if (markers.length) {
