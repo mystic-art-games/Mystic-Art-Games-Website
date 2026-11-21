@@ -1422,7 +1422,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     for (const b of $('room-list').querySelectorAll('button')) b.disabled = busy || b.dataset.full === 'true';
     const deckLocked = Boolean(ownReady());
     $('deck').disabled = !canAct() || deckLocked || !getDecks().length;
-    $('deck').title = deckLocked ? 'Click Not ready to change your deck.' : '';
+    $('deck').title = deckLocked ? 'Click Not Ready to change your deck.' : '';
     const disabled = $('deck').disabled;
     $('deck-trigger').setAttribute('aria-disabled', String(disabled));
     $('deck-trigger').tabIndex = disabled ? -1 : 0;
@@ -3195,7 +3195,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       ? selectedDeckId : (getDecks()[0]?.id || '');
     updateDeckCover();
     const isReady = room[`${mine}_ready`];
-    $('ready').textContent = isReady ? 'Not ready' : 'Ready';
+    $('ready').textContent = isReady ? 'Not Ready' : 'Ready';
     $('ready').classList.toggle('action-add-save', !isReady);
     $('ready').classList.toggle('action-delete', isReady);
     $('ready').setAttribute('aria-pressed', String(isReady));
