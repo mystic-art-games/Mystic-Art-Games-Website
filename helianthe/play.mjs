@@ -33,6 +33,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   const readySound = new Audio(new URL('./assets/Ready.mp3', import.meta.url));
   const notReadySound = new Audio(new URL('./assets/Not_Ready.mp3', import.meta.url));
   const openingDiceSound = new Audio(new URL('./assets/Play.mp3', import.meta.url));
+  const rollDiceSound = new Audio(new URL('./assets/Roll_Dices.mp3', import.meta.url));
   const winSound = new Audio(new URL('./assets/Win.wav', import.meta.url));
   const loseSound = new Audio(new URL('./assets/Lose.mp3', import.meta.url));
   const backToLobbySound = new Audio(new URL('./assets/Back_To_Lobby.mp3', import.meta.url));
@@ -761,6 +762,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (openingRollBusy || !room || room.turn_phase !== 'roll') return;
     const seat = room.host_id === userId ? 'host' : 'guest';
     if (room[`opening_${seat}_roll`] != null) return;
+    playTableSound(rollDiceSound);
     const expected = epoch, roomId = room.id, round = room.opening_roll_round;
     openingRollBusy = true;
     openingRollError = '';
