@@ -19,7 +19,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   let userId = null, room = null, channel = null, timer = null, awayTicker = null, awayExpiryBusy = false, visible = false, inLobby = false;
   let lobbyTimer = null, directoryChannel = null, directoryUserId = null, listSerial = 0, tableListSignature = '';
   let busy = false, epoch = 0, fetchSerial = 0, live = false, lastHeartbeat = 0, autoDeckPending = false;
-  const buildTableSound = new Audio(new URL("./assets/Build_Table.mp3", import.meta.url));
+  const buildTableSound = new Audio(new URL("./assets/Build_Table.mp3?v=2", import.meta.url));
+  const smashTableSound = new Audio(new URL('./assets/Smash_Table.mp3', import.meta.url));
   let pendingDeckId = null, deckSaveInFlight = false;
   let gameState = null, gameLoading = false, gameLoadFailed = false, gameReloadPending = false, handSignature = '', gameRenderSerial = 0, boardRenderSerial = 0, cardPreviewSerial = 0;
   let phaseBusy = false, selectedCardElement = null, hoveredCardElement = null, hoveredCardKey = '', mousePosition = null, patronDeckRequest = '', patronDeckLoadedAt = 0;
@@ -1422,9 +1423,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     $('back').disabled = busy || !room;
     $('leave').disabled = busy || !room;
   }
-  function playBuildTableSound() {
-    buildTableSound.currentTime = 0;
-    void buildTableSound.play().catch(() => {});
+  function playTableSound(sound) {
+    sound.currentTime = 0;
+    void sound.play().catch(() => {});
   }
   async function run(task) {
     if (busy) return;
@@ -3005,6 +3006,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   async function smashWaitingTable() {
     if (!room || room.status !== 'waiting' || room.host_id !== userId) return;
+    playTableSound(smashTableSound);
     await rpc('play_smash_waiting_table', { p_room_id: room.id });
     await disconnect();
     room = null; inLobby = false; tableListSignature = '';
@@ -3153,7 +3155,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   $('signin-button').addEventListener('click', requireSignIn);
   $('create').addEventListener('click', () => {
     if (busy) return;
-    playBuildTableSound();
+    playTableSound(buildTableSound);
     void run(async () => {
       await refreshIdentity();
       if (!userId) throw new Error('Sign in to create a table.');
