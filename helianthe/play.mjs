@@ -579,6 +579,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (node.entity) return null;
     if (!terrainTypes.includes(node.terrain)) return null;
     const effect = String(card.effect || '').replace(/\s+/g, ' ').toLowerCase();
+    if (effect.includes('this entity can be evoked only on a non-flow terrain')) {
+      return node.terrain === 'Flow' ? null : 'place';
+    }
     const prefix = '(?:this entity (?:can|may) be placed|place this entity) on ';
     const target = String(node.terrain).toLowerCase();
     const allowed = node.terrain === card.terrain
@@ -2747,11 +2750,24 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (!cardId) return;
     const placesEntity = action === 'place' || action === 'create_place';
     const flight = placesEntity ? draggedFlight || captureEntityFlight(handIndex) : null;
+    const entryEffects = {
+      'Battery Orchard': 'when placed, add 2 lumens on terrain under this entity.',
+      'Wood Wide Web': 'when placed, draw 1 card for each different adjacent terrain.',
+      'Mossveil Settlement': 'draw 1 card for each different adjacent terrain.',
+      'Solar Commons': 'draw 1 card.',
+      'Terrace Keepers': 'draw 1 card. if there are 3 or more verdant adjacent terrains, draw 1 additional card.',
+      'The High Seas': 'draw 1 card. if there are 3 or more adjacent flow entities, draw 1 additional card.',
+      'Electrostatic Spread': 'add 1 solar counter on terrain under this entity and on each adjacent radiance terrain.',
+      'Sunwire Avenue': 'add 1 lumen on each radiance terrain that has none yet.',
+      'Radiant Lock': 'put a shield counter on terrain under this entity.',
+      'River Pact Crossing': 'this entity can be evoked only on a non-flow terrain. both patrons draw 1 card. when shaped, draw 1 card.',
+    };
+    const normalizedEffect = String(card.effect || '').replace(/\s+/g, ' ').trim().toLowerCase();
+    const knownEntryEffect = entryEffects[card.title] === normalizedEffect;
     const kupalaNight = action === 'place' && card.title === 'Kupala Night'
-      && String(card.effect || '').replace(/\s+/g, ' ').trim().toLowerCase()
-        === 'draw cards equal to the amount of your entanglements.';
+      && normalizedEffect === 'draw cards equal to the amount of your entanglements.';
     const previousHandCount = gameState.hand.length;
-    const horizon = kupalaNight ? [...(gameState.horizon || [])] : [];
+    const horizon = [...(gameState.horizon || [])];
     if (placesEntity) arrivingEntityKey = `${targetX},${targetY}`;
     const expected = epoch, roomId = room.id;
     phaseBusy = true;
@@ -2777,19 +2793,23 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         ?.querySelector('.play-node-entity-card')?.classList.remove('is-arriving');
       if (expected !== epoch || room?.id !== roomId) return;
       await refreshRoom();
-      let kupalaDrawn = 0;
-      if (expected === epoch && room?.id === roomId && room.status === 'active' && kupalaNight) {
+      let entityDrawn = 0;
+      if (expected === epoch && room?.id === roomId && room.status === 'active') {
         const handCount = room.host_id === userId ? room.host_hand_count : room.guest_hand_count;
-        kupalaDrawn = Math.max(0, Math.min(horizon.length, Number(handCount) - previousHandCount + 1));
-        if (kupalaDrawn) await animateCardsToHand(horizon.slice(0, kupalaDrawn), [handIndex], 110);
+        entityDrawn = Math.max(0, Math.min(horizon.length, Number(handCount) - previousHandCount + 1));
+        if (entityDrawn) await animateCardsToHand(horizon.slice(0, entityDrawn), [handIndex], 110);
       }
       if (expected === epoch && room?.id === roomId) await loadGameState(true);
       if (expected === epoch && room?.id === roomId) eventNotice(result?.action === 'create_place'
         ? `${result?.title || card.title} created Verdant Terrain and landed on it.`
         : result?.action === 'shape'
-          ? `${result?.title || card.title} shaped ${result?.terrain || entityShapeTerrain(card)} Terrain. Card-specific effects are not automated yet.`
+          ? knownEntryEffect && card.title === 'River Pact Crossing'
+            ? `${result?.title || card.title} shaped ${result?.terrain || entityShapeTerrain(card)} Terrain · drew ${entityDrawn} card${entityDrawn === 1 ? '' : 's'}.`
+            : `${result?.title || card.title} shaped ${result?.terrain || entityShapeTerrain(card)} Terrain. Card-specific effects are not automated yet.`
           : kupalaNight
-            ? `${result?.title || card.title} placed · drew ${kupalaDrawn} card${kupalaDrawn === 1 ? '' : 's'} for Entanglements.`
+            ? `${result?.title || card.title} placed · drew ${entityDrawn} card${entityDrawn === 1 ? '' : 's'} for Entanglements.`
+            : knownEntryEffect
+              ? `${result?.title || card.title} placed · effect resolved${entityDrawn ? ` · drew ${entityDrawn}` : ''}.`
             : `${result?.title || card.title} placed on ${result?.terrain || room.board?.[`${targetX},${targetY}`]?.terrain} Terrain. Card-specific effects are not automated yet.`, true, false, false, 4500, true);
     } catch (error) {
       if (expected === epoch && room?.id === roomId) {
