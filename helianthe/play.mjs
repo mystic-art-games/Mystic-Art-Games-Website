@@ -19,7 +19,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   let userId = null, room = null, channel = null, timer = null, awayTicker = null, awayExpiryBusy = false, visible = false, inLobby = false;
   let lobbyTimer = null, directoryChannel = null, directoryUserId = null, listSerial = 0, tableListSignature = '';
   let busy = false, epoch = 0, fetchSerial = 0, live = false, lastHeartbeat = 0, autoDeckPending = false;
-  const buildTableSoundUrl = new URL('./assets/Build_Table.mp3?v=2', import.meta.url);
+  const buildTableSoundUrl = new URL('./assets/Build_Table_Wood.wav', import.meta.url);
   const TableAudioContext = window.AudioContext || window.webkitAudioContext;
   const buildTableSoundData = TableAudioContext && fetch(buildTableSoundUrl)
     .then(response => response.ok ? response.arrayBuffer() : null)
@@ -27,7 +27,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   let buildTableAudioContext;
   let buildTableSoundBuffer;
   let buildTableFallback;
-  let buildTableOutputPrimed = false;
   const smashTableSound = new Audio(new URL('./assets/Smash_Table.mp3', import.meta.url));
   const leaveTableSound = new Audio(new URL('./assets/Leave_Table.wav?v=2', import.meta.url));
   const sitAtTableSound = new Audio(new URL('./assets/Sit_At_The_Table.wav?v=2', import.meta.url));
@@ -80,7 +79,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       <button id="play-back" class="back-to-decks" type="button"><span aria-hidden="true">←</span> Back to Lobby</button>
       <div class="play-room-bar"><div class="play-room-identity"><div class="play-room-name-line"><strong id="play-room-name"></strong><button id="play-edit-name" class="action-cancel" type="button">Edit name</button></div><form id="play-name-form" hidden><input id="play-name-input" aria-label="Table name" maxlength="60" required><button type="submit">Save</button><button id="play-cancel-name" type="button">Cancel</button></form><span class="play-room-code-line">Code: <strong id="play-room-code"></strong></span></div><div class="play-room-actions"><button id="play-leave" class="action-delete" type="button">Smash Table</button></div></div>
       <div id="play-players" class="play-players"></div>
-      <div id="play-deck-field" class="play-deck-field"><span id="play-deck-label">Your deck</span><div class="play-deck-choice"><img id="play-deck-cover" class="play-deck-cover" alt="" hidden><select id="play-deck" hidden></select><details id="play-deck-picker" class="play-deck-picker"><summary id="play-deck-trigger" aria-labelledby="play-deck-label play-deck-trigger">No decks available</summary><div id="play-deck-options" class="play-deck-options"></div></details></div><span id="play-deck-patron" class="play-deck-patron" hidden></span></div>
+      <div id="play-deck-field" class="play-deck-field"><span id="play-deck-label" hidden>Your deck</span><div class="play-deck-choice"><img id="play-deck-cover" class="play-deck-cover" alt="" hidden><select id="play-deck" hidden></select><details id="play-deck-picker" class="play-deck-picker"><summary id="play-deck-trigger" aria-labelledby="play-deck-label play-deck-trigger">No decks available</summary><div id="play-deck-options" class="play-deck-options"></div></details></div><span id="play-deck-patron" class="play-deck-patron" hidden></span></div>
       <button id="play-ready" class="action-add-save" type="button">Ready</button>
       <div id="play-controls-parking" hidden></div>
       <p id="play-room-status" role="status"></p>
@@ -1439,29 +1438,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     sound.currentTime = 0;
     void sound.play().catch(() => {});
   }
-  function primeBuildTableOutput(context, start) {
-    const end = start + 0.24;
-    const tone = context.createOscillator();
-    const gain = context.createGain();
-    tone.frequency.value = 180;
-    gain.gain.setValueAtTime(0, start);
-    gain.gain.linearRampToValueAtTime(0.003, start + 0.02);
-    gain.gain.setValueAtTime(0.003, end - 0.02);
-    gain.gain.linearRampToValueAtTime(0, end);
-    tone.connect(gain).connect(context.destination);
-    tone.addEventListener('ended', () => {
-      tone.disconnect();
-      gain.disconnect();
-    }, { once: true });
-    tone.start(start);
-    tone.stop(end);
-    return end;
-  }
   async function playBuildTableSound() {
     if (TableAudioContext) {
       try {
         const context = buildTableAudioContext ||= new TableAudioContext();
-        const needsPriming = !buildTableOutputPrimed || context.state !== 'running';
         // Resume during the click so audio remains allowed after decoding.
         const ready = context.resume();
         buildTableSoundBuffer ||= buildTableSoundData.then(data => {
@@ -1473,11 +1453,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         source.buffer = buffer;
         source.connect(context.destination);
         source.addEventListener('ended', () => source.disconnect(), { once: true });
-        const now = context.currentTime;
-        // A quiet signal opens the output before the first impact.
-        const start = needsPriming ? primeBuildTableOutput(context, now + 0.01) : now + 0.12;
-        source.start(start);
-        buildTableOutputPrimed = true;
+        source.start(context.currentTime + 0.02);
         return;
       } catch {
         // Use the regular audio element if the browser cannot use Web Audio.
