@@ -2069,6 +2069,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (!requiredDiscards()) {
       const reason = cardPlayBlockReason(card);
       if (reason) blockedPlayNotice(reason);
+      else if (card.card_type === 'Event') void evokeEvent(card, handIndex);
       return;
     }
     if (discardSelections.has(handIndex)) {
@@ -3012,7 +3013,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       button.type = 'button'; button.className = 'play-hand-card';
       button.dataset.handIndex = String(index);
       button.dataset.customClickSound = '';
-      button.setAttribute('aria-label', `Preview ${card.title || 'card'}`);
+      button.setAttribute('aria-label', card.card_type === 'Event'
+        ? `Evoke ${card.title || 'Event'}` : `Preview ${card.title || 'card'}`);
+      if (card.card_type === 'Event') button.classList.add('is-playable-event');
       const previousCanvas = previousCanvases.get(cardSignature)?.shift();
       const arrivingCanvas = previousCanvas ? null : arrivingCardCanvases.get(cardSignature)?.shift();
       const canvas = previousCanvas || document.createElement('canvas');
@@ -3031,7 +3034,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       mulliganBadge.className = 'play-mulligan-order'; mulliganBadge.hidden = true;
       item.append(mulliganBadge);
       button.addEventListener('click', () => chooseHandCard(card, button, index));
-      if (card.card_type === 'Event' || card.card_type === 'Entity') enableCardDrag(button, card, index);
+      if (card.card_type === 'Entity') enableCardDrag(button, card, index);
       if (canvas.hidden) void (async () => {
         const artwork = card.artwork_id ? await getArtworkUrl(card.artwork_id).catch(() => '') : '';
         const result = await renderPlayCard(canvas, card, artwork, () => serial === gameRenderSerial);
