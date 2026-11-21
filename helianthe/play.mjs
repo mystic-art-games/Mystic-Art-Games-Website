@@ -2373,8 +2373,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const terrain = target.getBoundingClientRect();
     if (!terrain.width || !terrain.height) return;
     const landing = {
-      left: terrain.left + terrain.width * .06,
-      top: terrain.top + terrain.height * .06,
+      left: terrain.left + 5,
+      top: terrain.top + 5,
       width: terrain.width,
       height: terrain.height,
     };
