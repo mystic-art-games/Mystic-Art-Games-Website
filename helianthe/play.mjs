@@ -31,6 +31,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   const smashTableSound = new Audio(new URL('./assets/Smash_Table.mp3', import.meta.url));
   const leaveTableSound = new Audio(new URL('./assets/Leave_Table.wav?v=2', import.meta.url));
   const sitAtTableSound = new Audio(new URL('./assets/Sit_At_The_Table.wav?v=2', import.meta.url));
+  const readySound = new Audio(new URL('./assets/Ready.wav', import.meta.url));
   let pendingDeckId = null, deckSaveInFlight = false;
   let gameState = null, gameLoading = false, gameLoadFailed = false, gameReloadPending = false, handSignature = '', gameRenderSerial = 0, boardRenderSerial = 0, cardPreviewSerial = 0;
   let phaseBusy = false, selectedCardElement = null, hoveredCardElement = null, hoveredCardKey = '', mousePosition = null, patronDeckRequest = '', patronDeckLoadedAt = 0;
@@ -3275,7 +3276,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const deckId = $('deck').value;
     if (!ownReady() && !deckId) return message('Create a deck before getting ready.', true);
     void run(async () => {
-      if (!ownReady() && ownDeckId() !== deckId) await action('deck', { deck_id: deckId });
+      if (!ownReady()) {
+        playTableSound(readySound);
+        if (ownDeckId() !== deckId) await action('deck', { deck_id: deckId });
+      }
       await action('ready');
     });
   });
