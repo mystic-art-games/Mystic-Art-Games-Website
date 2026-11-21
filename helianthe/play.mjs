@@ -24,7 +24,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   const buildTableSoundData = TableAudioContext && fetch(buildTableSoundUrl)
     .then(response => response.ok ? response.arrayBuffer() : null)
     .catch(() => null);
-  let buildTableAudioContext;
+  let tableAudioContext;
   let buildTableSoundBuffer;
   let buildTableFallback;
   const smashTableSound = new Audio(new URL('./assets/Smash_Table.mp3', import.meta.url));
@@ -34,6 +34,24 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   const notReadySound = new Audio(new URL('./assets/Not_Ready.mp3', import.meta.url));
   const openingDiceSound = new Audio(new URL('./assets/Play.mp3', import.meta.url));
   const rollDiceSound = new Audio(new URL('./assets/Roll_Dices.mp3', import.meta.url));
+  rollDiceSound.preload = 'auto';
+  const OfflineContext = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+  const rollDiceClip = TableAudioContext && OfflineContext ? fetch(rollDiceSound.src)
+    .then(response => {
+      if (!response.ok) throw new Error('Dice sound unavailable.');
+      return response.arrayBuffer();
+    })
+    .then(data => new OfflineContext(1, 1, 44100).decodeAudioData(data))
+    .then(buffer => {
+      const channels = Array.from({ length: buffer.numberOfChannels }, (_, index) => buffer.getChannelData(index));
+      const onset = channels.reduce((first, samples) => {
+        const index = samples.findIndex(sample => Math.abs(sample) >= 0.01);
+        return index < 0 ? first : Math.min(first, index);
+      }, buffer.length);
+      const offset = onset === buffer.length ? 0 : Math.max(0, onset / buffer.sampleRate - 0.008);
+      return { buffer, offset };
+    })
+    .catch(() => null) : null;
   const winSound = new Audio(new URL('./assets/Win.wav', import.meta.url));
   const loseSound = new Audio(new URL('./assets/Lose.mp3', import.meta.url));
   const backToLobbySound = new Audio(new URL('./assets/Back_To_Lobby.mp3', import.meta.url));
@@ -762,7 +780,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (openingRollBusy || !room || room.turn_phase !== 'roll') return;
     const seat = room.host_id === userId ? 'host' : 'guest';
     if (room[`opening_${seat}_roll`] != null) return;
-    playTableSound(rollDiceSound);
+    void playRollDiceSound();
     const expected = epoch, roomId = room.id, round = room.opening_roll_round;
     openingRollBusy = true;
     openingRollError = '';
@@ -1444,10 +1462,27 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     sound.currentTime = 0;
     void sound.play().catch(() => {});
   }
+  async function playRollDiceSound() {
+    if (rollDiceClip) {
+      try {
+        const context = tableAudioContext ||= new TableAudioContext();
+        const [clip] = await Promise.all([rollDiceClip, context.resume()]);
+        if (clip) {
+          const source = context.createBufferSource();
+          source.buffer = clip.buffer;
+          source.connect(context.destination);
+          source.addEventListener('ended', () => source.disconnect(), { once: true });
+          source.start(0, clip.offset);
+          return;
+        }
+      } catch { /* Fall back to the preloaded media element. */ }
+    }
+    playTableSound(rollDiceSound);
+  }
   async function playBuildTableSound() {
     if (TableAudioContext) {
       try {
-        const context = buildTableAudioContext ||= new TableAudioContext();
+        const context = tableAudioContext ||= new TableAudioContext();
         // Resume during the click so audio remains allowed after decoding.
         const ready = context.resume();
         buildTableSoundBuffer ||= buildTableSoundData.then(data => {
