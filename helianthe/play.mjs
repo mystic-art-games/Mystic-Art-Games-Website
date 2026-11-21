@@ -130,6 +130,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
           <div class="play-game-zone-pair play-game-zone-pair-self" aria-label="Your card zones"><div class="play-game-zone play-game-zone-horizon"><div id="play-game-self-horizon" class="play-deck-stack" role="img" aria-label="Your Horizon, draw deck"></div></div><div class="play-game-zone play-game-zone-archive"><button id="play-game-self-archive" class="play-game-archive-card is-empty" type="button" aria-label="Browse your Archive"><canvas id="play-game-self-archive-canvas" aria-hidden="true" hidden></canvas><span id="play-game-archive-top"></span></button></div></div>
         </div>
         <div id="play-game-board" class="play-game-board" role="group" aria-label="Shared five-column, four-row Terrain board"></div>
+        <div id="play-game-entanglements" class="play-game-entanglements" aria-hidden="true"></div>
         <div class="play-game-zones-right">
           <div class="play-game-zone-pair play-game-zone-pair-opponent" aria-label="Opponent's card zones"><div class="play-game-zone play-game-zone-archive"><button id="play-game-opponent-archive" class="play-game-archive-card is-empty" type="button" aria-label="Browse opponent's Archive"><canvas id="play-game-opponent-archive-canvas" aria-hidden="true" hidden></canvas><span id="play-game-opponent-archive-top"></span></button></div><div class="play-game-zone play-game-zone-horizon"><div id="play-game-opponent-horizon" class="play-deck-stack" role="img" aria-label="Opponent's Horizon, draw deck"></div></div></div>
           <div class="play-game-zone play-game-zone-self-patron"><button id="play-game-self-patron-slot" class="play-game-patron-slot" type="button" aria-label="Preview your Patron"><canvas id="play-game-self-patron" hidden></canvas><span id="play-game-self-patron-fallback" class="play-game-patron-fallback" aria-hidden="true"></span></button></div>
@@ -217,6 +218,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const wrapBounds = boardWrap.getBoundingClientRect();
     const boardBounds = $('game-board').getBoundingClientRect();
     root.style.setProperty('--play-map-board-height', `${boardBounds.height}px`);
+    positionEntanglementTokens();
     if (desktop) {
       const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
       const badgeLeft = element => {
@@ -2855,12 +2857,53 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       delay += 150;
     }
   }
+  function renderEntanglementTokens() {
+    const board = room.board || {};
+    const links = new Set();
+    const tokens = [];
+    for (const [from, node] of Object.entries(board)) {
+      if (!node?.terrain || !Array.isArray(node.entanglements)) continue;
+      for (const to of node.entanglements) {
+        if (typeof to !== 'string' || from === to || !board[to]?.terrain) continue;
+        const link = [from, to].sort().join(':');
+        if (links.has(link)) continue;
+        links.add(link);
+        const token = document.createElement('img');
+        token.className = 'play-entanglement-token';
+        token.src = './assets/Entanglement_Simple.png';
+        token.alt = '';
+        token.dataset.from = from;
+        token.dataset.to = to;
+        token.hidden = true;
+        tokens.push(token);
+      }
+    }
+    $('game-entanglements').replaceChildren(...tokens);
+  }
+  function positionEntanglementTokens() {
+    const layer = $('game-entanglements');
+    if (!layer.childElementCount) return;
+    const frame = layer.getBoundingClientRect();
+    const cells = new Map(Array.from($('game-board').children, cell => [cell.dataset.key, cell]));
+    for (const token of layer.children) {
+      const from = cells.get(token.dataset.from);
+      const to = cells.get(token.dataset.to);
+      token.hidden = !from || !to || !frame.width || !frame.height
+        || from.classList.contains('is-terrain-arriving') || to.classList.contains('is-terrain-arriving');
+      if (token.hidden) continue;
+      const a = from.getBoundingClientRect();
+      const b = to.getBoundingClientRect();
+      token.style.left = `${(a.left + a.width / 2 + b.left + b.width / 2) / 2 - frame.left}px`;
+      token.style.top = `${(a.top + a.height / 2 + b.top + b.height / 2) / 2 - frame.top}px`;
+    }
+  }
   function finishTerrainArrival(key, arrival) {
     if (terrainArrivals.get(key) !== arrival) return;
     terrainArrivals.delete(key);
     arrival.animation?.cancel();
     arrival.flight?.remove();
     $('game-board').querySelector(`[data-key="${CSS.escape(key)}"]`)?.classList.remove('is-terrain-arriving');
+    positionEntanglementTokens();
   }
   function clearTerrainArrivals() {
     for (const [key, arrival] of terrainArrivals) finishTerrainArrival(key, arrival);
@@ -2952,7 +2995,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
           cell.append(token);
         }
         if (node.crisis) markers.push('Crisis');
-        if (node.entanglements?.length) markers.push(`Entangled ${node.entanglements.length}`);
         if (markers.length) {
           const badge = document.createElement('span'); badge.className = 'play-node-markers';
           badge.textContent = markers.join(' · '); cell.append(badge);
@@ -2976,6 +3018,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       nodes.push(cell);
     }
     $('game-board').replaceChildren(...nodes);
+    renderEntanglementTokens();
     requestAnimationFrame(syncHoveredCardPreview);
     renderBeginningEffects();
     syncEventTargets();

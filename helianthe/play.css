@@ -193,6 +193,8 @@ body.dark-mode .play-deck-field.is-locked select { border-color: #596d5d; backgr
 .play-game-node.is-fertilized:not(.terrain-center) { background: #17523a38; }
 .play-fertilize-token { display: block; width: 72%; max-width: 68px; aspect-ratio: 1; object-fit: contain; filter: drop-shadow(0 4px 7px #09251799); }
 .play-protection-token { position: absolute; z-index: 3; top: .15rem; left: .15rem; width: 36%; max-width: 38px; aspect-ratio: 1; object-fit: contain; filter: drop-shadow(0 2px 4px #09251799); pointer-events: none; }
+.play-game-entanglements { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+.play-entanglement-token { position: absolute; width: clamp(16px, calc(var(--play-map-card-width, 60px) * .34), 36px); aspect-ratio: 1; object-fit: contain; transform: translate(-50%, -50%); filter: drop-shadow(0 2px 4px #09251799); }
 .play-game-node .play-node-markers { position: absolute; z-index: 3; bottom: .15rem; left: .15rem; background: #153c32ed; color: #fff9e8; font-size: clamp(.48rem, .95vw, .68rem); font-weight: 800; }
 .play-game-node.is-event-target { border: 2px solid #87e1d5; box-shadow: inset 0 0 0 2px #173d37, 0 0 0 3px #87e1d5a8; cursor: pointer; }
 .play-game-node.is-event-target:hover, .play-game-node.is-event-target:focus-visible { outline: 2px solid #fff; outline-offset: 2px; filter: brightness(1.15); }
