@@ -117,8 +117,8 @@ body.dark-mode .play-deck-field.is-locked select { border-color: #596d5d; backgr
 .play-game-opponent-footer .play-game-actions { flex: 0 0 auto; margin-top: clamp(.3rem, 1vh, .7rem); }
 .play-game-opponent-identity, .play-game-self-identity { flex-wrap: wrap; min-width: 0; }
 .play-game-opponent-identity { padding: .2rem .5rem 0; }
-.play-game-hand-wrap { min-width: 0; }
-.play-game-hand-wrap #play-game-loading { margin: 0; text-align: center; }
+.play-game-hand-wrap { position: relative; min-width: 0; width: 100%; }
+.play-game-hand-wrap #play-game-loading { position: absolute; inset: 0; display: grid; place-content: center; margin: 0; text-align: center; pointer-events: none; }
 .play-deck-stack { display: block; flex: 0 0 auto; width: 62px; aspect-ratio: 63 / 88; border: 1px solid #123c2d; border-radius: 9px; background: url('../images/helianthe-logo.png') center / 62% no-repeat, #294b3ddf; box-shadow: inset 0 1px 0 #fff2cf36, 4px -4px 0 #294b3ddf, 5px -5px 0 #123c2d, 0 4px 12px #130b0a55; }
 .play-game-board-wrap { width: 100%; max-width: 1000px; margin: 0 auto; }
 .play-game-table { --play-map-card-gap: clamp(9px, 1.4cqh, 14px); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 5fr) minmax(0, 1fr); align-items: stretch; justify-content: center; gap: clamp(8px, 1.4vw, 18px); }
@@ -305,12 +305,15 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
   --play-hand-card-width: clamp(99px, min(19.2vh, 14.8vw), 181px);
   --play-hand-card-height: calc(var(--play-hand-card-width) * 88 / 63);
   align-items: center;
-  gap: .7rem;
-  min-height: calc(var(--play-hand-card-height) + .5rem);
+  width: 100%;
+  min-width: 0;
+  height: calc(var(--play-hand-card-height) + .5rem);
+  gap: min(.7rem, calc(20% / var(--play-hand-gap-count, 1)));
+  overflow: clip;
   padding: .25rem .3rem;
 }
-#play-game .play-hand-item { flex: 0 0 var(--play-hand-card-width); }
-#play-game .play-hand-card { height: var(--play-hand-card-height); transition: filter .16s ease; }
+#play-game .play-hand-item { flex: 0 1 var(--play-hand-card-width); }
+#play-game .play-hand-card { height: auto; min-height: 0; transition: filter .16s ease; }
 @media (hover: hover) and (prefers-reduced-motion: no-preference) {
   .play-game-patron-slot, .play-node-entity-card, .play-archive-browser-list button { transition: scale .16s ease; }
   #play-game:not(:has(.is-event-drop-zone)) :is(.play-game-patron-slot, .play-node-entity-card):hover,

@@ -1201,6 +1201,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       return true;
     } catch { return false; }
   }
+  function sizeHandGaps(hand, cardCount) {
+    hand.style.setProperty('--play-hand-gap-count', String(Math.max(1, cardCount - 1)));
+  }
   async function animateCardsToHand(rawCards, removedIndexes = [], stagger = 0, batchSound = null) {
     const source = $('game-self-horizon').getBoundingClientRect();
     const handElement = $('game-hand');
@@ -1211,7 +1214,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const removedItems = removedIndexes.map(index => handElement.children[index]).filter(Boolean);
     const items = Array.from(handElement.children).filter(item => !removedItems.includes(item));
     const originalBounds = items.map(item => item.getBoundingClientRect());
-    const originalScroll = handElement.scrollLeft;
     // Let the same flex layout size and position the incoming card before the flight.
     for (const item of removedItems) item.hidden = true;
     const placeholders = rawCards.map(() => {
@@ -1227,11 +1229,12 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       handElement.append(item);
       return item;
     });
+    sizeHandGaps(handElement, items.length + placeholders.length);
     const destinations = placeholders.map(item => item.firstElementChild.getBoundingClientRect());
     const finalBounds = items.map(item => item.getBoundingClientRect());
     for (const item of placeholders) item.remove();
     for (const item of removedItems) item.hidden = false;
-    handElement.scrollLeft = originalScroll;
+    sizeHandGaps(handElement, items.length + removedItems.length);
     if (destinations.some(bounds => !bounds.width || !bounds.height)) return;
 
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -2763,7 +2766,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       })().catch(() => {});
       return item;
     });
-    $('game-hand').replaceChildren(...cards);
+    const handElement = $('game-hand');
+    sizeHandGaps(handElement, cards.length);
+    handElement.replaceChildren(...cards);
     arrivingCardCanvases.clear();
     requestAnimationFrame(syncHoveredCardPreview);
   }
