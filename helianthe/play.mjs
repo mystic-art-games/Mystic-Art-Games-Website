@@ -37,6 +37,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   const massiveDrawSound = new Audio(new URL('./assets/Massive_Draw.mp3', import.meta.url));
   const shapeSound = new Audio(new URL('./assets/Shape.mp3', import.meta.url));
   const changeTurnSound = new Audio(new URL('./assets/Change_Turn.wav', import.meta.url));
+  const nextPhaseSound = new Audio(new URL('./assets/Next_Phase.mp3', import.meta.url));
   const playCardSound = new Audio(new URL('./assets/Play_Card.mp3', import.meta.url));
   rollDiceSound.preload = 'auto';
   const OfflineContext = window.OfflineAudioContext || window.webkitOfflineAudioContext;
@@ -3147,6 +3148,11 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     }
     const turnChanged = room.turn_number !== data.turn_number || room.turn_phase !== data.turn_phase
       || room.turn_player_id !== data.turn_player_id;
+    const phaseChangedWithinTurn = visible && !inLobby && !document.hidden
+      && room.status === 'active' && data.status === 'active'
+      && data.turn_player_id && room.turn_player_id === data.turn_player_id
+      && room.turn_number === data.turn_number && room.turn_phase !== data.turn_phase
+      && phaseOrder.includes(room.turn_phase) && phaseOrder.includes(data.turn_phase);
     if (pendingFestival && (data.turn_player_id !== userId || data.turn_phase !== 'main' || data.status !== 'active')) {
       pendingFestival = null;
       discardSelections.clear();
@@ -3191,6 +3197,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     }
     if (data.status !== 'active' || inLobby) clearTerrainArrivals();
     room = data; render();
+    if (phaseChangedWithinTurn) playTableSound(nextPhaseSound);
     if (opponentPlacement) {
       const [key, node] = opponentPlacement;
       const target = () => $('game-board').querySelector(`[data-key="${CSS.escape(key)}"] .play-node-entity-card`);
@@ -3502,7 +3509,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (playing && !finished) renderGame();
   }
 
-  for (const id of ['create', 'back', 'leave', 'ready', 'opening-roll-button', 'game-back', 'game-result-back']) {
+  for (const id of ['create', 'back', 'leave', 'ready', 'opening-roll-button', 'game-back', 'game-result-back', 'game-next-phase', 'game-extra-draw']) {
     $(id).dataset.customClickSound = '';
   }
   $('signin-button').addEventListener('click', requireSignIn);
