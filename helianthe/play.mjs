@@ -80,7 +80,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       <button id="play-back" class="back-to-decks" type="button"><span aria-hidden="true">←</span> Back to Lobby</button>
       <div class="play-room-bar"><div class="play-room-identity"><div class="play-room-name-line"><strong id="play-room-name"></strong><button id="play-edit-name" class="action-cancel" type="button">Edit name</button></div><form id="play-name-form" hidden><input id="play-name-input" aria-label="Table name" maxlength="60" required><button type="submit">Save</button><button id="play-cancel-name" type="button">Cancel</button></form><span class="play-room-code-line">Code: <strong id="play-room-code"></strong></span></div><div class="play-room-actions"><button id="play-leave" class="action-delete" type="button">Smash Table</button></div></div>
       <div id="play-players" class="play-players"></div>
-      <div id="play-deck-field" class="play-deck-field"><span id="play-deck-label">Your deck</span><div class="play-deck-choice"><img id="play-deck-cover" class="play-deck-cover" alt="" hidden><select id="play-deck" hidden></select><details id="play-deck-picker" class="play-deck-picker"><summary id="play-deck-trigger" aria-labelledby="play-deck-label play-deck-trigger">No decks available</summary><div id="play-deck-options" class="play-deck-options"></div></details></div></div>
+      <div id="play-deck-field" class="play-deck-field"><span id="play-deck-label">Your deck</span><div class="play-deck-choice"><img id="play-deck-cover" class="play-deck-cover" alt="" hidden><select id="play-deck" hidden></select><details id="play-deck-picker" class="play-deck-picker"><summary id="play-deck-trigger" aria-labelledby="play-deck-label play-deck-trigger">No decks available</summary><div id="play-deck-options" class="play-deck-options"></div></details></div><span id="play-deck-patron" class="play-deck-patron" hidden></span></div>
       <button id="play-ready" class="action-add-save" type="button">Ready</button>
       <div id="play-controls-parking" hidden></div>
       <p id="play-room-status" role="status"></p>
@@ -3125,6 +3125,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   function updateDeckCover() {
     const deck = getDecks().find(item => String(item.id) === $('deck').value);
+    const patron = $('deck-patron');
+    patron.hidden = !deck;
+    patron.textContent = deck ? deck.patron_name || 'Patron unavailable' : '';
     $('deck-trigger').replaceChildren(
       makeDeckFactionLabel(deck?.name || 'No decks available', getPatronFactionIcon(deck?.patron_name))
     );
