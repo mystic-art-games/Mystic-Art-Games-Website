@@ -19,7 +19,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   let userId = null, room = null, channel = null, timer = null, awayTicker = null, awayExpiryBusy = false, visible = false, inLobby = false;
   let lobbyTimer = null, directoryChannel = null, directoryUserId = null, listSerial = 0, tableListSignature = '';
   let busy = false, epoch = 0, fetchSerial = 0, live = false, lastHeartbeat = 0, autoDeckPending = false;
-  const buildTableSoundUrl = new URL('./assets/Build_Table_Wood.wav', import.meta.url);
+  const buildTableSoundUrl = new URL('./assets/Build_Table.mp3?v=3', import.meta.url);
   const TableAudioContext = window.AudioContext || window.webkitAudioContext;
   const buildTableSoundData = TableAudioContext && fetch(buildTableSoundUrl)
     .then(response => response.ok ? response.arrayBuffer() : null)
