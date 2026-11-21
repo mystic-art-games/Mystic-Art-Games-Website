@@ -19,7 +19,14 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   let userId = null, room = null, channel = null, timer = null, awayTicker = null, awayExpiryBusy = false, visible = false, inLobby = false;
   let lobbyTimer = null, directoryChannel = null, directoryUserId = null, listSerial = 0, tableListSignature = '';
   let busy = false, epoch = 0, fetchSerial = 0, live = false, lastHeartbeat = 0, autoDeckPending = false;
-  const buildTableSound = new Audio(new URL("./assets/Build_Table.mp3?v=2", import.meta.url));
+  const buildTableSoundUrl = new URL('./assets/Build_Table.mp3?v=2', import.meta.url);
+  const TableAudioContext = window.AudioContext || window.webkitAudioContext;
+  const buildTableSoundData = TableAudioContext && fetch(buildTableSoundUrl)
+    .then(response => response.ok ? response.arrayBuffer() : null)
+    .catch(() => null);
+  let buildTableAudioContext;
+  let buildTableSoundBuffer;
+  let buildTableFallback;
   const smashTableSound = new Audio(new URL('./assets/Smash_Table.mp3', import.meta.url));
   let pendingDeckId = null, deckSaveInFlight = false;
   let gameState = null, gameLoading = false, gameLoadFailed = false, gameReloadPending = false, handSignature = '', gameRenderSerial = 0, boardRenderSerial = 0, cardPreviewSerial = 0;
@@ -1426,6 +1433,31 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   function playTableSound(sound) {
     sound.currentTime = 0;
     void sound.play().catch(() => {});
+  }
+  async function playBuildTableSound() {
+    if (TableAudioContext) {
+      try {
+        const context = buildTableAudioContext ||= new TableAudioContext();
+        // Resume during the click so audio remains allowed after decoding.
+        const ready = context.resume();
+        buildTableSoundBuffer ||= buildTableSoundData.then(data => {
+          if (!data) throw new Error('Build Table audio could not be loaded.');
+          return context.decodeAudioData(data.slice(0));
+        });
+        const [buffer] = await Promise.all([buildTableSoundBuffer, ready]);
+        const source = context.createBufferSource();
+        source.buffer = buffer;
+        source.connect(context.destination);
+        source.addEventListener('ended', () => source.disconnect(), { once: true });
+        // Let the output wake up before the first impact in the clip.
+        source.start(context.currentTime + 0.12);
+        return;
+      } catch {
+        // Use the regular audio element if the browser cannot use Web Audio.
+      }
+    }
+    buildTableFallback ||= new Audio(buildTableSoundUrl);
+    playTableSound(buildTableFallback);
   }
   async function run(task) {
     if (busy) return;
@@ -3155,7 +3187,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   $('signin-button').addEventListener('click', requireSignIn);
   $('create').addEventListener('click', () => {
     if (busy) return;
-    playTableSound(buildTableSound);
+    void playBuildTableSound();
     void run(async () => {
       await refreshIdentity();
       if (!userId) throw new Error('Sign in to create a table.');
