@@ -111,6 +111,9 @@ body.dark-mode .play-deck-field.is-locked select { border-color: #596d5d; backgr
 .play-game-player-identity { display: grid; align-content: center; gap: .1rem; min-height: 1.4rem; padding: 0 .5rem .2rem; }
 .play-game-player-identity strong { font-size: 1rem; overflow-wrap: anywhere; }
 .play-game-identity-name { display: flex; align-items: center; flex-wrap: wrap; gap: .6rem; }
+.play-game-player-label { display: inline-flex; align-items: center; gap: .4rem; min-width: 0; }
+.play-game-player-label strong { min-width: 0; }
+.play-game-player-avatar { width: 1.7rem; height: 1.7rem; font-size: .7rem; }
 .play-game-seat-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .85rem; }
 .play-game-seat-heading > strong { font-size: 1.12rem; overflow-wrap: anywhere; }
 .play-game-opponent-footer { position: relative; display: flex; align-items: flex-start; justify-content: space-between; gap: .5rem; }
