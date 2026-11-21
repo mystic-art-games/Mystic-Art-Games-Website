@@ -27,6 +27,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   let buildTableAudioContext;
   let buildTableSoundBuffer;
   let buildTableFallback;
+  let buildTableOutputPrimed = false;
   const smashTableSound = new Audio(new URL('./assets/Smash_Table.mp3', import.meta.url));
   let pendingDeckId = null, deckSaveInFlight = false;
   let gameState = null, gameLoading = false, gameLoadFailed = false, gameReloadPending = false, handSignature = '', gameRenderSerial = 0, boardRenderSerial = 0, cardPreviewSerial = 0;
@@ -1434,10 +1435,29 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     sound.currentTime = 0;
     void sound.play().catch(() => {});
   }
+  function primeBuildTableOutput(context, start) {
+    const end = start + 0.24;
+    const tone = context.createOscillator();
+    const gain = context.createGain();
+    tone.frequency.value = 180;
+    gain.gain.setValueAtTime(0, start);
+    gain.gain.linearRampToValueAtTime(0.003, start + 0.02);
+    gain.gain.setValueAtTime(0.003, end - 0.02);
+    gain.gain.linearRampToValueAtTime(0, end);
+    tone.connect(gain).connect(context.destination);
+    tone.addEventListener('ended', () => {
+      tone.disconnect();
+      gain.disconnect();
+    }, { once: true });
+    tone.start(start);
+    tone.stop(end);
+    return end;
+  }
   async function playBuildTableSound() {
     if (TableAudioContext) {
       try {
         const context = buildTableAudioContext ||= new TableAudioContext();
+        const needsPriming = !buildTableOutputPrimed || context.state !== 'running';
         // Resume during the click so audio remains allowed after decoding.
         const ready = context.resume();
         buildTableSoundBuffer ||= buildTableSoundData.then(data => {
@@ -1449,8 +1469,11 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         source.buffer = buffer;
         source.connect(context.destination);
         source.addEventListener('ended', () => source.disconnect(), { once: true });
-        // Let the output wake up before the first impact in the clip.
-        source.start(context.currentTime + 0.12);
+        const now = context.currentTime;
+        // A quiet signal opens the output before the first impact.
+        const start = needsPriming ? primeBuildTableOutput(context, now + 0.01) : now + 0.12;
+        source.start(start);
+        buildTableOutputPrimed = true;
         return;
       } catch {
         // Use the regular audio element if the browser cannot use Web Audio.
