@@ -573,6 +573,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (!node?.terrain) return node?.entity || !canCreateTerrainAt(key)
       ? null : dreamwellCreatesTerrain(card) ? 'create_place'
         : (terrainTypes.includes(entityShapeTerrain(card)) ? 'shape' : null);
+    if (dreamwellCreatesTerrain(card)) return null;
     if (node.entity) return null;
     if (!terrainTypes.includes(node.terrain)) return null;
     const effect = String(card.effect || '').replace(/\s+/g, ' ').toLowerCase();
