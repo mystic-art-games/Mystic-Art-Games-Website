@@ -2763,10 +2763,13 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   async function animateOpponentCard(zone, { draw = false, card = null, title = '', delay = 0 } = {}) {
     const game = $('game');
-    if (!visible || inLobby || game.hidden || document.hidden
-      || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const canPlayLandingSound = () => !draw && visible && !inLobby && !game.hidden && !document.hidden;
+    if (!visible || inLobby || game.hidden || document.hidden) return;
     const bounds = zone?.getBoundingClientRect();
-    if (!bounds?.width || !bounds.height) return;
+    if (!bounds?.width || !bounds.height || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      if (canPlayLandingSound()) playTableSound(playCardSound);
+      return;
+    }
     const gameBounds = game.getBoundingClientRect();
     const top = Math.max(0, gameBounds.top);
     const dx = gameBounds.left + gameBounds.width / 2 - bounds.left - bounds.width / 2;
@@ -2806,7 +2809,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         if (result && !result.cancelled && flight.isConnected) flight.replaceChildren(canvas);
       })().catch(() => {});
     }
-    try { await animation.finished; }
+    try {
+      await animation.finished;
+      if (canPlayLandingSound()) playTableSound(playCardSound);
+    }
     catch { /* The match view may close during the flight. */ }
     finally {
       clearTimeout(drawSoundTimer);
@@ -2833,7 +2839,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       }
       const played = /^(evoked|shaped with) (.+)\.$/.exec(row.message);
       if (!played) continue;
-      if (played[1] === 'evoked') playTableSound(playCardSound);
       const card = getCards().find(item => item.title === played[2]
         && item.card_type === (played[1] === 'evoked' ? 'Event' : 'Entity'));
       void animateOpponentCard($('game-opponent-archive'), { card, title: played[2], delay });
@@ -3187,17 +3192,14 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (data.status !== 'active' || inLobby) clearTerrainArrivals();
     room = data; render();
     if (opponentPlacement) {
-      playTableSound(playCardSound);
       const [key, node] = opponentPlacement;
-      if (opponentArrivingEntities.has(key)) {
-        const target = () => $('game-board').querySelector(`[data-key="${CSS.escape(key)}"] .play-node-entity-card`);
-        const expected = epoch;
-        void animateOpponentCard(target(), { card: resolveGameCard(node.entity) }).finally(() => {
-          if (expected !== epoch) return;
-          opponentArrivingEntities.delete(key);
-          target()?.classList.remove('is-arriving', 'is-opponent-arriving');
-        });
-      }
+      const target = () => $('game-board').querySelector(`[data-key="${CSS.escape(key)}"] .play-node-entity-card`);
+      const expected = epoch;
+      void animateOpponentCard(target(), { card: resolveGameCard(node.entity) }).finally(() => {
+        if (expected !== epoch) return;
+        opponentArrivingEntities.delete(key);
+        target()?.classList.remove('is-arriving', 'is-opponent-arriving');
+      });
     }
     if (playShapeImmediately) playTableSound(shapeSound);
     if (openingDiceStarted) playTableSound(openingDiceSound);
