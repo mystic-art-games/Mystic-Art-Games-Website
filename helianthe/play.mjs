@@ -19,17 +19,16 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   let userId = null, room = null, channel = null, timer = null, awayTicker = null, awayExpiryBusy = false, visible = false, inLobby = false;
   let lobbyTimer = null, directoryChannel = null, directoryUserId = null, listSerial = 0, tableListSignature = '';
   let busy = false, epoch = 0, fetchSerial = 0, live = false, lastHeartbeat = 0, autoDeckPending = false;
-  const buildTableSoundUrl = new URL('./assets/Build_Table.mp3?v=3', import.meta.url);
+  const sitAtTableSoundUrl = new URL('./assets/Sit_At_The_Table.wav?v=2', import.meta.url);
   const TableAudioContext = window.AudioContext || window.webkitAudioContext;
-  const buildTableSoundData = TableAudioContext && fetch(buildTableSoundUrl)
+  const buildTableSoundData = TableAudioContext && fetch(sitAtTableSoundUrl)
     .then(response => response.ok ? response.arrayBuffer() : null)
     .catch(() => null);
   let tableAudioContext;
   let buildTableSoundBuffer;
-  let buildTableFallback;
   const smashTableSound = new Audio(new URL('./assets/Smash_Table.mp3', import.meta.url));
   const leaveTableSound = new Audio(new URL('./assets/Leave_Table.wav?v=2', import.meta.url));
-  const sitAtTableSound = new Audio(new URL('./assets/Sit_At_The_Table.wav?v=2', import.meta.url));
+  const sitAtTableSound = new Audio(sitAtTableSoundUrl);
   const readySound = new Audio(new URL('./assets/Ready.mp3', import.meta.url));
   const notReadySound = new Audio(new URL('./assets/Not_Ready.mp3', import.meta.url));
   const openingDiceSound = new Audio(new URL('./assets/Play.mp3', import.meta.url));
@@ -1553,8 +1552,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         // Use the regular audio element if the browser cannot use Web Audio.
       }
     }
-    buildTableFallback ||= new Audio(buildTableSoundUrl);
-    playTableSound(buildTableFallback);
+    playTableSound(sitAtTableSound);
   }
   async function run(task) {
     if (busy) return;
