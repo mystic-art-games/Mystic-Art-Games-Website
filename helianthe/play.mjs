@@ -37,6 +37,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   const massiveDrawSound = new Audio(new URL('./assets/Massive_Draw.mp3', import.meta.url));
   const shapeSound = new Audio(new URL('./assets/Shape.mp3', import.meta.url));
   const changeTurnSound = new Audio(new URL('./assets/Change_Turn.wav', import.meta.url));
+  const playCardSound = new Audio(new URL('./assets/Play_Card.mp3', import.meta.url));
   rollDiceSound.preload = 'auto';
   const OfflineContext = window.OfflineAudioContext || window.webkitOfflineAudioContext;
   const rollDiceClip = TableAudioContext && OfflineContext ? fetch(rollDiceSound.src)
@@ -460,6 +461,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (!ascending) rows = rows.reverse();
     if (older || !latest) gameLogHasOlder = rows.length === gameLogPageSize;
     gameLogEntries = older ? [...rows, ...gameLogEntries] : [...gameLogEntries, ...rows];
+    if (ascending && visible && !inLobby && !$('game').hidden
+      && rows.some(row => row.actor_id && row.actor_id !== userId && row.message.startsWith('evoked '))) {
+      playTableSound(playCardSound);
+    }
     if (!older && latest && !followGameLog) unreadGameLogCount += rows.length;
     if (!older && (!ascending || rows.length < gameLogPageSize)) gameLogRevision = revision;
     renderGameLog(false, older);
@@ -1866,6 +1871,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
           : { p_discard_index: discards[0]?.index ?? null, p_discard_card_id: discards[0]?.id || null }),
       });
       if (expected !== epoch || room?.id !== roomId) return;
+      playTableSound(playCardSound);
       if (indexes.length) await animateDiscardToArchive(indexes);
       if (expected !== epoch || room?.id !== roomId) return;
       pendingFestival = null;
@@ -2332,6 +2338,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         p_expected_hand_count: gameState.hand.length, p_choices: choices,
       });
       if (expected !== epoch || room?.id !== roomId) return;
+      playTableSound(playCardSound);
       if (result?.drawn > 0) await animateCardsToHand(horizon.slice(0, result.drawn), [event.handIndex], 110);
       if (expected !== epoch || room?.id !== roomId) return;
       await refreshRoom();
@@ -2437,6 +2444,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       });
       if (expected !== epoch || room?.id !== roomId) return;
       pendingEvent = null;
+      playTableSound(playCardSound);
       if (result?.drawn > 0) await animateCardsToHand(horizon.slice(0, result.drawn), [handIndex], 110);
       if (expected !== epoch || room?.id !== roomId) return;
       await refreshRoom();
@@ -2479,7 +2487,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       });
       if (expected !== epoch || room?.id !== roomId) return;
       pendingEntity = null;
-      if (result?.action === 'place') await animateEntityPlacement(flight, targetX, targetY);
+      if (result?.action === 'place') {
+        playTableSound(playCardSound);
+        await animateEntityPlacement(flight, targetX, targetY);
+      }
       arrivingEntityKey = null;
       Array.from($('game-board').children).find(cell => cell.dataset.key === `${targetX},${targetY}`)
         ?.querySelector('.play-node-entity-card')?.classList.remove('is-arriving');
@@ -3061,6 +3072,11 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const openingDiceStarted = visible && !inLobby && room.status === 'waiting'
       && data.status === 'active' && data.turn_phase === 'roll';
     const matchEnded = room.status === 'active' && data.status === 'closed' && Boolean(data.conceded_by);
+    const opponentPlacedEntity = visible && !inLobby && room.status === 'active' && data.status === 'active'
+      && data.turn_player_id !== userId && data.turn_player_id === room.turn_player_id
+      && data.turn_number === room.turn_number && !room.main_played_entity && data.main_played_entity
+      && Object.entries(data.board || {}).some(([key, node]) =>
+        node?.entity && room.board?.[key]?.terrain && !room.board[key].entity);
     let playShapeImmediately = false;
     if (visible && !inLobby && room.status === 'active' && data.status === 'active') {
       const arrivals = Object.entries(data.board || {}).filter(([key, node]) => node?.terrain && !room.board?.[key]?.terrain);
@@ -3080,6 +3096,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     }
     if (data.status !== 'active' || inLobby) clearTerrainArrivals();
     room = data; render();
+    if (opponentPlacedEntity) playTableSound(playCardSound);
     if (playShapeImmediately) playTableSound(shapeSound);
     if (openingDiceStarted) playTableSound(openingDiceSound);
     if (matchEnded) playTableSound(data.conceded_by === userId ? loseSound : winSound);
