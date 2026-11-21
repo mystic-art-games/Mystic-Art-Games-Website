@@ -83,6 +83,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   const discardHandShifts = [], discardHiddenCards = new Set();
   const arrivingCardCanvases = new Map();
   let beginningTurnKey = '', beginningOrder = [], beginningTargetSource = null;
+  const beginningSkipped = new Set();
   const beginningTargets = new Map();
   let archiveBrowserSeat = null, archiveBrowserCards = [], archiveBrowserIndex = 0;
   let archiveBrowserRequestSerial = 0, archiveBrowserCardSerial = 0, archiveBrowserOpener = null;
@@ -122,18 +123,20 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       <div class="play-game-opponent-footer"><div class="play-game-opponent-identity play-game-player-identity"><div class="play-game-identity-name"><strong id="play-game-opponent-name"></strong></div><span id="play-game-opponent-hand-count" class="play-game-hand-count" aria-live="polite" hidden></span></div><span id="play-game-opponent-presence" class="play-away-pill" hidden></span><div class="play-game-actions"><details class="play-table-menu"><summary class="play-menu-toggle" aria-label="Table actions" title="Table actions"><svg class="play-menu-bars" aria-hidden="true" viewBox="0 0 22 22"><path d="M3 5h16 M3 11h16 M3 17h16"/></svg></summary><div class="play-table-menu-panel"><strong id="play-game-name" class="play-menu-table-name"></strong><button id="play-game-leave" type="button">Concede</button><button id="play-game-back" class="play-menu-lobby" type="button">Back to Lobby</button></div></details></div></div>
       </div>
       <div class="play-game-board-wrap">
-      <aside id="play-game-beginning-effects" class="play-beginning-effects" aria-label="Beginning of Turn Entity effects" hidden><strong>Beginning of Turn effects</strong><p id="play-game-beginning-instructions"></p><ol id="play-game-beginning-list"></ol><button id="play-game-resolve-beginning" type="button">Resolve effects in this order</button></aside>
-      <aside id="play-game-card-preview" class="play-game-card-preview" aria-label="Card preview" hidden><button id="play-game-card-preview-close" class="play-game-card-preview-close action-delete" type="button" aria-label="Close card preview">×</button><canvas id="play-game-card-preview-canvas" hidden></canvas><img id="play-game-card-preview-image" alt="" hidden><span id="play-game-card-preview-fallback" class="play-hand-fallback"></span></aside>
+      <div class="play-game-left-stack">
+        <aside id="play-game-card-preview" class="play-game-card-preview" aria-label="Card preview" hidden><button id="play-game-card-preview-close" class="play-game-card-preview-close action-delete" type="button" aria-label="Close card preview">×</button><canvas id="play-game-card-preview-canvas" hidden></canvas><img id="play-game-card-preview-image" alt="" hidden><span id="play-game-card-preview-fallback" class="play-hand-fallback"></span></aside>
+        <aside id="play-game-beginning-effects" class="play-beginning-effects" aria-label="Beginning of Turn Entity effects" hidden><strong>Beginning of Turn effects</strong><p id="play-game-beginning-instructions"></p><section class="play-beginning-zone" aria-labelledby="play-game-beginning-active-title"><h3 id="play-game-beginning-active-title">Resolve in this order</h3><ol id="play-game-beginning-list"></ol></section><section class="play-beginning-zone play-beginning-skipped-zone" aria-labelledby="play-game-beginning-skipped-title"><h3 id="play-game-beginning-skipped-title">Skip this turn</h3><ol id="play-game-beginning-skipped-list"></ol><p id="play-game-beginning-skipped-empty">Drag optional “you may” effects here.</p></section><button id="play-game-resolve-beginning" type="button">Resolve effects in this order</button></aside>
+      </div>
       <div class="play-game-table">
         <div class="play-game-zones-left">
-          <div class="play-game-zone play-game-zone-opponent-patron"><button id="play-game-opponent-patron-slot" class="play-game-patron-slot" type="button" aria-label="Preview opponent's Patron"><canvas id="play-game-opponent-patron" hidden></canvas><span id="play-game-opponent-patron-fallback" class="play-game-patron-fallback" aria-hidden="true"></span></button></div>
+          <div class="play-game-zone play-game-zone-opponent-patron"><div id="play-game-opponent-patron-slot" class="play-game-patron-slot" role="img" aria-label="Opponent's Patron"><canvas id="play-game-opponent-patron" hidden></canvas><span id="play-game-opponent-patron-fallback" class="play-game-patron-fallback" aria-hidden="true"></span></div></div>
           <div class="play-game-zone-pair play-game-zone-pair-self" aria-label="Your card zones"><div class="play-game-zone play-game-zone-horizon"><div id="play-game-self-horizon" class="play-deck-stack" role="img" aria-label="Your Horizon, draw deck"></div></div><div class="play-game-zone play-game-zone-archive"><button id="play-game-self-archive" class="play-game-archive-card is-empty" type="button" aria-label="Browse your Archive"><canvas id="play-game-self-archive-canvas" aria-hidden="true" hidden></canvas><span id="play-game-archive-top"></span></button></div></div>
         </div>
         <div id="play-game-board" class="play-game-board" role="group" aria-label="Shared five-column, four-row Terrain board"></div>
         <div id="play-game-entanglements" class="play-game-entanglements" aria-hidden="true"></div>
         <div class="play-game-zones-right">
           <div class="play-game-zone-pair play-game-zone-pair-opponent" aria-label="Opponent's card zones"><div class="play-game-zone play-game-zone-archive"><button id="play-game-opponent-archive" class="play-game-archive-card is-empty" type="button" aria-label="Browse opponent's Archive"><canvas id="play-game-opponent-archive-canvas" aria-hidden="true" hidden></canvas><span id="play-game-opponent-archive-top"></span></button></div><div class="play-game-zone play-game-zone-horizon"><div id="play-game-opponent-horizon" class="play-deck-stack" role="img" aria-label="Opponent's Horizon, draw deck"></div></div></div>
-          <div class="play-game-zone play-game-zone-self-patron"><button id="play-game-self-patron-slot" class="play-game-patron-slot" type="button" aria-label="Preview your Patron"><canvas id="play-game-self-patron" hidden></canvas><span id="play-game-self-patron-fallback" class="play-game-patron-fallback" aria-hidden="true"></span></button></div>
+          <div class="play-game-zone play-game-zone-self-patron"><div id="play-game-self-patron-slot" class="play-game-patron-slot" role="img" aria-label="Your Patron"><canvas id="play-game-self-patron" hidden></canvas><span id="play-game-self-patron-fallback" class="play-game-patron-fallback" aria-hidden="true"></span></div></div>
         </div>
       </div>
       <div class="play-game-phase-stack" hidden>
@@ -582,13 +585,16 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       && effect === 'at the beginning of your every turn fertilize an adjacent node with no terrain. then if there are 4 or more adjacent verdant terrains, draw a card.') return 'expansive_ivy';
     return null;
   }
+  function beginningEffectOptional(card) {
+    return /\byou may\b/i.test(String(card?.effect || ''));
+  }
   function beginningEffects() {
     if (room?.status !== 'active' || room.turn_phase !== 'beginning'
       || room.beginning_effects_resolved_turn === room.turn_number) return [];
     return Object.entries(room.board || {}).filter(([key, node]) => /^[0-4],[0-3]$/.test(key)
       && node?.entity?.owner_id === room.turn_player_id && beginningEffectKind(node.entity))
       .map(([source, node]) => ({ source, card: { ...resolveGameCard(node.entity),
-        title: node.entity.title, effect: node.entity.effect } }))
+        title: node.entity.title, effect: node.entity.effect }, optional: beginningEffectOptional(node.entity) }))
       .sort((a, b) => Number(a.source.split(',')[1]) - Number(b.source.split(',')[1])
         || Number(a.source.split(',')[0]) - Number(b.source.split(',')[0]));
   }
@@ -597,6 +603,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const fertilized = new Set(Object.entries(room?.board || {}).filter(([, node]) => node?.fertilize).map(([key]) => key));
     const plan = new Map();
     for (const source of beginningOrder) {
+      if (beginningSkipped.has(source)) { plan.set(source, { options: [], target: null, valid: true }); continue; }
       const [x, y] = source.split(',').map(Number);
       const options = [[x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]]
         .filter(([column, row]) => column >= 0 && column <= 4 && row >= 0 && row <= 3)
@@ -1051,6 +1058,23 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   $('opening-mulligan-keep').addEventListener('click', () => void finishMulligan([]));
   $('opening-mulligan-confirm').addEventListener('click', () => void finishMulligan([...mulliganOrder]));
+  function moveBeginningEffect(source, skip, beforeSource = null) {
+    const effect = beginningEffects().find(entry => entry.source === source);
+    if (!effect || (skip && !effect.optional) || phaseBusy) return;
+    beginningOrder.splice(beginningOrder.indexOf(source), 1);
+    if (skip) { beginningSkipped.add(source); beginningTargets.delete(source); }
+    else beginningSkipped.delete(source);
+    if (beginningTargetSource === source) beginningTargetSource = null;
+    const before = beforeSource && beginningSkipped.has(beforeSource) === skip
+      ? beginningOrder.indexOf(beforeSource) : -1;
+    if (before >= 0) beginningOrder.splice(before, 0, source);
+    else if (skip) beginningOrder.push(source);
+    else {
+      const lastActive = beginningOrder.findLastIndex(item => !beginningSkipped.has(item));
+      beginningOrder.splice(lastActive + 1, 0, source);
+    }
+    renderBeginningEffects(); syncEventTargets(); void saveBeginningPlan();
+  }
   function renderBeginningEffects() {
     const effects = beginningEffects();
     const panel = $('game-beginning-effects');
@@ -1062,38 +1086,48 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const shared = saved?.turn === room.turn_number && saved?.player_id === room.turn_player_id
       && Array.isArray(saved.effects) ? saved.effects : null;
     $('game-beginning-instructions').textContent = own
-      ? 'Drag effects into the order you want. Choose an adjacent empty Node for each effect.'
-      : 'Opponent is choosing the order and targets.';
+      ? 'Drag to reorder. Move optional effects below to skip them this turn. Choose a Node for each effect you resolve.'
+      : 'Opponent is choosing the order, targets, and optional effects to skip.';
     $('game-resolve-beginning').hidden = !own;
     const turnKey = `${room.id}:${room.turn_number}`;
     const sources = new Set(effects.map(effect => effect.source));
     if (turnKey !== beginningTurnKey) {
       beginningTurnKey = turnKey;
       beginningOrder = effects.map(effect => effect.source);
+      beginningSkipped.clear();
       beginningTargets.clear();
       beginningTargetSource = null;
       if (shared) {
         beginningOrder = shared.map(entry => entry.source).filter(source => sources.has(source));
         for (const entry of shared) if (sources.has(entry.source) && entry.target) beginningTargets.set(entry.source, entry.target);
+        for (const entry of shared) if (sources.has(entry.source) && entry.skip) beginningSkipped.add(entry.source);
       }
     } else {
       beginningOrder = beginningOrder.filter(source => sources.has(source));
       for (const effect of effects) if (!beginningOrder.includes(effect.source)) beginningOrder.push(effect.source);
       for (const source of beginningTargets.keys()) if (!sources.has(source)) beginningTargets.delete(source);
+      for (const source of beginningSkipped) if (!sources.has(source)) beginningSkipped.delete(source);
       if (beginningTargetSource && !sources.has(beginningTargetSource)) beginningTargetSource = null;
       if (!own && shared) {
         beginningOrder = shared.map(entry => entry.source).filter(source => sources.has(source));
         beginningTargets.clear();
+        beginningSkipped.clear();
         for (const entry of shared) if (sources.has(entry.source) && entry.target) beginningTargets.set(entry.source, entry.target);
+        for (const entry of shared) if (sources.has(entry.source) && entry.skip) beginningSkipped.add(entry.source);
       }
     }
     for (const effect of effects) if (!beginningOrder.includes(effect.source)) beginningOrder.push(effect.source);
     const bySource = new Map(effects.map(effect => [effect.source, effect]));
     const plan = beginningPlan();
-    const rows = beginningOrder.map((source, index) => {
+    const activeSources = beginningOrder.filter(source => !beginningSkipped.has(source));
+    const skippedSources = beginningOrder.filter(source => beginningSkipped.has(source));
+    const rows = beginningOrder.map(source => {
       const effect = bySource.get(source);
+      const skipped = beginningSkipped.has(source);
+      const zoneSources = skipped ? skippedSources : activeSources;
+      const index = zoneSources.indexOf(source);
       const row = document.createElement('li');
-      row.className = `play-beginning-effect${beginningTargetSource === source ? ' is-choosing' : ''}`;
+      row.className = `play-beginning-effect${beginningTargetSource === source ? ' is-choosing' : ''}${skipped ? ' is-skipped' : ''}`;
       row.draggable = own && !phaseBusy;
       const heading = document.createElement('div'); heading.className = 'play-beginning-effect-heading';
       const title = document.createElement('strong'); title.textContent = `${effect.card.title} · ${source}`;
@@ -1105,7 +1139,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       const description = document.createElement('p'); description.textContent = effect.card.effect || '';
       const controls = document.createElement('div'); controls.className = 'play-beginning-effect-controls';
       const { options, target, valid } = plan.get(source);
-      if (!own) {
+      if (skipped) {
+        const status = document.createElement('span'); status.textContent = 'Skipped this turn'; controls.append(status);
+      } else if (!own) {
         const status = document.createElement('span');
         status.textContent = target && valid ? `Target: Node ${target}` : options.length ? 'Waiting for target' : 'No adjacent empty Node';
         controls.append(status);
@@ -1128,12 +1164,22 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         const unavailable = document.createElement('span'); unavailable.textContent = 'No adjacent empty Node';
         controls.append(unavailable);
       }
+      if (own && effect.optional) {
+        const toggle = document.createElement('button'); toggle.type = 'button';
+        toggle.textContent = skipped ? 'Restore' : 'Skip';
+        toggle.setAttribute('aria-label', `${skipped ? 'Restore' : 'Skip'} ${effect.card.title} this turn`);
+        toggle.disabled = phaseBusy;
+        toggle.addEventListener('click', () => moveBeginningEffect(source, !skipped));
+        controls.append(toggle);
+      }
       for (const [direction, label] of own ? [[-1, 'Move up'], [1, 'Move down']] : []) {
         const move = document.createElement('button'); move.type = 'button';
         move.textContent = direction < 0 ? '↑' : '↓'; move.setAttribute('aria-label', `${label}: ${effect.card.title}`);
-        move.disabled = phaseBusy || index + direction < 0 || index + direction >= beginningOrder.length;
+        move.disabled = phaseBusy || index + direction < 0 || index + direction >= zoneSources.length;
         move.addEventListener('click', () => {
-          [beginningOrder[index], beginningOrder[index + direction]] = [beginningOrder[index + direction], beginningOrder[index]];
+          const next = zoneSources[index + direction];
+          const from = beginningOrder.indexOf(source), to = beginningOrder.indexOf(next);
+          [beginningOrder[from], beginningOrder[to]] = [beginningOrder[to], beginningOrder[from]];
           renderBeginningEffects(); void saveBeginningPlan();
         });
         controls.append(move);
@@ -1147,24 +1193,22 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       if (own) row.addEventListener('dragend', () => row.classList.remove('is-dragging'));
       if (own) row.addEventListener('dragover', event => { event.preventDefault(); event.dataTransfer.dropEffect = 'move'; });
       if (own) row.addEventListener('drop', event => {
-        event.preventDefault();
+        event.preventDefault(); event.stopPropagation();
         const dragged = event.dataTransfer.getData('text/plain');
-        const from = beginningOrder.indexOf(dragged);
-        const to = beginningOrder.indexOf(source);
-        if (from < 0 || to < 0 || from === to) return;
-        beginningOrder.splice(from, 1);
-        beginningOrder.splice(to, 0, dragged);
-        renderBeginningEffects(); void saveBeginningPlan();
+        if (!bySource.has(dragged) || dragged === source) return;
+        moveBeginningEffect(dragged, skipped, source);
       });
       return row;
     });
-    $('game-beginning-list').replaceChildren(...rows);
+    $('game-beginning-list').replaceChildren(...rows.filter(row => !row.classList.contains('is-skipped')));
+    $('game-beginning-skipped-list').replaceChildren(...rows.filter(row => row.classList.contains('is-skipped')));
+    $('game-beginning-skipped-empty').hidden = skippedSources.length > 0;
     $('game-resolve-beginning').disabled = phaseBusy || beginningOrder.some(source => !plan.get(source)?.valid);
   }
   async function saveBeginningPlan() {
     if (phaseBusy || room?.turn_player_id !== userId || room.turn_phase !== 'beginning') return;
     const expected = epoch, roomId = room.id, turn = room.turn_number;
-    const entries = beginningOrder.map(source => ({ source, target: beginningTargets.get(source) || null }));
+    const entries = beginningOrder.map(source => ({ source, target: beginningSkipped.has(source) ? null : beginningTargets.get(source) || null, skip: beginningSkipped.has(source) }));
     phaseBusy = true;
     renderBeginningEffects();
     try {
@@ -1185,7 +1229,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (phaseBusy || room?.turn_player_id !== userId || room.turn_phase !== 'beginning') return;
     const effects = beginningEffects();
     if (!effects.length || beginningOrder.length !== effects.length) return;
-    const entries = beginningOrder.map(source => ({ source, target: beginningTargets.get(source) || null }));
+    const entries = beginningOrder.map(source => ({ source, target: beginningSkipped.has(source) ? null : beginningTargets.get(source) || null, skip: beginningSkipped.has(source) }));
     const plan = beginningPlan();
     if (entries.some(({ source }) => !plan.get(source)?.valid)) return;
     const expected = epoch, roomId = room.id, turn = room.turn_number;
@@ -1202,7 +1246,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       if (expected !== epoch || room?.id !== roomId) return;
       await refreshRoom();
       if (expected === epoch && room?.id === roomId) await loadGameState(true);
-      eventNotice(`${effects.length} Entity effect${effects.length === 1 ? '' : 's'} resolved${result?.drawn ? `; drew ${result.drawn} card${result.drawn === 1 ? '' : 's'}` : ''}.`, true, false, false, 4500, true);
+      const resolvedCount = effects.length - beginningSkipped.size;
+      eventNotice(`${resolvedCount} Entity effect${resolvedCount === 1 ? '' : 's'} resolved${beginningSkipped.size ? `; ${beginningSkipped.size} skipped` : ''}${result?.drawn ? `; drew ${result.drawn} card${result.drawn === 1 ? '' : 's'}` : ''}.`, true, false, false, 4500, true);
     } catch (error) {
       if (expected === epoch && room?.id === roomId) {
         await refreshRoom().catch(() => {});
@@ -1215,6 +1260,15 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     }
   }
   $('game-resolve-beginning').addEventListener('click', () => void resolveBeginningEffects());
+  for (const [id, skip] of [['game-beginning-list', false], ['game-beginning-skipped-list', true]]) {
+    const zone = $(id).closest('.play-beginning-zone');
+    zone.addEventListener('dragover', event => { event.preventDefault(); event.dataTransfer.dropEffect = 'move'; });
+    zone.addEventListener('drop', event => {
+      event.preventDefault();
+      const source = event.dataTransfer.getData('text/plain');
+      if (beginningOrder.includes(source)) moveBeginningEffect(source, skip);
+    });
+  }
   function clearDrawFlight() {
     for (const flight of activeDrawFlights) flight.remove();
     activeDrawFlights.clear();
@@ -1421,7 +1475,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       if (!menu.contains(event.target)) menu.open = false;
     }
     if (event.button !== 0 || $('game').hidden || !selectedGameCard) return;
-    if (event.target.closest('.play-hand-card, .play-game-patron-slot, .play-game-card-preview, .play-game-archive-card, .play-deck-stack, .play-game-node.has-entity, .play-game-node.is-event-target')) return;
+    if (event.target.closest('.play-hand-card, .play-game-patron-slot, .play-game-card-preview, .play-beginning-effects, .play-game-archive-card, .play-deck-stack, .play-game-node.has-entity, .play-game-node.is-event-target')) return;
     hideCardPreview();
   });
   document.addEventListener('keydown', event => {
@@ -1683,7 +1737,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       ? `url('./assets/Type_Patron_${terrain}_Arcane.png'), url('./assets/${frame}')`
       : `url('./assets/${frame}')`;
     fallback.style.backgroundSize = card ? '44% auto, 100% 100%' : '100% 100%';
-    $(`game-${seat}-patron-slot`).setAttribute('aria-label', `Preview ${seat === 'self' ? 'your' : "opponent's"} Patron: ${card?.title || 'none selected'}`);
+    $(`game-${seat}-patron-slot`).setAttribute('aria-label', `${seat === 'self' ? 'Your' : "Opponent's"} Patron: ${card?.title || 'none selected'}`);
     if (!card) return;
     void (async () => {
       const artwork = card.artwork_id ? await getArtworkUrl(card.artwork_id).catch(() => '') : '';
