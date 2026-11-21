@@ -291,12 +291,18 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
 #play-game-result-back:hover:not(:disabled) { background: #568a61; }
 #play-game-result-back:disabled { opacity: .55; cursor: wait; }
 #play-game .play-game-player-block { min-height: 0; }
-#play-game .play-game-hand { align-items: center; gap: .7rem; min-height: clamp(128px, min(25.5vh, 19.5vw), 232px); padding: .25rem .3rem; }
-#play-game .play-hand-item { flex: 0 1 clamp(99px, min(19.2vh, 14.8vw), 181px); }
-#play-game .play-hand-card { transition: filter .16s ease, scale .16s ease; }
+#play-game .play-game-hand {
+  --play-hand-card-width: clamp(99px, min(19.2vh, 14.8vw), 181px);
+  --play-hand-card-height: calc(var(--play-hand-card-width) * 88 / 63);
+  align-items: center;
+  gap: .7rem;
+  min-height: calc(var(--play-hand-card-height) + .5rem);
+  padding: .25rem .3rem;
+}
+#play-game .play-hand-item { flex: 0 0 var(--play-hand-card-width); }
+#play-game .play-hand-card { height: var(--play-hand-card-height); transition: filter .16s ease; }
 @media (hover: hover) and (prefers-reduced-motion: no-preference) {
   .play-game-patron-slot, .play-node-entity-card, .play-archive-browser-list button { transition: scale .16s ease; }
-  #play-game:not(:has(.is-event-drop-zone)) .play-hand-item:hover > .play-hand-card:not(.is-drag-source) { scale: 1.03; }
   #play-game:not(:has(.is-event-drop-zone)) :is(.play-game-patron-slot, .play-node-entity-card):hover,
   .play-archive-browser-list li:hover > button { scale: 1.045; }
   .play-game-node:is(.terrain-symbiosis, .terrain-flow, .terrain-verdant, .terrain-radiance)::before {

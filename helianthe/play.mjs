@@ -179,14 +179,12 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const board = $('game-board');
     const table = board.closest('.play-game-table');
     const hand = $('game-hand');
-    const handCard = hand.querySelector('.play-hand-card');
     const previousHandCardWidth = Math.max(94, Math.min(innerHeight * .182, innerWidth * .14, 172));
     const handStyle = getComputedStyle(hand);
     const verticalPadding = parseFloat(handStyle.paddingTop) + parseFloat(handStyle.paddingBottom);
-    const minimumHandHeight = parseFloat(handStyle.minHeight) + (handStyle.boxSizing === 'border-box' ? 0 : verticalPadding);
     // Keep the table's sizing area independent of the extra height used by the hand.
-    const previousHandHeight = Math.max(minimumHandHeight, previousHandCardWidth * 88 / 63 + verticalPadding);
-    const extraHandHeight = handCard ? Math.max(0, hand.offsetHeight - Math.ceil(previousHandHeight)) : 0;
+    const previousHandHeight = previousHandCardWidth * 88 / 63 + verticalPadding;
+    const extraHandHeight = Math.max(0, hand.offsetHeight - Math.ceil(previousHandHeight));
     root.style.setProperty('--play-extra-hand-height', `${extraHandHeight}px`);
     const handTop = $('game-self').getBoundingClientRect().top;
     if (handTop > 0) root.style.setProperty('--play-hand-top', `${handTop}px`);
