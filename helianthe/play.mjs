@@ -1794,7 +1794,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       if (actorId !== userId) { blockedPlayNotice(cardPlayBlockReason(card)); return; }
       if (mulliganBusy || !gameState) return;
       const position = mulliganOrder.indexOf(handIndex);
-      if (position >= 0) mulliganOrder.splice(position, 1);
+      if (position >= 0) {
+        mulliganOrder.splice(position, 1);
+        playTableSound(selectCardSound);
+      }
       else if (mulliganOrder.length < gameState.horizon.length) {
         mulliganOrder.push(handIndex);
         playTableSound(selectCardSound);
@@ -1805,11 +1808,11 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     }
     if (pendingFestival) {
       if (phaseBusy) return;
-      if (discardSelections.has(handIndex)) discardSelections.delete(handIndex);
-      else if (discardSelections.size < pendingFestival.discardCount) {
+      if (!discardSelections.delete(handIndex)) {
+        if (discardSelections.size >= pendingFestival.discardCount) return;
         discardSelections.add(handIndex);
-        playTableSound(selectCardSound);
       }
+      playTableSound(selectCardSound);
       syncDiscardBar();
       return;
     }
@@ -1823,9 +1826,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       if (selectedCardElement === source) hideCardPreview();
     } else {
       discardSelections.add(handIndex);
-      playTableSound(selectCardSound);
       showCardPreview(card, source, handIndex);
     }
+    playTableSound(selectCardSound);
     syncDiscardBar();
   }
   $('game-card-preview-close').addEventListener('click', hideCardPreview);
