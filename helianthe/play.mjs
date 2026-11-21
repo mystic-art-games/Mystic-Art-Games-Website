@@ -776,8 +776,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       else step.removeAttribute('aria-current');
     }
     const next = $('game-next-phase');
-    next.hidden = !own || phase !== 'main' || !room?.main_played_card;
-    next.disabled = !activeTurn || !own || phaseBusy || Boolean(pendingFestival);
+    next.hidden = !own || (phase === 'main' ? !room?.main_played_card
+      : phase !== 'beginning' || beginningEffects().length > 0);
+    next.disabled = !activeTurn || !own || phaseBusy || Boolean(pendingFestival)
+      || (phase === 'beginning' && !gameState);
     syncDiscardBar();
     const extra = $('game-extra-draw');
     extra.hidden = !own || phase !== 'main' || Boolean(room?.main_played_card);
@@ -2737,6 +2739,11 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (!cardId) return;
     const placesEntity = action === 'place' || action === 'create_place';
     const flight = placesEntity ? draggedFlight || captureEntityFlight(handIndex) : null;
+    const kupalaNight = action === 'place' && card.title === 'Kupala Night'
+      && String(card.effect || '').replace(/\s+/g, ' ').trim().toLowerCase()
+        === 'draw cards equal to the amount of your entanglements.';
+    const previousHandCount = gameState.hand.length;
+    const horizon = kupalaNight ? [...(gameState.horizon || [])] : [];
     if (placesEntity) arrivingEntityKey = `${targetX},${targetY}`;
     const expected = epoch, roomId = room.id;
     phaseBusy = true;
@@ -2762,12 +2769,20 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         ?.querySelector('.play-node-entity-card')?.classList.remove('is-arriving');
       if (expected !== epoch || room?.id !== roomId) return;
       await refreshRoom();
+      let kupalaDrawn = 0;
+      if (expected === epoch && room?.id === roomId && room.status === 'active' && kupalaNight) {
+        const handCount = room.host_id === userId ? room.host_hand_count : room.guest_hand_count;
+        kupalaDrawn = Math.max(0, Math.min(horizon.length, Number(handCount) - previousHandCount + 1));
+        if (kupalaDrawn) await animateCardsToHand(horizon.slice(0, kupalaDrawn), [handIndex], 110);
+      }
       if (expected === epoch && room?.id === roomId) await loadGameState(true);
       if (expected === epoch && room?.id === roomId) eventNotice(result?.action === 'create_place'
         ? `${result?.title || card.title} created Verdant Terrain and landed on it.`
         : result?.action === 'shape'
           ? `${result?.title || card.title} shaped ${result?.terrain || entityShapeTerrain(card)} Terrain. Card-specific effects are not automated yet.`
-          : `${result?.title || card.title} placed on ${result?.terrain || room.board?.[`${targetX},${targetY}`]?.terrain} Terrain. Card-specific effects are not automated yet.`, true, false, false, 4500, true);
+          : kupalaNight
+            ? `${result?.title || card.title} placed · drew ${kupalaDrawn} card${kupalaDrawn === 1 ? '' : 's'} for Entanglements.`
+            : `${result?.title || card.title} placed on ${result?.terrain || room.board?.[`${targetX},${targetY}`]?.terrain} Terrain. Card-specific effects are not automated yet.`, true, false, false, 4500, true);
     } catch (error) {
       if (expected === epoch && room?.id === roomId) {
         await refreshRoom().catch(() => {});
