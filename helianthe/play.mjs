@@ -34,6 +34,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   const notReadySound = new Audio(new URL('./assets/Not_Ready.mp3', import.meta.url));
   const openingDiceSound = new Audio(new URL('./assets/Play.mp3', import.meta.url));
   const winSound = new Audio(new URL('./assets/Win.wav', import.meta.url));
+  const backToLobbySound = new Audio(new URL('./assets/Back_To_Lobby.mp3', import.meta.url));
   let pendingDeckId = null, deckSaveInFlight = false;
   let gameState = null, gameLoading = false, gameLoadFailed = false, gameReloadPending = false, handSignature = '', gameRenderSerial = 0, boardRenderSerial = 0, cardPreviewSerial = 0;
   let phaseBusy = false, selectedCardElement = null, hoveredCardElement = null, hoveredCardKey = '', mousePosition = null, patronDeckRequest = '', patronDeckLoadedAt = 0;
@@ -3224,7 +3225,12 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       await enter(id, true);
     });
   });
-  $('back').addEventListener('click', () => run(leaveTable));
+  for (const [button, action] of [['back', leaveTable], ['game-back', leaveGameForLobby], ['game-result-back', returnToLobby]]) {
+    $(button).addEventListener('click', () => run(() => {
+      playTableSound(backToLobbySound);
+      return action();
+    }));
+  }
   $('leave').addEventListener('click', () => run(() => {
     if (!room) return;
     if (room.host_id === userId) return smashWaitingTable();
@@ -3232,8 +3238,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     return leaveTable();
   }));
   $('game-leave').addEventListener('click', () => run(concedeGame));
-  $('game-back').addEventListener('click', () => run(leaveGameForLobby));
-  $('game-result-back').addEventListener('click', () => run(returnToLobby));
   async function saveDeckSelection() {
     if (deckSaveInFlight) return;
     deckSaveInFlight = true;
