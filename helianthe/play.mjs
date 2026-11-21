@@ -354,7 +354,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       const text = document.createElement('span');
       const turn = !entry.local && entry.message.match(/^Turn (\d+)(?: · (.+)| began\.)$/);
       let owner = entry.local ? userId : entry.actor_id;
-      let message = entry.message;
+      let message = entry.message === 'Opening dice resolved. Choose who starts.'
+        ? openingDiceResultText(openingDiceWinner()) : entry.message;
       if (turn && knownTurn && seats.every(Boolean)) {
         const sameSeat = Math.abs(Number(turn[1]) - knownTurn.number) % 2 === 0;
         owner = sameSeat ? knownTurn.player : seats.find(id => id !== knownTurn.player);
@@ -440,7 +441,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const request = { key: gameLogKey };
     gameLogRequest = request;
     let builder = client.from('play_game_log').select('id,actor_id,message,created_at')
-      .eq('room_id', room.id).eq('match_started_at', room.activated_at);
+      .eq('room_id', room.id).eq('match_started_at', room.activated_at)
+      .neq('message', 'Match started. Opening hands dealt.');
     const latest = gameLogEntries.at(-1);
     if (older) builder = builder.lt('id', gameLogEntries[0].id);
     else if (latest) builder = builder.gt('id', latest.id);
@@ -683,6 +685,14 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       }
     }
   }
+  function openingDiceWinner() {
+    return room?.opening_roll_winner_id || (room?.opening_host_roll != null && room?.opening_guest_roll != null
+      && room.opening_host_roll !== room.opening_guest_roll
+      ? room.opening_host_roll > room.opening_guest_roll ? room.host_id : room.guest_id : null);
+  }
+  function openingDiceResultText(winnerId) {
+    return winnerId === userId ? 'You decide who plays first' : 'Opponent decides who plays first';
+  }
   function renderOpeningRoll() {
     const overlay = $('opening-roll');
     const phases = $('game-phases');
@@ -703,9 +713,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const rolling = room?.status === 'active' && room.turn_phase === 'roll' && room.opening_roll_round > 0;
     const choosing = room?.status === 'active' && room.turn_phase === 'choose_first';
     if (rolling || choosing) openingDealPendingKey = key;
-    const winnerId = room?.opening_roll_winner_id || (room?.opening_host_roll != null && room?.opening_guest_roll != null
-      && room.opening_host_roll !== room.opening_guest_roll
-      ? room.opening_host_roll > room.opening_guest_roll ? room.host_id : room.guest_id : null);
+    const winnerId = openingDiceWinner();
     const revealStorageKey = `helianthe-opening-result:${userId}:${key}`;
     let revealSeen = false;
     try { revealSeen = sessionStorage.getItem(revealStorageKey) === 'shown'; } catch {}
@@ -802,7 +810,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     button.textContent = reroll ? 'Roll Dices Again' : 'Roll Dices';
     $('opening-roll-status').classList.toggle('is-result', Boolean(revealing));
     $('opening-roll-status').textContent = openingRollBusy ? 'Rolling dices…' : revealing
-      ? winnerId === userId ? 'You decide who plays first' : 'Opponent decides who plays first'
+      ? openingDiceResultText(winnerId)
       : '';
     $('opening-roll-error').hidden = !openingRollError;
     $('opening-roll-error').textContent = openingRollError;
