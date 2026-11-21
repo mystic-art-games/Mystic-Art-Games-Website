@@ -32,6 +32,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   const sitAtTableSound = new Audio(new URL('./assets/Sit_At_The_Table.wav?v=2', import.meta.url));
   const readySound = new Audio(new URL('./assets/Ready.mp3', import.meta.url));
   const notReadySound = new Audio(new URL('./assets/Not_Ready.mp3', import.meta.url));
+  const openingDiceSound = new Audio(new URL('./assets/Play.mp3', import.meta.url));
   let pendingDeckId = null, deckSaveInFlight = false;
   let gameState = null, gameLoading = false, gameLoadFailed = false, gameReloadPending = false, handSignature = '', gameRenderSerial = 0, boardRenderSerial = 0, cardPreviewSerial = 0;
   let phaseBusy = false, selectedCardElement = null, hoveredCardElement = null, hoveredCardKey = '', mousePosition = null, patronDeckRequest = '', patronDeckLoadedAt = 0;
@@ -2907,7 +2908,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       inLobby = false;
       rememberAwayLobby(null);
     }
+    const openingDiceStarted = visible && !inLobby && room.status === 'waiting'
+      && data.status === 'active' && data.turn_phase === 'roll';
     room = data; render();
+    if (openingDiceStarted) playTableSound(openingDiceSound);
     if (room.status === 'active') {
       void loadGameState(turnChanged && !phaseBusy && !mulliganBusy);
       void loadGamePatrons().catch(() => { patronDeckRequest = ''; });
