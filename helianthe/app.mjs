@@ -4,7 +4,7 @@ import { renderCard, downloadCardPNG } from './card-renderer.mjs?v=play-card-den
 import { CardSheetPDF } from './card-sheet-pdf.mjs';
 import { PATRONS, FACTION_VISIONS, PATRON_RULES_REVISION, updatePatronVision } from './patrons.mjs?v=faction-visions-3';
 import { CARD_TAGS, normalizeCardTags, seedTagsForCard, tagLabel } from './card-tags.mjs?v=tags-3';
-import { createPlayView } from './play.mjs?v=play-168';
+import { createPlayView } from './play.mjs?v=play-169';
 
 const DEFAULT_PATRON_NAME = PATRONS[0].name;
 
@@ -230,9 +230,13 @@ function patronFactionClass(faction) {
 }
 
 function getPatronFactionIcon(name) {
-  const faction = patronByName(name)?.faction || '';
-  const terrain = PATRON_TERRAIN[faction];
-  return { faction, src: terrain ? `./assets/Faction_${terrain}.png` : '' };
+  const patron = patronByName(name);
+  if (!patron) return { faction: '', src: '' };
+  const terrain = patronPickerTerrain(patron);
+  const match = Object.entries(PATRON_TERRAIN).find(([, value]) => value === terrain);
+  const faction = match?.[0] || 'Nomads';
+  const filename = match ? `Faction_${terrain}.png` : 'Faction_Nomads_Cairn.png';
+  return { faction, src: new URL(`./assets/${filename}`, import.meta.url).href };
 }
 
 function patronPickerTerrain(patron) {

@@ -3019,10 +3019,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const factionIcons = decks.map(deck => getPatronFactionIcon(deck.patron_name));
     if (decks.length !== $('deck').options.length || decks.some((deck, index) =>
       String(deck.id) !== $('deck').options[index]?.value || deck.name !== $('deck').options[index]?.text
-      || factionIcons[index].faction !== $('deck').options[index]?.dataset.faction)) {
+      || factionIcons[index].src !== $('deck').options[index]?.dataset.factionIcon)) {
       const options = decks.map((deck, index) => {
         const option = new Option(deck.name, deck.id);
-        option.dataset.faction = factionIcons[index].faction;
+        option.dataset.factionIcon = factionIcons[index].src;
         return option;
       });
       $('deck').replaceChildren(...options);
