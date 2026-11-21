@@ -2471,7 +2471,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       });
       if (expected !== epoch || room?.id !== roomId) return;
       pendingEntity = null;
-      if (result?.action === 'shape') playTableSound(shapeSound);
       if (result?.action === 'place') await animateEntityPlacement(flight, targetX, targetY);
       arrivingEntityKey = null;
       Array.from($('game-board').children).find(cell => cell.dataset.key === `${targetX},${targetY}`)
@@ -2773,8 +2772,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         { transform: `translateY(${startTop - bounds.top}px) scale(.92)`, opacity: .65 },
         { transform: 'translateY(0) scale(1)', opacity: 1 },
       ], { duration: 430, easing: 'cubic-bezier(.18,.7,.27,1)', fill: 'both' });
-      const finish = () => finishTerrainArrival(key, arrival);
-      void arrival.animation.finished.then(finish, finish);
+      void arrival.animation.finished.then(() => {
+        if (terrainArrivals.get(key) === arrival && arrival.shaped) playTableSound(shapeSound);
+        finishTerrainArrival(key, arrival);
+      }, () => finishTerrainArrival(key, arrival));
     }
   }
   function renderGame() {
@@ -3052,16 +3053,26 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const openingDiceStarted = visible && !inLobby && room.status === 'waiting'
       && data.status === 'active' && data.turn_phase === 'roll';
     const matchEnded = room.status === 'active' && data.status === 'closed' && Boolean(data.conceded_by);
-    if (visible && !inLobby && room.status === 'active' && data.status === 'active'
-      && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      for (const [key, node] of Object.entries(data.board || {})) {
-        if (node?.terrain && !room.board?.[key]?.terrain) {
-          terrainArrivals.set(key, { terrain: node.terrain, ownTurn: data.turn_player_id === userId });
+    let playShapeImmediately = false;
+    if (visible && !inLobby && room.status === 'active' && data.status === 'active') {
+      const arrivals = Object.entries(data.board || {}).filter(([key, node]) => node?.terrain && !room.board?.[key]?.terrain);
+      const seat = data.turn_player_id === data.host_id ? 'host' : 'guest';
+      // Shape uses the turn's Entity play and puts that Entity in the Archive.
+      const shaped = arrivals.length === 1 && room.turn_number === data.turn_number
+        && room.turn_player_id === data.turn_player_id
+        && !room.main_played_entity && data.main_played_entity
+        && data[`${seat}_archive_top`]?.card_type === 'Entity'
+        && data[`${seat}_archive_count`] > room[`${seat}_archive_count`];
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) playShapeImmediately = shaped;
+      else {
+        for (const [key, node] of arrivals) {
+          terrainArrivals.set(key, { terrain: node.terrain, ownTurn: data.turn_player_id === userId, shaped });
         }
       }
     }
     if (data.status !== 'active' || inLobby) clearTerrainArrivals();
     room = data; render();
+    if (playShapeImmediately) playTableSound(shapeSound);
     if (openingDiceStarted) playTableSound(openingDiceSound);
     if (matchEnded) playTableSound(data.conceded_by === userId ? loseSound : winSound);
     if (room.status === 'active') {
