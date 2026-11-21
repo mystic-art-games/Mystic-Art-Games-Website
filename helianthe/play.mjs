@@ -34,6 +34,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   const notReadySound = new Audio(new URL('./assets/Not_Ready.mp3', import.meta.url));
   const openingDiceSound = new Audio(new URL('./assets/Play.mp3', import.meta.url));
   const rollDiceSound = new Audio(new URL('./assets/Roll_Dices.mp3', import.meta.url));
+  const drawCardSound = new Audio(new URL('./assets/Draw_Card.mp3', import.meta.url));
   rollDiceSound.preload = 'auto';
   const OfflineContext = window.OfflineAudioContext || window.webkitOfflineAudioContext;
   const rollDiceClip = TableAudioContext && OfflineContext ? fetch(rollDiceSound.src)
@@ -1188,6 +1189,17 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       createIncomingCardFlight(resolveHandCard(rawCard), source, destinations[index], duration, reduced ? 0 : index * stagger));
     const ready = await Promise.all(flights.map(flight => flight.ready));
     if (flights.some(({ element }) => !activeDrawFlights.has(element))) return;
+    const drawRoomId = room?.id;
+    const drawEpoch = epoch;
+    rawCards.forEach((_, index) => {
+      const playDraw = () => {
+        if (drawEpoch === epoch && room?.id === drawRoomId && visible && !inLobby) {
+          playTableSound(drawCardSound.cloneNode());
+        }
+      };
+      if (index === 0) playDraw();
+      else setTimeout(playDraw, index * (stagger || 110));
+    });
     if (ready.some(result => !result)) { clearDrawFlight(); return; }
 
     for (const item of removedItems) {
