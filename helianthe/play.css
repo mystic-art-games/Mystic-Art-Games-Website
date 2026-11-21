@@ -178,7 +178,7 @@ body.dark-mode .play-deck-field.is-locked select { border-color: #596d5d; backgr
 .play-game-node { position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: .15rem; min-width: 0; min-height: 0; padding: .2rem; overflow: hidden; border: 1px dashed #d5b88a9c; border-radius: 6px; background: #f8e8c814; text-align: center; }
 .play-game-node.has-entity { z-index: 2; overflow: visible; }
 .play-node-entity-card { position: absolute; z-index: 2; top: 10%; left: 10%; box-sizing: border-box; width: 100%; height: 100%; overflow: hidden; border: 1px solid #e5d9bb; border-radius: 5px; background: #e9ece1; box-shadow: 0 5px 10px #0b251bbb; cursor: default; }
-.play-game-node.is-event-target .play-node-entity-card { cursor: pointer; }
+.play-game-node.is-entity-target .play-node-entity-card { cursor: pointer; }
 .play-node-entity-card.is-arriving { visibility: hidden; }
 .play-node-entity-card canvas { display: block; width: 100%; height: 100%; object-fit: fill; }
 .play-node-entity-card canvas[hidden], .play-node-entity-card span[hidden] { display: none; }
@@ -319,7 +319,7 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
 @media (hover: hover) and (prefers-reduced-motion: no-preference) {
   .play-game-patron-slot, .play-node-entity-card, .play-archive-browser-list button { transition: scale .16s ease; }
   #play-game:not(:has(.is-event-drop-zone)) .play-game-patron-slot:hover,
-  #play-game:not(:has(.is-event-drop-zone)) .play-game-node.is-event-target .play-node-entity-card:hover,
+  #play-game:not(:has(.is-event-drop-zone)) .play-game-node.is-entity-target .play-node-entity-card:hover,
   .play-archive-browser-list li:hover > button { scale: 1.045; }
   .play-game-node:is(.terrain-symbiosis, .terrain-flow, .terrain-verdant, .terrain-radiance)::before {
     content: '';

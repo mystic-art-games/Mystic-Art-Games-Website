@@ -622,6 +622,11 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         || (pendingEntity && legalEntityAction(pendingEntity.card, node, cell.dataset.key))
         || (beginningTargetSource && beginningPlan().get(beginningTargetSource)?.options.includes(cell.dataset.key))));
       cell.classList.toggle('is-event-target', legal);
+      const entityInteraction = legal && node?.entity && pendingEvent &&
+        (pendingEvent.extended
+          ? /\bEntit(?:y|ies)\b/i.test(pendingEvent.step.label)
+          : /\bEntit(?:y|ies)\b/i.test(pendingEvent.rule[2] || ''));
+      cell.classList.toggle('is-entity-target', Boolean(entityInteraction));
       if (legal) { cell.tabIndex = 0; cell.setAttribute('role', 'button'); }
       else { cell.removeAttribute('tabindex'); cell.removeAttribute('role'); }
     }
@@ -3050,7 +3055,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         : node?.fertilize ? `${node.fertilize.owner_id === userId ? 'Your' : "Opponent's"} Fertilize marker on empty space at row ${row + 1}, column ${column + 1}`
           : `${isCenter ? 'Center empty space' : 'Empty space'} at row ${row + 1}, column ${column + 1}`);
       cell.addEventListener('click', event => {
-        if (event.target.closest('.play-node-entity-card') && !cell.classList.contains('is-event-target')) return;
+        if (event.target.closest('.play-node-entity-card') && !cell.classList.contains('is-entity-target')) return;
         chooseBoardTarget(column, row);
       });
       cell.addEventListener('keydown', event => {
