@@ -142,7 +142,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
           <h2 id="play-game-log-title">Game Log</h2>
           <div class="play-game-log-jump">
             <span id="play-game-log-unread" class="play-game-log-unread" aria-hidden="true" hidden></span>
-            <button id="play-game-log-latest" class="play-game-log-latest" type="button" aria-label="Go to the latest log entry" title="Go to latest entry" aria-controls="play-game-log-scroll" hidden><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3v9m-4-4 4 4 4-4"/></svg></button>
+            <button id="play-game-log-latest" class="play-game-log-latest action-add-save" type="button" aria-label="Go to the latest log entry" title="Go to latest entry" aria-controls="play-game-log-scroll" hidden><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3v9m-4-4 4 4 4-4"/></svg></button>
           </div>
         </header>
         <div id="play-game-log-scroll" class="play-game-log-scroll" tabindex="0" aria-label="Game log entries">
@@ -323,11 +323,41 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     gameLogError = '';
     renderGameLog(true);
   }
+  function appendGameLogMessage(container, message, cards) {
+    const lower = message.toLocaleLowerCase();
+    const letterOrDigit = character => Boolean(character && /[\p{L}\p{N}]/u.test(character));
+    let position = 0;
+    while (position < message.length) {
+      let match = null;
+      for (const entry of cards) {
+        let index = lower.indexOf(entry.lower, position);
+        while (index >= 0 && (letterOrDigit(message[index - 1])
+          || letterOrDigit(message[index + entry.title.length]))) {
+          index = lower.indexOf(entry.lower, index + 1);
+        }
+        if (index < 0) continue;
+        if (!match || index < match.index || (index === match.index && entry.title.length > match.entry.title.length)) {
+          match = { index, entry };
+        }
+      }
+      if (!match) break;
+      if (match.index > position) container.append(message.slice(position, match.index));
+      const name = document.createElement('span');
+      name.className = 'play-game-log-card';
+      name.textContent = message.slice(match.index, match.index + match.entry.title.length);
+      name._playCard = match.entry.card;
+      container.append(name);
+      position = match.index + match.entry.title.length;
+    }
+    if (position < message.length) container.append(message.slice(position));
+  }
   function renderGameLog(scrollToLatest = false, prepended = false) {
     const scroll = $('game-log-scroll');
     const list = $('game-log-list');
     const previousHeight = scroll.scrollHeight;
     const previousTop = scroll.scrollTop;
+    const cards = (getCards?.() || []).filter(card => card?.title)
+      .map(card => ({ card, title: card.title, lower: card.title.toLocaleLowerCase() }));
     if (scrollToLatest) followGameLog = true;
     const entries = [...gameLogEntries, ...localGameLog]
       .sort((a, b) => a.time - b.time || Number(a.id || 0) - Number(b.id || 0));
@@ -379,7 +409,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         lead.textContent = prefix;
         text.append(lead);
       }
-      text.append(message);
+      appendGameLogMessage(text, message, cards);
       row.append(text);
       if (entry.count > 1) {
         const count = document.createElement('span');
@@ -592,7 +622,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         || (pendingEntity && legalEntityAction(pendingEntity.card, node, cell.dataset.key))
         || (beginningTargetSource && beginningPlan().get(beginningTargetSource)?.options.includes(cell.dataset.key))));
       cell.classList.toggle('is-event-target', legal);
-      if (legal || node?.entity) { cell.tabIndex = 0; cell.setAttribute('role', 'button'); }
+      if (legal) { cell.tabIndex = 0; cell.setAttribute('role', 'button'); }
       else { cell.removeAttribute('tabindex'); cell.removeAttribute('role'); }
     }
   }
@@ -1721,14 +1751,14 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       return;
     }
     const target = document.elementFromPoint(mousePosition.x, mousePosition.y);
-    const source = target?.closest?.('.play-hand-card, .play-game-archive-card, .play-node-entity-card, .play-game-node[class*="terrain-"], .play-game-patron-slot');
+    const source = target?.closest?.('.play-hand-card, .play-game-archive-card, .play-node-entity-card, .play-game-node[class*="terrain-"], .play-game-patron-slot, .play-game-log-card');
     if (!source || !root.contains(source)) {
       if (hoveredCardElement) hideHoveredCardPreview();
       return;
     }
     let card = null;
     if (source.matches('.play-hand-card')) card = (pendingFestival?.hand || gameState?.hand || [])[Number(source.dataset.handIndex)];
-    else if (source.matches('.play-game-archive-card, .play-node-entity-card')) card = source._playCard;
+    else if (source.matches('.play-game-archive-card, .play-node-entity-card, .play-game-log-card')) card = source._playCard;
     else if (source.matches('.play-game-node')) card = source._playTerrain;
     else card = patronPreviews[source.id.includes('opponent') ? 'opponent' : 'self'].card;
     if (card) showHoveredCardPreview(resolveGameCard(card), source);
@@ -3019,7 +3049,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       cell.setAttribute('aria-label', node?.terrain ? `${node.terrain} Terrain at row ${row + 1}, column ${column + 1}${node.entity ? `, ${node.entity.title || 'Entity'} placed here` : ''}, ${node.lumens || 0} Lumens${node.protected ? ', Protected' : ''}${node.crisis ? ', Crisis' : ''}${node.entanglements?.length ? `, ${node.entanglements.length} Entanglement${node.entanglements.length === 1 ? '' : 's'}` : ''}`
         : node?.fertilize ? `${node.fertilize.owner_id === userId ? 'Your' : "Opponent's"} Fertilize marker on empty space at row ${row + 1}, column ${column + 1}`
           : `${isCenter ? 'Center empty space' : 'Empty space'} at row ${row + 1}, column ${column + 1}`);
-      cell.addEventListener('click', () => chooseBoardTarget(column, row));
+      cell.addEventListener('click', event => {
+        if (event.target.closest('.play-node-entity-card') && !cell.classList.contains('is-event-target')) return;
+        chooseBoardTarget(column, row);
+      });
       cell.addEventListener('keydown', event => {
         if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); chooseBoardTarget(column, row); }
       });
