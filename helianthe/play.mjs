@@ -19,7 +19,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   let userId = null, room = null, channel = null, timer = null, awayTicker = null, awayExpiryBusy = false, visible = false, inLobby = false;
   let lobbyTimer = null, directoryChannel = null, directoryUserId = null, listSerial = 0, tableListSignature = '';
   let busy = false, epoch = 0, fetchSerial = 0, live = false, lastHeartbeat = 0, autoDeckPending = false;
-  let buildTableAudioContext = null;
+  const buildTableSound = new Audio(new URL("./assets/Build_Table.wav", import.meta.url));
   let pendingDeckId = null, deckSaveInFlight = false;
   let gameState = null, gameLoading = false, gameLoadFailed = false, gameReloadPending = false, handSignature = '', gameRenderSerial = 0, boardRenderSerial = 0, cardPreviewSerial = 0;
   let phaseBusy = false, selectedCardElement = null, hoveredCardElement = null, hoveredCardKey = '', mousePosition = null, patronDeckRequest = '', patronDeckLoadedAt = 0;
@@ -60,7 +60,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     <div id="play-message" role="status" aria-live="polite" hidden><span id="play-message-text"></span><button id="play-message-close" type="button" aria-label="Dismiss message">×</button></div>
     <section id="play-signin" class="play-surface" hidden><h2>Your seat is waiting</h2><p>Sign in to create a table or join one from the list.</p><button id="play-signin-button" class="action-add-save" type="button">Sign in to play</button></section>
     <div id="play-lobby" class="play-lobby" hidden>
-      <section class="play-surface play-create-panel"><div><span class="play-eyebrow">HOST A SESSION</span><button id="play-create" class="action-add-save" type="button">Build a table</button></div></section>
+      <section class="play-surface play-create-panel"><div><span class="play-eyebrow">HOST A SESSION</span><button id="play-create" class="action-add-save" type="button">Build Table</button></div></section>
       <section class="play-surface play-recent"><div class="play-table-heading"><h2>All tables</h2></div><p id="play-no-rooms">Loading tables…</p><div id="play-room-list"></div></section>
     </div>
     <section id="play-session" hidden>
@@ -1418,45 +1418,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     $('leave').disabled = busy || !room;
   }
   function playBuildTableSound() {
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContext) return;
-    try {
-      const context = buildTableAudioContext ||= new AudioContext();
-      if (context.state === 'suspended') void context.resume();
-      const now = context.currentTime;
-      const knock = (delay, strength, pitch) => {
-        const start = now + delay;
-        const duration = 0.075;
-        const noise = context.createBuffer(1, Math.ceil(context.sampleRate * duration), context.sampleRate);
-        const samples = noise.getChannelData(0);
-        for (let i = 0; i < samples.length; i++) samples[i] = (Math.random() * 2 - 1) * (1 - i / samples.length);
-        const strike = context.createBufferSource();
-        const filter = context.createBiquadFilter();
-        const strikeVolume = context.createGain();
-        strike.buffer = noise;
-        filter.type = 'lowpass';
-        filter.frequency.value = pitch;
-        strikeVolume.gain.setValueAtTime(strength, start);
-        strikeVolume.gain.exponentialRampToValueAtTime(0.0001, start + duration);
-        strike.connect(filter).connect(strikeVolume).connect(context.destination);
-        strike.start(start);
-        strike.stop(start + duration);
-
-        const resonance = context.createOscillator();
-        const resonanceVolume = context.createGain();
-        resonance.type = 'sine';
-        resonance.frequency.setValueAtTime(pitch / 4, start);
-        resonance.frequency.exponentialRampToValueAtTime(pitch / 5, start + 0.11);
-        resonanceVolume.gain.setValueAtTime(strength * 0.18, start);
-        resonanceVolume.gain.exponentialRampToValueAtTime(0.0001, start + 0.11);
-        resonance.connect(resonanceVolume).connect(context.destination);
-        resonance.start(start);
-        resonance.stop(start + 0.11);
-      };
-      knock(0, 0.2, 950);
-      knock(0.13, 0.24, 800);
-      knock(0.29, 0.35, 650);
-    } catch { /* Audio is optional when the browser blocks playback. */ }
+    buildTableSound.currentTime = 0;
+    void buildTableSound.play().catch(() => {});
   }
   async function run(task) {
     if (busy) return;
