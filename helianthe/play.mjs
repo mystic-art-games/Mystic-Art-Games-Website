@@ -562,11 +562,17 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       || effect.match(/shape this entity (?:into|to create) (symbiosis|flow|verdant|radiance) terrain instead\b/);
     return override ? terrainTypes.find(type => type.toLowerCase() === override[1]) : card?.terrain;
   }
+  function dreamwellCreatesTerrain(card) {
+    const effect = String(card?.effect || '').replace(/\s+/g, ' ').trim().toLowerCase();
+    return card?.title === 'Dreamwell Courtyard' && ['Verdant', 'Evergreen'].includes(card.terrain)
+      && effect === 'create verdant terrain, then put this entity there.';
+  }
   function legalEntityAction(card, node, key) {
     if (room?.turn_player_id !== userId || room?.turn_phase !== 'main' || room?.main_played_entity
-      || !terrainTypes.includes(card?.terrain)) return null;
+      || (!terrainTypes.includes(card?.terrain) && !dreamwellCreatesTerrain(card))) return null;
     if (!node?.terrain) return node?.entity || !canCreateTerrainAt(key)
-      ? null : (terrainTypes.includes(entityShapeTerrain(card)) ? 'shape' : null);
+      ? null : dreamwellCreatesTerrain(card) ? 'create_place'
+        : (terrainTypes.includes(entityShapeTerrain(card)) ? 'shape' : null);
     if (node.entity) return null;
     if (!terrainTypes.includes(node.terrain)) return null;
     const effect = String(card.effect || '').replace(/\s+/g, ' ').toLowerCase();
@@ -2603,13 +2609,14 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (!action) { eventNotice('Choose an empty space or an unoccupied compatible Terrain.', true); return; }
     const cardId = card.card_id || card.id;
     if (!cardId) return;
-    const flight = action === 'place' ? draggedFlight || captureEntityFlight(handIndex) : null;
-    if (action === 'place') arrivingEntityKey = `${targetX},${targetY}`;
+    const placesEntity = action === 'place' || action === 'create_place';
+    const flight = placesEntity ? draggedFlight || captureEntityFlight(handIndex) : null;
+    if (placesEntity) arrivingEntityKey = `${targetX},${targetY}`;
     const expected = epoch, roomId = room.id;
     phaseBusy = true;
     renderTurnPhase();
     try {
-      const result = await rpc('play_entity_action', {
+      const result = await rpc(action === 'create_place' ? 'play_dreamwell_courtyard' : 'play_entity_action', {
         p_room_id: roomId,
         p_expected_turn: room.turn_number,
         p_hand_index: handIndex,
@@ -2620,7 +2627,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       });
       if (expected !== epoch || room?.id !== roomId) return;
       pendingEntity = null;
-      if (result?.action === 'place') {
+      if (result?.action === 'place' || result?.action === 'create_place') {
         playTableSound(playCardSound);
         await animateEntityPlacement(flight, targetX, targetY);
       }
@@ -2630,9 +2637,11 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       if (expected !== epoch || room?.id !== roomId) return;
       await refreshRoom();
       if (expected === epoch && room?.id === roomId) await loadGameState(true);
-      if (expected === epoch && room?.id === roomId) eventNotice(result?.action === 'shape'
-        ? `${result?.title || card.title} shaped ${result?.terrain || entityShapeTerrain(card)} Terrain. Card-specific effects are not automated yet.`
-        : `${result?.title || card.title} placed on ${result?.terrain || room.board?.[`${targetX},${targetY}`]?.terrain} Terrain. Card-specific effects are not automated yet.`, true, false, false, 4500, true);
+      if (expected === epoch && room?.id === roomId) eventNotice(result?.action === 'create_place'
+        ? `${result?.title || card.title} created Verdant Terrain and landed on it.`
+        : result?.action === 'shape'
+          ? `${result?.title || card.title} shaped ${result?.terrain || entityShapeTerrain(card)} Terrain. Card-specific effects are not automated yet.`
+          : `${result?.title || card.title} placed on ${result?.terrain || room.board?.[`${targetX},${targetY}`]?.terrain} Terrain. Card-specific effects are not automated yet.`, true, false, false, 4500, true);
     } catch (error) {
       if (expected === epoch && room?.id === roomId) {
         await refreshRoom().catch(() => {});
@@ -3359,7 +3368,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       && data.turn_player_id !== userId && data.turn_player_id === room.turn_player_id
       && data.turn_number === room.turn_number && !room.main_played_entity && data.main_played_entity
       && Object.entries(data.board || {}).find(([key, node]) =>
-        node?.entity && room.board?.[key]?.terrain && !room.board[key].entity);
+        node?.entity && !room.board?.[key]?.entity);
     if (opponentPlacement && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       opponentArrivingEntities.add(opponentPlacement[0]);
     }
