@@ -74,6 +74,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   let drawRetryAt = 0, activeHandShifts = [];
   const activeDrawFlights = new Set();
   const terrainArrivals = new Map();
+  const opponentCardFlights = new Set();
+  const opponentArrivingEntities = new Set();
   const drawHiddenItems = new Set();
   const discardFlights = new Set();
   const discardHandShifts = [], discardHiddenCards = new Set();
@@ -461,10 +463,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (!ascending) rows = rows.reverse();
     if (older || !latest) gameLogHasOlder = rows.length === gameLogPageSize;
     gameLogEntries = older ? [...rows, ...gameLogEntries] : [...gameLogEntries, ...rows];
-    if (ascending && visible && !inLobby && !$('game').hidden
-      && rows.some(row => row.actor_id && row.actor_id !== userId && row.message.startsWith('evoked '))) {
-      playTableSound(playCardSound);
-    }
+    if (ascending && visible && !inLobby && !$('game').hidden) animateOpponentLogActions(rows);
     if (!older && latest && !followGameLog) unreadGameLogCount += rows.length;
     if (!older && (!ascending || rows.length < gameLogPageSize)) gameLogRevision = revision;
     renderGameLog(false, older);
@@ -1241,6 +1240,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const drawEpoch = epoch;
     if (batchSound) {
       if (visible && !inLobby) playTableSound(batchSound);
+      animateOpponentDraws(5);
     } else rawCards.forEach((_, index) => {
       const playDraw = () => {
         if (drawEpoch === epoch && room?.id === drawRoomId && visible && !inLobby) {
@@ -1477,6 +1477,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     ++epoch; ++fetchSerial;
     delete $('game').dataset.turnAura;
     clearTerrainArrivals();
+    clearOpponentCardFlights();
     openingDealRunningKey = '';
     clearTimeout(phaseAdvanceTimer);
     phaseAdvanceTimer = null;
@@ -2754,6 +2755,79 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     arrivingCardCanvases.clear();
     requestAnimationFrame(syncHoveredCardPreview);
   }
+  function clearOpponentCardFlights() {
+    for (const animation of opponentCardFlights) animation.cancel();
+    opponentArrivingEntities.clear();
+    $('game-board').querySelectorAll('.play-node-entity-card.is-opponent-arriving')
+      .forEach(entity => entity.classList.remove('is-arriving', 'is-opponent-arriving'));
+  }
+  async function animateOpponentCard(zone, { draw = false, card = null, title = '', delay = 0 } = {}) {
+    const game = $('game');
+    if (!visible || inLobby || game.hidden || document.hidden
+      || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const bounds = zone?.getBoundingClientRect();
+    if (!bounds?.width || !bounds.height) return;
+    const gameBounds = game.getBoundingClientRect();
+    const top = Math.max(0, gameBounds.top);
+    const dx = gameBounds.left + gameBounds.width / 2 - bounds.left - bounds.width / 2;
+    const dy = top - bounds.height - bounds.top;
+    const flight = document.createElement('div');
+    flight.className = `play-opponent-card-flight${draw ? ' is-face-down' : ''}`;
+    flight.setAttribute('aria-hidden', 'true');
+    Object.assign(flight.style, {
+      left: `${bounds.left}px`, top: `${bounds.top}px`,
+      width: `${bounds.width}px`, height: `${bounds.height}px`,
+    });
+    if (!draw) flight.textContent = title || card?.title || '';
+    document.body.append(flight);
+    const atEdge = { transform: `translate(${dx}px, ${dy}px) rotate(${draw ? 10 : -8}deg)`, opacity: 1 };
+    const atZone = { transform: 'translate(0, 0) rotate(0deg)', opacity: 1 };
+    const animation = flight.animate(draw ? [atZone, atEdge] : [atEdge, atZone], {
+      duration: 460, delay, easing: 'cubic-bezier(.25,.7,.25,1)', fill: 'both',
+    });
+    opponentCardFlights.add(animation);
+    if (card && !draw) {
+      const canvas = document.createElement('canvas');
+      void (async () => {
+        const artwork = card.artwork_id ? await getArtworkUrl(card.artwork_id).catch(() => '') : '';
+        if (!flight.isConnected) return;
+        const result = await renderPlayCard(canvas, card, artwork, () => flight.isConnected, flight);
+        if (result && !result.cancelled && flight.isConnected) flight.replaceChildren(canvas);
+      })().catch(() => {});
+    }
+    try { await animation.finished; }
+    catch { /* The match view may close during the flight. */ }
+    finally {
+      opponentCardFlights.delete(animation);
+      flight.remove();
+    }
+  }
+  function animateOpponentDraws(count, delay = 0) {
+    const horizon = $('game-opponent-horizon');
+    const stagger = Math.min(110, 650 / Math.max(1, count - 1));
+    for (let index = 0; index < count; index++) {
+      void animateOpponentCard(horizon, { draw: true, delay: delay + index * stagger });
+    }
+    return Math.min(650, count * 110);
+  }
+  function animateOpponentLogActions(rows) {
+    let delay = 0;
+    for (const row of rows) {
+      if (!row.actor_id || row.actor_id === userId) continue;
+      const draw = /^drew (\d+) cards?\.$/.exec(row.message);
+      if (draw) {
+        delay += animateOpponentDraws(Number(draw[1]), delay);
+        continue;
+      }
+      const played = /^(evoked|shaped with) (.+)\.$/.exec(row.message);
+      if (!played) continue;
+      if (played[1] === 'evoked') playTableSound(playCardSound);
+      const card = getCards().find(item => item.title === played[2]
+        && item.card_type === (played[1] === 'evoked' ? 'Event' : 'Entity'));
+      void animateOpponentCard($('game-opponent-archive'), { card, title: played[2], delay });
+      delay += 150;
+    }
+  }
   function finishTerrainArrival(key, arrival) {
     if (terrainArrivals.get(key) !== arrival) return;
     terrainArrivals.delete(key);
@@ -2826,6 +2900,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
           const entity = document.createElement('div'); entity.className = 'play-node-entity-card';
           entity._playCard = entityCard;
           if (arrivingEntityKey === cell.dataset.key) entity.classList.add('is-arriving');
+          if (opponentArrivingEntities.has(cell.dataset.key)) entity.classList.add('is-arriving', 'is-opponent-arriving');
           entity.setAttribute('aria-hidden', 'true');
           const canvas = document.createElement('canvas'); canvas.hidden = true;
           const fallback = document.createElement('span'); fallback.textContent = entityCard.title || 'Entity';
@@ -3072,11 +3147,14 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const openingDiceStarted = visible && !inLobby && room.status === 'waiting'
       && data.status === 'active' && data.turn_phase === 'roll';
     const matchEnded = room.status === 'active' && data.status === 'closed' && Boolean(data.conceded_by);
-    const opponentPlacedEntity = visible && !inLobby && room.status === 'active' && data.status === 'active'
+    const opponentPlacement = visible && !inLobby && room.status === 'active' && data.status === 'active'
       && data.turn_player_id !== userId && data.turn_player_id === room.turn_player_id
       && data.turn_number === room.turn_number && !room.main_played_entity && data.main_played_entity
-      && Object.entries(data.board || {}).some(([key, node]) =>
+      && Object.entries(data.board || {}).find(([key, node]) =>
         node?.entity && room.board?.[key]?.terrain && !room.board[key].entity);
+    if (opponentPlacement && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      opponentArrivingEntities.add(opponentPlacement[0]);
+    }
     let playShapeImmediately = false;
     if (visible && !inLobby && room.status === 'active' && data.status === 'active') {
       const arrivals = Object.entries(data.board || {}).filter(([key, node]) => node?.terrain && !room.board?.[key]?.terrain);
@@ -3096,7 +3174,19 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     }
     if (data.status !== 'active' || inLobby) clearTerrainArrivals();
     room = data; render();
-    if (opponentPlacedEntity) playTableSound(playCardSound);
+    if (opponentPlacement) {
+      playTableSound(playCardSound);
+      const [key, node] = opponentPlacement;
+      if (opponentArrivingEntities.has(key)) {
+        const target = () => $('game-board').querySelector(`[data-key="${CSS.escape(key)}"] .play-node-entity-card`);
+        const expected = epoch;
+        void animateOpponentCard(target(), { card: resolveGameCard(node.entity) }).finally(() => {
+          if (expected !== epoch) return;
+          opponentArrivingEntities.delete(key);
+          target()?.classList.remove('is-arriving', 'is-opponent-arriving');
+        });
+      }
+    }
     if (playShapeImmediately) playTableSound(shapeSound);
     if (openingDiceStarted) playTableSound(openingDiceSound);
     if (matchEnded) playTableSound(data.conceded_by === userId ? loseSound : winSound);
@@ -3319,6 +3409,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const finished = Boolean(userId && room?.status === 'closed' && room.conceded_by);
     const playing = Boolean(userId && ((room?.status === 'active' && !inLobby) || finished));
     if (!playing) { hideCardPreview(); closeArchiveBrowser(false); }
+    if (!playing || finished) clearOpponentCardFlights();
     $('signin').hidden = Boolean(userId);
     $('lobby').hidden = !userId || Boolean(room && !inLobby);
     $('session').hidden = !userId || !room || playing || inLobby;
@@ -3509,6 +3600,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     syncLobbyRefresh();
     if (!value) {
       clearTerrainArrivals();
+      clearOpponentCardFlights();
       if (wasVisible && room?.status === 'active' && !inLobby) void run(goAway);
       return;
     }
