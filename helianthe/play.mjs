@@ -2895,6 +2895,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       b.textContent = entry.is_participant ? 'Sit down' : full ? 'Full' : 'Sit at the table';
       if (!full) b.classList.add('action-add-save');
       b.dataset.full = String(full); b.disabled = busy || full;
+      if (!entry.is_participant && !full) b.dataset.customClickSound = '';
       b.setAttribute('aria-label', `${b.textContent} ${entry.code}`);
       b.addEventListener('click', () => run(async () => {
         try {
@@ -3251,6 +3252,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (playing && !finished) renderGame();
   }
 
+  for (const id of ['create', 'back', 'leave', 'ready', 'opening-roll-button', 'game-back', 'game-result-back']) {
+    $(id).dataset.customClickSound = '';
+  }
   $('signin-button').addEventListener('click', requireSignIn);
   $('create').addEventListener('click', () => {
     if (busy) return;

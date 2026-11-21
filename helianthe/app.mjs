@@ -4,7 +4,16 @@ import { renderCard, downloadCardPNG } from './card-renderer.mjs?v=play-card-den
 import { CardSheetPDF } from './card-sheet-pdf.mjs';
 import { PATRONS, FACTION_VISIONS, PATRON_RULES_REVISION, updatePatronVision } from './patrons.mjs?v=faction-visions-3';
 import { CARD_TAGS, normalizeCardTags, seedTagsForCard, tagLabel } from './card-tags.mjs?v=tags-3';
-import { createPlayView } from './play.mjs?v=play-187';
+import { createPlayView } from './play.mjs?v=play-188';
+
+const clickSound = new Audio(new URL('./assets/Click.mp3', import.meta.url));
+document.addEventListener('click', event => {
+  if (!event.isTrusted || !(event.target instanceof Element)) return;
+  const button = event.target.closest('button, summary, [role="button"], input[type="button"], input[type="submit"], input[type="reset"]');
+  if (!button || button.matches(':disabled, [aria-disabled="true"], [data-custom-click-sound]')) return;
+  clickSound.currentTime = 0;
+  void clickSound.play().catch(() => {});
+}, { capture: true });
 
 const DEFAULT_PATRON_NAME = PATRONS[0].name;
 
