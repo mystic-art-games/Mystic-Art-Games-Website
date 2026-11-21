@@ -35,6 +35,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   const openingDiceSound = new Audio(new URL('./assets/Play.mp3', import.meta.url));
   const rollDiceSound = new Audio(new URL('./assets/Roll_Dices.mp3', import.meta.url));
   const drawCardSound = new Audio(new URL('./assets/Draw_Card.mp3', import.meta.url));
+  const massiveDrawSound = new Audio(new URL('./assets/Massive_Draw.mp3', import.meta.url));
   const shapeSound = new Audio(new URL('./assets/Shape.mp3', import.meta.url));
   rollDiceSound.preload = 'auto';
   const OfflineContext = window.OfflineAudioContext || window.webkitOfflineAudioContext;
@@ -61,6 +62,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   let gameState = null, gameLoading = false, gameLoadFailed = false, gameReloadPending = false, handSignature = '', gameRenderSerial = 0, boardRenderSerial = 0, cardPreviewSerial = 0;
   let phaseBusy = false, selectedCardElement = null, hoveredCardElement = null, hoveredCardKey = '', mousePosition = null, patronDeckRequest = '', patronDeckLoadedAt = 0;
   let openingRollBusy = false, openingChoiceBusy = false, openingRollError = '', openingMatchKey = '';
+  let openingDealPendingKey = '', openingDealRunningKey = '', openingDealDoneKey = '';
   let mulliganBusy = false, mulliganStepKey = '';
   const mulliganOrder = [];
   const mulliganFlights = new Set(), mulliganHiddenCards = new Set(), mulliganAnimations = new Set();
@@ -659,6 +661,28 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     next.parentElement.hidden = phases.hidden;
     syncAutomaticPhase();
   }
+  function openingDealPending() {
+    if (room?.status !== 'active') return false;
+    if (room.turn_phase === 'roll') return true;
+    const key = `${room.id}:${room.activated_at || ''}`;
+    return key !== openingDealDoneKey && (room.turn_phase === 'choose_first'
+      || (openingDealPendingKey === key && ['mulligan_first', 'mulligan_second'].includes(room.turn_phase)));
+  }
+  async function dealOpeningHand(key) {
+    openingDealRunningKey = key;
+    const expected = epoch;
+    try {
+      await animateCardsToHand(gameState.hand.slice(0, 5), [], 115, massiveDrawSound);
+    } finally {
+      if (expected === epoch && openingMatchKey === key) {
+        openingDealRunningKey = '';
+        openingDealDoneKey = key;
+        renderGameHand();
+        clearDrawFlight();
+        renderOpeningRoll();
+      }
+    }
+  }
   function renderOpeningRoll() {
     const overlay = $('opening-roll');
     const phases = $('game-phases');
@@ -678,6 +702,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     }
     const rolling = room?.status === 'active' && room.turn_phase === 'roll' && room.opening_roll_round > 0;
     const choosing = room?.status === 'active' && room.turn_phase === 'choose_first';
+    if (rolling || choosing) openingDealPendingKey = key;
     const winnerId = room?.opening_roll_winner_id || (room?.opening_host_roll != null && room?.opening_guest_roll != null
       && room.opening_host_roll !== room.opening_guest_roll
       ? room.opening_host_roll > room.opening_guest_roll ? room.host_id : room.guest_id : null);
@@ -704,14 +729,18 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const choice = $('opening-choice');
     choice.hidden = !choosing || revealing;
     renderMulligan();
+    if (visible && !inLobby && !rolling && !revealing && !openingRollBusy && openingDealPending()
+      && openingDealRunningKey !== key && gameState?.hand?.length) {
+      void dealOpeningHand(key).catch(() => {});
+    }
     if (choosing) {
       const ownWin = winnerId === userId;
       $('opening-choice-message').textContent = ownWin
         ? 'You won the roll. Review your hand, then choose who starts.'
         : 'Opponent won the roll and is choosing who starts.';
       $('opening-choice-actions').hidden = !ownWin;
-      $('opening-choose-self').disabled = openingChoiceBusy || !gameState;
-      $('opening-choose-opponent').disabled = openingChoiceBusy || !gameState;
+      $('opening-choose-self').disabled = openingChoiceBusy || !gameState || openingDealPending();
+      $('opening-choose-opponent').disabled = openingChoiceBusy || !gameState || openingDealPending();
     }
     if (!overlay.hidden && revealing && !openingRevealTimer && !openingRollBusy) {
       openingRevealTimer = setTimeout(() => {
@@ -856,7 +885,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       ? room.turn_phase === 'mulligan_first' ? 'You start. Choose your mulligan.' : 'Your mulligan decision.'
       : 'Your opponent is making their mulligan decision.';
     $('opening-mulligan-instructions').hidden = !own;
-    $('opening-mulligan-actions').hidden = !own || !gameState;
+    $('opening-mulligan-actions').hidden = !own || !gameState || openingDealPending();
     $('opening-mulligan-keep').hidden = mulliganOrder.length > 0;
     $('opening-mulligan-confirm').hidden = mulliganOrder.length === 0;
     $('opening-mulligan-confirm').textContent = `Replace ${mulliganOrder.length} ${mulliganOrder.length === 1 ? 'card' : 'cards'}`;
@@ -1151,7 +1180,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       return true;
     } catch { return false; }
   }
-  async function animateCardsToHand(rawCards, removedIndexes = [], stagger = 0) {
+  async function animateCardsToHand(rawCards, removedIndexes = [], stagger = 0, batchSound = null) {
     const source = $('game-self-horizon').getBoundingClientRect();
     const handElement = $('game-hand');
     const hand = handElement.getBoundingClientRect();
@@ -1192,7 +1221,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (flights.some(({ element }) => !activeDrawFlights.has(element))) return;
     const drawRoomId = room?.id;
     const drawEpoch = epoch;
-    rawCards.forEach((_, index) => {
+    if (batchSound) {
+      if (visible && !inLobby) playTableSound(batchSound);
+    } else rawCards.forEach((_, index) => {
       const playDraw = () => {
         if (drawEpoch === epoch && room?.id === drawRoomId && visible && !inLobby) {
           playTableSound(drawCardSound.cloneNode());
@@ -1426,6 +1457,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   async function disconnect() {
     ++epoch; ++fetchSerial;
+    openingDealRunningKey = '';
     clearTimeout(phaseAdvanceTimer);
     phaseAdvanceTimer = null;
     phaseAdvanceKey = '';
@@ -2643,7 +2675,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     });
   }
   function renderGameHand() {
-    const hand = (pendingFestival?.hand || (Array.isArray(gameState?.hand) ? gameState.hand : [])).map(resolveHandCard);
+    const hand = openingDealPending() ? []
+      : (pendingFestival?.hand || (Array.isArray(gameState?.hand) ? gameState.hand : [])).map(resolveHandCard);
     const signature = JSON.stringify(hand);
     if (signature === handSignature) return;
     const previousCanvases = new Map();
