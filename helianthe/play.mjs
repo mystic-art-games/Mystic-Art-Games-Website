@@ -6,7 +6,7 @@ export function playerOnline(timestamp, now = Date.now()) {
   return Boolean(timestamp && now - Date.parse(timestamp) < 45000);
 }
 
-export function createPlayView({ client, getUser, getDecks, getCards, getProfiles, makeAvatar, requireSignIn, renderCard, getArtworkUrl, getPatronCard, getPatronFaction, getDefaultPatronName }) {
+export function createPlayView({ client, getUser, getDecks, getCards, getProfiles, makeAvatar, requireSignIn, renderCard, getArtworkUrl, getPatronCard, getPatronFactionIcon, getDefaultPatronName }) {
   const root = document.querySelector('#play-view');
   const $ = id => root.querySelector(`#play-${id}`);
   function renderPlayCard(canvas, card, artwork, current, display = canvas.parentElement) {
@@ -3014,24 +3014,25 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   function refreshCollections() {
     const decks = getDecks();
     const value = pendingDeckId || (deckSaveInFlight ? $('deck').value : room ? ownDeckId() : $('deck').value);
+    const factionIcons = decks.map(deck => getPatronFactionIcon(deck.patron_name));
     if (decks.length !== $('deck').options.length || decks.some((deck, index) =>
       String(deck.id) !== $('deck').options[index]?.value || deck.name !== $('deck').options[index]?.text
-      || (getPatronFaction(deck.patron_name) || '') !== $('deck').options[index]?.dataset.faction)) {
-      const options = decks.map(deck => {
+      || factionIcons[index].faction !== $('deck').options[index]?.dataset.faction)) {
+      const options = decks.map((deck, index) => {
         const option = new Option(deck.name, deck.id);
-        option.dataset.faction = getPatronFaction(deck.patron_name) || '';
+        option.dataset.faction = factionIcons[index].faction;
         return option;
       });
       $('deck').replaceChildren(...options);
-      $('deck-options').replaceChildren(...options.map(option => {
+      $('deck-options').replaceChildren(...options.map((option, index) => {
         const button = document.createElement('button');
         button.type = 'button';
         button.dataset.deckId = option.value;
-        const faction = option.dataset.faction;
-        if (faction) {
+        const { faction, src } = factionIcons[index];
+        if (src) {
           const icon = document.createElement('img');
           icon.className = 'play-deck-faction';
-          icon.src = `./assets/Faction_${faction[0].toUpperCase() + faction.slice(1).toLowerCase()}.png`;
+          icon.src = src;
           icon.alt = faction;
           button.append(icon);
         }
