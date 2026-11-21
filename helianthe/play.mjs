@@ -2786,6 +2786,17 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       duration: 460, delay, easing: 'cubic-bezier(.25,.7,.25,1)', fill: 'both',
     });
     opponentCardFlights.add(animation);
+    let drawSoundTimer;
+    if (draw) {
+      const playDrawSound = () => {
+        if (opponentCardFlights.has(animation) && animation.playState === 'running'
+          && visible && !inLobby && !game.hidden && !document.hidden) {
+          playTableSound(drawCardSound.cloneNode());
+        }
+      };
+      if (delay > 0) drawSoundTimer = setTimeout(playDrawSound, delay);
+      else playDrawSound();
+    }
     if (card && !draw) {
       const canvas = document.createElement('canvas');
       void (async () => {
@@ -2798,6 +2809,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     try { await animation.finished; }
     catch { /* The match view may close during the flight. */ }
     finally {
+      clearTimeout(drawSoundTimer);
       opponentCardFlights.delete(animation);
       flight.remove();
     }
