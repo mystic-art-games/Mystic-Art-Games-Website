@@ -71,6 +71,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   const openingAnimatedValues = { host: null, guest: null };
   let drawRetryAt = 0, activeHandShifts = [];
   const activeDrawFlights = new Set();
+  const terrainArrivals = new Map();
   const drawHiddenItems = new Set();
   const discardFlights = new Set();
   const discardHandShifts = [], discardHiddenCards = new Set();
@@ -1462,6 +1463,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   async function disconnect() {
     ++epoch; ++fetchSerial;
+    clearTerrainArrivals();
     openingDealRunningKey = '';
     clearTimeout(phaseAdvanceTimer);
     phaseAdvanceTimer = null;
@@ -2734,6 +2736,47 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     arrivingCardCanvases.clear();
     requestAnimationFrame(syncHoveredCardPreview);
   }
+  function finishTerrainArrival(key, arrival) {
+    if (terrainArrivals.get(key) !== arrival) return;
+    terrainArrivals.delete(key);
+    arrival.animation?.cancel();
+    arrival.flight?.remove();
+    $('game-board').querySelector(`[data-key="${CSS.escape(key)}"]`)?.classList.remove('is-terrain-arriving');
+  }
+  function clearTerrainArrivals() {
+    for (const [key, arrival] of terrainArrivals) finishTerrainArrival(key, arrival);
+  }
+  function animateTerrainArrivals() {
+    if (!visible || inLobby || $('game').hidden) { clearTerrainArrivals(); return; }
+    for (const [key, arrival] of terrainArrivals) {
+      if (arrival.animation) continue;
+      const cell = $('game-board').querySelector(`[data-key="${CSS.escape(key)}"]`);
+      const bounds = cell?.getBoundingClientRect();
+      if (!bounds?.width || !bounds.height || !cell._playTerrain) {
+        finishTerrainArrival(key, arrival);
+        continue;
+      }
+      const flight = document.createElement('img');
+      flight.className = 'play-terrain-flight';
+      flight.alt = '';
+      flight.src = cell._playTerrain.fullArtUrl;
+      Object.assign(flight.style, {
+        left: `${bounds.left}px`, top: `${bounds.top}px`,
+        width: `${bounds.width}px`, height: `${bounds.height}px`,
+      });
+      const startTop = arrival.ownTurn
+        ? $('game-hand').getBoundingClientRect().top
+        : Math.max(0, $('game').getBoundingClientRect().top) - bounds.height;
+      document.body.append(flight);
+      arrival.flight = flight;
+      arrival.animation = flight.animate([
+        { transform: `translateY(${startTop - bounds.top}px) scale(.92)`, opacity: .65 },
+        { transform: 'translateY(0) scale(1)', opacity: 1 },
+      ], { duration: 430, easing: 'cubic-bezier(.18,.7,.27,1)', fill: 'both' });
+      const finish = () => finishTerrainArrival(key, arrival);
+      void arrival.animation.finished.then(finish, finish);
+    }
+  }
   function renderGame() {
     if (!room || room.status !== 'active') return;
     $('game-name').textContent = room.name || 'Table';
@@ -2749,6 +2792,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       const cell = document.createElement('div'); cell.className = 'play-game-node';
       if (isCenter && !node?.terrain) cell.classList.add('terrain-center');
       cell.dataset.key = `${column},${row}`;
+      const arrival = terrainArrivals.get(cell.dataset.key);
+      if (arrival && arrival.terrain === node?.terrain) cell.classList.add('is-terrain-arriving');
+      else if (arrival) finishTerrainArrival(cell.dataset.key, arrival);
       if (node?.terrain) {
         cell.classList.add(`terrain-${node.terrain.toLowerCase()}`);
         cell._playTerrain = { id: `terrain:${node.terrain.toLowerCase()}`, title: node.terrain,
@@ -2805,7 +2851,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     requestAnimationFrame(syncHoveredCardPreview);
     renderBeginningEffects();
     syncEventTargets();
-    requestAnimationFrame(syncZoneCardSize);
+    requestAnimationFrame(() => {
+      syncZoneCardSize();
+      animateTerrainArrivals();
+    });
     $('game-loading').hidden = Boolean(gameState) || gameLoadFailed;
     const reportedCount = room.host_id === userId ? room.guest_hand_count : room.host_hand_count;
     const opponentHandCount = Number.isInteger(reportedCount) ? Math.max(0, Math.min(reportedCount, 100)) : 5;
@@ -3003,6 +3052,15 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const openingDiceStarted = visible && !inLobby && room.status === 'waiting'
       && data.status === 'active' && data.turn_phase === 'roll';
     const matchEnded = room.status === 'active' && data.status === 'closed' && Boolean(data.conceded_by);
+    if (visible && !inLobby && room.status === 'active' && data.status === 'active'
+      && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      for (const [key, node] of Object.entries(data.board || {})) {
+        if (node?.terrain && !room.board?.[key]?.terrain) {
+          terrainArrivals.set(key, { terrain: node.terrain, ownTurn: data.turn_player_id === userId });
+        }
+      }
+    }
+    if (data.status !== 'active' || inLobby) clearTerrainArrivals();
     room = data; render();
     if (openingDiceStarted) playTableSound(openingDiceSound);
     if (matchEnded) playTableSound(data.conceded_by === userId ? loseSound : winSound);
@@ -3414,6 +3472,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     visible = value;
     syncLobbyRefresh();
     if (!value) {
+      clearTerrainArrivals();
       if (wasVisible && room?.status === 'active' && !inLobby) void run(goAway);
       return;
     }
