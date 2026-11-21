@@ -38,6 +38,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   const shapeSound = new Audio(new URL('./assets/Shape.mp3', import.meta.url));
   const changeTurnSound = new Audio(new URL('./assets/Change_Turn.wav', import.meta.url));
   const nextPhaseSound = new Audio(new URL('./assets/Next_Phase.mp3', import.meta.url));
+  const selectCardSound = new Audio(new URL('./assets/Select_Card.wav', import.meta.url));
   const playCardSound = new Audio(new URL('./assets/Play_Card.mp3', import.meta.url));
   rollDiceSound.preload = 'auto';
   const OfflineContext = window.OfflineAudioContext || window.webkitOfflineAudioContext;
@@ -1789,7 +1790,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       if (mulliganBusy || !gameState) return;
       const position = mulliganOrder.indexOf(handIndex);
       if (position >= 0) mulliganOrder.splice(position, 1);
-      else if (mulliganOrder.length < gameState.horizon.length) mulliganOrder.push(handIndex);
+      else if (mulliganOrder.length < gameState.horizon.length) {
+        mulliganOrder.push(handIndex);
+        playTableSound(selectCardSound);
+      }
       showCardPreview(card, source, handIndex);
       renderMulligan();
       return;
@@ -1797,7 +1801,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (pendingFestival) {
       if (phaseBusy) return;
       if (discardSelections.has(handIndex)) discardSelections.delete(handIndex);
-      else if (discardSelections.size < pendingFestival.discardCount) discardSelections.add(handIndex);
+      else if (discardSelections.size < pendingFestival.discardCount) {
+        discardSelections.add(handIndex);
+        playTableSound(selectCardSound);
+      }
       syncDiscardBar();
       return;
     }
@@ -1811,6 +1818,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       if (selectedCardElement === source) hideCardPreview();
     } else {
       discardSelections.add(handIndex);
+      playTableSound(selectCardSound);
       showCardPreview(card, source, handIndex);
     }
     syncDiscardBar();
@@ -2723,6 +2731,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       const button = document.createElement('button');
       button.type = 'button'; button.className = 'play-hand-card';
       button.dataset.handIndex = String(index);
+      button.dataset.customClickSound = '';
       button.setAttribute('aria-label', `Preview ${card.title || 'card'}`);
       const previousCanvas = previousCanvases.get(cardSignature)?.shift();
       const arrivingCanvas = previousCanvas ? null : arrivingCardCanvases.get(cardSignature)?.shift();
