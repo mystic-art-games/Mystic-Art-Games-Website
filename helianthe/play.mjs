@@ -2375,8 +2375,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const landing = {
       left: terrain.left + terrain.width * .06,
       top: terrain.top + terrain.height * .06,
-      width: terrain.width * .88,
-      height: terrain.height * .88,
+      width: terrain.width,
+      height: terrain.height,
     };
     const { flight, bounds } = snapshot;
     flight.classList.remove('play-event-drag-ghost');
