@@ -4,7 +4,7 @@ import { renderCard, downloadCardPNG } from './card-renderer.mjs?v=play-card-den
 import { CardSheetPDF } from './card-sheet-pdf.mjs';
 import { PATRONS, FACTION_VISIONS, PATRON_RULES_REVISION, updatePatronVision } from './patrons.mjs?v=faction-visions-3';
 import { CARD_TAGS, normalizeCardTags, seedTagsForCard, tagLabel } from './card-tags.mjs?v=tags-3';
-import { createPlayView } from './play.mjs?v=play-162';
+import { createPlayView } from './play.mjs?v=play-163';
 
 const DEFAULT_PATRON_NAME = PATRONS[0].name;
 
@@ -24,7 +24,7 @@ let authMode = 'sign-in';
 let recoveryPending = arrivedFromPasswordRecovery, authReady = false;
 let profileSaveStatusTimer = null;
 const state = { user: null, isAdmin: false, cards: [], decks: [], profiles: [], ideas: [], card: null, deck: null, profile: null, deckCards: [], deckPreviewCard: null, deckPreviewSerial: 0, deckPatronSerial: 0, artworkUrl: null, artworkLoading: false, artworkError: '', artworkSerial: 0, renderSerial: 0, authVersion: 0, realtimeChannel: null, cardFormDirty: false, cardAuthorEdited: false };
-const play = createPlayView({ client, getUser: () => state.user, getDecks: () => state.decks, getCards: () => state.cards, getProfiles: () => state.profiles, makeAvatar: avatarElement, requireSignIn: showSignIn, renderCard, getArtworkUrl, getPatronCard: name => patronCardByName(patronByName(name)?.name || name), getDefaultPatronName: () => DEFAULT_PATRON_NAME });
+const play = createPlayView({ client, getUser: () => state.user, getDecks: () => state.decks, getCards: () => state.cards, getProfiles: () => state.profiles, makeAvatar: avatarElement, requireSignIn: showSignIn, renderCard, getArtworkUrl, getPatronCard: name => patronCardByName(patronByName(name)?.name || name), getPatronFaction: name => patronByName(name)?.faction, getDefaultPatronName: () => DEFAULT_PATRON_NAME });
 let addToDeckCard = null;
 let recentDeckCardAddition = null;
 const ARTWORK_UPLOAD_LIMIT = 100 * 1024;

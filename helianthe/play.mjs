@@ -6,7 +6,7 @@ export function playerOnline(timestamp, now = Date.now()) {
   return Boolean(timestamp && now - Date.parse(timestamp) < 45000);
 }
 
-export function createPlayView({ client, getUser, getDecks, getCards, getProfiles, makeAvatar, requireSignIn, renderCard, getArtworkUrl, getPatronCard, getDefaultPatronName }) {
+export function createPlayView({ client, getUser, getDecks, getCards, getProfiles, makeAvatar, requireSignIn, renderCard, getArtworkUrl, getPatronCard, getPatronFaction, getDefaultPatronName }) {
   const root = document.querySelector('#play-view');
   const $ = id => root.querySelector(`#play-${id}`);
   function renderPlayCard(canvas, card, artwork, current, display = canvas.parentElement) {
@@ -3047,8 +3047,29 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const decks = getDecks();
     const value = pendingDeckId || (deckSaveInFlight ? $('deck').value : room ? ownDeckId() : $('deck').value);
     if (decks.length !== $('deck').options.length || decks.some((deck, index) =>
-      String(deck.id) !== $('deck').options[index]?.value || deck.name !== $('deck').options[index]?.text)) {
-      $('deck').replaceChildren(...(decks.length ? decks.map(deck => new Option(deck.name, deck.id)) : [new Option('No decks available', '')]));
+      String(deck.id) !== $('deck').options[index]?.value || deck.name !== $('deck').options[index]?.text
+      || (getPatronFaction(deck.patron_name) || '') !== $('deck').options[index]?.dataset.faction)) {
+      const decorate = CSS.supports('appearance', 'base-select');
+      const options = decks.map(deck => {
+        const option = new Option(deck.name, deck.id);
+        const faction = getPatronFaction(deck.patron_name) || '';
+        option.dataset.faction = faction;
+        if (decorate && faction) {
+          const icon = document.createElement('img');
+          icon.className = 'play-deck-faction';
+          icon.src = `./assets/Faction_${faction[0].toUpperCase() + faction.slice(1).toLowerCase()}.png`;
+          icon.alt = faction;
+          option.prepend(icon);
+        }
+        return option;
+      });
+      if (!options.length) options.push(new Option('No decks available', ''));
+      if (decorate) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.append(document.createElement('selectedcontent'));
+        $('deck').replaceChildren(button, ...options);
+      } else $('deck').replaceChildren(...options);
     }
     $('deck').value = decks.some(deck => deck.id === value) ? value : (decks[0]?.id || '');
     updateDeckCover();
