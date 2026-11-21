@@ -2372,6 +2372,12 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (!target) return;
     const terrain = target.getBoundingClientRect();
     if (!terrain.width || !terrain.height) return;
+    const landing = {
+      left: terrain.left + terrain.width * .06,
+      top: terrain.top + terrain.height * .06,
+      width: terrain.width * .88,
+      height: terrain.height * .88,
+    };
     const { flight, bounds } = snapshot;
     flight.classList.remove('play-event-drag-ghost');
     flight.classList.add('play-entity-flight');
@@ -2383,7 +2389,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     try {
       await flight.animate([
         { left: `${bounds.left}px`, top: `${bounds.top}px`, width: `${bounds.width}px`, height: `${bounds.height}px`, transform: 'rotate(-5deg)' },
-        { left: `${terrain.left + terrain.width * .1}px`, top: `${terrain.top + terrain.height * .1}px`, width: `${terrain.width}px`, height: `${terrain.height}px`, transform: 'rotate(0deg)' },
+        { left: `${landing.left}px`, top: `${landing.top}px`, width: `${landing.width}px`, height: `${landing.height}px`, transform: 'rotate(0deg)' },
       ], { duration: 460, easing: 'cubic-bezier(.2,.8,.2,1)' }).finished;
     } catch { /* The table may have been left while the card was moving. */ }
     finally { flight.remove(); }

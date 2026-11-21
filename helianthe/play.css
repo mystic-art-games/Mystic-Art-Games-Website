@@ -124,7 +124,7 @@ body.dark-mode .play-deck-field.is-locked select { border-color: #596d5d; backgr
 .play-game-hand-wrap #play-game-loading { position: absolute; inset: 0; display: grid; place-content: center; margin: 0; text-align: center; pointer-events: none; }
 .play-deck-stack { display: block; flex: 0 0 auto; width: 62px; aspect-ratio: 63 / 88; border: 1px solid #123c2d; border-radius: 9px; background: url('../images/helianthe-logo.png') center / 62% no-repeat, #294b3ddf; box-shadow: inset 0 1px 0 #fff2cf36, 4px -4px 0 #294b3ddf, 5px -5px 0 #123c2d, 0 4px 12px #130b0a55; }
 .play-game-board-wrap { width: 100%; max-width: 1000px; margin: 0 auto; }
-.play-game-table { --play-map-card-gap: clamp(9px, 1.4cqh, 14px); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 5fr) minmax(0, 1fr); align-items: stretch; justify-content: center; gap: clamp(8px, 1.4vw, 18px); }
+.play-game-table { --play-map-card-gap: clamp(14px, 2.2cqh, 22px); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 5fr) minmax(0, 1fr); align-items: stretch; justify-content: center; gap: clamp(8px, 1.4vw, 18px); }
 .play-game-board { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); grid-template-rows: repeat(4, minmax(0, 1fr)); align-self: center; gap: var(--play-map-card-gap); min-width: 0; width: 100%; aspect-ratio: 334 / 352; }
 .play-game-card-preview { position: fixed; z-index: 30; top: 50%; left: clamp(.75rem, 1.5vw, 1.25rem); transform: translateY(-50%); width: min(240px, 21vw, 40vh); aspect-ratio: 63 / 88; overflow: hidden; border: 1px solid #8da79a; border-radius: 7px; background: #e9ece1; box-shadow: 0 8px 24px #183a2c55; }
 .play-game-card-preview canvas, .play-game-card-preview img { display: block; width: 100%; height: 100%; object-fit: fill; }
@@ -180,7 +180,7 @@ body.dark-mode .play-deck-field.is-locked select { border-color: #596d5d; backgr
 .play-game-archive-card span { padding: .3rem; }
 .play-game-node { position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: .15rem; min-width: 0; min-height: 0; padding: .2rem; overflow: hidden; border: 1px dashed #d5b88a9c; border-radius: 6px; background: #f8e8c814; text-align: center; }
 .play-game-node.has-entity { z-index: 2; overflow: visible; }
-.play-node-entity-card { position: absolute; z-index: 2; top: 10%; left: 10%; box-sizing: border-box; width: 100%; height: 100%; overflow: hidden; border: 1px solid #e5d9bb; border-radius: 5px; background: #e9ece1; box-shadow: 0 5px 10px #0b251bbb; cursor: default; }
+.play-node-entity-card { position: absolute; z-index: 2; inset: 6%; box-sizing: border-box; overflow: hidden; border: 1px solid #e5d9bb; border-radius: 5px; background: #e9ece1; box-shadow: 0 5px 10px #0b251bbb; cursor: default; }
 .play-game-node.is-entity-target .play-node-entity-card { cursor: pointer; }
 .play-node-entity-card.is-arriving { visibility: hidden; }
 .play-node-entity-card canvas { display: block; width: 100%; height: 100%; object-fit: fill; }
