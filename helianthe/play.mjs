@@ -689,6 +689,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const own = Boolean(room?.turn_player_id && room.turn_player_id === userId);
     const activeTurn = room?.status === 'active' && phaseIndex >= 0 && room.turn_player_id;
     const game = $('game');
+    game.dataset.canPlayCards = String(Boolean(activeTurn && own && phase === 'main' && !phaseBusy && !pendingFestival));
     const previousAura = game.dataset.turnAura;
     const turnAura = activeTurn ? (own ? 'own' : 'opponent') : '';
     game.dataset.turnAura = turnAura;

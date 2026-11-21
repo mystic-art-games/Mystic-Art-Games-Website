@@ -215,7 +215,9 @@ body.dark-mode .play-deck-field.is-locked select { border-color: #596d5d; backgr
 .play-game-hand { display: flex; justify-content: safe center; gap: 1.2rem; overflow-x: auto; padding: .6rem .15rem .8rem; }
 .play-hand-item { position: relative; flex: 0 0 clamp(72px, 9vw, 92px); min-width: 0; }
 .play-hand-card { display: flex; align-items: center; justify-content: center; box-sizing: border-box; width: 100%; min-width: 0; aspect-ratio: 63 / 88; margin: 0; padding: 0; overflow: hidden; border: 1px solid #8da79a; border-radius: 6px; background: #e9ece1; box-shadow: 0 4px 12px #183a2c33; }
-.play-hand-card.is-draggable-card { cursor: grab; touch-action: none; }
+#play-game .play-hand-card { cursor: default; }
+.play-hand-card.is-draggable-card { touch-action: none; }
+#play-game[data-can-play-cards="true"] .play-hand-card.is-draggable-card { cursor: grab; }
 .play-hand-card.is-drag-source { opacity: .4; }
 .play-event-drag-ghost { position: fixed; z-index: 80; box-sizing: border-box; margin: 0; pointer-events: none; transform: rotate(-3deg); box-shadow: 0 7px 16px #0c1f1ba8; }
 .play-game-board-wrap.is-event-drop-zone .play-game-board { filter: brightness(1.12); }
