@@ -125,7 +125,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       <div class="play-game-board-wrap">
       <div class="play-game-left-stack">
         <aside id="play-game-card-preview" class="play-game-card-preview" aria-label="Card preview" hidden><button id="play-game-card-preview-close" class="play-game-card-preview-close action-delete" type="button" aria-label="Close card preview">×</button><canvas id="play-game-card-preview-canvas" hidden></canvas><img id="play-game-card-preview-image" alt="" hidden><span id="play-game-card-preview-fallback" class="play-hand-fallback"></span></aside>
-        <aside id="play-game-beginning-effects" class="play-beginning-effects" aria-label="Beginning of Turn Entity effects" hidden><strong>Beginning of Turn effects</strong><p id="play-game-beginning-instructions"></p><section class="play-beginning-zone" aria-labelledby="play-game-beginning-active-title"><h3 id="play-game-beginning-active-title">Resolve in this order</h3><ol id="play-game-beginning-list"></ol></section><section class="play-beginning-zone play-beginning-skipped-zone" aria-labelledby="play-game-beginning-skipped-title"><h3 id="play-game-beginning-skipped-title">Skip this turn</h3><ol id="play-game-beginning-skipped-list"></ol><p id="play-game-beginning-skipped-empty">Drag optional “you may” effects here.</p></section><button id="play-game-resolve-beginning" type="button">Resolve effects in this order</button></aside>
+        <aside id="play-game-beginning-effects" class="play-beginning-effects" aria-label="Beginning of Turn Entity effects" hidden><strong>Beginning of Turn effects</strong><p id="play-game-beginning-instructions"></p><section class="play-beginning-zone" aria-labelledby="play-game-beginning-active-title"><h3 id="play-game-beginning-active-title">Resolve in this order</h3><ol id="play-game-beginning-list"></ol><p id="play-game-beginning-empty" hidden>No Entity effects this turn.</p></section><section class="play-beginning-zone play-beginning-skipped-zone" aria-labelledby="play-game-beginning-skipped-title"><h3 id="play-game-beginning-skipped-title">Skip this turn</h3><ol id="play-game-beginning-skipped-list"></ol><p id="play-game-beginning-skipped-empty">Drag optional “you may” effects here.</p></section><button id="play-game-resolve-beginning" type="button">Resolve effects in this order</button></aside>
       </div>
       <div class="play-game-table">
         <div class="play-game-zones-left">
@@ -580,10 +580,18 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   function beginningEffectKind(card) {
     const effect = String(card?.effect || '').replace(/\s+/g, ' ').trim().toLowerCase();
     if (card?.title === 'Orchard Warden'
-      && effect === 'at the beginning of your turn fertilize 1 on adjacent node.') return 'orchard_warden';
+      && ['at the beginning of your turn fertilize 1 on adjacent node.',
+        "at the beginning of verdant patron's turn, fertilize 1 on any adjacent empty node."].includes(effect)) return 'orchard_warden';
     if (card?.title === 'Expansive Ivy'
-      && effect === 'at the beginning of your every turn fertilize an adjacent node with no terrain. then if there are 4 or more adjacent verdant terrains, draw a card.') return 'expansive_ivy';
+      && ['at the beginning of your every turn fertilize an adjacent node with no terrain. then if there are 4 or more adjacent verdant terrains, draw a card.',
+        "at the beginning of the verdant patron's turn, fertilize 1 on any adjacent node. then if there are 4 or more adjacent verdant terrains, draw 1 card."].includes(effect)) return 'expansive_ivy';
     return null;
+  }
+  function beginningEffectAvailable(card) {
+    const effect = String(card?.effect || '').replace(/\s+/g, ' ').trim().toLowerCase();
+    if (!/^at the beginning of (?:the )?verdant patron's turn/.test(effect)) return true;
+    const patron = room.turn_player_id === room.host_id ? room.host_patron_name : room.guest_patron_name;
+    return patron === 'Zhyr, Stitcher of the Wild';
   }
   function beginningEffectOptional(card) {
     return /\byou may\b/i.test(String(card?.effect || ''));
@@ -592,7 +600,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (room?.status !== 'active' || room.turn_phase !== 'beginning'
       || room.beginning_effects_resolved_turn === room.turn_number) return [];
     return Object.entries(room.board || {}).filter(([key, node]) => /^[0-4],[0-3]$/.test(key)
-      && node?.entity?.owner_id === room.turn_player_id && beginningEffectKind(node.entity))
+      && node?.entity?.owner_id === room.turn_player_id && beginningEffectKind(node.entity)
+      && beginningEffectAvailable(node.entity))
       .map(([source, node]) => ({ source, card: { ...resolveGameCard(node.entity),
         title: node.entity.title, effect: node.entity.effect }, optional: beginningEffectOptional(node.entity) }))
       .sort((a, b) => Number(a.source.split(',')[1]) - Number(b.source.split(',')[1])
@@ -668,8 +677,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (!visible || inLobby || $('game').hidden || room?.status !== 'active'
       || room.turn_player_id !== userId || !gameState || phaseBusy || pendingFestival) return '';
     const phase = room.turn_phase;
-    if ((phase === 'beginning' && beginningEffects().length === 0)
-      || (phase === 'end' && requiredDiscards() === 0)) return `${epoch}:${room.id}:${room.turn_number}:${phase}`;
+    if (phase === 'end' && requiredDiscards() === 0) return `${epoch}:${room.id}:${room.turn_number}:${phase}`;
     return '';
   }
   function syncAutomaticPhase() {
@@ -1079,17 +1087,21 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   function renderBeginningEffects() {
     const effects = beginningEffects();
     const panel = $('game-beginning-effects');
-    panel.hidden = effects.length === 0;
-    if (!effects.length) { beginningTargetSource = null; return; }
+    panel.hidden = room?.status !== 'active' || room.turn_phase !== 'beginning'
+      || room.beginning_effects_resolved_turn === room.turn_number;
+    if (panel.hidden) { beginningTargetSource = null; return; }
     const own = room.turn_player_id === userId;
     panel.classList.toggle('is-read-only', !own);
     const saved = room.beginning_effects_plan;
     const shared = saved?.turn === room.turn_number && saved?.player_id === room.turn_player_id
       && Array.isArray(saved.effects) ? saved.effects : null;
-    $('game-beginning-instructions').textContent = own
-      ? 'Drag to reorder. Move optional effects below to skip them this turn. Choose a Node for each effect you resolve.'
-      : 'Opponent is choosing the order, targets, and optional effects to skip.';
+    $('game-beginning-instructions').textContent = effects.length
+      ? own ? 'Drag to reorder. Move optional effects below to skip them this turn. Choose a Node for each effect you resolve.'
+        : 'Opponent is choosing the order, targets, and optional effects to skip.'
+      : own ? 'Continue to the Draw phase.' : 'Opponent is continuing to the Draw phase.';
     $('game-resolve-beginning').hidden = !own;
+    $('game-resolve-beginning').textContent = effects.length ? 'Resolve effects in this order' : 'Continue to Draw';
+    $('game-beginning-empty').hidden = effects.length > 0;
     const turnKey = `${room.id}:${room.turn_number}`;
     const sources = new Set(effects.map(effect => effect.source));
     if (turnKey !== beginningTurnKey) {
@@ -1260,7 +1272,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       renderBeginningEffects(); renderTurnPhase(); syncEventTargets();
     }
   }
-  $('game-resolve-beginning').addEventListener('click', () => void resolveBeginningEffects());
+  $('game-resolve-beginning').addEventListener('click', () => void (beginningEffects().length
+    ? resolveBeginningEffects() : advanceTurnPhase()));
   for (const [id, skip] of [['game-beginning-list', false], ['game-beginning-skipped-list', true]]) {
     const zone = $(id).closest('.play-beginning-zone');
     zone.addEventListener('dragover', event => { event.preventDefault(); event.dataTransfer.dropEffect = 'move'; });
