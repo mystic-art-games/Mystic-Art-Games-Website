@@ -36,6 +36,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   const drawCardSound = new Audio(new URL('./assets/Draw_Card.mp3', import.meta.url));
   const massiveDrawSound = new Audio(new URL('./assets/Massive_Draw.mp3', import.meta.url));
   const shapeSound = new Audio(new URL('./assets/Shape.mp3', import.meta.url));
+  const changeTurnSound = new Audio(new URL('./assets/Change_Turn.wav', import.meta.url));
   rollDiceSound.preload = 'auto';
   const OfflineContext = window.OfflineAudioContext || window.webkitOfflineAudioContext;
   const rollDiceClip = TableAudioContext && OfflineContext ? fetch(rollDiceSound.src)
@@ -637,7 +638,13 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const phaseIndex = phaseOrder.indexOf(phase);
     const own = Boolean(room?.turn_player_id && room.turn_player_id === userId);
     const activeTurn = room?.status === 'active' && phaseIndex >= 0 && room.turn_player_id;
-    $('game').dataset.turnAura = activeTurn ? (own ? 'own' : 'opponent') : '';
+    const game = $('game');
+    const previousAura = game.dataset.turnAura;
+    const turnAura = activeTurn ? (own ? 'own' : 'opponent') : '';
+    game.dataset.turnAura = turnAura;
+    if (visible && !inLobby && !game.hidden && previousAura && turnAura && previousAura !== turnAura) {
+      playTableSound(changeTurnSound);
+    }
     const phases = $('game-phases');
     phases.classList.toggle('is-your-turn', own);
     phases.classList.toggle('is-opponent-turn', Boolean(room?.turn_player_id) && !own);
@@ -1463,6 +1470,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   async function disconnect() {
     ++epoch; ++fetchSerial;
+    delete $('game').dataset.turnAura;
     clearTerrainArrivals();
     openingDealRunningKey = '';
     clearTimeout(phaseAdvanceTimer);
