@@ -34,6 +34,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   const notReadySound = new Audio(new URL('./assets/Not_Ready.mp3', import.meta.url));
   const openingDiceSound = new Audio(new URL('./assets/Play.mp3', import.meta.url));
   const winSound = new Audio(new URL('./assets/Win.wav', import.meta.url));
+  const loseSound = new Audio(new URL('./assets/Lose.mp3', import.meta.url));
   const backToLobbySound = new Audio(new URL('./assets/Back_To_Lobby.mp3', import.meta.url));
   let pendingDeckId = null, deckSaveInFlight = false;
   let gameState = null, gameLoading = false, gameLoadFailed = false, gameReloadPending = false, handSignature = '', gameRenderSerial = 0, boardRenderSerial = 0, cardPreviewSerial = 0;
@@ -2912,11 +2913,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     }
     const openingDiceStarted = visible && !inLobby && room.status === 'waiting'
       && data.status === 'active' && data.turn_phase === 'roll';
-    const wonMatch = room.status === 'active' && data.status === 'closed'
-      && Boolean(data.conceded_by) && data.conceded_by !== userId;
+    const matchEnded = room.status === 'active' && data.status === 'closed' && Boolean(data.conceded_by);
     room = data; render();
     if (openingDiceStarted) playTableSound(openingDiceSound);
-    if (wonMatch) playTableSound(winSound);
+    if (matchEnded) playTableSound(data.conceded_by === userId ? loseSound : winSound);
     if (room.status === 'active') {
       void loadGameState(turnChanged && !phaseBusy && !mulliganBusy);
       void loadGamePatrons().catch(() => { patronDeckRequest = ''; });
