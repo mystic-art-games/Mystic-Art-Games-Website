@@ -80,9 +80,10 @@ body.dark-mode #play-session .play-menu-toggle:hover, body.dark-mode #play-sessi
 .play-deck-picker { position: relative; flex: 1; min-width: 0; }
 .play-deck-picker summary { cursor: pointer; padding: .45rem; border: 1px solid #819e8d; border-radius: 8px; overflow-wrap: anywhere; }
 .play-deck-picker summary[aria-disabled="true"] { cursor: not-allowed; opacity: .65; }
-.play-deck-options { position: absolute; z-index: 12; top: calc(100% + .25rem); inset-inline: 0; padding: .25rem; border: 1px solid #819e8d; border-radius: 8px; background: #fffefa; box-shadow: 0 5px 14px #173d2b33; }
-.play-deck-options button { display: flex; align-items: center; gap: .45rem; width: 100%; text-align: left; overflow-wrap: anywhere; }
-.play-deck-options button[aria-current] { border-color: #52986d; }
+.play-deck-options { position: absolute; z-index: 12; top: calc(100% + .25rem); inset-inline: 0; padding: .25rem; border-radius: 8px; background: #fffefa; box-shadow: 0 5px 14px #173d2b33; }
+#play-deck-options button { display: flex; align-items: center; gap: .45rem; width: 100%; border: 0; background: transparent; box-shadow: none; text-align: left; overflow-wrap: anywhere; }
+#play-deck-options button:is(:hover, [aria-current]) { background: #52986d30; }
+#play-deck-options button:focus-visible { outline: 2px solid currentColor; outline-offset: -2px; }
 .play-deck-faction { flex: 0 0 1.2rem; width: 1.2rem; height: 1.2rem; object-fit: contain; }
 body.dark-mode .play-deck-options { background: #173f34; }
 .play-deck-cover { display: block; flex: 0 0 68px; width: 68px; aspect-ratio: 1.9 / 1; object-fit: cover; border-radius: 6px; background: #d9e5d7; }
