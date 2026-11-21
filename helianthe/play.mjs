@@ -605,7 +605,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const effect = String(card?.effect || '').replace(/\s+/g, ' ').trim().toLowerCase();
     if (!/^at the beginning of (?:the )?verdant patron's turn/.test(effect)) return true;
     const patron = room.turn_player_id === room.host_id ? room.host_patron_name : room.guest_patron_name;
-    return patron === 'Zhyr, Stitcher of the Wild';
+    return getPatronFactionIcon(patron).faction === 'Verdant';
   }
   function beginningEffectOptional(card) {
     return /\byou may\b/i.test(String(card?.effect || ''));
