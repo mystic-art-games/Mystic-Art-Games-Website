@@ -29,6 +29,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   let buildTableFallback;
   let buildTableOutputPrimed = false;
   const smashTableSound = new Audio(new URL('./assets/Smash_Table.mp3', import.meta.url));
+  const leaveTableSound = new Audio(new URL('./assets/Leave_Table.wav', import.meta.url));
+  const sitAtTableSound = new Audio(new URL('./assets/Sit_At_The_Table.wav', import.meta.url));
   let pendingDeckId = null, deckSaveInFlight = false;
   let gameState = null, gameLoading = false, gameLoadFailed = false, gameReloadPending = false, handSignature = '', gameRenderSerial = 0, boardRenderSerial = 0, cardPreviewSerial = 0;
   let phaseBusy = false, selectedCardElement = null, hoveredCardElement = null, hoveredCardKey = '', mousePosition = null, patronDeckRequest = '', patronDeckLoadedAt = 0;
@@ -2877,6 +2879,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       b.setAttribute('aria-label', `${b.textContent} ${entry.code}`);
       b.addEventListener('click', () => run(async () => {
         try {
+          if (!entry.is_participant) playTableSound(sitAtTableSound);
           const id = entry.is_participant ? entry.table_id : await rpc('play_join_room', { p_code: entry.code });
           await enter(id, false, true);
         } finally { if (!room) await listTables(); }
@@ -3219,7 +3222,12 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     });
   });
   $('back').addEventListener('click', () => run(leaveTable));
-  $('leave').addEventListener('click', () => run(() => room?.host_id === userId ? smashWaitingTable() : leaveTable()));
+  $('leave').addEventListener('click', () => run(() => {
+    if (!room) return;
+    if (room.host_id === userId) return smashWaitingTable();
+    playTableSound(leaveTableSound);
+    return leaveTable();
+  }));
   $('game-leave').addEventListener('click', () => run(concedeGame));
   $('game-back').addEventListener('click', () => run(leaveGameForLobby));
   $('game-result-back').addEventListener('click', () => run(returnToLobby));
