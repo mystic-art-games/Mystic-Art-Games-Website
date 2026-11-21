@@ -20,6 +20,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   let lobbyTimer = null, directoryChannel = null, directoryUserId = null, listSerial = 0, tableListSignature = '';
   let busy = false, epoch = 0, fetchSerial = 0, live = false, lastHeartbeat = 0, autoDeckPending = false;
   const sitAtTableSoundUrl = new URL('./assets/Sit_At_The_Table.wav?v=2', import.meta.url);
+  const tableSoundVolume = 0.3;
   const TableAudioContext = window.AudioContext || window.webkitAudioContext;
   const buildTableSoundData = TableAudioContext && fetch(sitAtTableSoundUrl)
     .then(response => response.ok ? response.arrayBuffer() : null)
@@ -1636,7 +1637,15 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   function playTableSound(sound) {
     sound.currentTime = 0;
+    sound.volume = tableSoundVolume;
     void sound.play().catch(() => {});
+  }
+  function connectTableSound(source, context) {
+    const gain = context.createGain();
+    gain.gain.value = tableSoundVolume;
+    source.connect(gain);
+    gain.connect(context.destination);
+    source.addEventListener('ended', () => { source.disconnect(); gain.disconnect(); }, { once: true });
   }
   async function playRollDiceSound() {
     if (rollDiceClip) {
@@ -1646,8 +1655,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         if (clip) {
           const source = context.createBufferSource();
           source.buffer = clip.buffer;
-          source.connect(context.destination);
-          source.addEventListener('ended', () => source.disconnect(), { once: true });
+          connectTableSound(source, context);
           source.start(0, clip.offset);
           return;
         }
@@ -1668,8 +1676,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         const [buffer] = await Promise.all([buildTableSoundBuffer, ready]);
         const source = context.createBufferSource();
         source.buffer = buffer;
-        source.connect(context.destination);
-        source.addEventListener('ended', () => source.disconnect(), { once: true });
+        connectTableSound(source, context);
         source.start(context.currentTime + 0.02);
         return;
       } catch {

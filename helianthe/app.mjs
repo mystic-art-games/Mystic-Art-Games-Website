@@ -4,9 +4,10 @@ import { renderCard, downloadCardPNG } from './card-renderer.mjs?v=play-card-den
 import { CardSheetPDF } from './card-sheet-pdf.mjs';
 import { PATRONS, FACTION_VISIONS, PATRON_RULES_REVISION, updatePatronVision } from './patrons.mjs?v=faction-visions-3';
 import { CARD_TAGS, normalizeCardTags, seedTagsForCard, tagLabel } from './card-tags.mjs?v=tags-3';
-import { createPlayView } from './play.mjs?v=play-211';
+import { createPlayView } from './play.mjs?v=play-212';
 
 const clickSound = new Audio(new URL('./assets/Click.mp3', import.meta.url));
+clickSound.volume = 0.3;
 document.addEventListener('click', event => {
   if (!event.isTrusted || !(event.target instanceof Element)) return;
   const button = event.target.closest('button, summary, [role="button"], input[type="button"], input[type="submit"], input[type="reset"]');
