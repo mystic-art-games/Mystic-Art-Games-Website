@@ -29,8 +29,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   let buildTableFallback;
   let buildTableOutputPrimed = false;
   const smashTableSound = new Audio(new URL('./assets/Smash_Table.mp3', import.meta.url));
-  const leaveTableSound = new Audio(new URL('./assets/Leave_Table.wav', import.meta.url));
-  const sitAtTableSound = new Audio(new URL('./assets/Sit_At_The_Table.wav', import.meta.url));
+  const leaveTableSound = new Audio(new URL('./assets/Leave_Table.wav?v=2', import.meta.url));
+  const sitAtTableSound = new Audio(new URL('./assets/Sit_At_The_Table.wav?v=2', import.meta.url));
   let pendingDeckId = null, deckSaveInFlight = false;
   let gameState = null, gameLoading = false, gameLoadFailed = false, gameReloadPending = false, handSignature = '', gameRenderSerial = 0, boardRenderSerial = 0, cardPreviewSerial = 0;
   let phaseBusy = false, selectedCardElement = null, hoveredCardElement = null, hoveredCardKey = '', mousePosition = null, patronDeckRequest = '', patronDeckLoadedAt = 0;
