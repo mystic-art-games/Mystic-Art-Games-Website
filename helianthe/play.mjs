@@ -67,7 +67,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       <button id="play-back" class="back-to-decks" type="button"><span aria-hidden="true">←</span> Back to Lobby</button>
       <div class="play-room-bar"><div class="play-room-identity"><div class="play-room-name-line"><strong id="play-room-name"></strong><button id="play-edit-name" class="action-cancel" type="button">Edit name</button></div><form id="play-name-form" hidden><input id="play-name-input" aria-label="Table name" maxlength="60" required><button type="submit">Save</button><button id="play-cancel-name" type="button">Cancel</button></form><span class="play-room-code-line">Code: <strong id="play-room-code"></strong></span></div><div class="play-room-actions"><button id="play-leave" class="action-delete" type="button">Smash Table</button></div></div>
       <div id="play-players" class="play-players"></div>
-      <label id="play-deck-field" class="play-deck-field" for="play-deck">Your deck<div class="play-deck-choice"><img id="play-deck-cover" class="play-deck-cover" alt="" hidden><select id="play-deck"><option value="">No decks available</option></select></div></label>
+      <div id="play-deck-field" class="play-deck-field"><span id="play-deck-label">Your deck</span><div class="play-deck-choice"><img id="play-deck-cover" class="play-deck-cover" alt="" hidden><select id="play-deck" hidden></select><details id="play-deck-picker" class="play-deck-picker"><summary id="play-deck-trigger" aria-labelledby="play-deck-label play-deck-trigger">No decks available</summary><div id="play-deck-options" class="play-deck-options"></div></details></div></div>
       <button id="play-ready" class="action-add-save" type="button">Ready</button>
       <div id="play-controls-parking" hidden></div>
       <p id="play-room-status" role="status"></p>
@@ -1411,6 +1411,11 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const deckLocked = Boolean(ownReady());
     $('deck').disabled = !canAct() || deckLocked || !getDecks().length;
     $('deck').title = deckLocked ? 'Click Not ready to change your deck.' : '';
+    const disabled = $('deck').disabled;
+    $('deck-trigger').setAttribute('aria-disabled', String(disabled));
+    $('deck-trigger').tabIndex = disabled ? -1 : 0;
+    $('deck-trigger').title = $('deck').title;
+    if (disabled) $('deck-picker').open = false;
     deckField.classList.toggle('is-locked', deckLocked);
     $('ready').disabled = !canAct() || deckSaveInFlight || (!ownReady() && !$('deck').value);
     $('edit-name').disabled = !canAct() || room?.host_id !== userId;
@@ -3012,27 +3017,35 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (decks.length !== $('deck').options.length || decks.some((deck, index) =>
       String(deck.id) !== $('deck').options[index]?.value || deck.name !== $('deck').options[index]?.text
       || (getPatronFaction(deck.patron_name) || '') !== $('deck').options[index]?.dataset.faction)) {
-      const decorate = CSS.supports('appearance', 'base-select');
       const options = decks.map(deck => {
         const option = new Option(deck.name, deck.id);
-        const faction = getPatronFaction(deck.patron_name) || '';
-        option.dataset.faction = faction;
-        if (decorate && faction) {
+        option.dataset.faction = getPatronFaction(deck.patron_name) || '';
+        return option;
+      });
+      $('deck').replaceChildren(...options);
+      $('deck-options').replaceChildren(...options.map(option => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.dataset.deckId = option.value;
+        const faction = option.dataset.faction;
+        if (faction) {
           const icon = document.createElement('img');
           icon.className = 'play-deck-faction';
           icon.src = `./assets/Faction_${faction[0].toUpperCase() + faction.slice(1).toLowerCase()}.png`;
           icon.alt = faction;
-          option.prepend(icon);
+          button.append(icon);
         }
-        return option;
-      });
-      if (!options.length) options.push(new Option('No decks available', ''));
-      if (decorate) {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.append(document.createElement('selectedcontent'));
-        $('deck').replaceChildren(button, ...options);
-      } else $('deck').replaceChildren(...options);
+        button.append(option.text);
+        button.addEventListener('click', () => {
+          if ($('deck').disabled) return;
+          $('deck-picker').open = false;
+          $('deck-trigger').focus();
+          if ($('deck').value === option.value) return;
+          $('deck').value = option.value;
+          $('deck').dispatchEvent(new Event('change'));
+        });
+        return button;
+      }));
     }
     $('deck').value = decks.some(deck => deck.id === value) ? value : (decks[0]?.id || '');
     updateDeckCover();
@@ -3042,6 +3055,11 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   function updateDeckCover() {
     const deck = getDecks().find(item => String(item.id) === $('deck').value);
+    $('deck-trigger').textContent = deck?.name || 'No decks available';
+    for (const button of $('deck-options').children) {
+      if (button.dataset.deckId === $('deck').value) button.setAttribute('aria-current', 'true');
+      else button.removeAttribute('aria-current');
+    }
     const image = $('deck-cover');
     image.hidden = !deck;
     if (!deck) return;
@@ -3167,6 +3185,18 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       controls();
     }
   }
+  $('deck-trigger').addEventListener('click', event => {
+    if ($('deck').disabled) event.preventDefault();
+  });
+  $('deck-picker').addEventListener('keydown', event => {
+    if (event.key !== 'Escape' || !$('deck-picker').open) return;
+    event.stopPropagation();
+    $('deck-picker').open = false;
+    $('deck-trigger').focus();
+  });
+  document.addEventListener('click', event => {
+    if (!$('deck-picker').contains(event.target)) $('deck-picker').open = false;
+  });
   $('deck').addEventListener('change', () => {
     if (busy || ownReady()) { $('deck').value = ownDeckId() || ''; updateDeckCover(); return; }
     updateDeckCover();
