@@ -179,7 +179,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         <div class="play-game-hand-wrap"><p id="play-game-loading" role="status">Preparing the opening hands…</p><div id="play-game-hand" class="play-game-hand"></div></div>
       </section>
       </div>
-      <div id="play-game-result" class="play-game-result" role="status" aria-live="polite" hidden><div class="play-game-result-panel"><h2 id="play-game-result-title"></h2><button id="play-game-result-back" type="button">Back to Lobby</button></div></div>
+      <div id="play-game-result" class="play-game-result" role="status" aria-live="polite" hidden><div class="play-game-result-panel"><h2 id="play-game-result-title"></h2><p id="play-game-result-detail"></p><button id="play-game-result-back" type="button">Back to Lobby</button></div></div>
     </section>`;
   function syncZoneCardSize() {
     const cell = $('game-board').firstElementChild;
@@ -3229,13 +3229,14 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       ++gameRenderSerial; gameState = null; gameLoading = false; gameLoadFailed = false; gameReloadPending = false; handSignature = '';
       hideCardPreview();
     }
-    if (data.status === 'closed' && data.conceded_by) {
+    if (data.status === 'closed' && (data.conceded_by || data.victory_winner_id || data.victory_shared)) {
       inLobby = false;
       rememberAwayLobby(null);
     }
     const openingDiceStarted = visible && !inLobby && room.status === 'waiting'
       && data.status === 'active' && data.turn_phase === 'roll';
-    const matchEnded = room.status === 'active' && data.status === 'closed' && Boolean(data.conceded_by);
+    const matchEnded = room.status === 'active' && data.status === 'closed'
+      && Boolean(data.conceded_by || data.victory_winner_id || data.victory_shared);
     const opponentPlacement = visible && !inLobby && room.status === 'active' && data.status === 'active'
       && data.turn_player_id !== userId && data.turn_player_id === room.turn_player_id
       && data.turn_number === room.turn_number && !room.main_played_entity && data.main_played_entity
@@ -3276,12 +3277,13 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     }
     if (playShapeImmediately) playTableSound(shapeSound);
     if (openingDiceStarted) playTableSound(openingDiceSound);
-    if (matchEnded) playTableSound(data.conceded_by === userId ? loseSound : winSound);
+    if (matchEnded) playTableSound(data.victory_shared || data.victory_winner_id === userId
+      || (data.conceded_by && data.conceded_by !== userId) ? winSound : loseSound);
     if (room.status === 'active') {
       void loadGameState(turnChanged && !phaseBusy && !mulliganBusy);
       void loadGamePatrons().catch(() => { patronDeckRequest = ''; });
     }
-    if (room.status === 'closed' && !room.conceded_by) {
+    if (room.status === 'closed' && !room.conceded_by && !room.victory_winner_id && !room.victory_shared) {
       const timedOut = [room.host_away_until, room.guest_away_until].some(deadline => deadline && Date.parse(deadline) <= Date.now());
       const notice = timedOut ? 'The away timer expired. The table closed.' : 'The table was smashed.';
       await disconnect(); room = null; inLobby = false; remember(null); render(); await listTables(); message(notice);
@@ -3314,7 +3316,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     let { data, error } = await client.from('play_rooms').select('*').eq('id', id).maybeSingle();
     if (expected !== epoch) return;
     if (error) throw error;
-    if (!data || (data.status === 'closed' && !data.conceded_by)) { remember(null); throw new Error('Table not found or closed.'); }
+    if (!data || (data.status === 'closed' && !data.conceded_by && !data.victory_winner_id && !data.victory_shared)) {
+      remember(null); throw new Error('Table not found or closed.');
+    }
     const seatId = await seatedUserId(data);
     if (expected !== epoch) return;
     if (!seatId) { remember(null); throw new Error('This table belongs to another account. Sign in with the account that joined it.'); }
@@ -3327,7 +3331,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       if (!returned) {
         ({ data, error } = await client.from('play_rooms').select('*').eq('id', id).maybeSingle());
         if (error) throw error;
-        if (!data || data.status !== 'closed' || !data.conceded_by) {
+        if (!data || data.status !== 'closed' || (!data.conceded_by && !data.victory_winner_id && !data.victory_shared)) {
           remember(null); throw new Error('The away timer expired. The table closed.');
         }
       } else {
@@ -3392,7 +3396,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (expected === epoch && room?.id === id && inLobby) await listTables();
   }
   async function returnToLobby() {
-    if (!room || room.status !== 'closed' || !room.conceded_by) return;
+    if (!room || room.status !== 'closed' || (!room.conceded_by && !room.victory_winner_id && !room.victory_shared)) return;
     const id = room.id;
     await rpc('play_return_to_lobby', { p_room_id: id });
     await disconnect();
@@ -3493,7 +3497,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   function render() {
     syncLobbyRefresh();
     root.classList.toggle('is-at-table', Boolean(userId && room && !inLobby));
-    const finished = Boolean(userId && room?.status === 'closed' && room.conceded_by);
+    const finished = Boolean(userId && room?.status === 'closed'
+      && (room.conceded_by || room.victory_winner_id || room.victory_shared));
     const playing = Boolean(userId && ((room?.status === 'active' && !inLobby) || finished));
     if (!playing) { hideCardPreview(); closeArchiveBrowser(false); }
     if (!playing || finished) clearOpponentCardFlights();
@@ -3503,7 +3508,16 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     $('game').hidden = !playing;
     $('game-result').hidden = !finished;
     if (playing) void loadGameLog();
-    if (finished) $('game-result-title').textContent = room.conceded_by === userId ? 'You Lost' : 'You Won';
+    if (finished) {
+      const winnerId = room.victory_winner_id || (room.conceded_by === room.host_id ? room.guest_id : room.host_id);
+      const loserId = winnerId === room.host_id ? room.guest_id : room.host_id;
+      const playerName = id => getProfiles().find(profile => profile.id === id)?.display_name || 'Player';
+      $('game-result-title').textContent = room.victory_shared ? 'Shared Victory'
+        : winnerId === userId ? 'You Won' : 'You Lost';
+      $('game-result-detail').textContent = room.victory_shared
+        ? `${playerName(room.host_id)} and ${playerName(room.guest_id)} fulfilled their Patron visions together.`
+        : `${playerName(winnerId)} won. ${playerName(loserId)} lost.${room.victory_winner_id ? ' A Patron vision was fulfilled.' : ''}`;
+    }
     if (!room) { controls(); return; }
     if (inLobby) { updateAwayDisplays(); controls(); return; }
     $('room-code').textContent = room.code;
