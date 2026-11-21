@@ -35,6 +35,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   const openingDiceSound = new Audio(new URL('./assets/Play.mp3', import.meta.url));
   const rollDiceSound = new Audio(new URL('./assets/Roll_Dices.mp3', import.meta.url));
   const drawCardSound = new Audio(new URL('./assets/Draw_Card.mp3', import.meta.url));
+  const shapeSound = new Audio(new URL('./assets/Shape.mp3', import.meta.url));
   rollDiceSound.preload = 'auto';
   const OfflineContext = window.OfflineAudioContext || window.webkitOfflineAudioContext;
   const rollDiceClip = TableAudioContext && OfflineContext ? fetch(rollDiceSound.src)
@@ -2432,6 +2433,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       });
       if (expected !== epoch || room?.id !== roomId) return;
       pendingEntity = null;
+      if (result?.action === 'shape') playTableSound(shapeSound);
       if (result?.action === 'place') await animateEntityPlacement(flight, targetX, targetY);
       arrivingEntityKey = null;
       Array.from($('game-board').children).find(cell => cell.dataset.key === `${targetX},${targetY}`)
