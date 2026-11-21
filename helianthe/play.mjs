@@ -776,8 +776,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       else step.removeAttribute('aria-current');
     }
     const next = $('game-next-phase');
-    next.hidden = !own || (phase === 'main' ? !room?.main_played_card
-      : phase !== 'beginning' || beginningEffects().length > 0);
+    const hasBeginningEffects = phase === 'beginning' && beginningEffects().length > 0;
+    next.hidden = !own || (phase === 'main' ? !room?.main_played_card : phase !== 'beginning');
+    next.textContent = hasBeginningEffects ? 'Resolve Effects' : 'Next Phase';
     next.disabled = !activeTurn || !own || phaseBusy || Boolean(pendingFestival)
       || (phase === 'beginning' && !gameState);
     syncDiscardBar();
@@ -1369,7 +1370,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (!effects.length || beginningOrder.length !== effects.length) return;
     const entries = beginningPlanEntries();
     const plan = beginningPlan();
-    if (entries.some(({ source }) => !plan.get(source)?.valid)) return;
+    if (entries.some(({ source }) => !plan.get(source)?.valid)) {
+      eventNotice('Choose the required targets and Archive Event before resolving.');
+      return;
+    }
     const expected = epoch, roomId = room.id, turn = room.turn_number;
     const horizon = gameState?.horizon || [];
     phaseBusy = true;
@@ -1606,7 +1610,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       renderTurnPhase();
     }
   }
-  $('game-next-phase').addEventListener('click', () => void advanceTurnPhase());
+  $('game-next-phase').addEventListener('click', () => {
+    if (room?.turn_phase === 'beginning' && beginningEffects().length) void resolveBeginningEffects();
+    else void advanceTurnPhase();
+  });
   $('game-extra-draw').addEventListener('click', () => void advanceTurnPhase(true));
   document.addEventListener('pointerdown', event => {
     for (const menu of root.querySelectorAll('.play-table-menu[open]')) {
