@@ -3073,6 +3073,21 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     remember(null); render(); message();
     await listTables();
   }
+  function makeDeckFactionLabel(text, { faction, src }) {
+    const label = document.createElement('span');
+    label.className = 'play-deck-faction-label';
+    if (src) {
+      const icon = document.createElement('img');
+      icon.className = 'play-deck-faction';
+      icon.src = src;
+      icon.alt = faction;
+      label.append(icon);
+    }
+    const name = document.createElement('span');
+    name.textContent = text;
+    label.append(name);
+    return label;
+  }
   function refreshCollections() {
     const decks = getDecks();
     const value = pendingDeckId || (deckSaveInFlight ? $('deck').value : room ? ownDeckId() : $('deck').value);
@@ -3090,15 +3105,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         const button = document.createElement('button');
         button.type = 'button';
         button.dataset.deckId = option.value;
-        const { faction, src } = factionIcons[index];
-        if (src) {
-          const icon = document.createElement('img');
-          icon.className = 'play-deck-faction';
-          icon.src = src;
-          icon.alt = faction;
-          button.append(icon);
-        }
-        button.append(option.text);
+        button.append(makeDeckFactionLabel(option.text, factionIcons[index]));
         button.addEventListener('click', () => {
           if ($('deck').disabled) return;
           $('deck-picker').open = false;
@@ -3118,7 +3125,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   function updateDeckCover() {
     const deck = getDecks().find(item => String(item.id) === $('deck').value);
-    $('deck-trigger').textContent = deck?.name || 'No decks available';
+    $('deck-trigger').replaceChildren(
+      makeDeckFactionLabel(deck?.name || 'No decks available', getPatronFactionIcon(deck?.patron_name))
+    );
     for (const button of $('deck-options').children) {
       if (button.dataset.deckId === $('deck').value) button.setAttribute('aria-current', 'true');
       else button.removeAttribute('aria-current');
@@ -3178,8 +3187,13 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       row.querySelector('.play-player-details > strong').textContent = id
         ? `${profile?.display_name || 'Player'}${own ? ' · You' : ''}` : 'Waiting for someone to bring a chair.';
       if (own) hasSeat = true;
-      else row.querySelector('.play-player-details > span').textContent = room[`${seat}_deck_id`]
-        ? room[`${seat}_patron_name`] || deck?.patron_name || 'Patron unavailable' : 'No deck selected';
+      else {
+        const patronName = room[`${seat}_deck_id`] ? room[`${seat}_patron_name`] || deck?.patron_name : '';
+        const label = patronName || (room[`${seat}_deck_id`] ? 'Patron unavailable' : 'No deck selected');
+        row.querySelector('.play-player-details > span').replaceChildren(
+          makeDeckFactionLabel(label, getPatronFactionIcon(patronName))
+        );
+      }
       const state = room.status === 'closed' ? 'Closed' : room[`${seat}_ready`] ? 'Ready' : '';
       let status = row.querySelector(':scope > .play-pill');
       if (id && state && !(own && state === 'Ready')) {
