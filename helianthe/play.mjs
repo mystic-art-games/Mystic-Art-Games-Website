@@ -2006,7 +2006,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       return;
     }
     let card = null;
-    if (source.matches('.play-hand-card')) card = (pendingFestival?.hand || gameState?.hand || [])[Number(source.dataset.handIndex)];
+    if (source.matches('.play-hand-card')) card = displayedHand()[Number(source.dataset.handIndex)];
     else if (source.matches('.play-game-archive-card, .play-node-entity-card, .play-game-log-card')) card = source._playCard;
     else if (source.matches('.play-game-node')) card = source._playTerrain;
     else card = patronPreviews[source.id.includes('opponent') ? 'opponent' : 'self'].card;
@@ -2085,7 +2085,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       return;
     }
     if (pendingFestival) {
-      if (phaseBusy) return;
+      if (phaseBusy || handIndex === pendingFestival.handIndex) return;
       if (!discardSelections.delete(handIndex)) {
         if (discardSelections.size >= pendingFestival.discardCount) return;
         discardSelections.add(handIndex);
@@ -2095,7 +2095,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       return;
     }
     if (!requiredDiscards()) {
-      if (selectedCardElement === source && source.classList.contains('is-queued')) {
+      if (!phaseBusy && selectedCardElement === source && source.classList.contains('is-queued')) {
         hideCardPreview();
         playTableSound(selectCardSound);
         return;
@@ -2140,14 +2140,14 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     pendingEvent = null;
     const originalState = gameState, expected = epoch, roomId = room.id;
     const drawn = (originalState.horizon || []).slice(0, 2);
-    const hand = originalState.hand.filter((_, index) => index !== handIndex).concat(drawn);
+    const hand = originalState.hand.concat(drawn);
     const twoDiscards = eventSupport(card)?.[1] === 'draw_two_discard_two';
-    const discardCount = Math.min(twoDiscards ? 2 : 1, hand.length);
+    const discardCount = Math.min(twoDiscards ? 2 : 1, hand.length - 1);
     eventNotice('');
     phaseBusy = true;
     renderTurnPhase();
     try {
-      await animateCardsToHand(drawn, [handIndex], 110);
+      await animateCardsToHand(drawn, [], 110);
       if (expected !== epoch || room?.id !== roomId || room.turn_player_id !== userId || room.turn_phase !== 'main') return;
       pendingFestival = { card, handIndex, drawn, hand, targetX, targetY, twoDiscards, discardCount };
       discardSelections.clear();
@@ -2166,7 +2166,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const indexes = [...discardSelections];
     const discards = indexes.map(index => {
       const card = festival.hand[index];
-      return { index, id: card?.card_id || card?.id };
+      return { index: index > festival.handIndex ? index - 1 : index, id: card?.card_id || card?.id };
     });
     if (discards.some(choice => !choice.id)) return;
     const expected = epoch, roomId = room.id;
@@ -2187,11 +2187,11 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       });
       if (expected !== epoch || room?.id !== roomId) return;
       playTableSound(playCardSound);
-      if (indexes.length) await animateDiscardToArchive(indexes);
+      await animateDiscardToArchive([festival.handIndex, ...indexes]);
       if (expected !== epoch || room?.id !== roomId) return;
-      pendingFestival = null;
       discardSelections.clear();
       await refreshRoom();
+      pendingFestival = null;
       if (expected === epoch && room?.id === roomId) await loadGameState(true);
       if (expected === epoch && room?.id === roomId && discardFlights.size) await archivePreviews.self.ready;
       if (expected === epoch && room?.id === roomId) eventNotice(`${festival.card.title} evoked · drew ${result?.drawn || 0}${result?.discarded ? ` · discarded ${result.discarded}` : ''}.`, true);
@@ -2226,7 +2226,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       });
     }
   }
-  async function animateDiscardToArchive(indexes) {
+  async function animateDiscardToArchive(indexes, { reflowHand = true } = {}) {
     const archive = $('game-self-archive');
     const destination = archive.getBoundingClientRect();
     if ($('game').hidden || !destination.width || !destination.height) return;
@@ -2241,20 +2241,22 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const paddingRight = parseFloat(handStyle.paddingRight) || 0;
     const available = handBounds.width - paddingLeft - paddingRight;
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const archiveStyle = getComputedStyle(archive);
+    const archiveRadius = getComputedStyle(archive).borderRadius;
+    const handCards = displayedHand();
     const flights = indexes.map((index, order) => {
       const source = items[index]?.querySelector('.play-hand-card');
       const bounds = source?.getBoundingClientRect();
       if (!bounds?.width || !bounds.height) return null;
       const flight = source.cloneNode(true);
-      flight.classList.remove('is-selected', 'is-discard-selected');
+      flight.classList.remove('is-selected', 'is-discard-selected', 'is-queued');
       flight.classList.add('play-discard-flight');
+      flight._archiveCardKey = archiveCardKey(resolveHandCard(handCards[index]));
       flight.setAttribute('aria-hidden', 'true');
       flight.tabIndex = -1;
       Object.assign(flight.style, {
         left: `${destination.left}px`, top: `${destination.top}px`,
         width: `${destination.width}px`, height: `${destination.height}px`,
-        borderColor: archiveStyle.borderColor, borderRadius: archiveStyle.borderRadius,
+        borderRadius: archiveRadius,
       });
       const sourceCanvas = source.querySelector('canvas');
       const flightCanvas = flight.querySelector('canvas');
@@ -2272,9 +2274,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       const scaleX = bounds.width / destination.width;
       const scaleY = bounds.height / destination.height;
       const animation = flight.animate([
-        { transform: `translate(${dx}px, ${dy}px) scale(${scaleX}, ${scaleY})` },
-        { transform: `translate(${dx * .4}px, ${dy * .4}px) rotate(-8deg)`, offset: .65 },
-        { transform: 'translate(0, 0) rotate(0deg)' },
+        { transform: `translate(${dx}px, ${dy}px) rotate(0deg) scale(${scaleX}, ${scaleY})` },
+        { transform: `translate(${dx * .4}px, ${dy * .4}px) rotate(-5deg) scale(${1 + (scaleX - 1) * .4}, ${1 + (scaleY - 1) * .4})`, offset: .65 },
+        { transform: 'translate(0, 0) rotate(0deg) scale(1)' },
       ], { duration: reducedMotion ? 100 : 650, delay: reducedMotion ? 0 : order * 85,
         easing: 'cubic-bezier(.22,.7,.18,1)', fill: 'both' });
       void animation.finished.then(() => {
@@ -2284,7 +2286,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       }, () => {});
       return { source, flight, animation };
     }).filter(Boolean);
-    if (remaining.length) {
+    if (reflowHand && remaining.length) {
       const preferredWidth = parseFloat(getComputedStyle(items[0]).flexBasis) || items[0].getBoundingClientRect().width;
       const targetWidth = Math.min(preferredWidth,
         Math.max(1, (available - (remaining.length - 1) * gap) / remaining.length));
@@ -2498,11 +2500,14 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   $('game-archive-browser-close').addEventListener('click', () => closeArchiveBrowser());
   $('game-archive-browser').querySelector('.play-archive-browser-backdrop')
     .addEventListener('click', () => closeArchiveBrowser());
+  function archiveCardKey(card) {
+    return JSON.stringify([card.id, card.title, card.card_type, card.terrain, card.effect, card.artwork_id]);
+  }
   function renderArchiveCard(seat, raw, count) {
     const preview = archivePreviews[seat];
-    const card = count && raw ? resolveGameCard(raw) : null;
+    const card = count && raw ? (seat === 'self' ? resolveHandCard(raw) : resolveGameCard(raw)) : null;
     $(`game-${seat}-archive`)._playCard = card;
-    const key = card ? JSON.stringify([card.id, card.title, card.card_type, card.terrain, card.effect, card.artwork_id]) : '';
+    const key = card ? archiveCardKey(card) : '';
     if (preview.key === key) return;
     preview.key = key;
     const serial = ++preview.serial;
@@ -2513,6 +2518,17 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     fallback.textContent = card?.title || 'ARCHIVE';
     preview.ready = null;
     if (!card) return;
+    const flight = seat === 'self' ? Array.from(discardFlights).at(-1) : null;
+    const landedCanvas = flight?.dataset.landed === 'true' && flight._archiveCardKey === key
+      ? flight.querySelector('canvas:not([hidden])') : null;
+    if (landedCanvas) {
+      canvas.width = landedCanvas.width;
+      canvas.height = landedCanvas.height;
+      canvas.getContext('2d').drawImage(landedCanvas, 0, 0);
+      canvas.hidden = false;
+      fallback.hidden = true;
+      return;
+    }
     preview.ready = (async () => {
       const artwork = card.artwork_id ? await getArtworkUrl(card.artwork_id).catch(() => '') : '';
       const result = await renderPlayCard(canvas, card, artwork, () => serial === preview.serial);
@@ -2672,7 +2688,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       || phaseBusy || !Array.isArray(gameState?.hand)) return;
     const cardId = event.card.card_id || event.card.id;
     if (!cardId) return;
-    hideCardPreview();
     const choices = { cells: [] };
     for (const choice of event.selected) {
       if (choice.type === 'cell') choices.cells.push(choice.key);
@@ -2692,10 +2707,15 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       });
       if (expected !== epoch || room?.id !== roomId) return;
       playTableSound(playCardSound);
+      const archiveMotion = animateDiscardToArchive([event.handIndex], { reflowHand: !(result?.drawn > 0) });
+      hideCardPreview();
+      await archiveMotion;
+      if (expected !== epoch || room?.id !== roomId) return;
       if (result?.drawn > 0) await animateCardsToHand(horizon.slice(0, result.drawn), [event.handIndex], 110);
       if (expected !== epoch || room?.id !== roomId) return;
       await refreshRoom();
       if (expected === epoch && room?.id === roomId) await loadGameState(true);
+      if (expected === epoch && room?.id === roomId && discardFlights.size) await archivePreviews.self.ready;
       if (expected === epoch && room?.id === roomId) eventNotice(`${result?.title || event.card.title} evoked${result?.drawn ? ` · drew ${result.drawn}` : ''}.`, true);
     } catch (error) {
       if (expected === epoch && room?.id === roomId) {
@@ -2705,6 +2725,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       }
     } finally {
       clearDrawFlight();
+      if (expected === epoch) clearDiscardHandMotion();
       phaseBusy = false;
       renderTurnPhase();
     }
@@ -2780,7 +2801,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (rule[1] === 'seed_caravan') return stageFestival(card, handIndex, targetX, targetY);
     const cardId = card.card_id || card.id;
     if (!cardId) return;
-    hideCardPreview();
     const expected = epoch, roomId = room.id;
     const horizon = gameState.horizon || [];
     phaseBusy = true;
@@ -2799,10 +2819,15 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       if (expected !== epoch || room?.id !== roomId) return;
       pendingEvent = null;
       playTableSound(playCardSound);
+      const archiveMotion = animateDiscardToArchive([handIndex], { reflowHand: !(result?.drawn > 0) });
+      hideCardPreview();
+      await archiveMotion;
+      if (expected !== epoch || room?.id !== roomId) return;
       if (result?.drawn > 0) await animateCardsToHand(horizon.slice(0, result.drawn), [handIndex], 110);
       if (expected !== epoch || room?.id !== roomId) return;
       await refreshRoom();
       if (expected === epoch && room?.id === roomId) await loadGameState(true);
+      if (expected === epoch && room?.id === roomId && discardFlights.size) await archivePreviews.self.ready;
       if (expected === epoch && room?.id === roomId) eventNotice(`${result?.title || card.title} evoked${result?.drawn ? ` · drew ${result.drawn}` : ''}${result?.applied ? ' · board updated' : ''}.`, true);
     } catch (error) {
       if (expected === epoch && room?.id === roomId) {
@@ -2812,6 +2837,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       }
     } finally {
       clearDrawFlight();
+      if (expected === epoch) clearDiscardHandMotion();
       phaseBusy = false;
       renderTurnPhase();
     }
@@ -2826,7 +2852,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (!cardId) return;
     const placesEntity = action === 'place' || action === 'create_place';
     const flight = placesEntity ? captureEntityFlight(handIndex) : null;
-    hideCardPreview();
+    if (placesEntity) hideCardPreview();
     const entryEffects = {
       'Battery Orchard': 'when placed, add 2 lumens on terrain under this entity.',
       'Wood Wide Web': 'when placed, draw 1 card for each different adjacent terrain.',
@@ -2874,9 +2900,18 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       if (expected === epoch && room?.id === roomId && room.status === 'active') {
         const handCount = room.host_id === userId ? room.host_hand_count : room.guest_hand_count;
         entityDrawn = Math.max(0, Math.min(horizon.length, Number(handCount) - previousHandCount + 1));
-        if (entityDrawn) await animateCardsToHand(horizon.slice(0, entityDrawn), [handIndex], 110);
+      }
+      if (expected !== epoch || room?.id !== roomId) return;
+      if (result?.action === 'shape') {
+        const archiveMotion = animateDiscardToArchive([handIndex], { reflowHand: !entityDrawn });
+        hideCardPreview();
+        await archiveMotion;
+      }
+      if (expected === epoch && room?.id === roomId && entityDrawn) {
+        await animateCardsToHand(horizon.slice(0, entityDrawn), [handIndex], 110);
       }
       if (expected === epoch && room?.id === roomId) await loadGameState(true);
+      if (expected === epoch && room?.id === roomId && discardFlights.size) await archivePreviews.self.ready;
       if (expected === epoch && room?.id === roomId) eventNotice(result?.action === 'create_place'
         ? `${result?.title || card.title} created Verdant Terrain and landed on it.`
         : result?.action === 'shape'
@@ -2897,6 +2932,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     } finally {
       arrivingEntityKey = null;
       $('game-board').querySelector('.play-node-entity-card.is-arriving')?.classList.remove('is-arriving');
+      if (expected === epoch) { clearDrawFlight(); clearDiscardHandMotion(); }
       phaseBusy = false;
       renderTurnPhase();
     }
@@ -2964,10 +3000,14 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     syncEventTargets();
     void playEntity(entity.card, entity.handIndex, column, row);
   }
+  function displayedHand() {
+    return pendingFestival?.hand || (Array.isArray(gameState?.hand) ? gameState.hand : []);
+  }
   function renderGameHand() {
     const hand = openingDealPending() ? []
-      : (pendingFestival?.hand || (Array.isArray(gameState?.hand) ? gameState.hand : [])).map(resolveHandCard);
-    const signature = JSON.stringify(hand);
+      : displayedHand().map(resolveHandCard);
+    const festivalIndex = pendingFestival?.handIndex;
+    const signature = JSON.stringify([hand, festivalIndex]);
     if (signature === handSignature) return;
     const previousCanvases = new Map();
     for (const item of $('game-hand').children) {
@@ -2990,6 +3030,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       button.dataset.customClickSound = '';
       button.setAttribute('aria-label', card.card_type === 'Event'
         ? `Evoke ${card.title || 'Event'}` : `Select ${card.title || 'Entity'}`);
+      if (index === festivalIndex) {
+        button.classList.add('is-queued');
+        button.setAttribute('aria-disabled', 'true');
+      }
       const previousCanvas = previousCanvases.get(cardSignature)?.shift();
       const arrivingCanvas = previousCanvas ? null : arrivingCardCanvases.get(cardSignature)?.shift();
       const canvas = previousCanvas || document.createElement('canvas');
@@ -3304,7 +3348,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     }
     const horizon = Array.isArray(gameState?.horizon) ? gameState.horizon : [];
     const archive = Array.isArray(gameState?.archive) ? gameState.archive : [];
-    const handCount = pendingFestival?.hand.length ?? (Array.isArray(gameState?.hand) ? gameState.hand.length : null);
+    const handCount = pendingFestival ? pendingFestival.hand.length - 1
+      : (Array.isArray(gameState?.hand) ? gameState.hand.length : null);
     const handBadge = $('game-hand-count');
     handBadge.hidden = handCount === null;
     if (handCount !== null) {
