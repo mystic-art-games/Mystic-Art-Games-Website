@@ -135,6 +135,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         <aside id="play-game-beginning-effects" class="play-beginning-effects" aria-label="Beginning of Turn Entity effects" hidden><strong>Beginning of Turn effects</strong><p id="play-game-beginning-opponent-status" hidden>Opponent is choosing the order, targets, and optional effects to skip.</p><section class="play-beginning-zone" aria-labelledby="play-game-beginning-active-title"><h3 id="play-game-beginning-active-title">Resolve in this order</h3><ol id="play-game-beginning-list"></ol></section><section class="play-beginning-zone play-beginning-skipped-zone" aria-labelledby="play-game-beginning-skipped-title"><h3 id="play-game-beginning-skipped-title">Skip this turn</h3><ol id="play-game-beginning-skipped-list"></ol></section><button id="play-game-resolve-beginning" type="button">Resolve Effects</button></aside>
       </div>
       <svg class="play-beginning-connector" aria-hidden="true"><path id="play-game-beginning-connector"></path></svg>
+      <div id="play-game-beginning-tooltip" class="play-beginning-tooltip" aria-hidden="true" hidden></div>
       <div class="play-game-table">
         <div class="play-game-zones-left">
           <div class="play-game-zone play-game-zone-opponent-patron"><div id="play-game-opponent-patron-slot" class="play-game-patron-slot" role="img" aria-label="Opponent's Patron"><canvas id="play-game-opponent-patron" hidden></canvas><span id="play-game-opponent-patron-fallback" class="play-game-patron-fallback" aria-hidden="true"></span></div></div>
@@ -1260,6 +1261,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   let beginningConnectorDestination;
   function clearBeginningConnector() {
+    $('game-beginning-tooltip').hidden = true;
     $('game-beginning-connector').removeAttribute('d');
     beginningConnectorDestination?.classList.remove('is-beginning-connector-destination');
     beginningConnectorDestination = null;
@@ -1495,12 +1497,29 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
           }
         }
       }
+      const hoverStatus = controls.querySelector('.play-beginning-hover-status');
+      const hoverMessage = hoverStatus?.textContent;
+      if (hoverMessage) {
+        row.setAttribute('aria-description', hoverMessage);
+        hoverStatus.remove();
+      }
       row.append(heading, controls);
       row.addEventListener('pointerover', event => {
         if (event.pointerType !== 'mouse' || row.classList.contains('is-dragging')) return;
         const target = event.target.closest('[data-beginning-target]');
         if (target) showBeginningConnector(target, target.dataset.beginningTarget, true);
         else showBeginningConnector(row, source);
+        if (hoverMessage) {
+          const tooltip = $('game-beginning-tooltip');
+          const bounds = row.getBoundingClientRect();
+          tooltip.textContent = hoverMessage;
+          tooltip.hidden = false;
+          const { width, height } = tooltip.getBoundingClientRect();
+          const left = bounds.right + 8 + width <= window.innerWidth
+            ? bounds.right + 8 : Math.max(8, bounds.left - width - 8);
+          tooltip.style.left = `${left}px`;
+          tooltip.style.top = `${Math.max(8, Math.min(window.innerHeight - height - 8, (bounds.top + bounds.bottom - height) / 2))}px`;
+        }
       });
       row.addEventListener('pointerleave', clearBeginningConnector);
       if (own) row.addEventListener('dragstart', event => {

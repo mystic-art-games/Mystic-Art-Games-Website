@@ -444,8 +444,7 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
 .play-beginning-effect-controls { display: flex; flex: 1 1 auto; flex-wrap: wrap; align-items: center; justify-content: flex-end; min-width: min-content; gap: .25rem; }
 .play-beginning-effect-controls:empty { display: none; }
 .play-beginning-effect-controls > span { flex: 1; font-size: .67rem; }
-.play-beginning-hover-status { visibility: hidden; }
-.play-beginning-effect:is(:hover, :focus-within) .play-beginning-hover-status { visibility: visible; }
+.play-beginning-tooltip { position: fixed; z-index: 33; width: max-content; max-width: min(15rem, calc(100vw - 1rem)); padding: .4rem .55rem; border: 1px solid #739786; border-radius: 7px; background: #1b352b; color: #f5f2e8; box-shadow: 0 4px 12px #130b0a55; font: 700 .72rem/1.3 Nunito, sans-serif; pointer-events: none; }
 .play-beginning-effect-controls select { flex: 1 1 100%; min-width: 0; padding: .3rem .4rem; border: 1px solid #8a9b80; border-radius: 6px; background: #305443; color: #f5f2e8; font: 700 .7rem Nunito, sans-serif; }
 .play-beginning-effect-controls select:disabled { opacity: .6; }
 #play-game .play-beginning-effects button { margin: 0; padding: .3rem .45rem; border: 1px solid #8a9b80; border-radius: 6px; background: #305443; color: #f5f2e8; font-size: .7rem; font-weight: 700; }
