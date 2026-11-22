@@ -114,7 +114,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     </div>
     <section id="play-session" hidden>
       <button id="play-back" class="back-to-decks" type="button"><span aria-hidden="true">←</span> Back to Lobby</button>
-      <div class="play-room-bar"><div class="play-room-identity"><div class="play-room-name-line"><strong id="play-room-name"></strong><button id="play-edit-name" class="action-cancel" type="button">Edit name</button></div><form id="play-name-form" hidden><input id="play-name-input" aria-label="Table name" maxlength="60" required><button type="submit">Save</button><button id="play-cancel-name" type="button">Cancel</button></form><span class="play-room-code-line">Code: <strong id="play-room-code"></strong></span></div><div class="play-room-actions"><button id="play-leave" class="action-delete" type="button">Smash Table</button></div></div>
+      <div class="play-room-bar"><div class="play-room-identity"><div class="play-room-name-line"><strong id="play-room-name"></strong><button id="play-edit-name" class="action-add-save" type="button">Edit Name</button></div><form id="play-name-form" hidden><input id="play-name-input" aria-label="Table name" maxlength="60" required><button type="submit">Save</button><button id="play-cancel-name" type="button">Cancel</button></form><span class="play-room-code-line">Code: <strong id="play-room-code"></strong></span></div><div class="play-room-actions"><button id="play-leave" class="action-delete" type="button">Smash Table</button></div></div>
       <div id="play-players" class="play-players"></div>
       <div id="play-deck-field" class="play-deck-field"><span id="play-deck-label" hidden>Your deck</span><div class="play-deck-choice"><img id="play-deck-cover" class="play-deck-cover" alt="" hidden><select id="play-deck" hidden></select><details id="play-deck-picker" class="play-deck-picker"><summary id="play-deck-trigger" aria-labelledby="play-deck-label play-deck-trigger">No decks available</summary><div id="play-deck-options" class="play-deck-options"></div></details></div><span id="play-deck-patron" class="play-deck-patron" hidden></span></div>
       <button id="play-ready" class="action-add-save" type="button">Ready</button>
@@ -3652,7 +3652,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       void loadGameState();
       void loadGamePatrons().catch(() => { patronDeckRequest = ''; });
     }
-    if (renameFailed) message('The table was created, but its name could not be updated. Use Edit name to try again.', true);
+    if (renameFailed) message('The table was created, but its name could not be updated. Use Edit Name to try again.', true);
     channel = client.channel(`play-room:${id}`)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'play_rooms', filter: `id=eq.${id}` }, () => {
         if (expected === epoch) void refreshRoom().catch(error => message(friendly(error), true));
