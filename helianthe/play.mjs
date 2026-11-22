@@ -1305,6 +1305,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (panel.hidden) { beginningTargetSource = null; return; }
     const own = room.turn_player_id === userId;
     panel.classList.toggle('is-read-only', !own);
+    panel.classList.toggle('is-your-turn', own);
+    panel.classList.toggle('is-opponent-turn', !own);
     const saved = room.beginning_effects_plan;
     const shared = saved?.turn === room.turn_number && saved?.player_id === room.turn_player_id
       && Array.isArray(saved.effects) ? saved.effects : null;
