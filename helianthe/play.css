@@ -290,11 +290,14 @@ html:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100%; over
 body:has(#play-view:not([hidden]) #play-game:not([hidden])),
 .play-opening-roll {
   background-color: #102b21;
+  /* A fine noise layer softens the steps between adjacent gradient colors. */
   background-image:
-    radial-gradient(ellipse at 46% 40%, #315b45, #214636 34%, transparent 72%),
-    linear-gradient(155deg, #18372b, #102b21 58%, #081c15);
-  background-position: center;
-  background-size: cover;
+    url('./assets/gradient-dither.svg'),
+    linear-gradient(145deg, #153529, #2c5743 42%, #1c4032 66%, #0a2219);
+  background-blend-mode: soft-light, normal;
+  background-position: left top, center;
+  background-repeat: repeat, no-repeat;
+  background-size: 192px 192px, cover;
 }
 body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; min-height: 0; overflow-y: hidden; scrollbar-gutter: auto; background-attachment: fixed; }
 #play-view:has(#play-game:not([hidden])) { display: flex; flex-direction: column; width: 100%; max-width: none; height: 100dvh; margin: 0; padding: clamp(.3rem, 1vh, .7rem); border: 0; border-radius: 0; background: transparent; box-shadow: none; }

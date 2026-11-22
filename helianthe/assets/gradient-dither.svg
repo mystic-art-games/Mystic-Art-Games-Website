@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
+  <filter id="dither" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+    <feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="1" stitchTiles="stitch"/>
+    <feColorMatrix type="matrix" values="
+      1 0 0 0 0
+      1 0 0 0 0
+      1 0 0 0 0
+      0 0 0 0 .12"/>
+  </filter>
+  <rect width="192" height="192" filter="url(#dither)"/>
+</svg>
