@@ -88,6 +88,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   let beginningTurnKey = '', beginningOrder = [], beginningTargetSource = null;
   const beginningSkipped = new Set();
   const beginningTargets = new Map();
+  const beginningChoices = new Map();
   const beginningBrambleTargets = new Map();
   const beginningBrambleEvents = new Map();
   let archiveBrowserSeat = null, archiveBrowserCards = [], archiveBrowserIndex = 0;
@@ -611,6 +612,12 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   function beginningEffectKind(card) {
     const effect = String(card?.effect || '').replace(/\s+/g, ' ').trim().toLowerCase();
+    if (['March of Mashrooms', 'March of Marshrooms', 'Marsh of Marshrooms'].includes(card?.title)
+      && /^at the (?:beginning|begining|beginnig) of your turn, you may move this entity to (?:an )?adjacent empty symbiosis terrain\. then,? entangle (?:the )?terrain under this entity\.?$/.test(effect)) return 'march_of_marshrooms';
+    if (card?.title === 'Efficient Grid'
+      && /^at the (?:beginning|begining|beginnig) of (?:the )?radiant patron(?:'s)? turn, luminate 1\b/.test(effect)) return 'efficient_grid';
+    if (card?.title === 'Solar Converter'
+      && /^at the (?:beginning|begining|beginnig) of your turn, you (?:can|may) remove 2 lumen counters? from terrain this entity is placed on,? to put a shield or crisis counter on any adjacent terrain\.?$/.test(effect)) return 'solar_converter';
     if (card?.title === 'Orchard Warden'
       && ['at the beginning of your turn fertilize 1 on adjacent node.',
         "at the beginning of verdant patron's turn, fertilize 1 on any adjacent empty node."].includes(effect)) return 'orchard_warden';
@@ -627,12 +634,13 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   function beginningEffectAvailable(card) {
     const effect = String(card?.effect || '').replace(/\s+/g, ' ').trim().toLowerCase();
-    if (!/^at the beginning of (?:the )?verdant patron's turn/.test(effect)) return true;
     const patron = room.turn_player_id === room.host_id ? room.host_patron_name : room.guest_patron_name;
+    if (beginningEffectKind(card) === 'efficient_grid') return getPatronFactionIcon(patron).faction === 'Brightworks';
+    if (!/^at the beginning of (?:the )?verdant patron's turn/.test(effect)) return true;
     return getPatronFactionIcon(patron).faction === 'Verdant';
   }
   function beginningEffectOptional(card) {
-    return /\byou may\b/i.test(String(card?.effect || ''));
+    return beginningEffectKind(card) === 'solar_converter' || /\byou may\b/i.test(String(card?.effect || ''));
   }
   function beginningEffects() {
     if (room?.status !== 'active' || room.turn_phase !== 'beginning'
@@ -651,13 +659,60 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const fertilized = new Set(Object.entries(room?.board || {}).filter(([, node]) => node?.fertilize).map(([key]) => key));
     const occupied = new Set(Object.entries(room?.board || {}).filter(([, node]) => node?.entity).map(([key]) => key));
     const protectedNodes = new Set(Object.entries(room?.board || {}).filter(([, node]) => node?.protected).map(([key]) => key));
+    const crisisNodes = new Set(Object.entries(room?.board || {}).filter(([, node]) => node?.crisis).map(([key]) => key));
     const links = new Map(Object.entries(room?.board || {}).map(([key, node]) => [key, new Set(node?.entanglements || [])]));
+    const lumens = new Map(Object.entries(room?.board || {}).map(([key, node]) => [key, Number(node?.lumens || 0)]));
     const archiveEvents = (gameState?.archive || []).filter(card => card?.card_type === 'Event' && card.id).slice();
     const effectsBySource = new Map(beginningEffects().map(effect => [effect.source, effect]));
     const plan = new Map();
     for (const source of beginningOrder) {
       if (beginningSkipped.has(source)) { plan.set(source, { options: [], target: null, valid: true }); continue; }
       const kind = effectsBySource.get(source)?.kind;
+      if (['march_of_marshrooms', 'efficient_grid', 'solar_converter'].includes(kind)) {
+        const neighbors = eventNeighbors(source);
+        const target = beginningTargets.get(source);
+        const choice = beginningChoices.get(source);
+        let options = [];
+        if (kind === 'march_of_marshrooms') {
+          options = neighbors.filter(key => terrain.get(key) === 'Symbiosis' && !occupied.has(key));
+        } else if (kind === 'efficient_grid') {
+          options = [...terrain].filter(([key, type]) => /^[0-4],[0-3]$/.test(key) && type === 'Radiance').map(([key]) => key);
+        } else if ((lumens.get(source) || 0) >= 2) {
+          options = neighbors.filter(key => terrain.has(key));
+        }
+        const targetValid = options.includes(target);
+        const choices = !targetValid ? [] : kind === 'solar_converter'
+          ? [{ value: 'protect', label: 'Protect' }, { value: 'crisis', label: 'Affect with Crisis' }]
+          : kind === 'march_of_marshrooms' && !links.get(target)?.size
+            ? eventNeighbors(target).filter(key => ['Flow', 'Radiance', 'Verdant'].includes(terrain.get(key)))
+              .map(key => ({ value: key, label: `${terrain.get(key)} · Node ${key}` }))
+            : [];
+        const valid = targetValid ? choices.length === 0 || choices.some(option => option.value === choice) : !target && options.length === 0;
+        plan.set(source, { options, target, choices, choice, valid });
+        if (targetValid && valid) {
+          if (kind === 'march_of_marshrooms') {
+            occupied.delete(source); occupied.add(target);
+            if (choices.length) {
+              if (!links.has(target)) links.set(target, new Set());
+              if (!links.has(choice)) links.set(choice, new Set());
+              links.get(target).add(choice);
+              links.get(choice).add(target);
+            }
+          } else if (kind === 'efficient_grid') {
+            const count = lumens.get(target) || 0;
+            lumens.set(target, Math.min(5, count + 1));
+            if (count >= 5 && !protectedNodes.delete(target)) crisisNodes.add(target);
+          } else {
+            lumens.set(source, lumens.get(source) - 2);
+            if (choice === 'crisis') {
+              if (!protectedNodes.delete(target)) crisisNodes.add(target);
+            } else if (!crisisNodes.delete(target)) {
+              protectedNodes.add(target);
+            }
+          }
+        }
+        continue;
+      }
       if (kind === 'garden_shared_roots') {
         plan.set(source, { options: [], target: null, valid: true, draws: (links.get(source)?.size || 0) > 0 });
         continue;
@@ -718,6 +773,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     return plan;
   }
   function syncEventTargets() {
+    const beginningOptions = beginningTargetSource ? beginningPlan().get(beginningTargetSource)?.options : null;
     for (const cell of $('game-board').children) {
       const node = room?.board?.[cell.dataset.key];
       const legal = Boolean(cell.dataset.key && (
@@ -726,7 +782,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
           : pendingEvent.nextKeys ? pendingEvent.nextKeys.includes(cell.dataset.key)
             : legalEventTarget(pendingEvent.rule[1], node, cell.dataset.key)))
         || (pendingEntity && legalEntityAction(pendingEntity.card, node, cell.dataset.key))
-        || (beginningTargetSource && beginningPlan().get(beginningTargetSource)?.options.includes(cell.dataset.key))));
+        || beginningOptions?.includes(cell.dataset.key)));
       cell.classList.toggle('is-event-target', legal);
       const entityInteraction = legal && node?.entity;
       cell.classList.toggle('is-entity-target', Boolean(entityInteraction));
@@ -1176,7 +1232,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const effect = beginningEffects().find(entry => entry.source === source);
     if (!effect || (skip && !effect.optional) || phaseBusy) return;
     beginningOrder.splice(beginningOrder.indexOf(source), 1);
-    if (skip) { beginningSkipped.add(source); beginningTargets.delete(source); beginningBrambleTargets.delete(source); beginningBrambleEvents.delete(source); }
+    if (skip) { beginningSkipped.add(source); beginningTargets.delete(source); beginningChoices.delete(source); beginningBrambleTargets.delete(source); beginningBrambleEvents.delete(source); }
     else beginningSkipped.delete(source);
     if (beginningTargetSource === source) beginningTargetSource = null;
     const before = beforeSource && beginningSkipped.has(beforeSource) === skip
@@ -1210,6 +1266,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       beginningOrder = effects.map(effect => effect.source);
       beginningSkipped.clear();
       beginningTargets.clear();
+      beginningChoices.clear();
       beginningBrambleTargets.clear();
       beginningBrambleEvents.clear();
       beginningTargetSource = null;
@@ -1217,6 +1274,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         beginningOrder = shared.map(entry => entry.source).filter(source => sources.has(source));
         for (const entry of shared) if (sources.has(entry.source)) {
           if (entry.target) beginningTargets.set(entry.source, entry.target);
+          if (entry.choice) beginningChoices.set(entry.source, entry.choice);
           if (Array.isArray(entry.targets)) beginningBrambleTargets.set(entry.source, entry.targets);
           if (entry.event_id) beginningBrambleEvents.set(entry.source, entry.event_id);
         }
@@ -1226,6 +1284,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       beginningOrder = beginningOrder.filter(source => sources.has(source));
       for (const effect of effects) if (!beginningOrder.includes(effect.source)) beginningOrder.push(effect.source);
       for (const source of beginningTargets.keys()) if (!sources.has(source)) beginningTargets.delete(source);
+      for (const source of beginningChoices.keys()) if (!sources.has(source)) beginningChoices.delete(source);
       for (const source of beginningBrambleTargets.keys()) if (!sources.has(source)) beginningBrambleTargets.delete(source);
       for (const source of beginningBrambleEvents.keys()) if (!sources.has(source)) beginningBrambleEvents.delete(source);
       for (const source of beginningSkipped) if (!sources.has(source)) beginningSkipped.delete(source);
@@ -1233,11 +1292,13 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       if (!own && shared) {
         beginningOrder = shared.map(entry => entry.source).filter(source => sources.has(source));
         beginningTargets.clear();
+        beginningChoices.clear();
         beginningBrambleTargets.clear();
         beginningBrambleEvents.clear();
         beginningSkipped.clear();
         for (const entry of shared) if (sources.has(entry.source)) {
           if (entry.target) beginningTargets.set(entry.source, entry.target);
+          if (entry.choice) beginningChoices.set(entry.source, entry.choice);
           if (Array.isArray(entry.targets)) beginningBrambleTargets.set(entry.source, entry.targets);
           if (entry.event_id) beginningBrambleEvents.set(entry.source, entry.event_id);
         }
@@ -1266,7 +1327,17 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       heading.append(title);
       const description = document.createElement('p'); description.textContent = effect.card.effect || '';
       const controls = document.createElement('div'); controls.className = 'play-beginning-effect-controls';
-      const { options, target, valid, terrainOptions, eventOptions, fallback, targets, eventId, draws, loading } = plan.get(source);
+      const { options, target, choices, choice, valid, terrainOptions, eventOptions, fallback, targets, eventId, draws, loading } = plan.get(source);
+      const targetPrompt = {
+        march_of_marshrooms: 'Choose an adjacent unoccupied Symbiosis Terrain',
+        efficient_grid: 'Choose a Radiance Terrain',
+        solar_converter: 'Choose an adjacent Terrain',
+      }[effect.kind] || 'Choose an adjacent empty Node';
+      const unavailableText = {
+        march_of_marshrooms: 'No adjacent unoccupied Symbiosis Terrain',
+        efficient_grid: 'No Radiance Terrain',
+        solar_converter: 'Requires 2 Lumens and an adjacent Terrain',
+      }[effect.kind] || 'No adjacent empty Node';
       if (skipped) {
         const status = document.createElement('span'); status.textContent = 'Skipped this turn'; controls.append(status);
       } else if (effect.kind === 'garden_shared_roots') {
@@ -1322,26 +1393,49 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         }
       } else if (!own) {
         const status = document.createElement('span');
-        status.textContent = target && valid ? `Target: Node ${target}` : options.length ? 'Waiting for target' : 'No adjacent empty Node';
+        status.textContent = options.includes(target) ? `Target: Node ${target}` : options.length ? 'Waiting for target' : unavailableText;
         controls.append(status);
       } else if (options.length) {
         const choose = document.createElement('button'); choose.type = 'button';
-        choose.textContent = target && valid ? `Node ${target}` : 'Choose Node';
+        choose.textContent = options.includes(target) ? `Node ${target}` : 'Choose Node';
         choose.disabled = phaseBusy;
         choose.addEventListener('click', () => {
           beginningTargetSource = beginningTargetSource === source ? null : source;
-          eventNotice(beginningTargetSource ? `Choose an adjacent empty Node for ${effect.card.title}.` : '');
+          eventNotice(beginningTargetSource ? `${targetPrompt} for ${effect.card.title}.` : '');
           renderBeginningEffects(); syncEventTargets();
         });
         controls.append(choose);
       } else if (target) {
         const clear = document.createElement('button'); clear.type = 'button'; clear.textContent = 'Clear Node';
         clear.disabled = phaseBusy;
-        clear.addEventListener('click', () => { beginningTargets.delete(source); renderBeginningEffects(); void saveBeginningPlan(); });
+        clear.addEventListener('click', () => { beginningTargets.delete(source); beginningChoices.delete(source); renderBeginningEffects(); void saveBeginningPlan(); });
         controls.append(clear);
       } else {
-        const unavailable = document.createElement('span'); unavailable.textContent = 'No adjacent empty Node';
+        const unavailable = document.createElement('span'); unavailable.textContent = unavailableText;
         controls.append(unavailable);
+      }
+      if (choices?.length) {
+        const label = effect.kind === 'march_of_marshrooms' ? 'Terrain to Entangle' : 'Choose Protect or Crisis';
+        if (own) {
+          const select = document.createElement('select');
+          select.setAttribute('aria-label', label);
+          select.add(new Option(label, ''));
+          for (const option of choices) select.add(new Option(option.label, option.value));
+          select.value = choice || '';
+          select.disabled = phaseBusy;
+          select.addEventListener('change', () => {
+            beginningChoices.set(source, select.value);
+            renderBeginningEffects(); void saveBeginningPlan();
+          });
+          controls.append(select);
+        } else {
+          const selected = choices.find(option => option.value === choice);
+          if (selected) {
+            const status = document.createElement('span');
+            status.textContent = selected.label;
+            controls.append(status);
+          }
+        }
       }
       if (own && effect.optional) {
         const toggle = document.createElement('button'); toggle.type = 'button';
@@ -1385,8 +1479,11 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     $('game-resolve-beginning').disabled = phaseBusy || beginningOrder.some(source => !plan.get(source)?.valid);
   }
   function beginningPlanEntries() {
+    const plan = beginningPlan();
     return beginningOrder.map(source => ({ source,
       target: beginningSkipped.has(source) ? null : beginningTargets.get(source) || null,
+      choice: plan.get(source)?.choices?.some(option => option.value === beginningChoices.get(source))
+        ? beginningChoices.get(source) : null,
       targets: beginningSkipped.has(source) ? [] : beginningBrambleTargets.get(source) || [],
       event_id: beginningSkipped.has(source) ? null : beginningBrambleEvents.get(source) || null,
       skip: beginningSkipped.has(source),
@@ -1419,7 +1516,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const entries = beginningPlanEntries();
     const plan = beginningPlan();
     if (entries.some(({ source }) => !plan.get(source)?.valid)) {
-      eventNotice('Choose the required targets and Archive Event before resolving.');
+      eventNotice('Complete the required choices before resolving.');
       return;
     }
     const expected = epoch, roomId = room.id, turn = room.turn_number;
@@ -1778,6 +1875,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     ++gameRenderSerial; gameState = null; gameLoading = false; gameLoadFailed = false; gameReloadPending = false; handSignature = '';
     phaseBusy = false; drawRetryAt = 0; clearDrawFlight(); clearMulliganFlights(); clearDiscardHandMotion(); discardSelections.clear(); pendingFestival = null; arrivingEntityKey = null;
     beginningTurnKey = ''; beginningOrder = []; beginningTargetSource = null; beginningTargets.clear();
+    beginningChoices.clear();
     beginningBrambleTargets.clear(); beginningBrambleEvents.clear();
     patronDeckRequest = ''; patronDeckLoadedAt = 0; gameDeckPatrons.clear(); gamePlayerPatrons.clear();
     zoneCounts = null; zoneCountsRevision = null; zoneCountsRequest = null;
@@ -3035,6 +3133,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (beginningTargetSource) {
       const target = `${column},${row}`;
       if (!beginningPlan().get(beginningTargetSource)?.options.includes(target)) return;
+      if (beginningTargets.get(beginningTargetSource) !== target) beginningChoices.delete(beginningTargetSource);
       beginningTargets.set(beginningTargetSource, target);
       beginningTargetSource = null;
       eventNotice('');
