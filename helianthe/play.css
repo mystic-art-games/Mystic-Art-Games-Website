@@ -154,9 +154,9 @@ body.dark-mode .play-deck-field.is-locked select { border-color: #596d5d; backgr
 .play-archive-browser-list[data-art-scroll-ready="true"] { scrollbar-width: none; }
 .play-archive-browser-list[data-art-scroll-ready="true"]::-webkit-scrollbar { display: none; }
 .play-archive-browser-list button, .play-archive-browser-list button:hover:not(:disabled), .play-archive-browser-list button:active { display: block; width: 100%; padding: 0; border: 0; border-radius: 4px; background: transparent; box-shadow: none; text-align: center; }
-.play-archive-browser-list canvas, .play-archive-gallery-fallback { display: block; box-sizing: border-box; width: 100%; aspect-ratio: 63 / 88; border-radius: 4px; background: #e9ece1; }
+.play-archive-browser-list canvas, .play-archive-gallery-fallback { display: block; box-sizing: border-box; width: 100%; aspect-ratio: 63 / 88; border-radius: 4px; }
 .play-archive-browser-list canvas[hidden], .play-archive-gallery-fallback[hidden] { display: none; }
-.play-archive-gallery-fallback { display: grid; place-items: center; padding: .4rem; color: #173b2d; font-size: .72rem; }
+.play-archive-gallery-fallback { display: grid; place-items: center; padding: .4rem; background: #e9ece1; color: #173b2d; font-size: .72rem; }
 .play-game-zones-left, .play-game-zones-right { display: grid; grid-template-rows: repeat(4, minmax(0, 1fr)); gap: var(--play-map-card-gap); justify-items: center; align-items: center; align-self: center; height: var(--play-map-board-height, 100%); min-height: 0; }
 .play-game-zone-pair { display: grid; grid-template-rows: repeat(2, minmax(0, 1fr)); gap: var(--play-map-card-gap); justify-items: center; align-items: center; width: 100%; height: 100%; }
 .play-game-zone-pair-opponent { grid-row: 1 / 3; }
@@ -174,7 +174,7 @@ body.dark-mode .play-deck-field.is-locked select { border-color: #596d5d; backgr
 .play-game-patron-fallback { position: relative; display: block; width: 100%; height: 100%; box-sizing: border-box; padding: 8% 5% 0; overflow: hidden; background-color: #eeeae6; background-position: center 50%, center; background-size: 44% auto, 100% 100%; background-repeat: no-repeat; color: #302b27; font-size: 7px; font-weight: 800; line-height: 1; text-align: center; text-shadow: 0 1px #fff; }
 .play-game-archive-card { display: flex; align-items: center; justify-content: center; padding: 0; border: 1px solid #9fb7aa; background: #e7ede3; color: #567063; font-family: Nunito, sans-serif; font-size: .72rem; font-weight: 700; overflow-wrap: anywhere; box-shadow: 0 4px 12px #183a2c22; cursor: pointer; }
 .play-game-archive-card:focus-visible { outline: 2px solid #e8d38a; outline-offset: 3px; }
-.play-game-archive-card.has-stack { box-shadow: 4px -4px 0 #e7ede3, 5px -5px 0 #123c2d, 0 4px 12px #183a2c22; }
+.play-game-archive-card.has-stack { box-shadow: 4px -4px 0 #e7ede3, 0 4px 12px #0002; }
 .play-game-archive-card canvas { display: block; width: 100%; height: 100%; border-radius: inherit; object-fit: fill; }
 .play-game-archive-card canvas[hidden], .play-game-archive-card span[hidden] { display: none; }
 .play-game-archive-card span { padding: .3rem; }
@@ -230,7 +230,7 @@ body.dark-mode .play-deck-field.is-locked select { border-color: #596d5d; backgr
 .play-entity-flight { position: fixed; z-index: 85; box-sizing: border-box; margin: 0; pointer-events: none; box-shadow: 0 12px 28px #0c1f1ba8; }
 .play-discard-flight { position: fixed; z-index: 85; box-sizing: border-box; margin: 0; pointer-events: none; transform-origin: center; box-shadow: 0 12px 28px #0c1f1ba8; }
 .play-draw-flight { position: fixed; z-index: 85; box-sizing: border-box; margin: 0; pointer-events: none; perspective: 1000px; }
-.play-terrain-flight { position: fixed; z-index: 85; display: block; object-fit: cover; border: 1px solid #8da79a; border-radius: 6px; box-shadow: 0 6px 14px #0c1f1b70; pointer-events: none; }
+.play-terrain-flight { position: fixed; z-index: 85; display: block; object-fit: cover; border-radius: 6px; box-shadow: 0 6px 14px #0007; pointer-events: none; }
 .play-opponent-card-flight { position: fixed; z-index: 86; display: grid; place-items: center; overflow: hidden; border: 1px solid #123c2d; border-radius: 6px; background: #e9ece1; color: #234536; box-shadow: 0 6px 14px #0c1f1b70; font: 800 .7rem Nunito, sans-serif; text-align: center; overflow-wrap: anywhere; pointer-events: none; }
 .play-opponent-card-flight.is-face-down { background: url('../images/helianthe-logo.png') center / 62% no-repeat, #294b3d; }
 .play-opponent-card-flight canvas { display: block; width: 100%; height: 100%; }
@@ -342,17 +342,24 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
   }
   #play-game:not(:has(.is-event-drop-zone)) .play-game-node:hover:not(:has(.play-node-entity-card:hover))::before { scale: 1.045; }
 }
-#play-game .play-hand-card.is-selected { outline: 2px solid #17372b; outline-offset: 1px; filter: brightness(.8); box-shadow: 0 4px 12px #0d171766; }
+#play-game .play-hand-card.is-selected { outline: 2px solid #c9cbd2; outline-offset: 1px; filter: brightness(.8); box-shadow: 0 4px 12px #0006; }
 #play-game .play-hand-card.is-discard-selected { outline: 2px solid #e88b81; outline-offset: 1px; filter: brightness(.72); box-shadow: 0 0 0 3px #5d2727aa, 0 4px 12px #0d171766; }
 #play-game .play-hand-card.is-mulligan-selected { outline: 3px solid #f3d67c; outline-offset: 2px; filter: brightness(.8); }
 .play-mulligan-order { position: absolute; z-index: 2; top: .35rem; right: .35rem; display: grid; place-items: center; width: 1.7rem; height: 1.7rem; border-radius: 50%; background: #f3d67c; color: #17372b; font: 900 .85rem Nunito, sans-serif; box-shadow: 0 2px 7px #0d171799; pointer-events: none; }
 .play-mulligan-order[hidden] { display: none; }
-#play-game .play-game-patron-slot.is-selected { outline: 2px solid #17372b; outline-offset: 1px; box-shadow: 0 4px 12px #0d171766; }
+#play-game .play-game-patron-slot.is-selected { outline: 2px solid #c9cbd2; outline-offset: 1px; box-shadow: 0 4px 12px #0006; }
 #play-game .play-game-board-wrap { position: relative; display: grid; grid-template-columns: var(--play-preview-gutter) minmax(0, 1fr) var(--play-preview-gutter); grid-template-rows: minmax(0, 1fr); align-items: stretch; gap: clamp(.5rem, 1vw, .9rem); box-sizing: border-box; width: 100%; min-height: 0; max-width: none; height: 100%; margin: 0; container-type: size; }
 #play-game .play-game-left-stack { grid-column: 1; grid-row: 1; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: .6rem; min-width: 0; min-height: 0; position: relative; top: var(--play-preview-offset-y, 0px); z-index: 25; --play-left-width: var(--play-preview-width, min(325px, 62cqh, calc(100% - 2.5rem))); }
 #play-game .play-game-left-stack:has(.play-game-card-preview:not([hidden])):has(.play-beginning-effects:not([hidden])) .play-game-card-preview { position: absolute; z-index: 31; top: 50%; left: 0; transform: translateY(-50%); flex: none; }
 #play-game .play-game-card-preview { position: relative; flex: 0 1 auto; box-sizing: border-box; top: auto; left: auto; transform: none; width: var(--play-left-width); max-width: 100%; }
-#play-game .play-game-card-preview, #play-game .play-hand-card, #play-game .play-game-patron-slot, #play-game .play-game-archive-card { border-color: #123c2d; }
+#play-game :is(.play-game-card-preview, .play-hand-card, .play-game-patron-slot, .play-game-archive-card, .play-node-entity-card, .play-archive-browser-card):has(> :is(canvas, img):not([hidden])),
+:is(.play-hand-card, .play-draw-flight-front, .play-opponent-card-flight:not(.is-face-down)):has(> canvas:not([hidden])) {
+  border: 0;
+  background: transparent;
+}
+#play-game :is(.play-game-card-preview, .play-hand-card, .play-game-patron-slot, .play-game-archive-card, .play-node-entity-card):not(.has-stack):has(> :is(canvas, img):not([hidden])) {
+  box-shadow: 0 4px 12px #0003;
+}
 #play-game .play-game-archive-card.is-empty { border-color: #effff048; background: #effff01c; backdrop-filter: blur(10px) saturate(1.15); -webkit-backdrop-filter: blur(10px) saturate(1.15); box-shadow: inset 0 1px 0 #ffffff47, 0 5px 16px #0e241a2e; }
 #play-game .play-game-archive-card.is-empty span { color: #eef7e6cc; font-size: clamp(.42rem, .7vw, .58rem); letter-spacing: .03em; white-space: nowrap; }
 #play-game .play-game-table { grid-column: 2; grid-row: 1; position: relative; top: var(--play-table-offset-y, 0px); width: min(100%, calc(144cqh + 24px)); height: 100%; margin: 0 auto; }
