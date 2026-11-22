@@ -1249,10 +1249,11 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   function clearBeginningConnector() {
     $('game-beginning-connector').removeAttribute('d');
   }
-  function showBeginningConnector(row, source) {
-    const card = $('game-board').querySelector(`[data-key="${CSS.escape(source)}"] .play-node-entity-card`);
+  function showBeginningConnector(origin, key, target = false) {
+    const cell = $('game-board').querySelector(`[data-key="${CSS.escape(key)}"]`);
+    const card = target ? cell : cell?.querySelector('.play-node-entity-card');
     if (!card) return;
-    const from = row.getBoundingClientRect();
+    const from = origin.getBoundingClientRect();
     const to = card.getBoundingClientRect();
     let path;
     if (from.right <= to.left || to.right <= from.left) {
@@ -1395,6 +1396,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
             select.add(new Option(`${index ? 'Second' : 'First'} empty Verdant Terrain`, ''));
             for (const key of terrainOptions) select.add(new Option(key, key));
             select.value = targets[index] || '';
+            if (select.value) select.dataset.beginningTarget = select.value;
             select.disabled = phaseBusy;
             select.addEventListener('change', () => {
               const selected = [...(beginningBrambleTargets.get(source) || [])];
@@ -1419,10 +1421,12 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       } else if (!own) {
         const status = document.createElement('span');
         status.textContent = options.includes(target) ? target : options.length ? 'Waiting for target' : unavailableText;
+        if (options.includes(target)) status.dataset.beginningTarget = target;
         controls.append(status);
       } else if (options.length) {
         const choose = document.createElement('button'); choose.type = 'button';
         choose.textContent = options.includes(target) ? target : 'Choose Target';
+        if (options.includes(target)) choose.dataset.beginningTarget = target;
         choose.disabled = phaseBusy;
         choose.addEventListener('click', () => {
           beginningTargetSource = beginningTargetSource === source ? null : source;
@@ -1447,6 +1451,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
           select.add(new Option(label, ''));
           for (const option of choices) select.add(new Option(option.label, option.value));
           select.value = choice || '';
+          if (effect.kind === 'march_of_marshrooms' && select.value) select.dataset.beginningTarget = select.value;
           select.disabled = phaseBusy;
           select.addEventListener('change', () => {
             beginningChoices.set(source, select.value);
@@ -1458,13 +1463,17 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
           if (selected) {
             const status = document.createElement('span');
             status.textContent = selected.label;
+            if (effect.kind === 'march_of_marshrooms') status.dataset.beginningTarget = selected.value;
             controls.append(status);
           }
         }
       }
       row.append(heading, controls);
-      row.addEventListener('pointerenter', event => {
-        if (event.pointerType === 'mouse' && !row.classList.contains('is-dragging')) showBeginningConnector(row, source);
+      row.addEventListener('pointerover', event => {
+        if (event.pointerType !== 'mouse' || row.classList.contains('is-dragging')) return;
+        const target = event.target.closest('[data-beginning-target]');
+        if (target) showBeginningConnector(target, target.dataset.beginningTarget, true);
+        else showBeginningConnector(row, source);
       });
       row.addEventListener('pointerleave', clearBeginningConnector);
       if (own) row.addEventListener('dragstart', event => {
