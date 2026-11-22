@@ -621,6 +621,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       && effect === "at the beginning of the verdant patron's turn, dissolve two empty verdant terrains to recall any event from the archive to your hand. if you can't, dissolve this entity.") return 'bramble_briar';
     if (card?.title === 'Garden of Shared Roots'
       && effect === 'when placed, create any terrain on adjacent empty node. at the beginning of your turn, draw 1 card if terrain under this entity is entangled.') return 'garden_shared_roots';
+    if (card?.title === 'Mirrorpool Shrine'
+      && effect === 'at the beginning of your turn, draw 1 card for each adjacent flow entity on a flow terrain.') return 'mirrorpool_shrine';
     return null;
   }
   function beginningEffectAvailable(card) {
@@ -658,6 +660,12 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       const kind = effectsBySource.get(source)?.kind;
       if (kind === 'garden_shared_roots') {
         plan.set(source, { options: [], target: null, valid: true, draws: (links.get(source)?.size || 0) > 0 });
+        continue;
+      }
+      if (kind === 'mirrorpool_shrine') {
+        const draws = eventNeighbors(source).filter(key => terrain.get(key) === 'Flow'
+          && occupied.has(key) && room.board?.[key]?.entity?.terrain === 'Flow').length;
+        plan.set(source, { options: [], target: null, valid: true, draws });
         continue;
       }
       if (kind === 'bramble_briar') {
@@ -1264,6 +1272,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       } else if (effect.kind === 'garden_shared_roots') {
         const status = document.createElement('span');
         status.textContent = draws ? 'Entangled Terrain: draw 1 card' : 'Terrain not entangled: no card drawn';
+        controls.append(status);
+      } else if (effect.kind === 'mirrorpool_shrine') {
+        const status = document.createElement('span');
+        status.textContent = draws ? `Draw ${draws} card${draws === 1 ? '' : 's'}` : 'No adjacent Flow Entity on Flow Terrain';
         controls.append(status);
       } else if (effect.kind === 'bramble_briar') {
         if (loading) {
@@ -2359,7 +2371,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   function resolveHandCard(raw) {
     const card = resolveGameCard(raw);
-    return raw?.card_type === 'Event' && typeof raw.effect === 'string'
+    return ['Entity', 'Event'].includes(raw?.card_type) && typeof raw.effect === 'string'
       ? { ...card, effect: raw.effect } : card;
   }
   function renderArchiveGallery() {
@@ -2899,6 +2911,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     };
     const normalizedEffect = String(card.effect || '').replace(/\s+/g, ' ').trim().toLowerCase();
     const knownEntryEffect = entryEffects[card.title] === normalizedEffect;
+    const hasOngoingEffect = beginningEffectKind(card) || (card.title === 'Depthcloak' && entityEffectKind(card, 'shape') === 'unprotect')
+      || (card.title === "Nautilus's Thought" && normalizedEffect === 'while this entity is on flow terrain, it counts as 2 toward your patron’s victory goal.');
     const kupalaNight = action === 'place' && card.title === 'Kupala Night'
       && normalizedEffect === 'draw cards equal to the amount of your entanglements.';
     const previousHandCount = gameState.hand.length;
@@ -2957,7 +2971,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
             ? `${result?.title || card.title} placed · drew ${entityDrawn} card${entityDrawn === 1 ? '' : 's'} for Entanglements.`
             : knownEntryEffect || effectKind
               ? `${result?.title || card.title} placed · effect resolved${entityDrawn ? ` · drew ${entityDrawn}` : ''}.`
-            : `${result?.title || card.title} placed on ${result?.terrain || room.board?.[source]?.terrain} Terrain.${normalizedEffect && !beginningEffectKind(card) ? ' Card-specific effects are not automated yet.' : ''}`, true);
+            : `${result?.title || card.title} placed on ${result?.terrain || room.board?.[source]?.terrain} Terrain.${normalizedEffect && !hasOngoingEffect ? ' Card-specific effects are not automated yet.' : ''}`, true);
     } catch (error) {
       if (expected === epoch && room?.id === roomId) {
         await refreshRoom().catch(() => {});
