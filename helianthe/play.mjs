@@ -688,8 +688,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
             ? eventNeighbors(target).filter(key => ['Flow', 'Radiance', 'Verdant'].includes(terrain.get(key)))
               .map(key => ({ value: key, label: key }))
             : [];
-        const valid = targetValid ? choices.length === 0 || choices.some(option => option.value === choice) : !target && options.length === 0;
-        plan.set(source, { options, target, choices, choice, valid });
+        const automaticSkip = options.length === 0;
+        const valid = automaticSkip || (targetValid && (choices.length === 0 || choices.some(option => option.value === choice)));
+        plan.set(source, { options, target, choices, choice, valid, automaticSkip });
         if (targetValid && valid) {
           if (kind === 'march_of_marshrooms') {
             occupied.delete(source); occupied.add(target);
@@ -759,14 +760,15 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         }
         continue;
       }
-      const [x, y] = source.split(',').map(Number);
-      const options = [[x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]]
-        .filter(([column, row]) => column >= 0 && column <= 4 && row >= 0 && row <= 3)
-        .map(([column, row]) => `${column},${row}`).filter(key => !terrain.has(key));
+      const neighbors = eventNeighbors(source);
+      const options = neighbors.filter(key => !terrain.has(key));
+      const draws = kind === 'expansive_ivy' && neighbors.filter(key => terrain.get(key) === 'Verdant').length >= 4;
+      const automaticSkip = options.length === 0 && !draws;
       const target = beginningTargets.get(source);
-      const valid = target ? options.includes(target) : options.length === 0;
-      plan.set(source, { options, target, valid });
-      if (target && valid) {
+      const targetValid = options.includes(target);
+      const valid = options.length === 0 || targetValid;
+      plan.set(source, { options, target, valid, automaticSkip });
+      if (targetValid) {
         if (fertilized.has(target)) { fertilized.delete(target); terrain.set(target, 'Verdant'); }
         else fertilized.add(target);
       }
@@ -1231,17 +1233,27 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   $('opening-mulligan-confirm').addEventListener('click', () => void finishMulligan([...mulliganOrder]));
   function moveBeginningEffect(source, skip, beforeSource = null) {
     const effect = beginningEffects().find(entry => entry.source === source);
-    if (!effect || (skip && !effect.optional) || phaseBusy) return;
+    if (!effect || phaseBusy) return;
+    const plan = beginningPlan();
+    if (plan.get(source)?.automaticSkip) {
+      if (!skip) blockedPlayNotice(`${effect.card.title} has no legal target.`);
+      return;
+    }
+    if (skip && !effect.optional) {
+      blockedPlayNotice(`${effect.card.title} is mandatory and cannot be skipped while it has a legal target.`);
+      return;
+    }
     beginningOrder.splice(beginningOrder.indexOf(source), 1);
     if (skip) { beginningSkipped.add(source); beginningTargets.delete(source); beginningChoices.delete(source); beginningBrambleTargets.delete(source); beginningBrambleEvents.delete(source); }
     else beginningSkipped.delete(source);
     if (beginningTargetSource === source) beginningTargetSource = null;
-    const before = beforeSource && beginningSkipped.has(beforeSource) === skip
+    const isSkipped = key => beginningSkipped.has(key) || Boolean(plan.get(key)?.automaticSkip);
+    const before = beforeSource && isSkipped(beforeSource) === skip
       ? beginningOrder.indexOf(beforeSource) : -1;
     if (before >= 0) beginningOrder.splice(before, 0, source);
     else if (skip) beginningOrder.push(source);
     else {
-      const lastActive = beginningOrder.findLastIndex(item => !beginningSkipped.has(item));
+      const lastActive = beginningOrder.findLastIndex(item => !isSkipped(item));
       beginningOrder.splice(lastActive + 1, 0, source);
     }
     renderBeginningEffects(); syncEventTargets(); void saveBeginningPlan();
@@ -1345,9 +1357,11 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     for (const effect of effects) if (!beginningOrder.includes(effect.source)) beginningOrder.push(effect.source);
     const bySource = new Map(effects.map(effect => [effect.source, effect]));
     const plan = beginningPlan();
+    if (plan.get(beginningTargetSource)?.automaticSkip) beginningTargetSource = null;
     const rows = beginningOrder.map(source => {
       const effect = bySource.get(source);
-      const skipped = beginningSkipped.has(source);
+      const automaticSkip = plan.get(source)?.automaticSkip;
+      const skipped = beginningSkipped.has(source) || automaticSkip;
       const row = document.createElement('li');
       row.className = `play-beginning-effect${beginningTargetSource === source ? ' is-choosing' : ''}${skipped ? ' is-skipped' : ''}`;
       row.draggable = own && !phaseBusy;
@@ -1371,7 +1385,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         solar_converter: 'Requires 2 Lumens and an adjacent Terrain',
       }[effect.kind] || 'No adjacent empty Node';
       if (skipped) {
-        const status = document.createElement('span'); status.textContent = 'Skipped this turn'; controls.append(status);
+        const status = document.createElement('span'); status.textContent = automaticSkip ? 'No legal target' : 'Skipped this turn'; controls.append(status);
       } else if (effect.kind === 'garden_shared_roots') {
         const status = document.createElement('span');
         status.textContent = draws ? 'Entangled Terrain: draw 1 card' : 'Terrain not entangled: no card drawn';
@@ -1502,10 +1516,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     $('game-beginning-skipped-list').replaceChildren(...rows.filter(row => row.classList.contains('is-skipped')));
     $('game-resolve-beginning').disabled = phaseBusy || beginningOrder.some(source => !plan.get(source)?.valid);
   }
-  function beginningPlanEntries() {
-    const plan = beginningPlan();
+  function beginningPlanEntries(plan = beginningPlan()) {
     return beginningOrder.map(source => ({ source,
-      target: beginningSkipped.has(source) ? null : beginningTargets.get(source) || null,
+      target: plan.get(source)?.options.length ? beginningTargets.get(source) || null : null,
       choice: plan.get(source)?.choices?.some(option => option.value === beginningChoices.get(source))
         ? beginningChoices.get(source) : null,
       targets: beginningSkipped.has(source) ? [] : beginningBrambleTargets.get(source) || [],
@@ -1537,8 +1550,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (phaseBusy || room?.turn_player_id !== userId || room.turn_phase !== 'beginning') return;
     const effects = beginningEffects();
     if (!effects.length || beginningOrder.length !== effects.length) return;
-    const entries = beginningPlanEntries();
     const plan = beginningPlan();
+    const entries = beginningPlanEntries(plan);
+    const skippedCount = entries.filter(entry => entry.skip || plan.get(entry.source)?.automaticSkip).length;
     if (entries.some(({ source }) => !plan.get(source)?.valid)) {
       eventNotice('Complete the required choices before resolving.');
       return;
@@ -1557,8 +1571,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       if (expected !== epoch || room?.id !== roomId) return;
       await refreshRoom();
       if (expected === epoch && room?.id === roomId) await loadGameState(true);
-      const resolvedCount = effects.length - beginningSkipped.size;
-      eventNotice(`${resolvedCount} Entity effect${resolvedCount === 1 ? '' : 's'} resolved${beginningSkipped.size ? `; ${beginningSkipped.size} skipped` : ''}${result?.drawn ? `; drew ${result.drawn} card${result.drawn === 1 ? '' : 's'}` : ''}${result?.recalled ? `; recalled ${result.recalled} Event${result.recalled === 1 ? '' : 's'}` : ''}.`, true);
+      const resolvedCount = effects.length - skippedCount;
+      eventNotice(`${resolvedCount} Entity effect${resolvedCount === 1 ? '' : 's'} resolved${skippedCount ? `; ${skippedCount} skipped` : ''}${result?.drawn ? `; drew ${result.drawn} card${result.drawn === 1 ? '' : 's'}` : ''}${result?.recalled ? `; recalled ${result.recalled} Event${result.recalled === 1 ? '' : 's'}` : ''}.`, true);
     } catch (error) {
       if (expected === epoch && room?.id === roomId) {
         await refreshRoom().catch(() => {});
