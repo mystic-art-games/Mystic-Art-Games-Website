@@ -289,8 +289,10 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) .masthead { display:
 html:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100%; overflow-y: hidden; }
 body:has(#play-view:not([hidden]) #play-game:not([hidden])),
 .play-opening-roll {
-  background-color: #263d70;
-  background-image: linear-gradient(to bottom, rgb(0 0 0 / .34), rgb(0 0 0 / .1) 50%), url('./assets/violet-mountains-background.png');
+  background-color: #102b21;
+  background-image:
+    radial-gradient(ellipse at 46% 40%, #315b45, #214636 34%, transparent 72%),
+    linear-gradient(155deg, #18372b, #102b21 58%, #081c15);
   background-position: center;
   background-size: cover;
 }
