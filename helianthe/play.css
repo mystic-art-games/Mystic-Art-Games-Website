@@ -392,16 +392,6 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
   #play-game .play-deck-stack:hover,
   .play-archive-browser-list li:hover > button { scale: 1.045; }
   #play-game .play-hand-card:hover { scale: 1.035; }
-  .play-game-node:not(.has-entity):is(.terrain-symbiosis, .terrain-flow, .terrain-verdant, .terrain-radiance)::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    background: inherit;
-    pointer-events: none;
-    transition: scale .16s ease;
-  }
-  #play-game .play-game-node:hover:not(:has(.play-node-entity-card:hover))::before { scale: 1.045; }
 }
 #play-game .play-hand-card.is-selected:not(.is-queued) { outline: 2px solid #c9cbd2; outline-offset: 1px; filter: brightness(.8); box-shadow: 0 4px 12px #0006; }
 #play-game .play-hand-card.is-discard-selected { outline: 2px solid #e88b81; outline-offset: 1px; filter: brightness(.72); box-shadow: 0 0 0 3px #5d2727aa, 0 4px 12px #0d171766; }
