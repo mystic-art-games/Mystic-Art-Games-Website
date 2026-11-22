@@ -1323,7 +1323,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         heading.append(handle);
       }
       heading.append(title);
-      const description = document.createElement('p'); description.textContent = effect.card.effect || '';
       const controls = document.createElement('div'); controls.className = 'play-beginning-effect-controls';
       const { options, target, choices, choice, valid, terrainOptions, eventOptions, fallback, targets, eventId, draws, loading } = plan.get(source);
       const targetPrompt = {
@@ -1455,7 +1454,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         });
         controls.append(move);
       }
-      row.append(heading, description, controls);
+      row.append(heading, controls);
       if (own) row.addEventListener('dragstart', event => {
         event.dataTransfer.effectAllowed = 'move';
         event.dataTransfer.setData('text/plain', source);

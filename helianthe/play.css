@@ -434,8 +434,7 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
 .play-beginning-effect.is-skipped { opacity: .7; }
 .play-beginning-effect-heading { display: flex; align-items: center; gap: .35rem; font-size: .76rem; }
 .play-beginning-effect-heading > span { color: #d7c9a7; letter-spacing: -.14em; }
-.play-beginning-effect p { margin: .3rem 0; font-size: .68rem; line-height: 1.3; }
-.play-beginning-effect-controls { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem; }
+.play-beginning-effect-controls { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem; margin-top: .3rem; }
 .play-beginning-effect-controls > span { flex: 1; font-size: .67rem; }
 .play-beginning-effect-controls select { flex: 1 1 100%; min-width: 0; padding: .3rem .4rem; border: 1px solid #8a9b80; border-radius: 6px; background: #305443; color: #f5f2e8; font: 700 .7rem Nunito, sans-serif; }
 .play-beginning-effect-controls select:disabled { opacity: .6; }
