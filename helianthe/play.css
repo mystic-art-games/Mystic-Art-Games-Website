@@ -427,8 +427,6 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
 .play-beginning-skipped-zone { flex: 0 1 auto; min-height: 4rem; margin: .45rem 0; border-style: dashed; }
 .play-beginning-zone h3 { margin: 0 0 .4rem; color: #f5f2e8; font: 800 .72rem/1.2 Nunito, sans-serif; }
 .play-beginning-zone ol { display: grid; gap: .4rem; min-height: 1.4rem; margin: 0; padding: 0; list-style: none; }
-.play-beginning-zone > p { margin: .2rem 0; color: #d7c9a7; font-size: .68rem; }
-.play-beginning-zone > p[hidden] { display: none; }
 .play-beginning-effect { padding: .45rem; border: 1px solid #8a9b80; border-radius: 7px; background: #264638; cursor: grab; }
 .play-beginning-effects.is-read-only .play-beginning-effect { cursor: default; }
 .play-beginning-effect.is-choosing { border-color: #f2c96b; }
