@@ -4,7 +4,7 @@
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 html { overflow-x: hidden; }
-body { margin: 0; min-height: 100vh; scrollbar-gutter: stable; overflow-x: hidden; background: var(--light-page-bg) url('./assets/green-city-background.jpg') center 60% / cover fixed no-repeat; }
+body { margin: 0; min-height: 100vh; scrollbar-gutter: stable; overflow-x: hidden; background: var(--light-page-bg) url('./assets/site-background.jpg') center 60% / cover fixed no-repeat; }
 button, input, select, textarea { font: inherit; }
 button { cursor: pointer; border: 1px solid #819e8d; border-radius: 10px; background: #f4f5e9; color: #163737; padding: .55rem .8rem; }
 button:hover:not(:disabled) { background: #e0ebda; }
@@ -1207,7 +1207,7 @@ body.dark-mode .masthead nav.mobile-menu-open button.active {
   .theme-control { top: calc(.55rem + env(safe-area-inset-top)); }
 }
 
-body.dark-mode { color-scheme: dark; background: #102f27 url('./assets/green-city-background.jpg') center 60% / cover fixed no-repeat; color: #e5eee0; }
+body.dark-mode { color-scheme: dark; background: #102f27 url('./assets/site-background.jpg') center 60% / cover fixed no-repeat; color: #e5eee0; }
 body.dark-mode .panel,
 body.dark-mode .auth-panel,
 body.dark-mode .auth-modal-card { border-color: #416853; background: #12372c; box-shadow: 0 12px 34px rgba(0, 18, 12, .28); }
