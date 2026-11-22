@@ -37,7 +37,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   const drawCardSound = new Audio(new URL('./assets/Draw_Card.mp3', import.meta.url));
   const massiveDrawSound = new Audio(new URL('./assets/Massive_Draw.mp3', import.meta.url));
   const shapeSound = new Audio(new URL('./assets/Shape.mp3', import.meta.url));
-  const changeTurnSound = new Audio(new URL('./assets/Change_Turn.wav', import.meta.url));
+  const changeTurnSound = new Audio(new URL('./assets/Change_Turn.mp3', import.meta.url));
   const nextPhaseSound = new Audio(new URL('./assets/Next_Phase.mp3', import.meta.url));
   const selectCardSound = new Audio(new URL('./assets/Select_Card.wav', import.meta.url));
   const playCardSound = new Audio(new URL('./assets/Play_Card.mp3', import.meta.url));
