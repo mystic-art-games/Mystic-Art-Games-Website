@@ -444,6 +444,8 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
 .play-beginning-effect-controls { display: flex; flex: 1 1 auto; flex-wrap: wrap; align-items: center; justify-content: flex-end; min-width: min-content; gap: .25rem; }
 .play-beginning-effect-controls:empty { display: none; }
 .play-beginning-effect-controls > span { flex: 1; font-size: .67rem; }
+.play-beginning-hover-status { visibility: hidden; }
+.play-beginning-effect:is(:hover, :focus-within) .play-beginning-hover-status { visibility: visible; }
 .play-beginning-effect-controls select { flex: 1 1 100%; min-width: 0; padding: .3rem .4rem; border: 1px solid #8a9b80; border-radius: 6px; background: #305443; color: #f5f2e8; font: 700 .7rem Nunito, sans-serif; }
 .play-beginning-effect-controls select:disabled { opacity: .6; }
 #play-game .play-beginning-effects button { margin: 0; padding: .3rem .45rem; border: 1px solid #8a9b80; border-radius: 6px; background: #305443; color: #f5f2e8; font-size: .7rem; font-weight: 700; }

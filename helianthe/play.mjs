@@ -1385,14 +1385,19 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         solar_converter: 'Requires 2 Lumens and an adjacent Terrain',
       }[effect.kind] || 'No adjacent empty Node';
       if (skipped) {
-        const status = document.createElement('span'); status.textContent = automaticSkip ? 'No legal target' : 'Skipped this turn'; controls.append(status);
+        const status = document.createElement('span');
+        status.className = 'play-beginning-hover-status';
+        status.textContent = automaticSkip ? unavailableText : 'Skipped this turn';
+        controls.append(status);
       } else if (effect.kind === 'garden_shared_roots') {
         const status = document.createElement('span');
         status.textContent = draws ? 'Entangled Terrain: draw 1 card' : 'Terrain not entangled: no card drawn';
+        if (!draws) status.className = 'play-beginning-hover-status';
         controls.append(status);
       } else if (effect.kind === 'mirrorpool_shrine') {
         const status = document.createElement('span');
         status.textContent = draws ? `Draw ${draws} card${draws === 1 ? '' : 's'}` : 'No adjacent Flow Entity on Flow Terrain';
+        if (!draws) status.className = 'play-beginning-hover-status';
         controls.append(status);
       } else if (effect.kind === 'bramble_briar') {
         if (loading) {
@@ -1441,6 +1446,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       } else if (!own) {
         const status = document.createElement('span');
         status.textContent = options.includes(target) ? target : options.length ? 'Waiting for target' : unavailableText;
+        if (!options.length) status.className = 'play-beginning-hover-status';
         if (options.includes(target)) status.dataset.beginningTarget = target;
         controls.append(status);
       } else if (options.length) {
@@ -1461,6 +1467,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         controls.append(clear);
       } else {
         const unavailable = document.createElement('span'); unavailable.textContent = unavailableText;
+        unavailable.className = 'play-beginning-hover-status';
         controls.append(unavailable);
       }
       if (choices?.length) {
