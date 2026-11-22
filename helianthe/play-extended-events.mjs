@@ -144,9 +144,14 @@ export function extendedEventStep(kind, selected, { board, archive, hand, eventI
     case 'hyphae':
     case 'shared_canal_gathering':
       if (count === 0) return boardStep('Choose Symbiosis Terrain to Entangle', board,
-        node => node.terrain === 'Symbiosis' && (kind === 'hyphae' ? entity(node) : !entity(node)) && !entangled(node));
+        (node, key) => node.terrain === 'Symbiosis' && (kind === 'hyphae' ? entity(node) : !entity(node))
+          && !entangled(node) && visibleCells(board).some(other =>
+            adjacent(key, other.key) && ['Verdant', 'Flow', 'Radiance'].includes(other.node.terrain)
+              && !other.node.entanglements?.includes(key)));
       if (count === 1) return boardStep('Choose adjacent non-Symbiosis Terrain', board,
-        (node, key) => terrain(node) && node.terrain !== 'Symbiosis' && adjacent(source, key));
+        (node, key) => ['Verdant', 'Flow', 'Radiance'].includes(node.terrain) && adjacent(source, key)
+          && first.terrain === 'Symbiosis' && !entangled(first) && (kind === 'hyphae' ? entity(first) : !entity(first))
+          && !node.entanglements?.includes(source));
       return null;
     case 'land_gift':
       if (count === 0) return boardStep('Choose empty Node adjacent to Verdant', board,

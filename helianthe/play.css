@@ -239,13 +239,7 @@ body.dark-mode .play-deck-field.is-locked select { border-color: #596d5d; backgr
 .play-hand-item { position: relative; flex: 0 0 clamp(72px, 9vw, 92px); min-width: 0; }
 .play-hand-card { display: flex; align-items: center; justify-content: center; box-sizing: border-box; width: 100%; min-width: 0; aspect-ratio: 63 / 88; margin: 0; padding: 0; overflow: hidden; border: 1px solid #8da79a; border-radius: 6px; background: #e9ece1; box-shadow: 0 4px 12px #183a2c33; }
 #play-game .play-hand-card { cursor: default; }
-.play-hand-card.is-draggable-card { touch-action: none; }
-#play-game[data-can-play-cards="true"] .play-hand-card.is-draggable-card { cursor: grab; }
-#play-game[data-can-play-cards="true"] .play-hand-card.is-playable-event { cursor: pointer; }
-.play-hand-card.is-drag-source { opacity: .4; }
-.play-event-drag-ghost { position: fixed; z-index: 80; box-sizing: border-box; margin: 0; pointer-events: none; transform: rotate(-3deg); box-shadow: 0 7px 16px #0c1f1ba8; }
-.play-game-board-wrap.is-event-drop-zone .play-game-board { filter: brightness(1.12); }
-.play-game-node.is-event-drag-target { outline: 3px solid #87e1d5; outline-offset: 2px; filter: brightness(1.25); }
+#play-game[data-can-play-cards="true"] .play-hand-card { cursor: pointer; }
 .play-entity-flight { position: fixed; z-index: 85; box-sizing: border-box; margin: 0; pointer-events: none; box-shadow: 0 12px 28px #0c1f1ba8; }
 .play-discard-flight { position: fixed; z-index: 85; box-sizing: border-box; margin: 0; pointer-events: none; transform-origin: center; box-shadow: 0 12px 28px #0c1f1ba8; }
 .play-draw-flight { position: fixed; z-index: 85; box-sizing: border-box; margin: 0; pointer-events: none; perspective: 1000px; }
@@ -383,18 +377,21 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
   height: calc(var(--play-hand-card-height) + .5rem);
   gap: min(.7rem, calc(20% / var(--play-hand-gap-count, 1)));
   overflow: clip;
+  overflow-clip-margin: .9rem;
   padding: .25rem .3rem;
 }
 #play-game .play-hand-item { flex: 0 1 var(--play-hand-card-width); }
 #play-game .play-hand-card { height: auto; min-height: 0; transition: filter .16s ease, scale .16s ease; }
+#play-game .play-hand-card.is-queued { translate: 0 -.7rem; }
+.play-hand-item:has(.play-hand-card.is-queued) { z-index: 1; }
 @media (hover: hover) and (prefers-reduced-motion: no-preference) {
   .play-game-patron-slot, .play-node-entity-card, .play-game-archive-card, .play-deck-stack, .play-archive-browser-list button { transition: scale .16s ease; }
-  #play-game:not(:has(.is-event-drop-zone)) .play-game-patron-slot:hover,
-  #play-game:not(:has(.is-event-drop-zone)) .play-node-entity-card:hover,
-  #play-game:not(:has(.is-event-drop-zone)) .play-game-archive-card:hover,
-  #play-game:not(:has(.is-event-drop-zone)) .play-deck-stack:hover,
+  #play-game .play-game-patron-slot:hover,
+  #play-game .play-node-entity-card:hover,
+  #play-game .play-game-archive-card:hover,
+  #play-game .play-deck-stack:hover,
   .play-archive-browser-list li:hover > button { scale: 1.045; }
-  #play-game:not(:has(.is-event-drop-zone)) .play-hand-card:hover:not(.is-drag-source) { scale: 1.035; }
+  #play-game .play-hand-card:hover { scale: 1.035; }
   .play-game-node:not(.has-entity):is(.terrain-symbiosis, .terrain-flow, .terrain-verdant, .terrain-radiance)::before {
     content: '';
     position: absolute;
@@ -404,9 +401,9 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
     pointer-events: none;
     transition: scale .16s ease;
   }
-  #play-game:not(:has(.is-event-drop-zone)) .play-game-node:hover:not(:has(.play-node-entity-card:hover))::before { scale: 1.045; }
+  #play-game .play-game-node:hover:not(:has(.play-node-entity-card:hover))::before { scale: 1.045; }
 }
-#play-game .play-hand-card.is-selected { outline: 2px solid #c9cbd2; outline-offset: 1px; filter: brightness(.8); box-shadow: 0 4px 12px #0006; }
+#play-game .play-hand-card.is-selected:not(.is-queued) { outline: 2px solid #c9cbd2; outline-offset: 1px; filter: brightness(.8); box-shadow: 0 4px 12px #0006; }
 #play-game .play-hand-card.is-discard-selected { outline: 2px solid #e88b81; outline-offset: 1px; filter: brightness(.72); box-shadow: 0 0 0 3px #5d2727aa, 0 4px 12px #0d171766; }
 #play-game .play-hand-card.is-mulligan-selected { outline: 3px solid #f3d67c; outline-offset: 2px; filter: brightness(.8); }
 .play-mulligan-order { position: absolute; z-index: 2; top: .35rem; right: .35rem; display: grid; place-items: center; width: 1.7rem; height: 1.7rem; border-radius: 50%; background: #f3d67c; color: #17372b; font: 900 .85rem Nunito, sans-serif; box-shadow: 0 2px 7px #0d171799; pointer-events: none; }

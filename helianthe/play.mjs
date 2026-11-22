@@ -1,4 +1,4 @@
-import { extendedEventRules, extendedKinds, extendedEventStep } from './play-extended-events.mjs?v=2';
+import { extendedEventRules, extendedKinds, extendedEventStep } from './play-extended-events.mjs?v=3';
 
 const terrainFullArtUrl = terrain => new URL(`./assets/Terrain_${terrain}_Full_Art.png`, import.meta.url).href;
 const defaultTableName = hostName => `${Array.from(String(hostName ?? '').trim() || 'Player').slice(0, 52).join("")}'s Table`;
@@ -99,7 +99,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   let followGameLog = true;
   let unreadGameLogCount = 0;
   let archiveGalleryObserver = null;
-  let selectedGameCard = null, selectedHandIndex = null, pendingEvent = null, pendingEntity = null, pendingFestival = null, arrivingEntityKey = null, zoneCounts = null, zoneCountsRevision = null, zoneCountsRequest = null, eventNoticeTimer = null;
+  let selectedGameCard = null, pendingEvent = null, pendingEntity = null, pendingFestival = null, arrivingEntityKey = null, zoneCounts = null, zoneCountsRevision = null, zoneCountsRequest = null, eventNoticeTimer = null;
   const discardSelections = new Set();
   const gameDeckPatrons = new Map(), gamePlayerPatrons = new Map();
   const patronPreviews = { self: { key: '', serial: 0 }, opponent: { key: '', serial: 0 } };
@@ -1651,7 +1651,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       if (!menu.contains(event.target)) menu.open = false;
     }
     if (event.button !== 0 || $('game').hidden || !selectedGameCard) return;
-    if (event.target.closest('.play-hand-card, .play-game-patron-slot, .play-game-card-preview, .play-beginning-effects, .play-game-archive-card, .play-deck-stack, .play-game-node.has-entity, .play-game-node.is-event-target')) return;
+    if (event.target.closest('.play-hand-card, .play-event-choice-dialog, .play-game-patron-slot, .play-game-card-preview, .play-beginning-effects, .play-game-archive-card, .play-deck-stack, .play-game-node.has-entity, .play-game-node.is-event-target')) return;
     hideCardPreview();
   });
   document.addEventListener('keydown', event => {
@@ -1671,7 +1671,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       }
       return;
     }
-    if (event.key === 'Escape') {
+    if (event.key === 'Escape' && !root.querySelector('.play-event-choice-dialog[open]')) {
       for (const menu of root.querySelectorAll('.play-table-menu[open]')) menu.open = false;
       if (beginningTargetSource) {
         beginningTargetSource = null;
@@ -1950,10 +1950,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     pendingEvent = null;
     pendingEntity = null;
     selectedGameCard = null;
-    selectedHandIndex = null;
     syncEventTargets();
     eventNotice('');
-    selectedCardElement?.classList.remove('is-selected');
+    selectedCardElement?.classList.remove('is-selected', 'is-queued');
     selectedCardElement?.removeAttribute('aria-pressed');
     selectedCardElement = null;
     requestAnimationFrame(syncHoveredCardPreview);
@@ -1996,8 +1995,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     })().catch(() => {});
   }
   function syncHoveredCardPreview() {
-    if (!mousePosition || $('game').hidden || !$('game-archive-browser').hidden
-      || root.querySelector('.play-game-board-wrap.is-event-drop-zone')) {
+    if (!mousePosition || $('game').hidden || !$('game-archive-browser').hidden) {
       if (hoveredCardElement) hideHoveredCardPreview();
       return;
     }
@@ -2043,6 +2041,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (card.card_type !== 'Event') return '';
     const support = eventSupport(card);
     if (!support) return unavailableEventReason(card);
+    if (support[1] === 'shared_canal_gathering'
+      && !extendedEventStep(support[1], [], { board: room.board })?.options.length) {
+      return 'Shared Canal Gathering needs an unoccupied, unentangled Symbiosis Terrain next to a different Terrain.';
+    }
     if (card.title === 'Beacon Grid' && support[1] === 'lumens_two') {
       const hasTarget = Array.from($('game-board').children).some(cell => cell.dataset.key
         && legalEventTarget(support[1], room?.board?.[cell.dataset.key]));
@@ -2053,18 +2055,13 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     }
     return '';
   }
-  function showCardPreview(card, source, handIndex = null) {
-    pendingEvent = null;
-    pendingEntity = card.card_type === 'Entity' && handIndex !== null && !pendingFestival
-      && !requiredDiscards() && room?.turn_player_id === userId && room?.turn_phase === 'main'
-      && !room.main_played_entity ? { card, handIndex } : null;
-    syncEventTargets();
+  function selectHandCard(card, source, queued = false) {
     selectedGameCard = card;
-    selectedHandIndex = handIndex;
-    selectedCardElement?.classList.remove('is-selected');
+    selectedCardElement?.classList.remove('is-selected', 'is-queued');
     selectedCardElement?.removeAttribute('aria-pressed');
     selectedCardElement = source;
     selectedCardElement?.classList.add('is-selected');
+    selectedCardElement?.classList.toggle('is-queued', queued);
     selectedCardElement?.setAttribute('aria-pressed', 'true');
     renderTurnPhase();
   }
@@ -2083,7 +2080,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         mulliganOrder.push(handIndex);
         playTableSound(selectCardSound);
       }
-      showCardPreview(card, source, handIndex);
+      selectHandCard(card, source);
       renderMulligan();
       return;
     }
@@ -2098,9 +2095,27 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       return;
     }
     if (!requiredDiscards()) {
+      if (selectedCardElement === source && source.classList.contains('is-queued')) {
+        hideCardPreview();
+        playTableSound(selectCardSound);
+        return;
+      }
       const reason = cardPlayBlockReason(card);
-      if (reason) blockedPlayNotice(reason);
-      else if (card.card_type === 'Event') void evokeEvent(card, handIndex);
+      if (reason) { blockedPlayNotice(reason); return; }
+      hideCardPreview();
+      if (card.card_type === 'Entity') {
+        pendingEntity = { card, handIndex };
+        selectHandCard(card, source, true);
+        syncEventTargets();
+        eventNotice('Choose compatible Terrain to Place, or an empty space to Shape.');
+        playTableSound(selectCardSound);
+      } else if (card.card_type === 'Event') {
+        void evokeEvent(card, handIndex);
+        if (pendingEvent || root.querySelector('.play-event-choice-dialog[open]')) {
+          selectHandCard(card, source, true);
+          playTableSound(selectCardSound);
+        }
+      }
       return;
     }
     if (discardSelections.has(handIndex)) {
@@ -2108,7 +2123,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       if (selectedCardElement === source) hideCardPreview();
     } else {
       discardSelections.add(handIndex);
-      showCardPreview(card, source, handIndex);
+      selectHandCard(card, source);
     }
     playTableSound(selectCardSound);
     syncDiscardBar();
@@ -2513,7 +2528,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const bounds = source.getBoundingClientRect();
     if (!bounds.width || !bounds.height) return null;
     const flight = source.cloneNode(true);
-    flight.classList.remove('is-selected', 'is-drag-source');
+    flight.classList.remove('is-selected', 'is-queued');
     flight.classList.add('play-entity-flight');
     flight.removeAttribute('aria-label');
     flight.setAttribute('aria-hidden', 'true');
@@ -2540,7 +2555,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       height: target.clientHeight,
     };
     const { flight, bounds } = snapshot;
-    flight.classList.remove('play-event-drag-ghost');
     flight.classList.add('play-entity-flight');
     flight.style.left = `${bounds.left}px`;
     flight.style.top = `${bounds.top}px`;
@@ -2604,8 +2618,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       const index = select && dialog.returnValue === 'confirm' ? select.value : dialog.returnValue;
       const chosen = /^\d+$/.test(index) ? options[Number(index)] : null;
       dialog.remove();
-      if (chosen && room?.id === roomId && room.turn_number === turn) {
-        onConfirm(chosen.value);
+      if (room?.id === roomId && room.turn_number === turn) {
+        if (chosen) onConfirm(chosen.value);
+        else hideCardPreview();
       }
     }, { once: true });
     dialog.showModal();
@@ -2614,6 +2629,11 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const step = extendedEventStep(event.rule[1], event.selected, {
       board: room?.board || {}, archive: gameState?.archive || [], hand: gameState?.hand || [], eventIndex: event.handIndex,
     });
+    if (event.rule[1] === 'shared_canal_gathering' && event.selected.length < 2 && !step?.options.length) {
+      hideCardPreview();
+      blockedPlayNotice(cardPlayBlockReason(event.card) || 'Choose an adjacent Terrain to complete the Entanglement.');
+      return;
+    }
     if (!step || !step.options.length) {
       pendingEvent = null;
       syncEventTargets();
@@ -2652,6 +2672,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       || phaseBusy || !Array.isArray(gameState?.hand)) return;
     const cardId = event.card.card_id || event.card.id;
     if (!cardId) return;
+    hideCardPreview();
     const choices = { cells: [] };
     for (const choice of event.selected) {
       if (choice.type === 'cell') choices.cells.push(choice.key);
@@ -2759,6 +2780,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (rule[1] === 'seed_caravan') return stageFestival(card, handIndex, targetX, targetY);
     const cardId = card.card_id || card.id;
     if (!cardId) return;
+    hideCardPreview();
     const expected = epoch, roomId = room.id;
     const horizon = gameState.horizon || [];
     phaseBusy = true;
@@ -2794,7 +2816,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       renderTurnPhase();
     }
   }
-  async function playEntity(card, handIndex, targetX, targetY, draggedFlight = null) {
+  async function playEntity(card, handIndex, targetX, targetY) {
     if (!room || room.status !== 'active' || room.turn_player_id !== userId
       || room.turn_phase !== 'main' || room.main_played_entity || phaseBusy || pendingFestival
       || !Array.isArray(gameState?.hand)) return;
@@ -2803,7 +2825,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const cardId = card.card_id || card.id;
     if (!cardId) return;
     const placesEntity = action === 'place' || action === 'create_place';
-    const flight = placesEntity ? draggedFlight || captureEntityFlight(handIndex) : null;
+    const flight = placesEntity ? captureEntityFlight(handIndex) : null;
+    hideCardPreview();
     const entryEffects = {
       'Battery Orchard': 'when placed, add 2 lumens on terrain under this entity.',
       'Wood Wide Web': 'when placed, draw 1 card for each different adjacent terrain.',
@@ -2941,128 +2964,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     syncEventTargets();
     void playEntity(entity.card, entity.handIndex, column, row);
   }
-  function enableCardDrag(button, card, handIndex) {
-    let drag = null, suppressClick = false;
-    const isEntity = card.card_type === 'Entity';
-    const rule = isEntity ? null : eventSupport(card);
-    const boardWrap = root.querySelector('.play-game-board-wrap');
-    const pointInside = (rect, x, y) => x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
-    const targetAt = (x, y) => Array.from($('game-board').children).find(cell =>
-      cell.dataset.key && pointInside(cell.getBoundingClientRect(), x, y));
-    const clearDragTarget = () => {
-      boardWrap.querySelector('.is-event-drag-target')?.classList.remove('is-event-drag-target');
-    };
-    button.classList.add('is-draggable-card');
-    button.setAttribute('aria-label', isEntity
-      ? `Preview ${card.title || 'Entity'}; drag to compatible Terrain to Place or an empty space to Shape`
-      : `Preview ${card.title || 'Event'}; drag toward the table to Evoke, or press E`);
-    button.addEventListener('pointerdown', event => {
-      if (event.button !== 0 || !event.isPrimary) return;
-      drag = { pointerId: event.pointerId, x: event.clientX, y: event.clientY, ghost: null };
-      button.setPointerCapture(event.pointerId);
-    });
-    button.addEventListener('pointermove', event => {
-      if (!drag || event.pointerId !== drag.pointerId) return;
-      const dx = event.clientX - drag.x, dy = event.clientY - drag.y;
-      if (!drag.ghost && Math.hypot(dx, dy) < 8) return;
-      if (!drag.ghost) {
-        if (drag.blocked) return;
-        const reason = cardPlayBlockReason(card);
-        if (reason) {
-          drag.blocked = true;
-          blockedPlayNotice(reason);
-          return;
-        }
-        const bounds = button.getBoundingClientRect();
-        const boardCard = $('game-board').firstElementChild?.getBoundingClientRect();
-        const ghostWidth = boardCard?.width || bounds.width;
-        const ghostHeight = boardCard?.height || bounds.height;
-        const ghost = button.cloneNode(true);
-        ghost.removeAttribute('aria-label');
-        ghost.setAttribute('aria-hidden', 'true');
-        ghost.classList.add('play-event-drag-ghost');
-        ghost.style.width = `${ghostWidth}px`;
-        ghost.style.height = `${ghostHeight}px`;
-        const sourceCanvas = button.querySelector('canvas');
-        const ghostCanvas = ghost.querySelector('canvas');
-        if (sourceCanvas && ghostCanvas && !sourceCanvas.hidden && sourceCanvas.width) {
-          ghostCanvas.width = sourceCanvas.width;
-          ghostCanvas.height = sourceCanvas.height;
-          ghostCanvas.getContext('2d').drawImage(sourceCanvas, 0, 0);
-        }
-        document.body.append(ghost);
-        drag.ghost = ghost;
-        drag.offsetX = (drag.x - bounds.left) * ghostWidth / bounds.width;
-        drag.offsetY = (drag.y - bounds.top) * ghostHeight / bounds.height;
-        hideCardPreview();
-        button.classList.add('is-drag-source');
-        boardWrap.classList.add('is-event-drop-zone');
-      }
-      event.preventDefault();
-      drag.ghost.style.left = `${event.clientX - drag.offsetX}px`;
-      drag.ghost.style.top = `${event.clientY - drag.offsetY}px`;
-      clearDragTarget();
-      const target = targetAt(event.clientX, event.clientY);
-      if (target && (isEntity ? legalEntityAction(card, room?.board?.[target.dataset.key], target.dataset.key)
-        : rule && legalEventTarget(rule[1], room?.board?.[target.dataset.key], target.dataset.key))) {
-        target.classList.add('is-event-drag-target');
-      }
-    });
-    const finish = (event, cancelled = false) => {
-      if (!drag || event.pointerId !== drag.pointerId) return;
-      const moved = Boolean(drag.ghost || drag.blocked);
-      const blocked = drag.blocked;
-      const draggedFlight = isEntity && drag.ghost
-        ? { flight: drag.ghost, bounds: drag.ghost.getBoundingClientRect() } : null;
-      drag.ghost?.remove();
-      button.classList.remove('is-drag-source');
-      boardWrap.classList.remove('is-event-drop-zone');
-      clearDragTarget();
-      drag = null;
-      if (!moved) return;
-      suppressClick = true;
-      setTimeout(() => { suppressClick = false; }, 0);
-      if (cancelled || blocked) return;
-      const table = boardWrap.getBoundingClientRect();
-      const hand = $('game-self').getBoundingClientRect();
-      const droppedOnTable = event.clientY < hand.top - 8
-        && pointInside(table, event.clientX, event.clientY);
-      if (!droppedOnTable) return;
-      const reason = cardPlayBlockReason(card);
-      if (reason) { blockedPlayNotice(reason); return; }
-      const target = targetAt(event.clientX, event.clientY);
-      const key = target?.dataset.key;
-      const node = key ? room?.board?.[key] : null;
-      const targetDescription = rule?.[2];
-      if (key && (isEntity ? legalEntityAction(card, node, key)
-        : targetDescription && legalEventTarget(rule[1], node, key))) {
-        const [x, y] = key.split(',').map(Number);
-        if (isEntity) void playEntity(card, handIndex, x, y, draggedFlight);
-        else void evokeEvent(card, handIndex, x, y);
-      } else if (isEntity || (key && targetDescription)) {
-        pendingEvent = null;
-        pendingEntity = null;
-        syncEventTargets();
-        blockedPlayNotice(isEntity ? 'Choose an empty space or an unoccupied compatible Terrain.'
-          : `Invalid target. Choose ${targetDescription}.`);
-      } else {
-        void evokeEvent(card, handIndex);
-      }
-    };
-    button.addEventListener('pointerup', event => finish(event));
-    button.addEventListener('pointercancel', event => finish(event, true));
-    button.addEventListener('click', event => {
-      if (suppressClick) { event.preventDefault(); event.stopImmediatePropagation(); }
-    }, true);
-    button.addEventListener('keydown', event => {
-      if (isEntity || event.key.toLowerCase() !== 'e') return;
-      event.preventDefault();
-      const reason = cardPlayBlockReason(card);
-      if (reason) { blockedPlayNotice(reason); return; }
-      showCardPreview(card, button, handIndex);
-      void evokeEvent(card, handIndex);
-    });
-  }
   function renderGameHand() {
     const hand = openingDealPending() ? []
       : (pendingFestival?.hand || (Array.isArray(gameState?.hand) ? gameState.hand : [])).map(resolveHandCard);
@@ -3088,8 +2989,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       button.dataset.handIndex = String(index);
       button.dataset.customClickSound = '';
       button.setAttribute('aria-label', card.card_type === 'Event'
-        ? `Evoke ${card.title || 'Event'}` : `Preview ${card.title || 'card'}`);
-      if (card.card_type === 'Event') button.classList.add('is-playable-event');
+        ? `Evoke ${card.title || 'Event'}` : `Select ${card.title || 'Entity'}`);
       const previousCanvas = previousCanvases.get(cardSignature)?.shift();
       const arrivingCanvas = previousCanvas ? null : arrivingCardCanvases.get(cardSignature)?.shift();
       const canvas = previousCanvas || document.createElement('canvas');
@@ -3108,7 +3008,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       mulliganBadge.className = 'play-mulligan-order'; mulliganBadge.hidden = true;
       item.append(mulliganBadge);
       button.addEventListener('click', () => chooseHandCard(card, button, index));
-      if (card.card_type === 'Entity') enableCardDrag(button, card, index);
       if (canvas.hidden) void (async () => {
         const artwork = card.artwork_id ? await getArtworkUrl(card.artwork_id).catch(() => '') : '';
         const result = await renderPlayCard(canvas, card, artwork, () => serial === gameRenderSerial);
