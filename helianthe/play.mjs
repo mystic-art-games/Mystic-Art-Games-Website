@@ -1596,7 +1596,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (!effects.length || beginningOrder.length !== effects.length) return;
     const plan = beginningPlan();
     const entries = beginningPlanEntries(plan);
-    const skippedCount = entries.filter(entry => entry.skip || plan.get(entry.source)?.automaticSkip).length;
     if (entries.some(({ source }) => !plan.get(source)?.valid)) {
       eventNotice('Complete the required choices before resolving.');
       return;
@@ -1605,6 +1604,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const horizon = gameState?.horizon || [];
     phaseBusy = true;
     beginningTargetSource = null;
+    eventNotice('');
     renderBeginningEffects(); renderTurnPhase(); syncEventTargets();
     try {
       const result = await rpc('play_resolve_beginning_entity_effects', {
@@ -1615,8 +1615,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       if (expected !== epoch || room?.id !== roomId) return;
       await refreshRoom();
       if (expected === epoch && room?.id === roomId) await loadGameState(true);
-      const resolvedCount = effects.length - skippedCount;
-      eventNotice(`${resolvedCount} Entity effect${resolvedCount === 1 ? '' : 's'} resolved${skippedCount ? `; ${skippedCount} skipped` : ''}${result?.drawn ? `; drew ${result.drawn} card${result.drawn === 1 ? '' : 's'}` : ''}${result?.recalled ? `; recalled ${result.recalled} Event${result.recalled === 1 ? '' : 's'}` : ''}.`, true);
     } catch (error) {
       if (expected === epoch && room?.id === roomId) {
         await refreshRoom().catch(() => {});
