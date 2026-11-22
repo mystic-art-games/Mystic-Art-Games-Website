@@ -1456,8 +1456,13 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         controls.append(status);
       } else if (options.length) {
         const choose = document.createElement('button'); choose.type = 'button';
-        choose.textContent = options.includes(target) ? target : 'Choose Target';
-        if (options.includes(target)) choose.dataset.beginningTarget = target;
+        if (options.includes(target)) {
+          choose.textContent = target;
+          choose.dataset.beginningTarget = target;
+        } else {
+          choose.setAttribute('aria-label', `Choose target for ${effect.card.title}`);
+          choose.innerHTML = '<svg aria-hidden="true" width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="display:block"><circle cx="10" cy="10" r="6"/><path d="M10 1.5v4m0 9v4m-8.5-8.5h4m9 0h4"/><circle cx="10" cy="10" r="1" fill="currentColor" stroke="none"/></svg>';
+        }
         choose.disabled = phaseBusy;
         choose.addEventListener('click', () => {
           beginningTargetSource = beginningTargetSource === source ? null : source;
