@@ -1,4 +1,4 @@
-import { extendedEventRules, extendedKinds, extendedEventStep } from './play-extended-events.mjs?v=4';
+import { extendedEventRules, extendedKinds, extendedEventStep } from './play-extended-events.mjs?v=5';
 import { entityEffectKind, entityEffectStep } from './play-entity-effects.mjs?v=2';
 
 const terrainFullArtUrl = terrain => new URL(`./assets/Terrain_${terrain}_Full_Art.png`, import.meta.url).href;
@@ -778,6 +778,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   function syncEventTargets() {
     const beginningOptions = beginningTargetSource ? beginningPlan().get(beginningTargetSource)?.options : null;
+    const targetsEntity = pendingEvent?.extended ? pendingEvent.step.targetsEntity
+      : pendingEvent && !pendingEvent.nextKeys && ['dissolve_entity', 'unprotect_entity', 'fertile_rain'].includes(pendingEvent.rule[1]);
     for (const cell of $('game-board').children) {
       const node = room?.board?.[cell.dataset.key];
       const legal = Boolean(cell.dataset.key && (
@@ -790,6 +792,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       cell.classList.toggle('is-event-target', legal);
       const entityInteraction = legal && node?.entity;
       cell.classList.toggle('is-entity-target', Boolean(entityInteraction));
+      cell.classList.toggle('is-entity-only-target', Boolean(entityInteraction && targetsEntity));
       if (legal) { cell.tabIndex = 0; cell.setAttribute('role', 'button'); }
       else { cell.removeAttribute('tabindex'); cell.removeAttribute('role'); }
     }
