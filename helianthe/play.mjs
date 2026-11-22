@@ -185,7 +185,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         <div class="play-hand-notices">
           <div id="play-opening-choice" class="play-opening-choice" role="status" hidden><strong id="play-opening-choice-message"></strong><div id="play-opening-choice-actions"><button id="play-opening-choose-self" type="button">I start</button><button id="play-opening-choose-opponent" type="button">Opponent starts</button></div></div>
           <div id="play-opening-mulligan" class="play-opening-choice play-opening-mulligan" role="status" aria-live="polite" hidden><strong id="play-opening-mulligan-message"></strong><p id="play-opening-mulligan-instructions" hidden>Select cards in the order they should go to the bottom of your Horizon. Then draw the same number.</p><div id="play-opening-mulligan-actions" hidden><button id="play-opening-mulligan-keep" type="button">Keep</button><button id="play-opening-mulligan-confirm" type="button" hidden>Replace selected cards</button></div></div>
-          <div id="play-game-event-notice" class="play-game-event-notice" role="status" aria-live="polite" hidden><span id="play-game-event-notice-text"></span><button id="play-game-event-notice-close" type="button" aria-label="Dismiss message" hidden>×</button></div>
+          <div id="play-game-event-notice" class="play-game-event-notice" role="status" aria-live="polite" hidden><span id="play-game-event-notice-text"></span><button id="play-game-event-notice-cancel" type="button" hidden>Cancel</button><button id="play-game-event-notice-close" type="button" aria-label="Dismiss message" hidden>×</button></div>
           <div id="play-game-discard-bar" class="play-game-discard-bar" hidden><strong id="play-game-discard-text" role="status" aria-live="polite"></strong><button id="play-game-confirm-discard" type="button" disabled>Confirm Discard</button></div>
         </div>
         <div class="play-game-hand-wrap"><p id="play-game-loading" role="status">Preparing the opening hands…</p><div id="play-game-hand" class="play-game-hand"></div></div>
@@ -537,12 +537,23 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     notice.classList.toggle('error', Boolean(text && error));
     notice.classList.toggle('is-message', Boolean(text && dismissible));
     $('game-event-notice-close').hidden = !text || !dismissible;
+    $('game-event-notice-cancel').hidden = !text || temporary || dismissible
+      || !(beginningTargetSource || pendingEvent || pendingEntity);
     if (text && temporary) eventNoticeTimer = setTimeout(() => { notice.hidden = true; eventNoticeTimer = null; }, duration);
   }
   function blockedPlayNotice(reason) {
     eventNotice(reason, true, false, false, 2000);
   }
   $('game-event-notice-close').addEventListener('click', () => eventNotice(''));
+  function cancelTargetSelection() {
+    if (beginningTargetSource) {
+      beginningTargetSource = null;
+      eventNotice(''); renderBeginningEffects(); syncEventTargets();
+    } else {
+      hideCardPreview();
+    }
+  }
+  $('game-event-notice-cancel').addEventListener('click', cancelTargetSelection);
   function eventNeighbors(key) {
     const [x, y] = key.split(',').map(Number);
     return [[x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]]
@@ -1857,11 +1868,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     }
     if (event.key === 'Escape' && !root.querySelector('.play-event-choice-dialog[open]')) {
       for (const menu of root.querySelectorAll('.play-table-menu[open]')) menu.open = false;
-      if (beginningTargetSource) {
-        beginningTargetSource = null;
-        eventNotice(''); renderBeginningEffects(); syncEventTargets();
-      } else if (pendingFestival && !phaseBusy) cancelFestival();
-      else hideCardPreview();
+      if (pendingFestival && !phaseBusy) cancelFestival();
+      else cancelTargetSelection();
     }
   });
   function message(text = '', error = false) {
