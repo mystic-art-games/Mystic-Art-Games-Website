@@ -100,16 +100,8 @@ const entityTargetSteps = {
   natural_habitat: [0], skyfire_pair: [0, 1], waterish_doppelganger: [0],
 };
 
-const entityTargetSteps = {
-  swap_entities: [0, 1], bubble_switch: [0], compost_front: [1], dematerialize: [0],
-  fertile_rain_any: [0], fungal_rainwood: [0], return_entity: [0], landshift: [0],
-  lilac_overgrowth: [0], liquid_protection: [0, 1], migration_wind_sails: [0],
-  natural_habitat: [0], skyfire_pair: [0, 1], waterish_doppelganger: [0],
-};
-
 export function extendedEventStep(kind, selected, context) {
   const step = eventStep(kind, selected, context);
-  if (step && entityTargetSteps[kind]?.includes(selected.length)) step.targetsEntity = true;
   if (step && entityTargetSteps[kind]?.includes(selected.length)) step.targetsEntity = true;
   if (step && selected.length === 0 && pairedEvents.has(kind)) {
     step.options = step.options.filter(({ value }) => eventStep(kind, [value], context)?.options.length);
