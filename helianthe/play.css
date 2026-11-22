@@ -544,16 +544,11 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
 .play-game-phase-list li.is-current .play-game-phase-marker { border-color: var(--play-turn-accent, #7ba98a); background: var(--play-turn-accent, #7ba98a); box-shadow: 0 0 0 2px #fff6d83d; }
 .play-game-phase-actions { display: grid; grid-template-areas: "action"; align-self: center; width: max-content; max-width: 100%; }
 .play-game-phase-actions[hidden] { display: none; }
-#play-game .play-game-next-phase, .play-game-phase-actions::before { grid-area: action; box-sizing: border-box; margin: 0; padding: .25rem .5rem; border-width: 1px; font: 700 .74rem/1.2 Nunito, sans-serif; white-space: nowrap; }
+#play-game .play-game-next-phase, .play-game-phase-actions::before { grid-area: action; box-sizing: border-box; margin: 0; padding: .4rem .75rem; border-width: 1px; font: 700 .82rem/1.2 Nunito, sans-serif; white-space: nowrap; }
 .play-game-phase-actions::before { content: 'Draw Instead'; visibility: hidden; border-style: solid; }
 .play-game-next-phase { width: 100%; border-radius: 7px; }
-#play-game-next-phase { background: #1b352bd9 !important; border-color: #123c2d !important; }
 .play-game-next-phase[hidden] { display: none; }
 .play-game-extra-draw[hidden] { display: none; }
-body:not(.dark-mode) button.play-game-extra-draw { border-color: #c39645 !important; background: linear-gradient(145deg, #f6dc8b, #e7bd5d 52%, #c9943e) !important; color: #3d2c10 !important; box-shadow: inset 1px 1px 0 #fff6d6, 0 2px 8px #81602044 !important; }
-body.dark-mode button.play-game-extra-draw { border-color: #e2c375 !important; background: linear-gradient(145deg, #e8cb77, #d3ad51 52%, #aa7d31) !important; color: #2d230e !important; box-shadow: inset 1px 1px 0 #fff0b877, 0 6px 16px #1c160b55 !important; }
-body:not(.dark-mode) button.play-game-extra-draw:hover:not(:disabled) { box-shadow: inset 1px 1px 0 #fff9e3, 0 5px 12px #81602055 !important; }
-body.dark-mode button.play-game-extra-draw:hover:not(:disabled) { box-shadow: inset 1px 1px 0 #fff1bf99, 0 6px 16px #1c160b77 !important; }
 @media (min-width: 901px) {
   .play-game-opponent-footer { padding-right: 3.3rem; }
   .play-game-opponent-footer .play-game-actions { position: absolute; z-index: 20; top: clamp(.3rem, 1vh, .7rem); right: 0; margin-top: 0; }
