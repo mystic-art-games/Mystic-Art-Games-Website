@@ -3552,7 +3552,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         : node?.fertilize ? `${node.fertilize.owner_id === userId ? 'Your' : "Opponent's"} Fertilize marker on empty space at row ${row + 1}, column ${column + 1}`
           : `${isCenter ? 'Center empty space' : 'Empty space'} at row ${row + 1}, column ${column + 1}`);
       cell.addEventListener('click', event => {
-        if (event.target.closest('.play-node-entity-card') && !cell.classList.contains('is-entity-target')) return;
+        const clickedEntity = Boolean(event.target.closest('.play-node-entity-card'));
+        if (cell.classList.contains('is-entity-only-target') && !clickedEntity) return;
+        if (clickedEntity && !cell.classList.contains('is-entity-target')) return;
         chooseBoardTarget(column, row);
       });
       cell.addEventListener('keydown', event => {
