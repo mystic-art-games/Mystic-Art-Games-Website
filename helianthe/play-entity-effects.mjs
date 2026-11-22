@@ -8,10 +8,14 @@ const placementRules = {
   'Heliotic Discharge': ['double', 'duplicate solar counters on one adjacent radiance terrain.'],
   'Heart of Aurelia': ['spend', 'remove 3 lumens from terrain under this entity to put shield counter on any terrain.'],
   'Impulse Transmittion': ['transfer', 'choose two radiance terrains. relocate radiance counters between them as you like.'],
+  'Helianthus Nursery': ['relocate_protection', 'choose any adjacent terrain. relocate protection from the chosen terrain to adjacent terrain to the chosen one. (remove protection if relocation is not possible). if this entity is fully surrounded with any terrains, dissolve entity from the chosen terrain.'],
+  'Memories of Atlantis': ['dissolve_recall', 'dissolve any flow entity to recall any entity from your archive to you hand. when shaped, you may protect any terrain.'],
+  'Sludge Bath': ['dissolve_adjacent', 'dissolve adjacent entity. when shaped, relocate any terrain to adjacent node.'],
 };
 const shapeRules = {
   'Depthcloak': ['unprotect', 'while this entity is on non-flow terrain, it counts as 2 toward your patron’s victory goal. when shaped, you may unprotect any terrain.'],
   'Memories of Atlantis': ['protect_any', 'dissolve any flow entity to recall any entity from your archive to you hand. when shaped, you may protect any terrain.'],
+  'Sludge Bath': ['relocate', 'dissolve adjacent entity. when shaped, relocate any terrain to adjacent node.'],
 };
 
 export function entityEffectKind(card, action) {
@@ -24,7 +28,7 @@ const boardKeys = Array.from({ length: 20 }, (_, index) => `${index % 5},${Math.
 const adjacent = (a, b) => Math.abs(Number(a[0]) - Number(b[0])) + Math.abs(Number(a[2]) - Number(b[2])) === 1;
 const lumens = node => Number(node?.lumens || 0);
 
-export function entityEffectStep(kind, board, source, choices) {
+export function entityEffectStep(kind, board, source, choices, archive = []) {
   const node = key => board[key] || {};
   const nearby = key => adjacent(source, key);
   const empty = key => key !== source && !node(key).terrain;
@@ -79,6 +83,25 @@ export function entityEffectStep(kind, board, source, choices) {
         key => present(key) && node(key).protected, true);
     case 'protect_any':
       return 'target' in choices ? null : cell('Choose Terrain to Protect', 'target', present, true);
+    case 'dissolve_adjacent':
+      return choices.target ? null : cell('Choose an adjacent Entity to Dissolve', 'target', key => nearby(key) && node(key).entity);
+    case 'dissolve_recall': {
+      const entities = new Map(archive.filter(card => card.card_type === 'Entity' && card.id)
+        .map(card => [card.id, card.title]));
+      const options = [...entities].map(([value, label]) => ({ label, value }));
+      if (!options.length) return null;
+      if (!choices.target) return cell('Choose a Flow Entity to Dissolve', 'target', key => key === source || node(key).entity?.terrain === 'Flow');
+      if (choices.recall || node(choices.target).protected) return null;
+      return { label: 'Choose an Entity to Recall from your Archive', field: 'recall', options };
+    }
+    case 'relocate_protection':
+      if (!choices.target) return cell('Choose an adjacent Terrain', 'target', key => nearby(key) && present(key));
+      if (choices.second || !node(choices.target).protected) return null;
+      return cell('Choose adjacent Terrain to receive Protection', 'second', key => adjacent(choices.target, key) && present(key));
+    case 'relocate':
+      if (!choices.target) return cell('Choose Terrain to relocate', 'target',
+        key => present(key) && boardKeys.some(destination => empty(destination) && adjacent(key, destination)));
+      return choices.second ? null : cell('Choose an adjacent empty Node', 'second', key => adjacent(choices.target, key) && empty(key));
     default:
       return null;
   }

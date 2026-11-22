@@ -1,5 +1,5 @@
 import { extendedEventRules, extendedKinds, extendedEventStep } from './play-extended-events.mjs?v=3';
-import { entityEffectKind, entityEffectStep } from './play-entity-effects.mjs?v=1';
+import { entityEffectKind, entityEffectStep } from './play-entity-effects.mjs?v=2';
 
 const terrainFullArtUrl = terrain => new URL(`./assets/Terrain_${terrain}_Full_Art.png`, import.meta.url).href;
 const defaultTableName = hostName => `${Array.from(String(hostName ?? '').trim() || 'Player').slice(0, 52).join("")}'s Table`;
@@ -2754,11 +2754,14 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     }, { once: true });
     dialog.showModal();
   }
-  async function chooseEntityEffect(kind, source) {
+  async function chooseEntityEffect(kind, source, terrain) {
     const choices = {};
-    const board = room.board || {};
-    for (let step = entityEffectStep(kind, board, source, choices); step?.options.length;
-      step = entityEffectStep(kind, board, source, choices)) {
+    const board = kind === 'relocate'
+      ? { ...room.board, [source]: { ...room.board?.[source], terrain } }
+      : room.board || {};
+    const archive = gameState?.archive || [];
+    for (let step = entityEffectStep(kind, board, source, choices, archive); step?.options.length;
+      step = entityEffectStep(kind, board, source, choices, archive)) {
       const options = step.optional ? [{ label: 'Skip this choice', value: null }, ...step.options] : step.options;
       const choice = await new Promise(resolve => chooseEventOption(step.label, options, resolve, () => resolve()));
       if (choice === undefined) return null;
@@ -2982,7 +2985,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (effectKind) {
       phaseBusy = true;
       renderTurnPhase();
-      try { choices = await chooseEntityEffect(effectKind, source); }
+      try { choices = await chooseEntityEffect(effectKind, source, entityShapeTerrain(card)); }
       finally { if (expected === epoch) { phaseBusy = false; renderTurnPhase(); } }
       if (expected !== epoch || room?.id !== roomId || room.turn_number !== turn) return;
       if (choices === null) { hideCardPreview(); return; }
@@ -3044,7 +3047,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       if (expected !== epoch || room?.id !== roomId) return;
       await refreshRoom();
       let entityDrawn = 0;
-      if (expected === epoch && room?.id === roomId && room.status === 'active') {
+      if (expected === epoch && room?.id === roomId && room.status === 'active' && effectKind !== 'dissolve_recall') {
         const handCount = room.host_id === userId ? room.host_hand_count : room.guest_hand_count;
         entityDrawn = Math.max(0, Math.min(horizon.length, Number(handCount) - previousHandCount + 1));
       }
