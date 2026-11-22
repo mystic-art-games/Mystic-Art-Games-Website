@@ -686,7 +686,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
           ? [{ value: 'protect', label: 'Protect' }, { value: 'crisis', label: 'Affect with Crisis' }]
           : kind === 'march_of_marshrooms' && !links.get(target)?.size
             ? eventNeighbors(target).filter(key => ['Flow', 'Radiance', 'Verdant'].includes(terrain.get(key)))
-              .map(key => ({ value: key, label: `${terrain.get(key)} · Node ${key}` }))
+              .map(key => ({ value: key, label: key }))
             : [];
         const valid = targetValid ? choices.length === 0 || choices.some(option => option.value === choice) : !target && options.length === 0;
         plan.set(source, { options, target, choices, choice, valid });
@@ -1393,7 +1393,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
             const select = document.createElement('select');
             select.setAttribute('aria-label', `${index ? 'Second' : 'First'} empty Verdant Terrain for ${effect.card.title}`);
             select.add(new Option(`${index ? 'Second' : 'First'} empty Verdant Terrain`, ''));
-            for (const key of terrainOptions) select.add(new Option(`Node ${key}`, key));
+            for (const key of terrainOptions) select.add(new Option(key, key));
             select.value = targets[index] || '';
             select.disabled = phaseBusy;
             select.addEventListener('change', () => {
@@ -1418,11 +1418,11 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         }
       } else if (!own) {
         const status = document.createElement('span');
-        status.textContent = options.includes(target) ? `Target: Node ${target}` : options.length ? 'Waiting for target' : unavailableText;
+        status.textContent = options.includes(target) ? target : options.length ? 'Waiting for target' : unavailableText;
         controls.append(status);
       } else if (options.length) {
         const choose = document.createElement('button'); choose.type = 'button';
-        choose.textContent = options.includes(target) ? `Node ${target}` : 'Choose Node';
+        choose.textContent = options.includes(target) ? target : 'Choose Target';
         choose.disabled = phaseBusy;
         choose.addEventListener('click', () => {
           beginningTargetSource = beginningTargetSource === source ? null : source;
@@ -1431,7 +1431,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         });
         controls.append(choose);
       } else if (target) {
-        const clear = document.createElement('button'); clear.type = 'button'; clear.textContent = 'Clear Node';
+        const clear = document.createElement('button'); clear.type = 'button'; clear.textContent = 'Clear Target';
         clear.disabled = phaseBusy;
         clear.addEventListener('click', () => { beginningTargets.delete(source); beginningChoices.delete(source); renderBeginningEffects(); void saveBeginningPlan(); });
         controls.append(clear);
