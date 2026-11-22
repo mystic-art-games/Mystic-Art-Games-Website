@@ -1462,14 +1462,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
           }
         }
       }
-      if (own && effect.optional) {
-        const toggle = document.createElement('button'); toggle.type = 'button';
-        toggle.textContent = skipped ? 'Restore' : 'Skip';
-        toggle.setAttribute('aria-label', `${skipped ? 'Restore' : 'Skip'} ${effect.card.title} this turn`);
-        toggle.disabled = phaseBusy;
-        toggle.addEventListener('click', () => moveBeginningEffect(source, !skipped));
-        controls.append(toggle);
-      }
       row.append(heading, controls);
       row.addEventListener('pointerenter', event => {
         if (event.pointerType === 'mouse' && !row.classList.contains('is-dragging')) showBeginningConnector(row, source);
