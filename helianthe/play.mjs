@@ -94,6 +94,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   const gameLogPageSize = 120;
   let gameLogKey = '', gameLogRevision = null, gameLogRequest = null, gameLogRetryAt = 0;
   let gameLogEntries = [], localGameLog = [], gameLogHasOlder = false, gameLogError = '';
+  const loggedHandPrompts = new Map();
   let followGameLog = true;
   let unreadGameLogCount = 0;
   let archiveGalleryObserver = null;
@@ -322,6 +323,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     gameLogKey = key;
     gameLogEntries = [];
     localGameLog = [];
+    loggedHandPrompts.clear();
     gameLogRevision = null;
     gameLogRequest = null;
     gameLogRetryAt = 0;
@@ -475,6 +477,17 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (!followGameLog) unreadGameLogCount++;
     renderGameLog();
   }
+  function logHandPrompt(panel, text) {
+    if (!text || panel.hidden) {
+      loggedHandPrompts.delete(panel);
+      return;
+    }
+    if (inLobby || $('game').hidden || room?.status !== 'active' || !matchLogKey()) return;
+    syncGameLogScope();
+    if (loggedHandPrompts.get(panel) === text) return;
+    loggedHandPrompts.set(panel, text);
+    logPrivateNotice(text);
+  }
   async function loadGameLog(older = false) {
     syncGameLogScope();
     if (!gameLogKey || gameLogRequest || Date.now() < gameLogRetryAt) return;
@@ -510,8 +523,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (gameLogRevision !== room.revision) void loadGameLog();
   }
   $('game-log-older').addEventListener('click', () => void loadGameLog(true));
-  function eventNotice(text, temporary = false, error = false, dismissible = false, duration = 4500, alreadyLogged = false) {
-    if (!alreadyLogged) logPrivateNotice(text);
+  function eventNotice(text, temporary = false, error = false, dismissible = false, duration = 4500) {
+    logPrivateNotice(text);
     if (eventNoticeTimer) clearTimeout(eventNoticeTimer);
     const notice = $('game-event-notice');
     $('game-event-notice-text').textContent = text || '';
@@ -716,19 +729,26 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (!required && !pendingFestival) discardSelections.clear();
     const bar = $('game-discard-bar');
     bar.hidden = required === 0 && !pendingFestival;
+    let prompt = '';
     if (pendingFestival) {
       const { card, discardCount, drawn } = pendingFestival;
       const choiceNeeded = discardCount > 0;
-      $('game-discard-text').textContent = choiceNeeded
-        ? `${card.title}: draw ${drawn.length}, then choose ${discardCount} to discard. Selected ${discardSelections.size}/${discardCount}. Press Esc to cancel.`
+      prompt = choiceNeeded
+        ? `${card.title}: draw ${drawn.length}, then choose ${discardCount} to discard.`
         : `${card.title}: no card remains to discard.`;
+      $('game-discard-text').textContent = choiceNeeded
+        ? `${prompt} Selected ${discardSelections.size}/${discardCount}. Press Esc to cancel.`
+        : prompt;
+      if (choiceNeeded) prompt += ' Press Esc to cancel.';
       $('game-confirm-discard').textContent = choiceNeeded ? 'Discard and Resolve' : 'Resolve Event';
       $('game-confirm-discard').disabled = phaseBusy || discardSelections.size !== discardCount;
     } else if (required) {
-      $('game-discard-text').textContent = `Discard ${required} card${required === 1 ? '' : 's'} so 7 remain. Selected ${discardSelections.size}/${required}.`;
+      prompt = `Discard ${required} card${required === 1 ? '' : 's'} so 7 remain.`;
+      $('game-discard-text').textContent = `${prompt} Selected ${discardSelections.size}/${required}.`;
       $('game-confirm-discard').textContent = 'Confirm Discard';
       $('game-confirm-discard').disabled = phaseBusy || discardSelections.size !== required;
     }
+    logHandPrompt(bar, prompt);
     for (const [index, item] of Array.from($('game-hand').children).entries()) {
       item.querySelector('.play-hand-card')?.classList.toggle('is-discard-selected', (required > 0 || pendingFestival) && discardSelections.has(index));
     }
@@ -878,6 +898,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       $('opening-choose-self').disabled = openingChoiceBusy || !gameState || openingDealPending();
       $('opening-choose-opponent').disabled = openingChoiceBusy || !gameState || openingDealPending();
     }
+    logHandPrompt(choice, $('opening-choice-message').textContent);
     if (!overlay.hidden && revealing && !openingRevealTimer && !openingRollBusy) {
       openingRevealTimer = setTimeout(() => {
         openingRevealTimer = null;
@@ -1013,14 +1034,20 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       const badge = item.querySelector('.play-mulligan-order');
       if (badge) { badge.hidden = !position; badge.textContent = String(position); }
     }
-    if (!active) return;
+    if (!active) {
+      logHandPrompt(panel, '');
+      return;
+    }
     const actorId = room.turn_phase === 'mulligan_first' ? room.turn_player_id
       : room.turn_player_id === room.host_id ? room.guest_id : room.host_id;
     const own = actorId === userId;
-    $('opening-mulligan-message').textContent = own
+    const message = own
       ? room.turn_phase === 'mulligan_first' ? 'You start. Choose your mulligan.' : 'Your mulligan decision.'
       : 'Your opponent is making their mulligan decision.';
-    $('opening-mulligan-instructions').hidden = !own;
+    $('opening-mulligan-message').textContent = message;
+    const instructions = $('opening-mulligan-instructions');
+    instructions.hidden = !own;
+    logHandPrompt(panel, own ? `${message} ${instructions.textContent}` : message);
     $('opening-mulligan-actions').hidden = !own || !gameState || openingDealPending();
     $('opening-mulligan-keep').hidden = mulliganOrder.length > 0;
     $('opening-mulligan-confirm').hidden = mulliganOrder.length === 0;
@@ -1392,7 +1419,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       await refreshRoom();
       if (expected === epoch && room?.id === roomId) await loadGameState(true);
       const resolvedCount = effects.length - beginningSkipped.size;
-      eventNotice(`${resolvedCount} Entity effect${resolvedCount === 1 ? '' : 's'} resolved${beginningSkipped.size ? `; ${beginningSkipped.size} skipped` : ''}${result?.drawn ? `; drew ${result.drawn} card${result.drawn === 1 ? '' : 's'}` : ''}${result?.recalled ? `; recalled ${result.recalled} Event${result.recalled === 1 ? '' : 's'}` : ''}.`, true, false, false, 4500, true);
+      eventNotice(`${resolvedCount} Entity effect${resolvedCount === 1 ? '' : 's'} resolved${beginningSkipped.size ? `; ${beginningSkipped.size} skipped` : ''}${result?.drawn ? `; drew ${result.drawn} card${result.drawn === 1 ? '' : 's'}` : ''}${result?.recalled ? `; recalled ${result.recalled} Event${result.recalled === 1 ? '' : 's'}` : ''}.`, true);
     } catch (error) {
       if (expected === epoch && room?.id === roomId) {
         await refreshRoom().catch(() => {});
@@ -2151,7 +2178,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       await refreshRoom();
       if (expected === epoch && room?.id === roomId) await loadGameState(true);
       if (expected === epoch && room?.id === roomId && discardFlights.size) await archivePreviews.self.ready;
-      if (expected === epoch && room?.id === roomId) eventNotice(`${festival.card.title} evoked · drew ${result?.drawn || 0}${result?.discarded ? ` · discarded ${result.discarded}` : ''}.`, true, false, false, 4500, true);
+      if (expected === epoch && room?.id === roomId) eventNotice(`${festival.card.title} evoked · drew ${result?.drawn || 0}${result?.discarded ? ` · discarded ${result.discarded}` : ''}.`, true);
     } catch (error) {
       if (expected === epoch && room?.id === roomId) {
         pendingFestival = null;
@@ -2621,7 +2648,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       if (expected !== epoch || room?.id !== roomId) return;
       await refreshRoom();
       if (expected === epoch && room?.id === roomId) await loadGameState(true);
-      if (expected === epoch && room?.id === roomId) eventNotice(`${result?.title || event.card.title} evoked${result?.drawn ? ` · drew ${result.drawn}` : ''}.`, true, false, false, 4500, true);
+      if (expected === epoch && room?.id === roomId) eventNotice(`${result?.title || event.card.title} evoked${result?.drawn ? ` · drew ${result.drawn}` : ''}.`, true);
     } catch (error) {
       if (expected === epoch && room?.id === roomId) {
         await refreshRoom().catch(() => {});
@@ -2727,7 +2754,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       if (expected !== epoch || room?.id !== roomId) return;
       await refreshRoom();
       if (expected === epoch && room?.id === roomId) await loadGameState(true);
-      if (expected === epoch && room?.id === roomId) eventNotice(`${result?.title || card.title} evoked${result?.drawn ? ` · drew ${result.drawn}` : ''}${result?.applied ? ' · board updated' : ''}.`, true, false, false, 4500, true);
+      if (expected === epoch && room?.id === roomId) eventNotice(`${result?.title || card.title} evoked${result?.drawn ? ` · drew ${result.drawn}` : ''}${result?.applied ? ' · board updated' : ''}.`, true);
     } catch (error) {
       if (expected === epoch && room?.id === roomId) {
         await refreshRoom().catch(() => {});
@@ -2810,7 +2837,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
             ? `${result?.title || card.title} placed · drew ${entityDrawn} card${entityDrawn === 1 ? '' : 's'} for Entanglements.`
             : knownEntryEffect
               ? `${result?.title || card.title} placed · effect resolved${entityDrawn ? ` · drew ${entityDrawn}` : ''}.`
-            : `${result?.title || card.title} placed on ${result?.terrain || room.board?.[`${targetX},${targetY}`]?.terrain} Terrain. Card-specific effects are not automated yet.`, true, false, false, 4500, true);
+            : `${result?.title || card.title} placed on ${result?.terrain || room.board?.[`${targetX},${targetY}`]?.terrain} Terrain. Card-specific effects are not automated yet.`, true);
     } catch (error) {
       if (expected === epoch && room?.id === roomId) {
         await refreshRoom().catch(() => {});
