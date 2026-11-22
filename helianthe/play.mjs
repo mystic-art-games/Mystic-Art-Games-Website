@@ -1246,10 +1246,14 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     }
     renderBeginningEffects(); syncEventTargets(); void saveBeginningPlan();
   }
+  let beginningConnectorDestination;
   function clearBeginningConnector() {
     $('game-beginning-connector').removeAttribute('d');
+    beginningConnectorDestination?.classList.remove('is-beginning-connector-destination');
+    beginningConnectorDestination = null;
   }
   function showBeginningConnector(origin, key, target = false) {
+    clearBeginningConnector();
     const cell = $('game-board').querySelector(`[data-key="${CSS.escape(key)}"]`);
     const card = target ? cell : cell?.querySelector('.play-node-entity-card');
     if (!card) return;
@@ -1274,6 +1278,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       path = `M ${x1} ${start} C ${x1} ${middle}, ${x2} ${middle}, ${x2} ${end}`;
     }
     $('game-beginning-connector').setAttribute('d', path);
+    beginningConnectorDestination = card;
+    card.classList.add('is-beginning-connector-destination');
   }
   $('game-beginning-effects').addEventListener('scroll', clearBeginningConnector, true);
   window.addEventListener('resize', clearBeginningConnector);
