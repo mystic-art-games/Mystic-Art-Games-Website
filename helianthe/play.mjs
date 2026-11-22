@@ -132,7 +132,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       <div class="play-game-board-wrap">
       <div class="play-game-left-stack">
         <aside id="play-game-card-preview" class="play-game-card-preview" aria-label="Card preview" hidden><button id="play-game-card-preview-close" class="play-game-card-preview-close action-delete" type="button" aria-label="Close card preview">×</button><canvas id="play-game-card-preview-canvas" hidden></canvas><img id="play-game-card-preview-image" alt="" hidden><span id="play-game-card-preview-fallback" class="play-hand-fallback"></span></aside>
-        <aside id="play-game-beginning-effects" class="play-beginning-effects" aria-label="Beginning of Turn Entity effects" hidden><strong>Beginning of Turn effects</strong><section class="play-beginning-zone" aria-labelledby="play-game-beginning-active-title"><h3 id="play-game-beginning-active-title">Resolve in this order</h3><ol id="play-game-beginning-list"></ol></section><section class="play-beginning-zone play-beginning-skipped-zone" aria-labelledby="play-game-beginning-skipped-title"><h3 id="play-game-beginning-skipped-title">Skip this turn</h3><ol id="play-game-beginning-skipped-list"></ol></section><button id="play-game-resolve-beginning" type="button">Resolve Effects</button></aside>
+        <aside id="play-game-beginning-effects" class="play-beginning-effects" aria-label="Beginning of Turn Entity effects" hidden><strong>Beginning of Turn effects</strong><section class="play-beginning-zone" aria-labelledby="play-game-beginning-active-title"><h3 id="play-game-beginning-active-title">Resolve in this order</h3><ol id="play-game-beginning-list"></ol></section><section class="play-beginning-zone play-beginning-skipped-zone" aria-labelledby="play-game-beginning-skipped-title"><h3 id="play-game-beginning-skipped-title">Skip this turn</h3><ol id="play-game-beginning-skipped-list"></ol></section></aside>
       </div>
       <svg class="play-beginning-connector" aria-hidden="true"><path id="play-game-beginning-connector"></path></svg>
       <div id="play-game-beginning-tooltip" class="play-beginning-tooltip" aria-hidden="true" hidden></div>
@@ -1310,7 +1310,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const saved = room.beginning_effects_plan;
     const shared = saved?.turn === room.turn_number && saved?.player_id === room.turn_player_id
       && Array.isArray(saved.effects) ? saved.effects : null;
-    $('game-resolve-beginning').hidden = !own;
     const turnKey = `${room.id}:${room.turn_number}`;
     const sources = new Set(effects.map(effect => effect.source));
     if (turnKey !== beginningTurnKey) {
@@ -1541,7 +1540,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     });
     $('game-beginning-list').replaceChildren(...rows.filter(row => !row.classList.contains('is-skipped')));
     $('game-beginning-skipped-list').replaceChildren(...rows.filter(row => row.classList.contains('is-skipped')));
-    $('game-resolve-beginning').disabled = phaseBusy || beginningOrder.some(source => !plan.get(source)?.valid);
   }
   function beginningPlanEntries(plan = beginningPlan()) {
     return beginningOrder.map(source => ({ source,
@@ -1611,7 +1609,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       renderBeginningEffects(); renderTurnPhase(); syncEventTargets();
     }
   }
-  $('game-resolve-beginning').addEventListener('click', () => void resolveBeginningEffects());
   for (const [id, skip] of [['game-beginning-list', false], ['game-beginning-skipped-list', true]]) {
     const zone = $(id).closest('.play-beginning-zone');
     zone.addEventListener('dragover', event => { event.preventDefault(); event.dataTransfer.dropEffect = 'move'; });
