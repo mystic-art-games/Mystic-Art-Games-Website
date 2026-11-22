@@ -134,6 +134,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         <aside id="play-game-card-preview" class="play-game-card-preview" aria-label="Card preview" hidden><button id="play-game-card-preview-close" class="play-game-card-preview-close action-delete" type="button" aria-label="Close card preview">×</button><canvas id="play-game-card-preview-canvas" hidden></canvas><img id="play-game-card-preview-image" alt="" hidden><span id="play-game-card-preview-fallback" class="play-hand-fallback"></span></aside>
         <aside id="play-game-beginning-effects" class="play-beginning-effects" aria-label="Beginning of Turn Entity effects" hidden><strong>Beginning of Turn effects</strong><p id="play-game-beginning-opponent-status" hidden>Opponent is choosing the order, targets, and optional effects to skip.</p><section class="play-beginning-zone" aria-labelledby="play-game-beginning-active-title"><h3 id="play-game-beginning-active-title">Resolve in this order</h3><ol id="play-game-beginning-list"></ol></section><section class="play-beginning-zone play-beginning-skipped-zone" aria-labelledby="play-game-beginning-skipped-title"><h3 id="play-game-beginning-skipped-title">Skip this turn</h3><ol id="play-game-beginning-skipped-list"></ol></section><button id="play-game-resolve-beginning" type="button">Resolve Effects</button></aside>
       </div>
+      <svg class="play-beginning-connector" aria-hidden="true"><path id="play-game-beginning-connector"></path></svg>
       <div class="play-game-table">
         <div class="play-game-zones-left">
           <div class="play-game-zone play-game-zone-opponent-patron"><div id="play-game-opponent-patron-slot" class="play-game-patron-slot" role="img" aria-label="Opponent's Patron"><canvas id="play-game-opponent-patron" hidden></canvas><span id="play-game-opponent-patron-fallback" class="play-game-patron-fallback" aria-hidden="true"></span></div></div>
@@ -1245,7 +1246,38 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     }
     renderBeginningEffects(); syncEventTargets(); void saveBeginningPlan();
   }
+  function clearBeginningConnector() {
+    $('game-beginning-connector').removeAttribute('d');
+  }
+  function showBeginningConnector(row, source) {
+    const card = $('game-board').querySelector(`[data-key="${CSS.escape(source)}"] .play-node-entity-card`);
+    if (!card) return;
+    const from = row.getBoundingClientRect();
+    const to = card.getBoundingClientRect();
+    let path;
+    if (from.right <= to.left || to.right <= from.left) {
+      const direction = from.right <= to.left ? 1 : -1;
+      const start = direction === 1 ? from.right : from.left;
+      const end = direction === 1 ? to.left : to.right;
+      const middle = (start + end) / 2;
+      const y1 = (from.top + from.bottom) / 2;
+      const y2 = (to.top + to.bottom) / 2;
+      path = `M ${start} ${y1} C ${middle} ${y1}, ${middle} ${y2}, ${end} ${y2}`;
+    } else {
+      const above = to.top < from.top;
+      const start = above ? from.top : from.bottom;
+      const end = above ? to.bottom : to.top;
+      const middle = (start + end) / 2;
+      const x1 = (from.left + from.right) / 2;
+      const x2 = (to.left + to.right) / 2;
+      path = `M ${x1} ${start} C ${x1} ${middle}, ${x2} ${middle}, ${x2} ${end}`;
+    }
+    $('game-beginning-connector').setAttribute('d', path);
+  }
+  $('game-beginning-effects').addEventListener('scroll', clearBeginningConnector, true);
+  window.addEventListener('resize', clearBeginningConnector);
   function renderBeginningEffects() {
+    clearBeginningConnector();
     const effects = beginningEffects();
     const panel = $('game-beginning-effects');
     panel.hidden = effects.length === 0;
@@ -1317,7 +1349,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       row.className = `play-beginning-effect${beginningTargetSource === source ? ' is-choosing' : ''}${skipped ? ' is-skipped' : ''}`;
       row.draggable = own && !phaseBusy;
       const heading = document.createElement('div'); heading.className = 'play-beginning-effect-heading';
-      const title = document.createElement('strong'); title.textContent = `${effect.card.title} · ${source}`;
+      const title = document.createElement('strong'); title.textContent = effect.card.title;
       if (own) {
         const handle = document.createElement('span'); handle.textContent = '⋮⋮'; handle.setAttribute('aria-hidden', 'true');
         heading.append(handle);
@@ -1455,7 +1487,12 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         controls.append(move);
       }
       row.append(heading, controls);
+      row.addEventListener('pointerenter', event => {
+        if (event.pointerType === 'mouse' && !row.classList.contains('is-dragging')) showBeginningConnector(row, source);
+      });
+      row.addEventListener('pointerleave', clearBeginningConnector);
       if (own) row.addEventListener('dragstart', event => {
+        clearBeginningConnector();
         event.dataTransfer.effectAllowed = 'move';
         event.dataTransfer.setData('text/plain', source);
         row.classList.add('is-dragging');
