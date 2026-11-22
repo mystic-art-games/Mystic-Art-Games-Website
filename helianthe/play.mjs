@@ -2532,10 +2532,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (!target) return;
     const terrain = target.getBoundingClientRect();
     if (!terrain.width || !terrain.height) return;
-    const offset = parseFloat(getComputedStyle(target).getPropertyValue('--play-entity-offset')) / 100;
+    const offset = parseFloat(getComputedStyle(target).getPropertyValue('--play-entity-offset')) || 0;
     const landing = target.querySelector('.play-node-entity-card')?.getBoundingClientRect() ?? {
-      left: terrain.left + target.clientLeft + target.clientWidth * offset,
-      top: terrain.top + target.clientTop + target.clientHeight * offset,
+      left: terrain.left + target.clientLeft + offset,
+      top: terrain.top + target.clientTop + offset,
       width: target.clientWidth,
       height: target.clientHeight,
     };

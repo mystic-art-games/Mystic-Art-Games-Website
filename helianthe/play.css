@@ -179,7 +179,7 @@ body.dark-mode .play-deck-field.is-locked select { border-color: #596d5d; backgr
 .play-game-archive-card canvas[hidden], .play-game-archive-card span[hidden] { display: none; }
 .play-game-archive-card span { padding: .3rem; }
 .play-game-node { position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: .15rem; min-width: 0; min-height: 0; padding: .2rem; overflow: hidden; border: 1px dashed #8c929dcc; border-radius: 6px; background: #f8e8c814; text-align: center; }
-.play-game-node { --play-entity-offset: 8%; }
+.play-game-node { --play-entity-offset: 7px; }
 .play-game-node.has-entity { z-index: 2; overflow: visible; }
 .play-node-entity-card { position: absolute; z-index: 2; top: var(--play-entity-offset); left: var(--play-entity-offset); box-sizing: border-box; width: 100%; height: 100%; overflow: hidden; border: 1px solid #e5d9bb; border-radius: 5px; background: #e9ece1; box-shadow: 0 5px 10px #0b251bbb; cursor: default; }
 .play-game-node.is-entity-target .play-node-entity-card { cursor: pointer; }
