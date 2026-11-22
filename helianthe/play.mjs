@@ -1,5 +1,6 @@
 import { extendedEventRules, extendedKinds, extendedEventStep } from './play-extended-events.mjs?v=2';
 
+const terrainFullArtUrl = terrain => new URL(`./assets/Terrain_${terrain}_Full_Art.png`, import.meta.url).href;
 const defaultTableName = hostName => `${Array.from(String(hostName ?? '').trim() || 'Player').slice(0, 52).join("")}'s Table`;
 
 export function playerOnline(timestamp, now = Date.now()) {
@@ -2560,25 +2561,50 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     dialog.setAttribute('aria-label', title);
     const form = document.createElement('form');
     form.method = 'dialog';
-    const label = document.createElement('label');
-    label.textContent = title;
-    const select = document.createElement('select');
-    for (const [index, option] of options.entries()) select.add(new Option(option.label, String(index)));
-    label.append(select);
-    const confirm = document.createElement('button');
-    confirm.value = 'confirm';
-    confirm.textContent = 'Confirm';
+    const terrainChoices = options.length > 0 && options.every(({ value }) => terrainTypes.includes(value.terrain));
+    let select;
+    if (terrainChoices) {
+      dialog.classList.add('play-terrain-choice-dialog');
+      const heading = document.createElement('h2');
+      heading.textContent = title;
+      const cards = document.createElement('div');
+      cards.className = 'play-terrain-choices';
+      for (const [index, option] of options.entries()) {
+        const card = document.createElement('button');
+        card.type = 'submit';
+        card.value = String(index);
+        const art = document.createElement('img');
+        art.src = terrainFullArtUrl(option.value.terrain);
+        art.alt = '';
+        const caption = document.createElement('span');
+        caption.textContent = option.label;
+        card.append(art, caption);
+        cards.append(card);
+      }
+      form.append(heading, cards);
+    } else {
+      const label = document.createElement('label');
+      label.textContent = title;
+      select = document.createElement('select');
+      for (const [index, option] of options.entries()) select.add(new Option(option.label, String(index)));
+      label.append(select);
+      const confirm = document.createElement('button');
+      confirm.value = 'confirm';
+      confirm.textContent = 'Confirm';
+      form.append(label, confirm);
+    }
     const cancel = document.createElement('button');
     cancel.value = 'cancel';
     cancel.textContent = 'Cancel';
-    form.append(label, confirm, cancel);
+    form.append(cancel);
     dialog.append(form);
     root.append(dialog);
     const roomId = room.id, turn = room.turn_number;
     dialog.addEventListener('close', () => {
-      const chosen = options[Number(select.value)];
+      const index = select && dialog.returnValue === 'confirm' ? select.value : dialog.returnValue;
+      const chosen = /^\d+$/.test(index) ? options[Number(index)] : null;
       dialog.remove();
-      if (dialog.returnValue === 'confirm' && chosen && room?.id === roomId && room.turn_number === turn) {
+      if (chosen && room?.id === roomId && room.turn_number === turn) {
         onConfirm(chosen.value);
       }
     }, { once: true });
@@ -3294,7 +3320,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         cell.classList.add(`terrain-${node.terrain.toLowerCase()}`);
         cell._playTerrain = { id: `terrain:${node.terrain.toLowerCase()}`, title: node.terrain,
           card_type: 'Terrain', terrain: node.terrain, fullArtTerrain: true,
-          fullArtUrl: new URL(`./assets/Terrain_${node.terrain}_Full_Art.png`, import.meta.url).href };
+          fullArtUrl: terrainFullArtUrl(node.terrain) };
         if (node.entity) {
           cell.classList.add('has-entity');
           const entityCard = resolveGameCard(node.entity);
