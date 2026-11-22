@@ -88,7 +88,20 @@ function terrainStep(label, excluded) {
     .map(type => ({ label: type, value: { type: 'terrain', terrain: type } })) };
 }
 
-export function extendedEventStep(kind, selected, { board, archive, hand, eventIndex }) {
+const pairedEvents = new Set([
+  'swap_entities', 'bubble_switch', 'relocate_terrain', 'landshift', 'liquid_protection',
+  'migration_wind_sails', 'wave_of_change',
+]);
+
+export function extendedEventStep(kind, selected, context) {
+  const step = eventStep(kind, selected, context);
+  if (step && selected.length === 0 && pairedEvents.has(kind)) {
+    step.options = step.options.filter(({ value }) => eventStep(kind, [value], context)?.options.length);
+  }
+  return step;
+}
+
+function eventStep(kind, selected, { board, archive, hand, eventIndex }) {
   const cells = selected.filter(choice => choice.type === 'cell').map(choice => choice.key);
   const count = selected.length;
   const first = board?.[cells[0]] || {};

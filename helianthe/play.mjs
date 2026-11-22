@@ -1,4 +1,4 @@
-import { extendedEventRules, extendedKinds, extendedEventStep } from './play-extended-events.mjs?v=3';
+import { extendedEventRules, extendedKinds, extendedEventStep } from './play-extended-events.mjs?v=4';
 import { entityEffectKind, entityEffectStep } from './play-entity-effects.mjs?v=2';
 
 const terrainFullArtUrl = terrain => new URL(`./assets/Terrain_${terrain}_Full_Art.png`, import.meta.url).href;
@@ -2164,7 +2164,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     }
   });
   window.addEventListener('blur', hideHoveredCardPreview);
-  function cardPlayBlockReason(card) {
+  function cardPlayBlockReason(card, handIndex) {
     if (['mulligan_first', 'mulligan_second'].includes(room?.turn_phase)) return 'You can play cards after both players finish their mulligans.';
     if (room?.turn_player_id !== userId) return "You can play cards only on your turn.";
     if (room?.turn_phase !== 'main') return 'You can play cards only during your Main Phase.';
@@ -2180,17 +2180,27 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (card.card_type !== 'Event') return '';
     const support = eventSupport(card);
     if (!support) return unavailableEventReason(card);
-    if (support[1] === 'shared_canal_gathering'
-      && !extendedEventStep(support[1], [], { board: room.board })?.options.length) {
-      return 'Shared Canal Gathering needs an unoccupied, unentangled Symbiosis Terrain next to a different Terrain.';
-    }
-    if (card.title === 'Beacon Grid' && support[1] === 'lumens_two') {
-      const hasTarget = Array.from($('game-board').children).some(cell => cell.dataset.key
-        && legalEventTarget(support[1], room?.board?.[cell.dataset.key]));
-      if (!hasTarget) return card.title === 'Beacon Grid' ? 'Beacon Grid needs Radiance Terrain.'
-        : support[1] === 'fertilize_existing_draw' ? 'There is no fertilized empty space to choose.'
-          : support[1].startsWith('fertilize') ? 'There is no legal empty space to Fertilize.'
-            : `There is no legal target. This Event needs ${support[2]}.`;
+    return eventTargetBlockReason(support, handIndex);
+  }
+  function eventTargetBlockReason(rule, handIndex) {
+    const [, kind, targetLabel] = rule;
+    const board = room?.board || {};
+    if (['lumen_draw', 'fertilize_draw', 'protect_radiance_draw', 'restore_radiance_draw', 'restore_draw', 'seed_caravan'].includes(kind)) return '';
+    if (extendedKinds.has(kind)) {
+      if (['reclamation_pulse', 'terrestrial_reorientation'].includes(kind)) return '';
+      const step = extendedEventStep(kind, [], {
+        board, archive: gameState?.archive, hand: gameState?.hand, eventIndex: handIndex,
+      });
+      const recall = ['spark_discard_recall', 'sunken_archive'].includes(kind);
+      if ((step && !step.options.length) || (recall && !step)) {
+        return kind === 'lilac_overgrowth' ? 'Lilac Overgrowth needs an Entity adjacent to two Verdant Terrain cards.'
+          : 'There is no legal target for this Event.';
+      }
+    } else if (kind === 'recall_event') {
+      if (!gameState?.archive?.some(item => item.card_type === 'Event')) return 'There is no Event to Recall.';
+    } else if (targetLabel && !Array.from($('game-board').children).some(cell => cell.dataset.key
+      && legalEventTarget(kind, board[cell.dataset.key], cell.dataset.key))) {
+      return `There is no legal target. This Event needs ${targetLabel}.`;
     }
     return '';
   }
@@ -2239,7 +2249,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         playTableSound(selectCardSound);
         return;
       }
-      const reason = cardPlayBlockReason(card);
+      const reason = cardPlayBlockReason(card, handIndex);
       if (reason) { blockedPlayNotice(reason); return; }
       hideCardPreview();
       if (card.card_type === 'Entity') {
@@ -2806,6 +2816,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       pendingEvent = null;
       syncEventTargets();
       eventNotice('');
+      const reason = event.selected.length === 0 && eventTargetBlockReason(event.rule, event.handIndex);
+      if (reason) { blockedPlayNotice(reason); return; }
       void resolveExtendedEvent(event);
       return;
     }
@@ -2887,6 +2899,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       || room.turn_phase !== 'main' || phaseBusy || pendingFestival || !Array.isArray(gameState?.hand)) return;
     const rule = eventSupport(card);
     if (!rule) { eventNotice(unavailableEventReason(card)); return; }
+    if (targetX === null && targetY === null && targetCells === null) {
+      const reason = eventTargetBlockReason(rule, handIndex);
+      if (reason) { blockedPlayNotice(reason); return; }
+    }
     if (extendedKinds.has(rule[1])) return startExtendedEvent(card, handIndex, rule, targetX, targetY);
     if (rule[1] === 'draw_two_discard_one' || rule[1] === 'draw_two_discard_two') return stageFestival(card, handIndex);
     if (rule[1] === 'recall_event' && !targetCells) {
