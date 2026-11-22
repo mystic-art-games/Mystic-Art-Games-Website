@@ -2127,7 +2127,9 @@ body.dark-mode button:is(.action-cancel, .action-choose) {
 body:not(.dark-mode) button:is(.action-cancel, .action-choose):hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.06); box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .7), 0 5px 12px rgba(34, 98, 49, .28) !important; }
 body.dark-mode button:is(.action-cancel, .action-choose):hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.12); box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .34), 0 6px 16px rgba(0, 18, 12, .38) !important; }
 
-body:not(.dark-mode) button.action-add-save {
+body:not(.dark-mode) button.action-add-save,
+body.dark-mode button.action-add-save,
+body.dark-mode #sign-out {
   border-color: rgba(73, 120, 94, .55) !important;
   background: linear-gradient(145deg, rgba(64, 112, 79, .92), rgba(52, 117, 90, .9) 52%, rgba(38, 88, 71, .88)) !important;
   color: #fff !important;
@@ -2135,35 +2137,20 @@ body:not(.dark-mode) button.action-add-save {
   font-weight: 400;
   transition: transform .15s ease, filter .15s ease, box-shadow .15s ease;
 }
-body.dark-mode button.action-add-save,
-body.dark-mode #sign-out {
-  border-color: rgba(226, 246, 235, .34) !important;
-  background: linear-gradient(145deg, rgba(47, 92, 64, .86), rgba(42, 94, 65, .84) 52%, rgba(28, 70, 52, .88)) !important;
-  color: #eef8ed !important;
-  box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .28), 0 6px 16px rgba(0, 18, 12, .3) !important;
-  font-weight: 400;
-  transition: transform .15s ease, filter .15s ease, box-shadow .15s ease;
-}
-body:not(.dark-mode) button.action-add-save:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.06); box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .65), 0 5px 12px rgba(34, 98, 49, .28) !important; }
+body:not(.dark-mode) button.action-add-save:hover:not(:disabled),
 body.dark-mode button.action-add-save:hover:not(:disabled),
-body.dark-mode #sign-out:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.12); box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .34), 0 6px 16px rgba(0, 18, 12, .38) !important; }
+body.dark-mode #sign-out:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.06); box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .65), 0 5px 12px rgba(34, 98, 49, .28) !important; }
 
-body:not(.dark-mode) button.action-delete {
+body:not(.dark-mode) button.action-delete,
+body.dark-mode button.action-delete {
   border-color: rgba(166, 75, 67, .55) !important;
   background: linear-gradient(145deg, rgba(137, 38, 32, .86), rgba(176, 61, 52, .82) 46%, rgba(183, 65, 55, .76) 100%) !important;
   color: #fff !important;
   box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .72), 0 2px 8px rgba(125, 48, 40, .18) !important;
   transition: transform .15s ease, filter .15s ease, box-shadow .15s ease;
 }
-body.dark-mode button.action-delete {
-  border-color: rgba(224, 143, 132, .5) !important;
-  background: linear-gradient(145deg, rgba(84, 20, 21, .72), rgba(137, 35, 31, .66) 46%, rgba(153, 43, 36, .64) 100%) !important;
-  color: #ffe8e3 !important;
-  box-shadow: inset 1px 1px 0 rgba(255, 232, 227, .28), 0 6px 16px rgba(40, 10, 8, .3) !important;
-  transition: transform .15s ease, filter .15s ease, box-shadow .15s ease;
-}
-body:not(.dark-mode) button.action-delete:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.06); box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .82), 0 5px 12px rgba(125, 48, 40, .28) !important; }
-body.dark-mode button.action-delete:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.12); box-shadow: inset 1px 1px 0 rgba(255, 232, 227, .34), 0 6px 16px rgba(40, 10, 8, .38) !important; }
+body:not(.dark-mode) button.action-delete:hover:not(:disabled),
+body.dark-mode button.action-delete:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.06); box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .82), 0 5px 12px rgba(125, 48, 40, .28) !important; }
 
 /* Faction cards use the existing faction marks and a restrained glass tint. */
 #factions-view .faction-card { border-color: rgba(var(--faction-color), .36); background: linear-gradient(145deg, rgba(var(--faction-color), .29), rgba(var(--faction-color), .12) 78%), rgba(255, 255, 255, .24); backdrop-filter: blur(8px); }
