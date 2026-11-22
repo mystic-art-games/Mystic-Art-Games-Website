@@ -180,7 +180,7 @@ body.dark-mode .play-deck-field.is-locked select { border-color: #596d5d; backgr
 .play-game-archive-card span { padding: .3rem; }
 .play-game-node { position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: .15rem; min-width: 0; min-height: 0; padding: .2rem; overflow: hidden; border: 1px dashed #8c929dcc; border-radius: 6px; background: #f8e8c814; text-align: center; }
 .play-game-node.has-entity { z-index: 2; overflow: visible; }
-.play-node-entity-card { position: absolute; z-index: 2; top: 5px; left: 5px; box-sizing: border-box; width: 100%; height: 100%; overflow: hidden; border: 1px solid #e5d9bb; border-radius: 5px; background: #e9ece1; box-shadow: 0 5px 10px #0b251bbb; cursor: default; }
+.play-node-entity-card { position: absolute; z-index: 2; top: 0; left: 0; box-sizing: border-box; width: 100%; height: 100%; overflow: hidden; border: 1px solid #e5d9bb; border-radius: 5px; background: #e9ece1; box-shadow: 0 5px 10px #0b251bbb; cursor: default; }
 .play-game-node.is-entity-target .play-node-entity-card { cursor: pointer; }
 .play-node-entity-card.is-arriving { visibility: hidden; }
 .play-node-entity-card canvas { display: block; width: 100%; height: 100%; object-fit: fill; }
@@ -194,6 +194,7 @@ body.dark-mode .play-deck-field.is-locked select { border-color: #596d5d; backgr
 .play-game-node.terrain-flow { background: url('./assets/Terrain_Flow_Full_Art.png') center / cover; }
 .play-game-node.terrain-verdant { background: url('./assets/Terrain_Verdant_Full_Art.png') center / cover; }
 .play-game-node.terrain-radiance { background: url('./assets/Terrain_Radiance_Full_Art.png') center / cover; }
+.play-game-node.has-entity { background: none; }
 .play-game-node.is-fertilized:not(.terrain-center) { background: #17523a38; }
 .play-fertilize-token { display: block; width: 72%; max-width: 68px; aspect-ratio: 1; object-fit: contain; filter: drop-shadow(0 4px 7px #09251799); }
 .play-protection-token { position: absolute; z-index: 3; top: 50%; left: 50%; width: 36%; max-width: 38px; aspect-ratio: 1; object-fit: contain; transform: translate(-50%, -50%); filter: drop-shadow(0 2px 4px #09251799); pointer-events: none; }
@@ -330,7 +331,7 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
   #play-game:not(:has(.is-event-drop-zone)) .play-deck-stack:hover,
   .play-archive-browser-list li:hover > button { scale: 1.045; }
   #play-game:not(:has(.is-event-drop-zone)) .play-hand-card:hover:not(.is-drag-source) { scale: 1.035; }
-  .play-game-node:is(.terrain-symbiosis, .terrain-flow, .terrain-verdant, .terrain-radiance)::before {
+  .play-game-node:not(.has-entity):is(.terrain-symbiosis, .terrain-flow, .terrain-verdant, .terrain-radiance)::before {
     content: '';
     position: absolute;
     inset: 0;
