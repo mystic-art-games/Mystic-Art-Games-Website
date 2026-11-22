@@ -2531,11 +2531,12 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (!target) return;
     const terrain = target.getBoundingClientRect();
     if (!terrain.width || !terrain.height) return;
-    const landing = {
-      left: terrain.left + 5,
-      top: terrain.top + 5,
-      width: terrain.width,
-      height: terrain.height,
+    const offset = parseFloat(getComputedStyle(target).getPropertyValue('--play-entity-offset')) / 100;
+    const landing = target.querySelector('.play-node-entity-card')?.getBoundingClientRect() ?? {
+      left: terrain.left + target.clientLeft + target.clientWidth * offset,
+      top: terrain.top + target.clientTop + target.clientHeight * offset,
+      width: target.clientWidth,
+      height: target.clientHeight,
     };
     const { flight, bounds } = snapshot;
     flight.classList.remove('play-event-drag-ghost');
@@ -3315,19 +3316,27 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
             }
           })().catch(() => {});
         }
-        const markers = [];
-        if (Number(node.lumens || 0) > 0) markers.push(`${node.lumens} ✦`);
-        if (node.protected) {
-          const token = document.createElement('img');
-          token.className = 'play-protection-token';
-          token.src = './assets/Protection_Simple.png';
-          token.alt = '';
-          cell.append(token);
-        }
-        if (node.crisis) markers.push('Crisis');
-        if (markers.length) {
-          const badge = document.createElement('span'); badge.className = 'play-node-markers';
-          badge.textContent = markers.join(' · '); cell.append(badge);
+        const labels = [];
+        if (Number(node.lumens || 0) > 0) labels.push(`${node.lumens} ✦`);
+        if (node.crisis) labels.push('Crisis');
+        if (node.protected || labels.length) {
+          const markers = document.createElement('div');
+          markers.className = 'play-node-markers';
+          markers.setAttribute('aria-hidden', 'true');
+          if (node.protected) {
+            const token = document.createElement('img');
+            token.className = 'play-protection-token';
+            token.src = './assets/Protection_Simple.png';
+            token.alt = '';
+            markers.append(token);
+          }
+          if (labels.length) {
+            const badge = document.createElement('span');
+            badge.className = 'play-node-marker-badge';
+            badge.textContent = labels.join(' · ');
+            markers.append(badge);
+          }
+          cell.append(markers);
         }
       }
       if (!node?.terrain && node?.fertilize) {
