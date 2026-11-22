@@ -1338,13 +1338,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     for (const effect of effects) if (!beginningOrder.includes(effect.source)) beginningOrder.push(effect.source);
     const bySource = new Map(effects.map(effect => [effect.source, effect]));
     const plan = beginningPlan();
-    const activeSources = beginningOrder.filter(source => !beginningSkipped.has(source));
-    const skippedSources = beginningOrder.filter(source => beginningSkipped.has(source));
     const rows = beginningOrder.map(source => {
       const effect = bySource.get(source);
       const skipped = beginningSkipped.has(source);
-      const zoneSources = skipped ? skippedSources : activeSources;
-      const index = zoneSources.indexOf(source);
       const row = document.createElement('li');
       row.className = `play-beginning-effect${beginningTargetSource === source ? ' is-choosing' : ''}${skipped ? ' is-skipped' : ''}`;
       row.draggable = own && !phaseBusy;
@@ -1473,18 +1469,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         toggle.disabled = phaseBusy;
         toggle.addEventListener('click', () => moveBeginningEffect(source, !skipped));
         controls.append(toggle);
-      }
-      for (const [direction, label] of own ? [[-1, 'Move up'], [1, 'Move down']] : []) {
-        const move = document.createElement('button'); move.type = 'button';
-        move.textContent = direction < 0 ? '↑' : '↓'; move.setAttribute('aria-label', `${label}: ${effect.card.title}`);
-        move.disabled = phaseBusy || index + direction < 0 || index + direction >= zoneSources.length;
-        move.addEventListener('click', () => {
-          const next = zoneSources[index + direction];
-          const from = beginningOrder.indexOf(source), to = beginningOrder.indexOf(next);
-          [beginningOrder[from], beginningOrder[to]] = [beginningOrder[to], beginningOrder[from]];
-          renderBeginningEffects(); void saveBeginningPlan();
-        });
-        controls.append(move);
       }
       row.append(heading, controls);
       row.addEventListener('pointerenter', event => {
