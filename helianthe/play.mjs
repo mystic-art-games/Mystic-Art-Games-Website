@@ -1,4 +1,5 @@
 import { extendedEventRules, extendedKinds, extendedEventStep } from './play-extended-events.mjs?v=3';
+import { entityEffectKind, entityEffectStep } from './play-entity-effects.mjs?v=1';
 
 const terrainFullArtUrl = terrain => new URL(`./assets/Terrain_${terrain}_Full_Art.png`, import.meta.url).href;
 const defaultTableName = hostName => `${Array.from(String(hostName ?? '').trim() || 'Player').slice(0, 52).join("")}'s Table`;
@@ -583,13 +584,17 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     return card?.title === 'Dreamwell Courtyard' && ['Verdant', 'Evergreen'].includes(card.terrain)
       && effect === 'create verdant terrain, then put this entity there.';
   }
+  function workshopCreatesTerrain(card) {
+    return card?.title === 'Lumen Workshop District' && card.terrain === 'Radiance'
+      && /^create radiance terrain, then place this entity there\.$/i.test(String(card.effect || '').replace(/\s+/g, ' ').trim());
+  }
   function legalEntityAction(card, node, key) {
     if (room?.turn_player_id !== userId || room?.turn_phase !== 'main' || room?.main_played_entity
       || (!terrainTypes.includes(card?.terrain) && !dreamwellCreatesTerrain(card))) return null;
     if (!node?.terrain) return node?.entity || !canCreateTerrainAt(key)
-      ? null : dreamwellCreatesTerrain(card) ? 'create_place'
+      ? null : dreamwellCreatesTerrain(card) || workshopCreatesTerrain(card) ? 'create_place'
         : (terrainTypes.includes(entityShapeTerrain(card)) ? 'shape' : null);
-    if (dreamwellCreatesTerrain(card)) return null;
+    if (dreamwellCreatesTerrain(card) || workshopCreatesTerrain(card)) return null;
     if (node.entity) return null;
     if (!terrainTypes.includes(node.terrain)) return null;
     const effect = String(card.effect || '').replace(/\s+/g, ' ').toLowerCase();
@@ -2585,13 +2590,13 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     } catch { /* The table may have been left while the card was moving. */ }
     finally { flight.remove(); }
   }
-  function chooseEventOption(title, options, onConfirm) {
+  function chooseEventOption(title, options, onConfirm, onCancel = hideCardPreview) {
     const dialog = document.createElement('dialog');
     dialog.className = 'play-event-choice-dialog';
     dialog.setAttribute('aria-label', title);
     const form = document.createElement('form');
     form.method = 'dialog';
-    const terrainChoices = options.length > 0 && options.every(({ value }) => terrainTypes.includes(value.terrain));
+    const terrainChoices = options.length > 0 && options.every(({ value }) => terrainTypes.includes(value?.terrain));
     let select;
     if (terrainChoices) {
       dialog.classList.add('play-terrain-choice-dialog');
@@ -2634,12 +2639,22 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       const index = select && dialog.returnValue === 'confirm' ? select.value : dialog.returnValue;
       const chosen = /^\d+$/.test(index) ? options[Number(index)] : null;
       dialog.remove();
-      if (room?.id === roomId && room.turn_number === turn) {
-        if (chosen) onConfirm(chosen.value);
-        else hideCardPreview();
-      }
+      if (chosen && room?.id === roomId && room.turn_number === turn) onConfirm(chosen.value);
+      else onCancel();
     }, { once: true });
     dialog.showModal();
+  }
+  async function chooseEntityEffect(kind, source) {
+    const choices = {};
+    const board = room.board || {};
+    for (let step = entityEffectStep(kind, board, source, choices); step?.options.length;
+      step = entityEffectStep(kind, board, source, choices)) {
+      const options = step.optional ? [{ label: 'Skip this choice', value: null }, ...step.options] : step.options;
+      const choice = await new Promise(resolve => chooseEventOption(step.label, options, resolve, () => resolve()));
+      if (choice === undefined) return null;
+      choices[step.field] = choice?.terrain ?? choice;
+    }
+    return choices;
   }
   function continueExtendedEvent(event) {
     const step = extendedEventStep(event.rule[1], event.selected, {
@@ -2846,10 +2861,27 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (!room || room.status !== 'active' || room.turn_player_id !== userId
       || room.turn_phase !== 'main' || room.main_played_entity || phaseBusy || pendingFestival
       || !Array.isArray(gameState?.hand)) return;
-    const action = legalEntityAction(card, room.board?.[`${targetX},${targetY}`], `${targetX},${targetY}`);
+    const source = `${targetX},${targetY}`;
+    const action = legalEntityAction(card, room.board?.[source], source);
     if (!action) { eventNotice('Choose an empty space or an unoccupied compatible Terrain.', true); return; }
     const cardId = card.card_id || card.id;
     if (!cardId) return;
+    const expected = epoch, roomId = room.id, turn = room.turn_number;
+    const effectKind = entityEffectKind(card, action);
+    let choices = {};
+    if (effectKind) {
+      phaseBusy = true;
+      renderTurnPhase();
+      try { choices = await chooseEntityEffect(effectKind, source); }
+      finally { if (expected === epoch) { phaseBusy = false; renderTurnPhase(); } }
+      if (expected !== epoch || room?.id !== roomId || room.turn_number !== turn) return;
+      if (choices === null) { hideCardPreview(); return; }
+      if (legalEntityAction(card, room.board?.[source], source) !== action) {
+        hideCardPreview();
+        blockedPlayNotice('The board has changed. Select the Entity again.');
+        return;
+      }
+    }
     const placesEntity = action === 'place' || action === 'create_place';
     const flight = placesEntity ? captureEntityFlight(handIndex) : null;
     if (placesEntity) hideCardPreview();
@@ -2872,11 +2904,13 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const previousHandCount = gameState.hand.length;
     const horizon = [...(gameState.horizon || [])];
     if (placesEntity) arrivingEntityKey = `${targetX},${targetY}`;
-    const expected = epoch, roomId = room.id;
     phaseBusy = true;
     renderTurnPhase();
     try {
-      const result = await rpc(action === 'create_place' ? 'play_dreamwell_courtyard' : 'play_entity_action', {
+      const usesChoices = effectKind || workshopCreatesTerrain(card);
+      const endpoint = usesChoices ? 'play_entity_action_with_choices'
+        : action === 'create_place' ? 'play_dreamwell_courtyard' : 'play_entity_action';
+      const result = await rpc(endpoint, {
         p_room_id: roomId,
         p_expected_turn: room.turn_number,
         p_hand_index: handIndex,
@@ -2884,6 +2918,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         p_expected_hand_count: gameState.hand.length,
         p_target_x: targetX,
         p_target_y: targetY,
+        ...(usesChoices ? { p_choices: choices } : {}),
       });
       if (expected !== epoch || room?.id !== roomId) return;
       pendingEntity = null;
@@ -2913,16 +2948,16 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       if (expected === epoch && room?.id === roomId) await loadGameState(true);
       if (expected === epoch && room?.id === roomId && discardFlights.size) await archivePreviews.self.ready;
       if (expected === epoch && room?.id === roomId) eventNotice(result?.action === 'create_place'
-        ? `${result?.title || card.title} created Verdant Terrain and landed on it.`
+        ? `${result?.title || card.title} created ${result?.terrain || card.terrain} Terrain and landed on it.`
         : result?.action === 'shape'
           ? knownEntryEffect && card.title === 'River Pact Crossing'
             ? `${result?.title || card.title} shaped ${result?.terrain || entityShapeTerrain(card)} Terrain · drew ${entityDrawn} card${entityDrawn === 1 ? '' : 's'}.`
-            : `${result?.title || card.title} shaped ${result?.terrain || entityShapeTerrain(card)} Terrain. Card-specific effects are not automated yet.`
+            : `${result?.title || card.title} shaped ${result?.terrain || entityShapeTerrain(card)} Terrain.${effectKind ? ' Shape effect resolved.' : /\bwhen shaped\b/i.test(normalizedEffect) ? ' This Shape effect is not automated yet.' : ''}`
           : kupalaNight
             ? `${result?.title || card.title} placed · drew ${entityDrawn} card${entityDrawn === 1 ? '' : 's'} for Entanglements.`
-            : knownEntryEffect
+            : knownEntryEffect || effectKind
               ? `${result?.title || card.title} placed · effect resolved${entityDrawn ? ` · drew ${entityDrawn}` : ''}.`
-            : `${result?.title || card.title} placed on ${result?.terrain || room.board?.[`${targetX},${targetY}`]?.terrain} Terrain. Card-specific effects are not automated yet.`, true);
+            : `${result?.title || card.title} placed on ${result?.terrain || room.board?.[source]?.terrain} Terrain.${normalizedEffect && !beginningEffectKind(card) ? ' Card-specific effects are not automated yet.' : ''}`, true);
     } catch (error) {
       if (expected === epoch && room?.id === roomId) {
         await refreshRoom().catch(() => {});

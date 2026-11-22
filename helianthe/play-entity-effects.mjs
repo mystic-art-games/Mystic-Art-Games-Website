@@ -1,0 +1,85 @@
+const terrainTypes = ['Symbiosis', 'Flow', 'Verdant', 'Radiance'];
+const placementRules = {
+  'Garden of Shared Roots': ['garden', 'when placed, create any terrain on adjacent empty node. at the beginning of your turn, draw 1 card if terrain under this entity is entangled.'],
+  'Green Reclamation': ['reclaim', 'transform any adjacent empty terrain to verdant.'],
+  'Hypervine': ['fertilize', 'if there are two or more adjacent verdant terrains, fertilize 2 on adjacent nodes.'],
+  'Lanternhollow': ['entangle', 'when placed, entangle terrain under this entity.'],
+  'Moss Bastion': ['protect', 'protect any terrain under this entity and on up to 1 adjacent verdant terrain.'],
+  'Heliotic Discharge': ['double', 'duplicate solar counters on one adjacent radiance terrain.'],
+  'Heart of Aurelia': ['spend', 'remove 3 lumens from terrain under this entity to put shield counter on any terrain.'],
+  'Impulse Transmittion': ['transfer', 'choose two radiance terrains. relocate radiance counters between them as you like.'],
+};
+const shapeRules = {
+  'Depthcloak': ['unprotect', 'while this entity is on non-flow terrain, it counts as 2 toward your patron’s victory goal. when shaped, you may unprotect any terrain.'],
+  'Memories of Atlantis': ['protect_any', 'dissolve any flow entity to recall any entity from your archive to you hand. when shaped, you may protect any terrain.'],
+};
+
+export function entityEffectKind(card, action) {
+  const rule = (action === 'shape' ? shapeRules : placementRules)[card.title];
+  const effect = String(card.effect || '').replace(/\s+/g, ' ').trim().toLowerCase();
+  return Array.isArray(rule) && rule[1] === effect ? rule[0] : null;
+}
+
+const boardKeys = Array.from({ length: 20 }, (_, index) => `${index % 5},${Math.floor(index / 5)}`);
+const adjacent = (a, b) => Math.abs(Number(a[0]) - Number(b[0])) + Math.abs(Number(a[2]) - Number(b[2])) === 1;
+const lumens = node => Number(node?.lumens || 0);
+
+export function entityEffectStep(kind, board, source, choices) {
+  const node = key => board[key] || {};
+  const nearby = key => adjacent(source, key);
+  const empty = key => key !== source && !node(key).terrain;
+  const present = key => key === source || Boolean(node(key).terrain);
+  const cell = (label, field, predicate, optional = false) => ({
+    label, field, optional,
+    options: boardKeys.filter(predicate).map(key => ({
+      label: `R${Number(key[2]) + 1} C${Number(key[0]) + 1} · ${node(key).terrain || (key === source ? 'New Terrain' : 'Empty')}${node(key).entity ? ` · ${node(key).entity.title}` : ''}`,
+      value: key,
+    })),
+  });
+  switch (kind) {
+    case 'garden':
+      if (!choices.target) return cell('Choose an adjacent empty Node', 'target', key => nearby(key) && empty(key));
+      return choices.terrain ? null : { label: 'Choose Terrain to create', field: 'terrain',
+        options: terrainTypes.map(terrain => ({ label: terrain, value: { terrain } })) };
+    case 'reclaim':
+      return choices.target ? null : cell('Choose adjacent unoccupied Terrain to Transform', 'target',
+        key => nearby(key) && node(key).terrain && !node(key).entity);
+    case 'fertilize':
+      if (boardKeys.filter(key => nearby(key) && node(key).terrain === 'Verdant').length < 2) return null;
+      if (!choices.target) return cell('Choose a Node for the first Fertilize token', 'target', key => nearby(key) && empty(key));
+      return choices.second ? null : cell('Choose a Node for the second Fertilize token', 'second',
+        key => nearby(key) && empty(key) && (key !== choices.target || !node(key).fertilize));
+    case 'entangle':
+      if (choices.target || node(source).terrain !== 'Symbiosis' || node(source).entanglements?.length) return null;
+      return cell('Choose adjacent non-Symbiosis Terrain to Entangle', 'target',
+        key => nearby(key) && present(key) && node(key).terrain !== 'Symbiosis' && !node(key).entanglements?.includes(source));
+    case 'protect':
+      return 'target' in choices ? null : cell('Choose adjacent Verdant Terrain to Protect', 'target',
+        key => nearby(key) && node(key).terrain === 'Verdant', true);
+    case 'double':
+      return choices.target ? null : cell('Choose adjacent Radiance Terrain', 'target',
+        key => nearby(key) && node(key).terrain === 'Radiance');
+    case 'spend':
+      return choices.target || lumens(node(source)) < 3 ? null : cell('Choose Terrain to Protect', 'target', present);
+    case 'transfer': {
+      const radiance = boardKeys.filter(key => node(key).terrain === 'Radiance');
+      if (radiance.length < 2 || !radiance.some(key => lumens(node(key)))) return null;
+      if (!choices.target) return cell('Choose the first Radiance Terrain', 'target', key => radiance.includes(key));
+      if (!choices.second) return cell('Choose the second Radiance Terrain', 'second', key => key !== choices.target && radiance.includes(key));
+      if ('amount' in choices) return null;
+      const first = lumens(node(choices.target));
+      const second = lumens(node(choices.second));
+      return { label: 'Choose the final Lumen distribution', field: 'amount',
+        options: Array.from({ length: first + second + 1 }, (_, amount) => ({
+          label: `First Terrain: ${amount} · Second Terrain: ${first + second - amount}`, value: amount,
+        })) };
+    }
+    case 'unprotect':
+      return 'target' in choices ? null : cell('Choose Terrain to Unprotect', 'target',
+        key => present(key) && node(key).protected, true);
+    case 'protect_any':
+      return 'target' in choices ? null : cell('Choose Terrain to Protect', 'target', present, true);
+    default:
+      return null;
+  }
+}
