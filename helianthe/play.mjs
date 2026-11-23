@@ -1,5 +1,5 @@
 import { extendedEventRules, extendedKinds, extendedEventStep } from './play-extended-events.mjs?v=7';
-import { entityEffectKind, entityEffectStep } from './play-entity-effects.mjs?v=3';
+import { entityEffectKind, entityEffectStep } from './play-entity-effects.mjs?v=4';
 
 const terrainFullArtUrl = terrain => new URL(`./assets/Terrain_${terrain}_Full_Art.png`, import.meta.url).href;
 const defaultTableName = hostName => `${Array.from(String(hostName ?? '').trim() || 'Player').slice(0, 52).join("")}'s Table`;

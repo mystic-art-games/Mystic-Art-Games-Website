@@ -1,5 +1,6 @@
 const terrainTypes = ['Symbiosis', 'Flow', 'Verdant', 'Radiance'];
 const placementRules = {
+  'Through Fire Reborn': ['through_fire_reborn', 'fertilize 1. if you sacrifice a verdant terrain, fertilize 3'],
   'Equatorial Forests': ['equatorial_forests', 'when placed, create verdant terrain. when this terrain becomes fully surrounded by any terrains, put an extra verdant terrain on any node. then, dissolve this entity.'],
   'Equatorial Forests': ['equatorial_forests', 'when placed, create verdant terrain. when this terrain becomes fully surrounded by any terrains, put an extra verdant terrain on any node. then, dissolve this entity.'],
   'Garden of Shared Roots': ['garden', 'when placed, create any terrain on adjacent empty node. at the beginning of your turn, draw 1 card if terrain under this entity is entangled.'],
@@ -23,6 +24,7 @@ const shapeRules = {
 export function entityEffectKind(card, action) {
   const rule = (action === 'shape' ? shapeRules : placementRules)[card.title];
   const effect = String(card.effect || '').replace(/\s+/g, ' ').trim().toLowerCase();
+  if (rule?.[0] === 'through_fire_reborn') return effect.replace(/\.$/, '') === rule[1] ? rule[0] : null;
   return Array.isArray(rule) && rule[1] === effect ? rule[0] : null;
 }
 
@@ -43,6 +45,21 @@ export function entityEffectStep(kind, board, source, choices, archive = []) {
     })),
   });
   switch (kind) {
+    case 'through_fire_reborn': {
+      const canSacrifice = key => node(key).terrain === 'Verdant' && !node(key).protected;
+      if (!('sacrifice' in choices) && boardKeys.some(canSacrifice)) {
+        return cell('Choose Verdant Terrain to sacrifice, or Fertilize 1', 'sacrifice', canSacrifice, true);
+      }
+      const fields = choices.sacrifice ? ['target', 'second', 'third'] : ['target'];
+      const field = fields.find(name => !choices[name]);
+      if (!field) return null;
+      return cell('Choose a Node to Fertilize', field, key => {
+        const sacrificed = key === choices.sacrifice;
+        if (!sacrificed && !empty(key)) return false;
+        const tokens = fields.filter(name => choices[name] === key).length;
+        return tokens + Number(!sacrificed && Boolean(node(key).fertilize)) < 2;
+      });
+    }
     case 'equatorial_forests':
       return choices.target ? null : cell('Choose an empty Node for Verdant Terrain', 'target',
         key => empty(key) && boardKeys.some(other => present(other) && adjacent(key, other)));
