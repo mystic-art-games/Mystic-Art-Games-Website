@@ -1,3 +1,5 @@
+import { entityEffectsSuppressed, vigilBlocksCreation, vigilBlocksPlacement } from './play-passive-entities.mjs';
+
 // These are the Event texts currently present in the online card catalog.
 // Match the dealt card's text, not just its title, so edited cards cannot
 // silently resolve as an older version of an effect.
@@ -20,6 +22,7 @@ export const extendedEventRules = {
   'Natural Habitat': ['choose any verdant terrain with entity. draw cards equal to the number of adjacent verdant terrains minus 2.', 'natural_habitat', 'Verdant Terrain with an Entity'],
   "Poseidon's Chosen One": ['if you have 3 or more entities in your archive, you may recall one of them to your hand.', 'poseidons_chosen_one', ''],
   'Reclamation Pulse': ['dissolve any empty verdant terrain to protect any verdant terrain. draw 1 card.', 'reclamation_pulse', 'empty Verdant Terrain'],
+  'Restoration Nursery': ['relocate protection to a different terrain.', 'restoration_nursery', 'protected Terrain'],
   'Regrow': ['dissolve any verdant terrain to recall any entity from the archive.', 'regrow', 'Verdant Terrain'],
   'Shared Canal Gathering': ['entangle any symbiosis empty terrain.', 'shared_canal_gathering', 'empty Symbiosis Terrain'],
   'Skyfire': ['dissolve two adjacent entities from two different patrons.', 'skyfire_pair', 'an Entity adjacent to an opposing Entity'],
@@ -89,6 +92,7 @@ function terrainStep(label, excluded) {
 }
 
 const pairedEvents = new Set([
+  'restoration_nursery',
   'swap_entities', 'bubble_switch', 'relocate_terrain', 'landshift', 'liquid_protection',
   'migration_wind_sails', 'wave_of_change',
 ]);
@@ -119,6 +123,11 @@ function eventStep(kind, selected, { board, archive, hand, eventIndex }) {
   const entangled = node => Array.isArray(node.entanglements) && node.entanglements.length > 0;
   const source = cells[0];
   switch (kind) {
+    case 'restoration_nursery':
+      if (count === 0) return boardStep('Choose protected Terrain', board, node => terrain(node) && node.protected);
+      if (count === 1) return boardStep('Choose another Terrain to receive Protection', board,
+        (node, key) => terrain(node) && key !== source);
+      return null;
     case 'swap_entities':
       if (count === 0) return boardStep('Choose the first Entity', board, entity);
       if (count === 1) return boardStep('Choose the second Entity', board, (node, key) => entity(node) && key !== source);
@@ -136,9 +145,10 @@ function eventStep(kind, selected, { board, archive, hand, eventIndex }) {
       return null;
     case 'dematerialize':
       if (count === 0) return boardStep('Choose an unprotected Entity', board, node => entity(node) && !node.protected);
-      if (count === 1 && ['Equatorial Forests', 'Garden of Shared Roots'].includes(first.entity?.title))
+      if (count === 1 && !entityEffectsSuppressed(board, source)
+        && ['Equatorial Forests', 'Garden of Shared Roots'].includes(first.entity?.title))
         return boardStep('Choose an empty Node for its When Placed effect', board,
-          (node, key) => empty(node) && (first.entity?.title === 'Garden of Shared Roots'
+          (node, key) => empty(node) && !vigilBlocksCreation(board, key) && (first.entity?.title === 'Garden of Shared Roots'
             ? adjacent(source, key) : visibleCells(board).some(other => terrain(other.node) && adjacent(key, other.key))));
       if (count === 2 && first.entity?.title === 'Garden of Shared Roots') return terrainStep('Choose the created Terrain', null);
       return null;
@@ -146,7 +156,8 @@ function eventStep(kind, selected, { board, archive, hand, eventIndex }) {
       if (count === 0) return boardStep('Choose Verdant Terrain with an Entity', board, node => node.terrain === 'Verdant' && entity(node));
       if (first.protected) return null;
       if (count < 3) return boardStep('Choose an adjacent empty Node to Fertilize', board, (node, key) =>
-        empty(node) && adjacent(source, key) && !(count === 2 && key === cells[1] && node.fertilize));
+        empty(node) && !vigilBlocksCreation(board, key) && adjacent(source, key)
+          && !(count === 2 && key === cells[1] && (node.fertilize || vigilBlocksPlacement(board, key))));
       return null;
     case 'fungal_rainwood':
       return count ? null : boardStep('Choose an Entity on entangled Terrain', board, node => entity(node) && entangled(node));
@@ -176,9 +187,9 @@ function eventStep(kind, selected, { board, archive, hand, eventIndex }) {
       return null;
     case 'land_gift':
       if (count === 0) return boardStep('Choose empty Node adjacent to Verdant', board,
-        (node, key) => empty(node) && verdantNeighbors(board, key) > 0);
+        (node, key) => empty(node) && !vigilBlocksCreation(board, key) && verdantNeighbors(board, key) > 0);
       if (count === 1 && visibleCells(board).filter(cell => cell.node.terrain === 'Verdant').length >= 8)
-        return boardStep('Choose an empty Node to Fertilize', board, (node, key) => empty(node) && key !== source);
+        return boardStep('Choose an empty Node to Fertilize', board, (node, key) => empty(node) && !vigilBlocksCreation(board, key) && key !== source);
       return null;
     case 'landshift':
       if (count === 0) return boardStep('Choose a Verdant Entity', board, node => node.entity?.terrain === 'Verdant');

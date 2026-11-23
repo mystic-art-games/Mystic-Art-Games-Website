@@ -1,3 +1,5 @@
+import { vigilBlocksCreation, vigilBlocksPlacement } from './play-passive-entities.mjs';
+
 const terrainTypes = ['Symbiosis', 'Flow', 'Verdant', 'Radiance'];
 const placementRules = {
   'Through Fire Reborn': ['through_fire_reborn', 'fertilize 1. if you sacrifice a verdant terrain, fertilize 3'],
@@ -36,6 +38,7 @@ export function entityEffectStep(kind, board, source, choices, archive = []) {
   const node = key => board[key] || {};
   const nearby = key => adjacent(source, key);
   const empty = key => key !== source && !node(key).terrain;
+  const canCreate = key => empty(key) && !vigilBlocksCreation(board, key);
   const present = key => key === source || Boolean(node(key).terrain);
   const cell = (label, field, predicate, optional = false) => ({
     label, field, optional,
@@ -57,17 +60,15 @@ export function entityEffectStep(kind, board, source, choices, archive = []) {
         const sacrificed = key === choices.sacrifice;
         if (!sacrificed && !empty(key)) return false;
         const tokens = fields.filter(name => choices[name] === key).length;
-        return tokens + Number(!sacrificed && Boolean(node(key).fertilize)) < 2;
+        const existing = tokens + Number(!sacrificed && Boolean(node(key).fertilize));
+        return existing < 2 && (existing === 0 || !vigilBlocksPlacement(board, key));
       });
     }
     case 'equatorial_forests':
       return choices.target ? null : cell('Choose an empty Node for Verdant Terrain', 'target',
-        key => empty(key) && boardKeys.some(other => present(other) && adjacent(key, other)));
-    case 'equatorial_forests':
-      return choices.target ? null : cell('Choose an empty Node for Verdant Terrain', 'target',
-        key => empty(key) && boardKeys.some(other => present(other) && adjacent(key, other)));
+        key => canCreate(key) && boardKeys.some(other => present(other) && adjacent(key, other)));
     case 'garden':
-      if (!choices.target) return cell('Choose an adjacent empty Node', 'target', key => nearby(key) && empty(key));
+      if (!choices.target) return cell('Choose an adjacent empty Node', 'target', key => nearby(key) && canCreate(key));
       return choices.terrain ? null : { label: 'Choose Terrain to create', field: 'terrain',
         options: terrainTypes.map(terrain => ({ label: terrain, value: { terrain } })) };
     case 'reclaim':
@@ -75,9 +76,9 @@ export function entityEffectStep(kind, board, source, choices, archive = []) {
         key => nearby(key) && node(key).terrain && !node(key).entity);
     case 'fertilize':
       if (boardKeys.filter(key => nearby(key) && node(key).terrain === 'Verdant').length < 2) return null;
-      if (!choices.target) return cell('Choose a Node for the first Fertilize token', 'target', key => nearby(key) && empty(key));
+      if (!choices.target) return cell('Choose a Node for the first Fertilize token', 'target', key => nearby(key) && canCreate(key));
       return choices.second ? null : cell('Choose a Node for the second Fertilize token', 'second',
-        key => nearby(key) && empty(key) && (key !== choices.target || !node(key).fertilize));
+        key => nearby(key) && canCreate(key) && (key !== choices.target || (!node(key).fertilize && !vigilBlocksPlacement(board, key))));
     case 'entangle':
       if (choices.target || node(source).terrain !== 'Symbiosis' || node(source).entanglements?.length) return null;
       return cell('Choose adjacent non-Symbiosis Terrain to Entangle', 'target',

@@ -1,5 +1,6 @@
-import { extendedEventRules, extendedKinds, extendedEventStep } from './play-extended-events.mjs?v=7';
-import { entityEffectKind, entityEffectStep } from './play-entity-effects.mjs?v=4';
+import { extendedEventRules, extendedKinds, extendedEventStep } from './play-extended-events.mjs?v=8';
+import { entityEffectKind, entityEffectStep } from './play-entity-effects.mjs?v=5';
+import { entityEffectsSuppressed, passiveEntityKind, vigilBlocksCreation, vigilBlocksPlacement } from './play-passive-entities.mjs';
 
 const terrainFullArtUrl = terrain => new URL(`./assets/Terrain_${terrain}_Full_Art.png`, import.meta.url).href;
 const defaultTableName = hostName => `${Array.from(String(hostName ?? '').trim() || 'Player').slice(0, 52).join("")}'s Table`;
@@ -629,15 +630,15 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (extendedKinds.has(kind)) return Boolean(extendedEventStep(kind, [], { board })?.options
       .some(option => option.value.type === 'cell' && option.value.key === key));
     if (kind === 'recall_event') return false;
-    if (kind === 'greenway') return !node?.terrain && (eventNeighbors(key).some(k => board[k]?.terrain)
+    if (kind === 'greenway') return !node?.terrain && !vigilBlocksCreation(board, key) && (eventNeighbors(key).some(k => board[k]?.terrain)
       || !Object.values(board).some(entry => entry?.terrain));
-    if (kind === 'seed_caravan') return !node?.terrain && eventNeighbors(key).some(k => board[k]?.terrain === 'Verdant');
+    if (kind === 'seed_caravan') return !node?.terrain && !vigilBlocksCreation(board, key) && eventNeighbors(key).some(k => board[k]?.terrain === 'Verdant');
     if (kind === 'tangle') return eventNeighbors(key).filter(k => board[k]?.terrain === 'Verdant').length >= 2;
     if (kind === 'accord') return node?.terrain === 'Symbiosis';
     if (kind === 'reconfigure') return Boolean(node?.terrain && !node.entity);
     if (kind === 'fertile_rain') return node?.terrain === 'Verdant' && Boolean(node.entity);
-    if (kind === 'fertilize_two' || kind === 'fertilize_draw') return !node?.terrain;
-    if (kind === 'fertilize_existing_draw') return !node?.terrain && Boolean(node?.fertilize);
+    if (kind === 'fertilize_two' || kind === 'fertilize_draw') return !node?.terrain && !vigilBlocksCreation(board, key);
+    if (kind === 'fertilize_existing_draw') return !node?.terrain && Boolean(node?.fertilize) && !vigilBlocksCreation(board, key);
     if (!node?.terrain) return false;
     if (kind === 'protect' || kind === 'restore_draw' || kind === 'dissolve_terrain') return true;
     if (kind === 'dissolve_entity') return Boolean(node.entity);
@@ -669,10 +670,13 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   function legalEntityAction(card, node, key) {
     if (room?.turn_player_id !== userId || room?.turn_phase !== 'main' || room?.main_played_entity
       || (!terrainTypes.includes(card?.terrain) && !dreamwellCreatesTerrain(card))) return null;
-    if (!node?.terrain) return node?.entity || !canCreateTerrainAt(key)
-      ? null : dreamwellCreatesTerrain(card) || workshopCreatesTerrain(card) ? 'create_place'
+    const board = room.board || {};
+    const createsAndPlaces = dreamwellCreatesTerrain(card) || workshopCreatesTerrain(card);
+    if (!node?.terrain) return node?.entity || !canCreateTerrainAt(key) || vigilBlocksCreation(board, key)
+      || (createsAndPlaces && vigilBlocksPlacement(board, key))
+      ? null : createsAndPlaces ? 'create_place'
         : (terrainTypes.includes(entityShapeTerrain(card)) ? 'shape' : null);
-    if (dreamwellCreatesTerrain(card) || workshopCreatesTerrain(card)) return null;
+    if (createsAndPlaces || vigilBlocksPlacement(board, key)) return null;
     if (node.entity) return null;
     if (!terrainTypes.includes(node.terrain)) return null;
     const effect = String(card.effect || '').replace(/\s+/g, ' ').toLowerCase();
@@ -725,6 +729,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       || room.beginning_effects_resolved_turn === room.turn_number) return [];
     return Object.entries(room.board || {}).filter(([key, node]) => /^[0-4],[0-3]$/.test(key)
       && node?.entity?.owner_id === room.turn_player_id && beginningEffectKind(node.entity)
+      && !entityEffectsSuppressed(room.board, key)
       && beginningEffectAvailable(node.entity))
       .map(([source, node]) => ({ source, kind: beginningEffectKind(node.entity), card: { ...resolveGameCard(node.entity),
         title: node.entity.title, effect: node.entity.effect }, optional: beginningEffectOptional(node.entity) }))
@@ -732,7 +737,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         || Number(a.source.split(',')[0]) - Number(b.source.split(',')[0]));
   }
   function beginningPlan() {
-    const terrain = new Map(Object.entries(room?.board || {}).filter(([, node]) => node?.terrain)
+    const board = room?.board || {};
+    const terrain = new Map(Object.entries(board).filter(([, node]) => node?.terrain)
       .map(([key, node]) => [key, node.terrain]));
     const fertilized = new Set(Object.entries(room?.board || {}).filter(([, node]) => node?.fertilize).map(([key]) => key));
     const occupied = new Set(Object.entries(room?.board || {}).filter(([, node]) => node?.entity).map(([key]) => key));
@@ -741,12 +747,20 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const links = new Map(Object.entries(room?.board || {}).map(([key, node]) => [key, new Set(node?.entanglements || [])]));
     const lumens = new Map(Object.entries(room?.board || {}).map(([key, node]) => [key, Number(node?.lumens || 0)]));
     const archiveEvents = (gameState?.archive || []).filter(card => card?.card_type === 'Event' && card.id).slice();
+    const entities = new Map(Object.entries(board).filter(([, node]) => node?.entity).map(([key, node]) => [key, node.entity]));
     const effectsBySource = new Map(beginningEffects().map(effect => [effect.source, effect]));
     const plan = new Map();
     for (const source of beginningOrder) {
       if (beginningSkipped.has(source)) { plan.set(source, { options: [], target: null, valid: true }); continue; }
       const effect = effectsBySource.get(source);
       const kind = effect?.kind;
+      const projectedBoard = Object.fromEntries(Array.from(terrain.keys(), key => [key, {
+        terrain: terrain.get(key), entity: entities.get(key), entanglements: [...(links.get(key) || [])],
+      }]));
+      if (entityEffectsSuppressed(projectedBoard, source)) {
+        plan.set(source, { options: [], target: null, valid: true, automaticSkip: true, suppressed: true });
+        continue;
+      }
       if (kind === 'march_of_marshrooms') {
         const symbiosisOnly = /adjacent\s+empty\s+symbiosis\s+terrain/i.test(effect.card.effect);
         const options = eventNeighbors(source).filter(key => terrain.has(key) && !occupied.has(key)
@@ -767,7 +781,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         }).map(key => ({ value: key, label: formatNodeCoordinates(key) }));
         plan.set(source, { options, target, choices, choice, valid: true, symbiosisOnly,
           automaticSkip: !options.length && !choices.length });
-        if (target) { occupied.delete(source); occupied.add(target); }
+        if (target) {
+          occupied.delete(source); occupied.add(target);
+          entities.set(target, entities.get(source)); entities.delete(source);
+        }
         if (choices.some(option => option.value === choice)) {
           if (!links.has(destination)) links.set(destination, new Set());
           if (!links.has(choice)) links.set(choice, new Set());
@@ -843,7 +860,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         plan.set(source, { options: [], target: null, valid, terrainOptions, eventOptions, fallback, targets, eventId });
         if (fallback) {
           if (protectedNodes.has(source)) protectedNodes.delete(source);
-          else occupied.delete(source);
+          else { occupied.delete(source); entities.delete(source); }
         } else if (valid) {
           for (const key of targets) {
             terrain.delete(key); fertilized.delete(key); links.delete(key);
@@ -854,7 +871,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         continue;
       }
       const neighbors = eventNeighbors(source);
-      const options = neighbors.filter(key => !terrain.has(key));
+      const options = neighbors.filter(key => !terrain.has(key)
+        && (!fertilized.has(key) || !vigilBlocksPlacement(projectedBoard, key)));
       const draws = kind === 'expansive_ivy' && neighbors.filter(key => terrain.get(key) === 'Verdant').length >= 4;
       const automaticSkip = options.length === 0 && !draws;
       const target = beginningTargets.get(source);
@@ -887,7 +905,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
           : pendingEvent.nextKeys ? pendingEvent.nextKeys.includes(cell.dataset.key)
             : legalEventTarget(pendingEvent.rule[1], node, cell.dataset.key)))
         || (pendingEntity && legalEntityAction(pendingEntity.card, node, cell.dataset.key))
-        || beginningOptions?.includes(cell.dataset.key)));
+        || beginningOptions?.includes(cell.dataset.key))
+        && !(pendingEvent?.rule[1] === 'fertilize_two'
+          && firstFertilizeTarget === cell.dataset.key && (node?.fertilize || vigilBlocksPlacement(room.board, cell.dataset.key))));
       cell.classList.toggle('is-event-target', legal);
       cell.classList.toggle('is-first-fertilize-target', cell.dataset.key === firstFertilizeTarget);
       const entityInteraction = legal && node?.entity;
@@ -1508,7 +1528,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         controls.append(beginningControl('skip', label));
       };
       if (skipped) {
-        showUnavailable(automaticSkip ? unavailableText : 'Skipped this turn');
+        showUnavailable(plan.get(source)?.suppressed ? 'Sporebound Relay suppresses this Entity’s effect.'
+          : automaticSkip ? unavailableText : 'Skipped this turn');
       } else if (effect.kind === 'garden_shared_roots' || effect.kind === 'mirrorpool_shrine') {
         if (draws) {
           const count = Number(draws);
@@ -2009,7 +2030,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const roomId = room.id;
     const expected = epoch;
     const options = Array.from({ length: 20 }, (_, index) => `${index % 5},${Math.floor(index / 5)}`)
-      .filter(key => !room.board?.[key]?.terrain)
+      .filter(key => !room.board?.[key]?.terrain && !vigilBlocksCreation(room.board, key))
       .map(key => ({ value: key, label: formatNodeCoordinates(key) }));
     phaseBusy = true;
     renderTurnPhase();
@@ -3313,7 +3334,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       }
       if (rule[1] === 'greenway' || rule[1] === 'fertile_rain') {
         const nextKeys = rule[1] === 'fertile_rain' && node?.protected ? []
-          : eventNeighbors(key).filter(k => !room.board?.[k]?.terrain);
+          : eventNeighbors(key).filter(k => !room.board?.[k]?.terrain && !vigilBlocksCreation(room.board, k));
         if (nextKeys.length) {
           pendingEvent = { card, handIndex, rule, origin: [targetX, targetY], nextKeys, targets: [] };
           syncEventTargets();
@@ -3411,7 +3432,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const cardId = card.card_id || card.id;
     if (!cardId) return;
     const expected = epoch, roomId = room.id, turn = room.turn_number;
-    const effectKind = entityEffectKind(card, action);
+    const suppressed = action === 'place' && entityEffectsSuppressed(room.board, source);
+    const effectKind = suppressed ? null : entityEffectKind(card, action);
     let choices = {}, recall = null;
     if (effectKind) {
       phaseBusy = true;
@@ -3448,10 +3470,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       'River Pact Crossing': 'this entity can be evoked only on a non-flow terrain. both patrons draw 1 card. when shaped, draw 1 card.',
     };
     const normalizedEffect = String(card.effect || '').replace(/\s+/g, ' ').trim().toLowerCase();
-    const knownEntryEffect = entryEffects[card.title] === normalizedEffect;
-    const hasOngoingEffect = beginningEffectKind(card) || (card.title === 'Depthcloak' && entityEffectKind(card, 'shape') === 'unprotect')
+    const knownEntryEffect = !suppressed && entryEffects[card.title] === normalizedEffect;
+    const hasOngoingEffect = suppressed || passiveEntityKind(card) || beginningEffectKind(card) || (card.title === 'Depthcloak' && entityEffectKind(card, 'shape') === 'unprotect')
       || (card.title === "Nautilus's Thought" && normalizedEffect === 'while this entity is on flow terrain, it counts as 2 toward your patron’s victory goal.');
-    const kupalaNight = action === 'place' && card.title === 'Kupala Night'
+    const kupalaNight = !suppressed && action === 'place' && card.title === 'Kupala Night'
       && normalizedEffect === 'draw cards equal to the amount of your entanglements.';
     const previousHandCount = gameState.hand.length;
     const horizon = [...(gameState.horizon || [])];
@@ -3567,7 +3589,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       if (!event.nextKeys.includes(key)) return;
       event.targets.push([column, row]);
       if (event.rule[1] === 'fertile_rain' && event.targets.length === 1) {
-        if (room.board?.[key]?.fertilize) event.nextKeys = event.nextKeys.filter(k => k !== key);
+        if (room.board?.[key]?.fertilize || vigilBlocksPlacement(room.board, key)) event.nextKeys = event.nextKeys.filter(k => k !== key);
         if (event.nextKeys.length) {
           syncEventTargets();
           eventNotice('Choose an adjacent empty Node for the second Fertilize token.');
@@ -3581,8 +3603,15 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     }
     if (!legalEventTarget(event.rule[1], room?.board?.[key], key)) return;
     if (event.rule[1] === 'fertilize_two') {
+      const board = room.board || {};
+      const first = event.targets[0]?.join(',');
+      if (first === key && (board[key]?.fertilize || vigilBlocksPlacement(board, key))) return;
       event.targets.push([column, row]);
-      if (event.targets.length < 2) {
+      if (event.targets.length < 2 && Array.from($('game-board').children).some(cell => {
+        const next = cell.dataset.key;
+        return next && legalEventTarget('fertilize_two', board[next], next)
+          && (next !== key || (!board[key]?.fertilize && !vigilBlocksPlacement(board, key)));
+      })) {
         syncEventTargets();
         eventNotice('Choose an empty space for the second Fertilize token. You may choose the same space again.');
         return;
