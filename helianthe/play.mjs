@@ -100,6 +100,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   let archiveBrowserSeat = null, archiveBrowserCards = [], archiveBrowserIndex = 0;
   let archiveBrowserRequestSerial = 0, archiveBrowserCardSerial = 0, archiveBrowserOpener = null;
   let archiveBrowserLoading = false, archiveBrowserError = '';
+  let archiveRecallPicker = null;
+  const stagedRecallFlights = new Set();
+  const beginningRecallPreviews = new Map();
   const gameLogPageSize = 120;
   let gameLogKey = '', gameLogRevision = null, gameLogRequest = null, gameLogRetryAt = 0;
   let gameLogEntries = [], localGameLog = [], gameLogHasOlder = false, gameLogError = '';
@@ -184,7 +187,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         </div>
       </div></div>
       <div id="play-opening-roll" class="play-opening-roll" role="dialog" aria-modal="true" aria-labelledby="play-opening-roll-title" hidden><div class="play-opening-roll-panel"><h2 id="play-opening-roll-title">Opening Dice</h2><p id="play-opening-roll-status" class="play-opening-roll-status" role="status" aria-live="polite"></p><div id="play-opening-dice" class="play-opening-dice" hidden><div id="play-opening-die-seat-host" class="play-opening-die-seat"><strong id="play-opening-host-name"></strong><div id="play-opening-host-pair" class="play-opening-die-pair" hidden><div id="play-opening-host-die-1" class="play-opening-die" aria-label="Host's first die">${diePips}</div><div id="play-opening-host-die-2" class="play-opening-die" aria-label="Host's second die">${diePips}</div></div><span id="play-opening-host-total" class="play-opening-total" hidden></span></div><div id="play-opening-die-seat-guest" class="play-opening-die-seat"><strong id="play-opening-guest-name"></strong><div id="play-opening-guest-pair" class="play-opening-die-pair" hidden><div id="play-opening-guest-die-1" class="play-opening-die" aria-label="Guest's first die">${diePips}</div><div id="play-opening-guest-die-2" class="play-opening-die" aria-label="Guest's second die">${diePips}</div></div><span id="play-opening-guest-total" class="play-opening-total" hidden></span></div></div><button id="play-opening-roll-button" class="action-add-save" type="button">Roll Dices</button><p id="play-opening-roll-error" class="play-opening-roll-error" role="alert" hidden></p></div></div>
-      <div id="play-game-archive-browser" class="play-archive-browser" hidden><div class="play-archive-browser-backdrop"></div><section class="play-archive-browser-panel" role="dialog" aria-modal="true" aria-labelledby="play-game-archive-browser-title"><header><div><h2 id="play-game-archive-browser-title">Archive</h2><p id="play-game-archive-browser-status" role="status" aria-live="polite"></p></div><button id="play-game-archive-browser-close" class="play-archive-browser-close" type="button" aria-label="Close Archive">×</button></header><div class="play-archive-browser-body"><div class="play-archive-browser-view"><div class="play-archive-browser-card"><canvas id="play-game-archive-browser-canvas" hidden></canvas><span id="play-game-archive-browser-fallback"></span></div></div><ol id="play-game-archive-browser-list" class="play-archive-browser-list" aria-label="Cards in Archive"></ol></div></section></div>
+      <div id="play-game-archive-browser" class="play-archive-browser" hidden><div class="play-archive-browser-backdrop"></div><section class="play-archive-browser-panel" role="dialog" aria-modal="true" aria-labelledby="play-game-archive-browser-title"><header><div><h2 id="play-game-archive-browser-title">Archive</h2><p id="play-game-archive-browser-status" role="status" aria-live="polite"></p></div><button id="play-game-archive-browser-close" class="play-archive-browser-close" type="button" aria-label="Close Archive">×</button><button id="play-game-archive-browser-skip" class="play-archive-browser-skip" type="button" hidden>Do Not Recall</button></header><div class="play-archive-browser-body"><div class="play-archive-browser-view"><div class="play-archive-browser-card"><canvas id="play-game-archive-browser-canvas" hidden></canvas><span id="play-game-archive-browser-fallback"></span></div></div><ol id="play-game-archive-browser-list" class="play-archive-browser-list" aria-label="Cards in Archive"></ol></div></section></div>
       <div class="play-game-player-block">
       <div class="play-game-self-identity play-game-player-identity"><div class="play-game-identity-name"><span class="play-game-player-label"><span id="play-game-self-avatar" class="user-avatar play-game-player-avatar" aria-hidden="true"></span><strong id="play-game-self-name"></strong></span><span id="play-game-self-presence" class="play-away-pill" hidden></span></div><span id="play-game-hand-count" class="play-game-hand-count" aria-live="polite" hidden></span></div>
       <section id="play-game-self" class="play-surface play-game-seat" aria-label="Your area">
@@ -1348,6 +1351,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       beginningChoices.clear();
       beginningBrambleTargets.clear();
       beginningBrambleEvents.clear();
+      beginningRecallPreviews.clear();
       beginningTargetSource = null;
       if (shared) {
         beginningOrder = shared.map(entry => entry.source).filter(source => sources.has(source));
@@ -1461,17 +1465,21 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
             });
             controls.append(select);
           }
-          const select = document.createElement('select');
-          select.setAttribute('aria-label', `Event to recall for ${effect.card.title}`);
-          select.add(new Option('Event to recall from Archive', ''));
-          for (const card of eventOptions) select.add(new Option(card.title, String(card.id)));
-          select.value = eventId;
-          select.disabled = phaseBusy;
-          select.addEventListener('change', () => {
-            beginningBrambleEvents.set(source, select.value);
+          const recall = document.createElement('button');
+          recall.type = 'button';
+          recall.textContent = eventOptions.find(card => String(card.id) === eventId)?.title || 'Choose Event from Archive';
+          recall.setAttribute('aria-label', 'Choose an Event to Recall for ' + effect.card.title);
+          recall.disabled = phaseBusy;
+          recall.addEventListener('click', async () => {
+            const selection = await chooseArchiveRecall('Event', eventOptions.map(card => ({
+              card, value: String(card.id),
+            })).reverse(), { hold: false });
+            if (!selection || beginningTurnKey !== turnKey) return;
+            beginningBrambleEvents.set(source, selection.value);
+            beginningRecallPreviews.set(source, selection);
             renderBeginningEffects(); void saveBeginningPlan();
           });
-          controls.append(select);
+          controls.append(recall);
         }
       } else if (!own) {
         const status = document.createElement('span');
@@ -1625,7 +1633,25 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         p_room_id: roomId, p_expected_turn: turn, p_effects: entries,
       });
       if (expected !== epoch || room?.id !== roomId) return;
-      if (result?.drawn > 0) await animateCardsToHand(horizon.slice(0, result.drawn));
+      const drawn = horizon.slice(0, result?.drawn || 0);
+      const arrivals = [], recalls = [];
+      let remainingRecalls = result?.recalled || 0;
+      for (const entry of entries) {
+        if (entry.skip) continue;
+        const effect = plan.get(entry.source);
+        if (remainingRecalls && !effect.fallback && entry.event_id) {
+          const card = effect.eventOptions?.find(item => String(item.id) === entry.event_id);
+          if (card) {
+            const selection = beginningRecallPreviews.get(entry.source);
+            recalls[arrivals.length] = selection?.value === entry.event_id ? selection : { card };
+            arrivals.push(card);
+            remainingRecalls--;
+          }
+        }
+        arrivals.push(...drawn.splice(0, Number(effect.draws || 0)));
+      }
+      arrivals.push(...drawn);
+      if (arrivals.length) await animateCardsToHand(arrivals, [], 110, null, recalls);
       if (expected !== epoch || room?.id !== roomId) return;
       await refreshRoom();
       if (expected === epoch && room?.id === roomId) await loadGameState(true);
@@ -1673,7 +1699,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   function sizeHandGaps(hand, cardCount) {
     hand.style.setProperty('--play-hand-gap-count', String(Math.max(1, cardCount - 1)));
   }
-  async function animateCardsToHand(rawCards, removedIndexes = [], stagger = 0, batchSound = null) {
+  async function animateCardsToHand(rawCards, removedIndexes = [], stagger = 0, batchSound = null, recalls = []) {
     const source = $('game-self-horizon').getBoundingClientRect();
     const handElement = $('game-hand');
     const hand = handElement.getBoundingClientRect();
@@ -1708,8 +1734,13 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
 
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const duration = reduced ? 100 : 850;
-    const flights = rawCards.map((rawCard, index) =>
-      createIncomingCardFlight(resolveHandCard(rawCard), source, destinations[index], duration, reduced ? 0 : index * stagger));
+    const archive = recalls.length ? $('game-self-archive').getBoundingClientRect() : null;
+    const flights = rawCards.map((rawCard, index) => {
+      const recall = recalls[index];
+      const start = recall ? (recall.preview?.bounds || archive) : source;
+      return createIncomingCardFlight(resolveHandCard(rawCard), start, destinations[index],
+        reduced ? 100 : recall ? 620 : duration, reduced ? 0 : index * stagger, recall);
+    });
     const ready = await Promise.all(flights.map(flight => flight.ready));
     if (flights.some(({ element }) => !activeDrawFlights.has(element))) return;
     const drawRoomId = room?.id;
@@ -1718,6 +1749,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       if (visible && !inLobby) playTableSound(batchSound);
       animateOpponentDraws(5);
     } else rawCards.forEach((_, index) => {
+      if (recalls[index]) return;
       const playDraw = () => {
         if (drawEpoch === epoch && room?.id === drawRoomId && visible && !inLobby) {
           playTableSound(drawCardSound.cloneNode());
@@ -1742,7 +1774,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     });
     await Promise.allSettled(flights.flatMap(flight => flight.start()));
   }
-  function createIncomingCardFlight(card, source, destination, duration, delay) {
+  function createIncomingCardFlight(card, source, destination, duration, delay, recall) {
     const flight = document.createElement('div');
     flight.className = 'play-draw-flight';
     flight.setAttribute('aria-hidden', 'true');
@@ -1758,7 +1790,22 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const fallback = document.createElement('span'); fallback.textContent = card.title || 'Card';
     front.append(canvas, fallback); inner.append(back, front); flight.append(inner); document.body.append(flight);
     activeDrawFlights.add(flight);
-    const ready = prepareArrivingCard(card, canvas, fallback, () => activeDrawFlights.has(flight));
+    const previewCanvas = recall?.preview?.canvas;
+    let ready;
+    if (previewCanvas && !previewCanvas.hidden) {
+      canvas.width = previewCanvas.width;
+      canvas.height = previewCanvas.height;
+      canvas.getContext('2d').drawImage(previewCanvas, 0, 0);
+      canvas.hidden = false;
+      fallback.hidden = true;
+      const key = JSON.stringify(card);
+      if (!arrivingCardCanvases.has(key)) arrivingCardCanvases.set(key, []);
+      arrivingCardCanvases.get(key).push(canvas);
+      ready = Promise.resolve(true);
+    } else {
+      ready = prepareArrivingCard(card, canvas, fallback, () => activeDrawFlights.has(flight));
+    }
+    if (recall) inner.style.transform = 'rotateY(180deg)';
     const dx = source.left + source.width / 2 - destination.left - destination.width / 2;
     const dy = source.top + source.height / 2 - destination.top - destination.height / 2;
     return {
@@ -1769,6 +1816,11 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
           { transform: `translate(${dx * .45}px, ${dy * .45}px) rotate(-5deg)`, offset: .45 },
           { transform: 'translate(0, 0) rotate(0deg)' },
         ], { duration, delay, easing: 'cubic-bezier(.22,.7,.18,1)', fill: 'both' });
+        if (recall) {
+          flight.style.visibility = '';
+          releaseArchiveRecall(recall.preview);
+          return [motion.finished];
+        }
         const flip = inner.animate([
           { transform: 'rotateY(0deg)', offset: 0 },
           { transform: 'rotateY(0deg)', offset: .22 },
@@ -1869,7 +1921,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       } else if (event.key === 'ArrowRight' && archiveBrowserIndex < archiveBrowserCards.length - 1) {
         event.preventDefault(); ++archiveBrowserIndex; renderArchiveBrowser();
       } else if (event.key === 'Tab') {
-        const buttons = Array.from($('game-archive-browser').querySelectorAll('button:not(:disabled)'));
+        const buttons = Array.from($('game-archive-browser').querySelectorAll('button:not(:disabled):not([hidden])'));
         if (event.shiftKey && document.activeElement === buttons[0]) {
           event.preventDefault(); buttons.at(-1)?.focus();
         } else if (!event.shiftKey && document.activeElement === buttons.at(-1)) {
@@ -2579,10 +2631,17 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const serial = archiveBrowserRequestSerial;
     const entries = archiveBrowserCards.map((item, index) => {
       const row = document.createElement('li');
-      const thumbnail = document.createElement('div');
+      const thumbnail = document.createElement(archiveRecallPicker ? 'button' : 'div');
       thumbnail.className = 'play-archive-gallery-thumbnail';
-      thumbnail.setAttribute('role', 'img');
-      thumbnail.setAttribute('aria-label', `${item.title || 'card'} in Archive`);
+      if (archiveRecallPicker) {
+        thumbnail.type = 'button';
+        thumbnail.addEventListener('click', () => selectArchiveRecall(index, thumbnail));
+      } else {
+        thumbnail.setAttribute('role', 'img');
+      }
+      thumbnail.setAttribute('aria-label', archiveRecallPicker
+        ? 'Recall ' + (item.title || 'card') + ' to your hand'
+        : (item.title || 'Card') + ' in Archive');
       const canvas = document.createElement('canvas');
       canvas.hidden = true;
       canvas.setAttribute('aria-hidden', 'true');
@@ -2598,6 +2657,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       thumbnail.addEventListener('pointerenter', event => {
         if (event.pointerType === 'mouse') showCard();
       });
+      if (archiveRecallPicker) thumbnail.addEventListener('focus', showCard);
       row.append(thumbnail);
       return { row, thumbnail, canvas, fallback, item };
     });
@@ -2632,7 +2692,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if ($('game-archive-browser').hidden) return;
     const card = archiveBrowserCards[archiveBrowserIndex];
     const status = $('game-archive-browser-status');
-    status.textContent = archiveBrowserError || (archiveBrowserLoading ? 'Loading cards…'
+    status.textContent = archiveRecallPicker?.prompt || archiveBrowserError || (archiveBrowserLoading ? 'Loading cards…'
       : `${archiveBrowserCards.length} card${archiveBrowserCards.length === 1 ? '' : 's'}`);
     Array.from($('game-archive-browser-list').children).forEach((row, index) => {
       const thumbnail = row.firstElementChild;
@@ -2670,9 +2730,81 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     archiveBrowserError = '';
     if (restoreFocus && archiveBrowserOpener?.isConnected) archiveBrowserOpener.focus();
     archiveBrowserOpener = null;
+    $('game-archive-browser-skip').hidden = true;
+    const picker = archiveRecallPicker;
+    archiveRecallPicker = null;
+    picker?.resolve(null);
+  }
+  function chooseArchiveRecall(type, entries, { skip = null, hold = true } = {}) {
+    if (!entries.length || room?.status !== 'active') return Promise.resolve(null);
+    closeArchiveBrowser(false);
+    hideHoveredCardPreview();
+    clearBeginningConnector();
+    const prompt = 'Choose an ' + type + ' to Recall to your hand.';
+    return new Promise(resolve => {
+      archiveRecallPicker = { entries, prompt, skip, hold, resolve, roomId: room.id, turn: room.turn_number };
+      archiveBrowserCards = entries.map(({ card }) => resolveHandCard(card));
+      archiveBrowserIndex = 0;
+      archiveBrowserOpener = document.activeElement;
+      $('game-archive-browser-title').textContent = 'Your Archive';
+      $('game-archive-browser-skip').hidden = !skip;
+      $('game-archive-browser').hidden = false;
+      ++archiveBrowserRequestSerial;
+      renderArchiveGallery();
+      renderArchiveBrowser();
+      $('game-archive-browser-close').focus();
+    });
+  }
+  function selectArchiveRecall(index, thumbnail) {
+    const picker = archiveRecallPicker;
+    if (!picker) return;
+    if (room?.id !== picker.roomId || room.turn_number !== picker.turn) {
+      closeArchiveBrowser();
+      return;
+    }
+    const entry = index === null ? picker.skip : picker.entries[index];
+    if (!entry) return;
+    const preview = thumbnail ? captureArchiveRecall(thumbnail, picker.hold) : null;
+    archiveRecallPicker = null;
+    closeArchiveBrowser();
+    picker.resolve({ ...entry, preview });
+  }
+  function captureArchiveRecall(thumbnail, hold) {
+    const bounds = thumbnail.getBoundingClientRect();
+    if (!bounds.width || !bounds.height) return null;
+    const element = document.createElement('div');
+    element.className = 'play-hand-card play-archive-recall-flight';
+    element.setAttribute('aria-hidden', 'true');
+    Object.assign(element.style, {
+      left: bounds.left + 'px', top: bounds.top + 'px',
+      width: bounds.width + 'px', height: bounds.height + 'px',
+    });
+    const source = thumbnail.querySelector('canvas:not([hidden])');
+    const canvas = document.createElement('canvas');
+    canvas.hidden = !source?.width;
+    if (!canvas.hidden) {
+      canvas.width = source.width;
+      canvas.height = source.height;
+      canvas.getContext('2d').drawImage(source, 0, 0);
+    }
+    const fallback = document.createElement('span');
+    fallback.className = 'play-hand-fallback';
+    fallback.textContent = thumbnail.querySelector('.play-archive-gallery-fallback').textContent;
+    fallback.hidden = !canvas.hidden;
+    element.append(canvas, fallback);
+    if (hold && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      document.body.append(element);
+      stagedRecallFlights.add(element);
+    }
+    return { bounds, element, canvas };
+  }
+  function releaseArchiveRecall(preview) {
+    if (!preview) return;
+    stagedRecallFlights.delete(preview.element);
+    preview.element.remove();
   }
   async function openArchiveBrowser(seat) {
-    if (room?.status !== 'active' || !userId) return;
+    if (archiveRecallPicker || room?.status !== 'active' || !userId) return;
     hideCardPreview();
     archiveBrowserSeat = seat;
     archiveBrowserCards = [];
@@ -2713,6 +2845,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     $(`game-${seat}-archive`).addEventListener('click', () => void openArchiveBrowser(seat));
   }
   $('game-archive-browser-close').addEventListener('click', () => closeArchiveBrowser());
+  $('game-archive-browser-skip').addEventListener('click', () => selectArchiveRecall(null));
   $('game-archive-browser').querySelector('.play-archive-browser-backdrop')
     .addEventListener('click', () => closeArchiveBrowser());
   function archiveCardKey(card) {
@@ -2859,6 +2992,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   async function chooseEntityEffect(kind, source, terrain) {
     const choices = {};
+    let recall = null;
     const board = kind === 'relocate'
       ? { ...room.board, [source]: { ...room.board?.[source], terrain } }
       : room.board || {};
@@ -2866,6 +3000,16 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     for (let step = entityEffectStep(kind, board, source, choices, archive); step?.options.length;
       step = entityEffectStep(kind, board, source, choices, archive)) {
       const options = step.optional ? [{ label: 'Skip this choice', value: null }, ...step.options] : step.options;
+      if (step.field === 'recall') {
+        const entries = step.options.flatMap(({ value }) => {
+          const card = archive.find(item => item.card_type === 'Entity' && item.id === value);
+          return card ? [{ card, value }] : [];
+        });
+        recall = await chooseArchiveRecall('Entity', entries);
+        if (!recall) return null;
+        choices.recall = recall.value;
+        continue;
+      }
       let choice;
       const selectingSecondFertilize = kind === 'fertilize' && step.field === 'second';
       if (selectingSecondFertilize) {
@@ -2883,7 +3027,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       if (choice === undefined) return null;
       choices[step.field] = choice?.terrain ?? choice;
     }
-    return choices;
+    return { choices, recall };
   }
   function continueExtendedEvent(event) {
     const step = extendedEventStep(event.rule[1], event.selected, {
@@ -2900,8 +3044,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       eventNotice('');
       const reason = event.selected.length === 0 && eventTargetBlockReason(event.rule, event.handIndex);
       if (reason) { blockedPlayNotice(reason); return; }
-      void resolveExtendedEvent(event);
-      return;
+      return resolveExtendedEvent(event);
     }
     if (step.options.some(option => option.value.type === 'cell')) {
       event.step = step;
@@ -2913,6 +3056,22 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     pendingEvent = null;
     syncEventTargets();
     eventNotice('');
+    const archiveOptions = step.options.filter(option => option.value.type === 'archive');
+    const entries = archiveOptions.flatMap(({ value }) => {
+      const card = gameState?.archive?.[value.index];
+      return card ? [{ card, value }] : [];
+    });
+    if (entries.length) {
+      const skip = step.options.find(option => option.value.type === 'skip');
+      void chooseArchiveRecall(entries[0].card.card_type, entries, { skip }).then(async selection => {
+        if (!selection) { hideCardPreview(); return; }
+        event.selected.push(selection.value);
+        if (selection.card) event.recall = selection;
+        try { await continueExtendedEvent(event); }
+        finally { releaseArchiveRecall(selection.preview); }
+      });
+      return;
+    }
     chooseEventOption(step.label, step.options, choice => {
       event.selected.push(choice);
       continueExtendedEvent(event);
@@ -2953,11 +3112,21 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       });
       if (expected !== epoch || room?.id !== roomId) return;
       playTableSound(playCardSound);
-      const archiveMotion = animateDiscardToArchive([event.handIndex], { reflowHand: !(result?.drawn > 0) });
+      const removedIndexes = [event.handIndex];
+      if (event.recall && Number.isInteger(choices.discard_index)) {
+        removedIndexes.push(choices.discard_index + Number(choices.discard_index >= event.handIndex));
+      }
+      const archiveMotion = animateDiscardToArchive(removedIndexes, { reflowHand: !event.recall && !(result?.drawn > 0) });
       hideCardPreview();
-      await archiveMotion;
-      if (expected !== epoch || room?.id !== roomId) return;
-      if (result?.drawn > 0) await animateCardsToHand(horizon.slice(0, result.drawn), [event.handIndex], 110);
+      const drawn = horizon.slice(0, result?.drawn || 0);
+      if (event.recall) {
+        await Promise.all([archiveMotion, animateCardsToHand([event.recall.card, ...drawn],
+          removedIndexes, 110, null, [event.recall])]);
+      } else {
+        await archiveMotion;
+        if (expected !== epoch || room?.id !== roomId) return;
+        if (drawn.length) await animateCardsToHand(drawn, removedIndexes, 110);
+      }
       if (expected !== epoch || room?.id !== roomId) return;
       await refreshRoom();
       if (expected === epoch && room?.id === roomId) await loadGameState(true);
@@ -2976,7 +3145,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       renderTurnPhase();
     }
   }
-  async function evokeEvent(card, handIndex, targetX = null, targetY = null, targetCells = null) {
+  async function evokeEvent(card, handIndex, targetX = null, targetY = null, targetCells = null, recall = null) {
     if (!room || room.status !== 'active' || room.turn_player_id !== userId
       || room.turn_phase !== 'main' || phaseBusy || pendingFestival || !Array.isArray(gameState?.hand)) return;
     const rule = eventSupport(card);
@@ -2991,11 +3160,13 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       const options = (gameState.archive || []).flatMap((item, archiveIndex) => {
         const cardId = item.card_id || item.id;
         return item.card_type === 'Event' && cardId
-          ? [{ label: item.title, value: { archiveIndex, cardId } }] : [];
+          ? [{ card: item, value: { archiveIndex, cardId } }] : [];
       }).reverse();
       if (options.length) {
-        chooseEventOption('Choose an Event from your Archive', options,
-          choice => void evokeEvent(card, handIndex, null, null, choice));
+        const selection = await chooseArchiveRecall('Event', options);
+        if (!selection) { hideCardPreview(); return; }
+        try { await evokeEvent(card, handIndex, null, null, selection.value, selection); }
+        finally { releaseArchiveRecall(selection.preview); }
         return;
       }
     }
@@ -3069,11 +3240,18 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       if (expected !== epoch || room?.id !== roomId) return;
       pendingEvent = null;
       playTableSound(playCardSound);
-      const archiveMotion = animateDiscardToArchive([handIndex], { reflowHand: !(result?.drawn > 0) });
+      const recalled = recall && result?.recalled;
+      const archiveMotion = animateDiscardToArchive([handIndex], { reflowHand: !recalled && !(result?.drawn > 0) });
       hideCardPreview();
-      await archiveMotion;
-      if (expected !== epoch || room?.id !== roomId) return;
-      if (result?.drawn > 0) await animateCardsToHand(horizon.slice(0, result.drawn), [handIndex], 110);
+      const drawn = horizon.slice(0, result?.drawn || 0);
+      if (recalled) {
+        await Promise.all([archiveMotion, animateCardsToHand([recall.card, ...drawn], [handIndex], 110, null, [recall])]);
+      } else {
+        releaseArchiveRecall(recall?.preview);
+        await archiveMotion;
+        if (expected !== epoch || room?.id !== roomId) return;
+        if (drawn.length) await animateCardsToHand(drawn, [handIndex], 110);
+      }
       if (expected !== epoch || room?.id !== roomId) return;
       await refreshRoom();
       if (expected === epoch && room?.id === roomId) await loadGameState(true);
@@ -3103,15 +3281,21 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (!cardId) return;
     const expected = epoch, roomId = room.id, turn = room.turn_number;
     const effectKind = entityEffectKind(card, action);
-    let choices = {};
+    let choices = {}, recall = null;
     if (effectKind) {
       phaseBusy = true;
       renderTurnPhase();
-      try { choices = await chooseEntityEffect(effectKind, source, entityShapeTerrain(card)); }
+      let selection;
+      try { selection = await chooseEntityEffect(effectKind, source, entityShapeTerrain(card)); }
       finally { if (expected === epoch) { phaseBusy = false; renderTurnPhase(); } }
-      if (expected !== epoch || room?.id !== roomId || room.turn_number !== turn) return;
-      if (choices === null) { hideCardPreview(); return; }
+      if (expected !== epoch || room?.id !== roomId || room.turn_number !== turn) {
+        releaseArchiveRecall(selection?.recall?.preview);
+        return;
+      }
+      if (!selection) { hideCardPreview(); return; }
+      ({ choices, recall } = selection);
       if (legalEntityAction(card, room.board?.[source], source) !== action) {
+        releaseArchiveRecall(recall?.preview);
         hideCardPreview();
         blockedPlayNotice('The board has changed. Select the Entity again.');
         return;
@@ -3161,7 +3345,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       pendingEntity = null;
       if (result?.action === 'place' || result?.action === 'create_place') {
         playTableSound(playCardSound);
-        await Promise.all([animateEntityPlacement(flight, targetX, targetY), refreshRoom()]);
+        const recallMotion = recall
+          ? animateCardsToHand([recall.card], [handIndex], 0, null, [recall])
+          : null;
+        await Promise.all([animateEntityPlacement(flight, targetX, targetY), refreshRoom(), recallMotion]);
         if (expected !== epoch || room?.id !== roomId) return;
         const terrainArrival = terrainArrivals.get(source);
         if (terrainArrival && !document.hidden) {
@@ -3219,6 +3406,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         message(friendly(error), true);
       }
     } finally {
+      releaseArchiveRecall(recall?.preview);
       flight?.flight.remove();
       if (expected === epoch) {
         arrivingEntityKey = null;
@@ -3364,6 +3552,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     requestAnimationFrame(syncHoveredCardPreview);
   }
   function clearGameCardFlights() {
+    for (const element of stagedRecallFlights) element.remove();
+    stagedRecallFlights.clear();
     for (const animation of gameCardFlights) animation.cancel();
     opponentArrivingEntities.clear();
     $('game-board').querySelectorAll('.play-node-entity-card.is-opponent-arriving')

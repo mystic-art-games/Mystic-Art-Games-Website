@@ -143,7 +143,8 @@ body.dark-mode .play-deck-field.is-locked select { border-color: #596d5d; backgr
 .play-archive-browser-panel .play-archive-browser-close:hover:not(:disabled) { background: #477452; }
 .play-archive-browser-panel button:disabled { cursor: default; opacity: .5; }
 .play-archive-browser-panel button:focus-visible { outline: 2px solid #e8d38a; outline-offset: 2px; }
-.play-archive-browser-panel .play-archive-browser-close { flex: 0 0 auto; width: 2rem; height: 2rem; padding: 0; font-size: 1.35rem; line-height: 1; }
+.play-archive-browser-panel .play-archive-browser-skip { margin-left: auto; }
+.play-archive-browser-panel .play-archive-browser-close { order: 1; flex: 0 0 auto; width: 2rem; height: 2rem; padding: 0; font-size: 1.35rem; line-height: 1; }
 .play-archive-browser-body { display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.5fr); gap: 1rem; min-height: 0; padding: 1rem; }
 .play-archive-browser-view { display: grid; justify-items: center; align-content: center; gap: .6rem; min-width: 0; min-height: 0; }
 .play-archive-browser-card { display: grid; place-items: center; width: auto; max-width: 100%; height: min(48dvh, 450px); aspect-ratio: 63 / 88; overflow: hidden; border: 1px solid #9bbba3; border-radius: 7px; background: #e9ece1; color: #173b2d; text-align: center; }
@@ -155,6 +156,9 @@ body.dark-mode .play-deck-field.is-locked select { border-color: #596d5d; backgr
 .play-archive-browser-list[data-art-scroll-ready="true"] { scrollbar-width: none; }
 .play-archive-browser-list[data-art-scroll-ready="true"]::-webkit-scrollbar { display: none; }
 .play-archive-gallery-thumbnail { display: block; width: 100%; padding: 0; border: 0; border-radius: 4px; background: transparent; box-shadow: none; text-align: center; }
+#play-game button.play-archive-gallery-thumbnail { margin: 0; cursor: pointer; }
+#play-game button.play-archive-gallery-thumbnail:hover:not(:disabled) { background: transparent; box-shadow: 0 0 0 2px #efd894; }
+.play-archive-recall-flight { position: fixed; z-index: 101; pointer-events: none; }
 .play-archive-browser-list canvas, .play-archive-gallery-fallback { display: block; box-sizing: border-box; width: 100%; aspect-ratio: 63 / 88; border-radius: 4px; }
 .play-archive-browser-list canvas[hidden], .play-archive-gallery-fallback[hidden] { display: none; }
 .play-archive-gallery-fallback { display: grid; place-items: center; padding: .4rem; background: #e9ece1; color: #173b2d; font-size: .72rem; }
