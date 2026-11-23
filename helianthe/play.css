@@ -249,6 +249,7 @@ body.dark-mode .play-deck-field.is-locked select { border-color: #596d5d; backgr
 .play-entity-flight { position: fixed; z-index: 85; box-sizing: border-box; margin: 0; pointer-events: none; box-shadow: 0 12px 28px #0c1f1ba8; }
 .play-discard-flight { position: fixed; z-index: 85; box-sizing: border-box; margin: 0; pointer-events: none; transform-origin: center; box-shadow: 0 12px 28px #0c1f1ba8; }
 .play-draw-flight { position: fixed; z-index: 85; box-sizing: border-box; margin: 0; pointer-events: none; perspective: 1000px; }
+.play-fertilize-flight { position: fixed; z-index: 86; max-width: none; pointer-events: none; }
 .play-terrain-flight { position: fixed; z-index: 85; display: block; object-fit: cover; border-radius: 6px; box-shadow: 0 6px 14px #0007; pointer-events: none; }
 .play-opponent-card-flight { position: fixed; z-index: 86; display: grid; place-items: center; overflow: hidden; border: 1px solid #123c2d; border-radius: 6px; background: #e9ece1; color: #234536; box-shadow: 0 6px 14px #0c1f1b70; font: 800 .7rem Nunito, sans-serif; text-align: center; overflow-wrap: anywhere; pointer-events: none; }
 .play-opponent-card-flight.is-face-down { border: 2px solid var(--play-card-back-border); background: url('../images/helianthe-logo.png') center / 62% no-repeat, var(--play-card-back-and-log-bg); }

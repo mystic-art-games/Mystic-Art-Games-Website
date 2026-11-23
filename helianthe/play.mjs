@@ -85,6 +85,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   const activeDrawFlights = new Set();
   const terrainArrivals = new Map();
   const gameCardFlights = new Set();
+  const fertilizeArrivals = new Map();
   const opponentArrivingEntities = new Set();
   const drawHiddenItems = new Set();
   const discardFlights = new Set();
@@ -3513,7 +3514,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         flight.alt = '';
         flight.src = cell._playTerrain.fullArtUrl;
         const dy = terrainExit - bounds.top + (ownTurn ? bounds.height : -bounds.height);
-        terrainAnimation = animateDissolveFlight(flight, bounds, [
+        terrainAnimation = animateBoardFlight(flight, bounds, [
           { transform: 'translateY(0)', opacity: 1 },
           { transform: 'translateY(' + dy + 'px) rotate(' + (ownTurn ? 8 : -8) + 'deg) scale(.9)', opacity: 0 },
         ], 460);
@@ -3536,7 +3537,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       }
       const dx = destination.left + (destination.width - bounds.width) / 2 - bounds.left;
       const dy = destination.top + (destination.height - bounds.height) / 2 - bounds.top;
-      const animation = animateDissolveFlight(flight, bounds, [
+      const animation = animateBoardFlight(flight, bounds, [
         { transform: 'translate(0, 0) scale(1)' },
         { transform: 'translate(' + dx + 'px, ' + dy + 'px) scale('
           + destination.width / bounds.width + ', ' + destination.height / bounds.height + ')' },
@@ -3561,7 +3562,47 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       });
     }
   }
-  function animateDissolveFlight(flight, bounds, keyframes, duration) {
+  function animateFertilizeChanges(previousBoard, nextBoard, ownTurn, arriving) {
+    const game = $('game');
+    if (!visible || inLobby || game.hidden || document.hidden
+      || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    const playerArea = ownTurn ? $('game-hand') : game.querySelector('.play-game-opponent-footer');
+    const origin = playerArea.getBoundingClientRect();
+    for (const cell of $('game-board').children) {
+      const key = cell.dataset.key;
+      const previous = previousBoard?.[key];
+      const next = nextBoard?.[key];
+      const hadToken = !previous?.terrain && Boolean(previous?.fertilize);
+      const hasToken = !next?.terrain && Boolean(next?.fertilize);
+      if (hadToken === hasToken || hasToken !== arriving) continue;
+      const token = cell.querySelector('.play-fertilize-token');
+      const bounds = token?.getBoundingClientRect();
+      if (!bounds?.width || !bounds.height) continue;
+
+      fertilizeArrivals.get(key)?.cancel();
+      const flight = token.cloneNode();
+      flight.classList.add('play-fertilize-flight');
+      flight.style.visibility = '';
+      const dx = origin.left + origin.width / 2 - bounds.left - bounds.width / 2;
+      const dy = origin.top + origin.height / 2 - bounds.top - bounds.height / 2;
+      const atPlayer = { transform: 'translate(' + dx + 'px, ' + dy + 'px) scale(.4)', opacity: 0 };
+      const atNode = { transform: 'translate(0, 0) scale(1)', opacity: 1 };
+      const animation = animateBoardFlight(flight, bounds,
+        arriving ? [atPlayer, atNode] : [atNode, atPlayer], 420);
+      if (!arriving) continue;
+      token.style.visibility = 'hidden';
+      fertilizeArrivals.set(key, animation);
+      const revealToken = () => {
+        if (fertilizeArrivals.get(key) !== animation) return;
+        fertilizeArrivals.delete(key);
+        const current = $('game-board').querySelector('[data-key="' + CSS.escape(key) + '"] .play-fertilize-token');
+        if (current) current.style.visibility = '';
+      };
+      void animation.finished.then(revealToken, revealToken);
+    }
+  }
+  function animateBoardFlight(flight, bounds, keyframes, duration) {
     flight.setAttribute('aria-hidden', 'true');
     Object.assign(flight.style, {
       left: bounds.left + 'px', top: bounds.top + 'px',
@@ -3651,6 +3692,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         const token = document.createElement('img');
         token.className = 'play-fertilize-token';
         token.src = './assets/Fertilize_Simple.png';
+        if (fertilizeArrivals.has(cell.dataset.key)) token.style.visibility = 'hidden';
         token.alt = '';
         cell.append(token);
       }
@@ -3906,11 +3948,16 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         }
       }
     }
-    if (room.status === 'active' && data.status === 'active') {
-      animateDissolvedCards(data.board, room.turn_player_id === userId);
+    const previousBoard = room.board;
+    const ownAction = room.turn_player_id === userId;
+    const activeMatch = room.status === 'active' && data.status === 'active';
+    if (activeMatch) {
+      animateDissolvedCards(data.board, ownAction);
+      animateFertilizeChanges(previousBoard, data.board, ownAction, false);
     }
     if (data.status !== 'active' || inLobby) clearTerrainArrivals();
     room = data; render();
+    if (activeMatch) animateFertilizeChanges(previousBoard, data.board, ownAction, true);
     if (phaseChangedWithinTurn) playTableSound(nextPhaseSound);
     if (opponentPlacement) {
       const [key, node] = opponentPlacement;
