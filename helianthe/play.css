@@ -250,6 +250,13 @@ body.dark-mode .play-deck-field.is-locked select { border-color: #596d5d; backgr
   top: calc(76% + var(--play-entity-offset));
   left: calc(50% + var(--play-entity-offset));
 }
+.play-game-node:has(> .play-node-entity-card.faces-opponent:not(.is-arriving)) > .play-node-markers {
+  top: calc(24% + var(--play-entity-offset));
+}
+.play-game-node:not(.has-entity) > .play-node-markers:has(> .play-protection-token) > .play-node-marker-badge {
+  position: absolute;
+  top: 100%;
+}
 .play-protection-token { width: clamp(12px, calc(var(--play-map-card-width, 60px) * .29), 32px); aspect-ratio: 1; object-fit: contain; filter: drop-shadow(0 2px 4px #09251799); }
 .play-game-entanglements { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
 .play-entanglement-token { position: absolute; width: clamp(16px, calc(var(--play-map-card-width, 60px) * .34), 36px); aspect-ratio: 1; object-fit: contain; transform: translate(-50%, -50%); filter: drop-shadow(0 2px 4px #09251799); }

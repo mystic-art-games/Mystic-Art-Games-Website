@@ -3046,7 +3046,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       return;
     }
     const card = count && raw ? (seat === 'self' ? resolveHandCard(raw) : resolveGameCard(raw)) : null;
-    $(`game-${seat}-archive`)._playCard = card;
+    const slot = $(`game-${seat}-archive`);
+    slot._playCard = card;
+    slot.classList.toggle('faces-opponent', seat === 'opponent' && Boolean(card));
     const key = card ? archiveCardKey(card) : '';
     if (preview.key === key) return;
     preview.key = key;
@@ -3776,7 +3778,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     $('game-board').querySelectorAll('.play-node-entity-card.is-opponent-arriving')
       .forEach(entity => entity.classList.remove('is-arriving', 'is-opponent-arriving'));
   }
-  async function animateOpponentCard(zone, { draw = false, card = null, title = '', delay = 0, facesOpponent = false } = {}) {
+  async function animateOpponentCard(zone, { draw = false, card = null, title = '', delay = 0 } = {}) {
     const game = $('game');
     const canPlayLandingSound = () => !draw && visible && !inLobby && !game.hidden && !document.hidden;
     if (!visible || inLobby || game.hidden || document.hidden) return;
@@ -3791,7 +3793,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const dy = top - bounds.height - bounds.top;
     const flight = document.createElement('div');
     flight.className = `play-opponent-card-flight${draw ? ' is-face-down' : ''}`;
-    flight.classList.toggle('faces-opponent', facesOpponent);
+    flight.classList.toggle('faces-opponent', !draw);
     flight.setAttribute('aria-hidden', 'true');
     Object.assign(flight.style, {
       left: `${bounds.left}px`, top: `${bounds.top}px`,
@@ -4415,19 +4417,40 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const previousBoard = room.board;
     const ownAction = room.turn_player_id === userId;
     const activeMatch = room.status === 'active' && data.status === 'active';
+    const protectionDepartures = new Map();
+    if (visible && !inLobby && !document.hidden && room.status === 'active'
+      && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      for (const cell of $('game-board').children) {
+        const { key } = cell.dataset;
+        const before = previousBoard?.[key], after = data.board?.[key];
+        if (before?.entity && before.protected && after?.protected && !after.entity && before.terrain === after.terrain) {
+          const bounds = cell.querySelector('.play-protection-token')?.getBoundingClientRect();
+          if (bounds?.width) protectionDepartures.set(key, bounds);
+        }
+      }
+    }
     if (activeMatch) {
       animateDissolvedCards(data.board, ownAction);
       animateFertilizeChanges(previousBoard, data.board, ownAction, false);
     }
     if (data.status !== 'active' || inLobby) clearTerrainArrivals();
     room = data; render();
+    for (const [key, from] of protectionDepartures) {
+      const token = $('game-board').querySelector(`[data-key="${CSS.escape(key)}"] .play-protection-token`);
+      if (!token) continue;
+      const to = token.getBoundingClientRect();
+      token.animate([
+        { translate: `${from.left - to.left}px ${from.top - to.top}px` },
+        { translate: '0px 0px' },
+      ], { duration: 290, easing: 'cubic-bezier(.2,.7,.3,1)' });
+    }
     if (activeMatch) animateFertilizeChanges(previousBoard, data.board, ownAction, true);
     if (phaseChangedWithinTurn) playTableSound(nextPhaseSound);
     if (opponentPlacement) {
       const [key, node] = opponentPlacement;
       const target = () => $('game-board').querySelector(`[data-key="${CSS.escape(key)}"] .play-node-entity-card`);
       const expected = epoch;
-      void animateOpponentCard(target(), { card: resolveGameCard(node.entity), facesOpponent: true }).finally(() => {
+      void animateOpponentCard(target(), { card: resolveGameCard(node.entity) }).finally(() => {
         if (expected !== epoch) return;
         opponentArrivingEntities.delete(key);
         target()?.classList.remove('is-arriving', 'is-opponent-arriving');
