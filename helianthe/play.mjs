@@ -11,7 +11,7 @@ function formatNodeCoordinates(key) {
 
 const beginningIconPaths = {
   target: '<circle cx="12" cy="12" r="6"/><path d="M12 3v3m0 12v3M3 12h3m12 0h3"/><circle cx="12" cy="12" r="1"/>',
-  move: '<path d="M5 18 18 5M10 5h8v8"/>',
+  move: '<circle cx="5" cy="17" r="2.5"/><path d="M7.5 17H12a3 3 0 0 0 3-3v-4a3 3 0 0 1 3-3h3m-4-4 4 4-4 4"/>',
   draw: '<rect x="7" y="3" width="12" height="15" rx="2"/><path d="M4 7v12a2 2 0 0 0 2 2h9m-2-14v7m-3-3h6"/>',
   recall: '<path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7l-3-5m-13 5 3-5m-3 5h4m8 0h4M12 15V3m-3 3 3-3 3 3"/>',
   protect: '<path d="M12 22s7-4 7-10V5l-7-3-7 3v7c0 6 7 10 7 10Z"/><path d="m9 12 2 2 4-4"/>',
@@ -1565,9 +1565,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         }
       } else if (!own) {
         if (options.includes(target)) {
-          controls.append(beginningControl(canStay ? 'move' : 'target', `Target · ${formatNodeCoordinates(target)}`, { target }));
+          controls.append(beginningControl('target', `Target · ${formatNodeCoordinates(target)}`, { target, symbol: canStay ? 'move' : undefined }));
         } else if (canStay) {
-          controls.append(beginningControl('target', 'Staying here'));
+          controls.append(beginningControl('target', 'Staying here', { symbol: 'move' }));
         } else if (options.length) {
           controls.append(beginningControl('wait', 'Waiting for target'));
         } else {
@@ -1587,7 +1587,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         });
         controls.append(choose);
         if (canStay && chosenTarget) {
-          const stay = beginningControl('target', 'Stay here', { button: true });
+          const stay = beginningControl('target', 'Stay here', { button: true, symbol: 'move' });
           stay.disabled = phaseBusy;
           stay.addEventListener('click', () => {
             beginningTargetSource = null;
@@ -1599,7 +1599,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
           controls.append(stay);
         }
       } else if (canStay) {
-        controls.append(beginningControl('target', 'Staying here'));
+        controls.append(beginningControl('target', 'Staying here', { symbol: 'move' }));
       } else if (target) {
         const clear = beginningControl('clear', 'Clear target', { button: true });
         clear.disabled = phaseBusy;
