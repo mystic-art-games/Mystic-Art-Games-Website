@@ -683,8 +683,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   function beginningEffectKind(card) {
     const effect = String(card?.effect || '').replace(/\s+/g, ' ').trim().toLowerCase();
-    if (['March of Mushrooms', 'March of Mashrooms', 'March of Marshrooms', 'Marsh of Mashrooms', 'Marsh of Marshrooms'].includes(card?.title)
-      && /^at the (?:beginning|begining|beginnig) of your turn, you may move this entity to (?:an )?adjacent empty symbiosis terrain\. then,? entangle (?:the )?terrain under this entity(?:, even if it did not move)?\.?$/.test(effect)) return 'march_of_marshrooms';
+    if (['March of Mushrooms', 'Marsh of Mushrooms', 'March of Mashrooms', 'March of Marshrooms', 'Marsh of Mashrooms', 'Marsh of Marshrooms'].includes(card?.title)
+      && /^at the (?:beginning|begining|beginnig) of your turn, you may move this entity to (?:an |any )?adjacent empty (?:symbiosis )?terrain\. then,? (?:you may )?entangle (?:the )?terrain under this entity(?:, even if it did not move)?\.?$/.test(effect)) return 'march_of_marshrooms';
     if (card?.title === 'Efficient Grid'
       && /^at the (?:beginning|begining|beginnig) of (?:the )?radiant patron(?:'s)? turn, luminate 1\b/.test(effect)) return 'efficient_grid';
     if (card?.title === 'Solar Converter'
@@ -712,7 +712,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   function beginningEffectOptional(card) {
     const kind = beginningEffectKind(card);
-    if (kind === 'march_of_marshrooms') return false;
     return ['solar_converter', 'expansive_ivy'].includes(kind) || /\byou may\b/i.test(String(card?.effect || ''));
   }
   function beginningEffects() {
@@ -740,9 +739,12 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const plan = new Map();
     for (const source of beginningOrder) {
       if (beginningSkipped.has(source)) { plan.set(source, { options: [], target: null, valid: true }); continue; }
-      const kind = effectsBySource.get(source)?.kind;
+      const effect = effectsBySource.get(source);
+      const kind = effect?.kind;
       if (kind === 'march_of_marshrooms') {
-        const options = eventNeighbors(source).filter(key => terrain.get(key) === 'Symbiosis' && !occupied.has(key));
+        const symbiosisOnly = /adjacent\s+empty\s+symbiosis\s+terrain/i.test(effect.card.effect);
+        const options = eventNeighbors(source).filter(key => terrain.has(key) && !occupied.has(key)
+          && (!symbiosisOnly || terrain.get(key) === 'Symbiosis'));
         const selected = beginningTargets.get(source);
         const target = options.includes(selected) ? selected : null;
         const destination = target || source;
@@ -757,16 +759,14 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
           return ['Flow', 'Radiance', 'Verdant'].includes(destinationType)
             && otherType === 'Symbiosis' && !links.get(key)?.size && !links.get(destination)?.has(key);
         }).map(key => ({ value: key, label: formatNodeCoordinates(key) }));
-        const valid = !choices.length || choices.some(option => option.value === choice);
-        plan.set(source, { options, target, choices, choice, valid, automaticSkip: !options.length && !choices.length });
-        if (valid) {
-          if (target) { occupied.delete(source); occupied.add(target); }
-          if (choices.length) {
-            if (!links.has(destination)) links.set(destination, new Set());
-            if (!links.has(choice)) links.set(choice, new Set());
-            links.get(destination).add(choice);
-            links.get(choice).add(destination);
-          }
+        plan.set(source, { options, target, choices, choice, valid: true, symbiosisOnly,
+          automaticSkip: !options.length && !choices.length });
+        if (target) { occupied.delete(source); occupied.add(target); }
+        if (choices.some(option => option.value === choice)) {
+          if (!links.has(destination)) links.set(destination, new Set());
+          if (!links.has(choice)) links.set(choice, new Set());
+          links.get(destination).add(choice);
+          links.get(choice).add(destination);
         }
         continue;
       }
@@ -1484,10 +1484,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       }
       heading.append(title);
       const controls = document.createElement('div'); controls.className = 'play-beginning-effect-controls';
-      const { options, target, choices, choice, terrainOptions, eventOptions, fallback, targets, eventId, draws, loading } = plan.get(source);
+      const { options, target, choices, choice, terrainOptions, eventOptions, fallback, targets, eventId, draws, loading, symbiosisOnly } = plan.get(source);
       const canStay = effect.kind === 'march_of_marshrooms';
       const targetPrompt = {
-        march_of_marshrooms: 'Choose an adjacent unoccupied Symbiosis Terrain',
+        march_of_marshrooms: symbiosisOnly ? 'Choose an adjacent empty Symbiosis Terrain' : 'Choose an adjacent empty Terrain',
         efficient_grid: 'Choose a Radiance Terrain',
         solar_converter: 'Choose an adjacent Terrain',
       }[effect.kind] || 'Choose an adjacent empty Node';
@@ -1608,15 +1608,15 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         if (own) {
           const select = document.createElement('select');
           select.setAttribute('aria-label', label);
-          select.add(new Option(label, ''));
+          select.add(new Option(canStay ? 'Skip Entangle' : label, ''));
           for (const option of choices) select.add(new Option(option.label, option.value));
-          select.value = choice || '';
+          select.value = selected?.value || '';
           select.disabled = phaseBusy;
           select.addEventListener('change', () => {
             beginningChoices.set(source, select.value);
             renderBeginningEffects(); void saveBeginningPlan();
           });
-          controls.append(beginningControl(icon, selected ? `${label} · ${selected.label}` : label,
+          controls.append(beginningControl(icon, selected ? `${label} · ${selected.label}` : canStay ? 'Choose Terrain to Entangle or skip' : label,
             { select, target: canStay ? selected?.value : undefined, selected: Boolean(selected) }));
         } else if (selected) {
           controls.append(beginningControl(icon, canStay ? `Entangle ${selected.label}` : selected.label,
