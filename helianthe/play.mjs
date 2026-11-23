@@ -12,6 +12,7 @@ function formatNodeCoordinates(key) {
 const beginningIconPaths = {
   target: '<circle cx="12" cy="12" r="6"/><path d="M12 3v3m0 12v3M3 12h3m12 0h3"/><circle cx="12" cy="12" r="1"/>',
   move: '<path d="M5 18 18 5M10 5h8v8"/>',
+  entangle: '<path d="m10 14 4-4m-5 7-2 2a3.5 3.5 0 0 1-5-5l5-5a3.5 3.5 0 0 1 5 0m0 6a3.5 3.5 0 0 0 5 0l5-5a3.5 3.5 0 0 0-5-5l-2 2"/>',
   draw: '<rect x="7" y="3" width="12" height="15" rx="2"/><path d="M4 7v12a2 2 0 0 0 2 2h9m-2-14v7m-3-3h6"/>',
   recall: '<path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7l-3-5m-13 5 3-5m-3 5h4m8 0h4M12 15V3m-3 3 3-3 3 3"/>',
   protect: '<path d="M12 22s7-4 7-10V5l-7-3-7 3v7c0 6 7 10 7 10Z"/><path d="m9 12 2 2 4-4"/>',
@@ -29,12 +30,13 @@ function beginningIcon(name) {
   return `<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round">${beginningIconPaths[name]}</svg>`;
 }
 
-function beginningControl(icon, label, { button = false, select, target, selected = Boolean(target), count } = {}) {
+function beginningControl(icon, label, { button = false, select, target, selected = Boolean(target), count, symbol } = {}) {
   const control = document.createElement(button ? 'button' : 'span');
   control.className = 'play-beginning-control';
   control.dataset.beginningTooltip = label;
   control.classList.toggle('is-chosen', selected);
   control.innerHTML = beginningIcon(icon);
+  if (symbol) control.insertAdjacentHTML('beforeend', beginningIcon(symbol));
   if (target) control.dataset.beginningTarget = target;
   if (select) {
     control.classList.add('play-beginning-picker');
@@ -138,6 +140,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   const discardHandShifts = [], discardHiddenCards = new Set();
   const arrivingCardCanvases = new Map();
   let beginningTurnKey = '', beginningOrder = [], beginningTargetSource = null;
+  let beginningTargetMode = 'move';
   const beginningSkipped = new Set();
   const beginningTargets = new Map();
   const beginningChoices = new Map();
@@ -867,7 +870,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       : ['fertile_rain', 'fertilize_two'].includes(eventKind)
         ? pendingEvent.targets?.[0]?.join(',')
         : firstEntityFertilizeTarget;
-    const beginningOptions = beginningTargetSource ? beginningPlan().get(beginningTargetSource)?.options : null;
+    const beginningOptions = beginningBoardOptions();
     const targetsEntity = pendingEvent?.extended ? pendingEvent.step.targetsEntity
       : pendingEvent && !pendingEvent.nextKeys && ['dissolve_entity', 'unprotect_entity', 'fertile_rain'].includes(pendingEvent.rule[1]);
     for (const cell of $('game-board').children) {
@@ -1567,11 +1570,12 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       } else if (options.length) {
         const chosenTarget = options.includes(target) ? target : undefined;
         const label = chosenTarget ? `${targetPrompt} · ${formatNodeCoordinates(chosenTarget)}` : targetPrompt;
-        const choose = beginningControl(canStay ? 'move' : 'target', label, { button: true, target: chosenTarget });
-        choose.setAttribute('aria-pressed', String(beginningTargetSource === source));
+        const choose = beginningControl('target', label, { button: true, target: chosenTarget, symbol: canStay ? 'move' : undefined });
+        choose.setAttribute('aria-pressed', String(beginningTargetSource === source && beginningTargetMode === 'move'));
         choose.disabled = phaseBusy;
         choose.addEventListener('click', () => {
-          beginningTargetSource = beginningTargetSource === source ? null : source;
+          beginningTargetSource = beginningTargetSource === source && beginningTargetMode === 'move' ? null : source;
+          beginningTargetMode = 'move';
           eventNotice(beginningTargetSource ? `${targetPrompt} for ${effect.card.title}.` : '');
           renderBeginningEffects(); syncEventTargets();
         });
@@ -1602,10 +1606,24 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         const label = canStay ? 'Terrain to Entangle' : 'Choose Protect or Crisis';
         const selected = choices.find(option => option.value === choice);
         const icon = canStay ? 'target' : selected?.value || 'condition';
-        if (own) {
+        if (canStay) {
+          const label = selected ? `Entangle ${selected.label}` : 'Choose Terrain to Entangle';
+          const entangle = beginningControl('target', label, { button: own, target: selected?.value, symbol: 'entangle' });
+          if (own) {
+            entangle.disabled = phaseBusy;
+            entangle.setAttribute('aria-pressed', String(beginningTargetSource === source && beginningTargetMode === 'entangle'));
+            entangle.addEventListener('click', () => {
+              beginningTargetSource = beginningTargetSource === source && beginningTargetMode === 'entangle' ? null : source;
+              beginningTargetMode = 'entangle';
+              eventNotice(beginningTargetSource ? 'Choose Terrain to Entangle. Select the current target again to skip Entangle.' : '');
+              renderBeginningEffects(); syncEventTargets();
+            });
+          }
+          controls.append(entangle);
+        } else if (own) {
           const select = document.createElement('select');
           select.setAttribute('aria-label', label);
-          select.add(new Option(canStay ? 'Skip Entangle' : label, ''));
+          select.add(new Option(label, ''));
           for (const option of choices) select.add(new Option(option.label, option.value));
           select.value = selected?.value || '';
           select.disabled = phaseBusy;
@@ -1613,11 +1631,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
             beginningChoices.set(source, select.value);
             renderBeginningEffects(); void saveBeginningPlan();
           });
-          controls.append(beginningControl(icon, selected ? `${label} · ${selected.label}` : canStay ? 'Choose Terrain to Entangle or skip' : label,
-            { select, target: canStay ? selected?.value : undefined, selected: Boolean(selected) }));
+          controls.append(beginningControl(icon, selected ? `${label} · ${selected.label}` : label,
+            { select, selected: Boolean(selected) }));
         } else if (selected) {
-          controls.append(beginningControl(icon, canStay ? `Entangle ${selected.label}` : selected.label,
-            { target: canStay ? selected.value : undefined }));
+          controls.append(beginningControl(icon, selected.label, { selected: true }));
         }
       }
       if (hoverMessage) {
@@ -3573,12 +3590,22 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     syncEventTargets();
     void evokeEvent(event.card, event.handIndex, column, row);
   }
+  function beginningBoardOptions() {
+    if (!beginningTargetSource) return [];
+    const effect = beginningPlan().get(beginningTargetSource);
+    return beginningTargetMode === 'entangle' ? (effect?.choices || []).map(option => option.value) : effect?.options || [];
+  }
   function chooseBoardTarget(column, row) {
     if (beginningTargetSource) {
       const target = `${column},${row}`;
-      if (!beginningPlan().get(beginningTargetSource)?.options.includes(target)) return;
-      if (beginningTargets.get(beginningTargetSource) !== target) beginningChoices.delete(beginningTargetSource);
-      beginningTargets.set(beginningTargetSource, target);
+      if (!beginningBoardOptions().includes(target)) return;
+      if (beginningTargetMode === 'entangle') {
+        if (beginningChoices.get(beginningTargetSource) === target) beginningChoices.delete(beginningTargetSource);
+        else beginningChoices.set(beginningTargetSource, target);
+      } else {
+        if (beginningTargets.get(beginningTargetSource) !== target) beginningChoices.delete(beginningTargetSource);
+        beginningTargets.set(beginningTargetSource, target);
+      }
       beginningTargetSource = null;
       eventNotice('');
       renderBeginningEffects(); syncEventTargets(); void saveBeginningPlan();
