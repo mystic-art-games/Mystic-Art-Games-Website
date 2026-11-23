@@ -9,6 +9,55 @@ function formatNodeCoordinates(key) {
   return 'R' + (row + 1) + ' C' + (column + 1);
 }
 
+const beginningIconPaths = {
+  target: '<circle cx="12" cy="12" r="6"/><path d="M12 3v3m0 12v3M3 12h3m12 0h3"/><circle cx="12" cy="12" r="1"/>',
+  move: '<path d="M5 18 18 5M10 5h8v8"/>',
+  stay: '<path d="m5 11 7-6 7 6m-12-1v9h10v-9m-7 9v-5h4v5"/>',
+  draw: '<rect x="7" y="3" width="12" height="15" rx="2"/><path d="M4 7v12a2 2 0 0 0 2 2h9m-2-14v7m-3-3h6"/>',
+  recall: '<path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7l-3-5m-13 5 3-5m-3 5h4m8 0h4M12 15V3m-3 3 3-3 3 3"/>',
+  entangle: '<path d="m10 14 4-4m-5 7-2 2a3.5 3.5 0 0 1-5-5l5-5a3.5 3.5 0 0 1 5 0m0 6a3.5 3.5 0 0 0 5 0l5-5a3.5 3.5 0 0 0-5-5l-2 2"/>',
+  protect: '<path d="M12 22s7-4 7-10V5l-7-3-7 3v7c0 6 7 10 7 10Z"/><path d="m9 12 2 2 4-4"/>',
+  crisis: '<path d="m13 2-8 12h6l-1 8 9-12h-6l1-8z"/>',
+  condition: '<path d="M12 22s7-4 7-10V5l-7-3-7 3v7c0 6 7 10 7 10Z"/><path d="m13 7-3 5h4l-2 5"/>',
+  dissolve: '<path d="m5 7 7-4 7 4v7l-7 4-7-4V7Zm0 0 7 4 7-4m-7 4v3m-5 5h.01m5 2h.01m5-2h.01"/>',
+  clear: '<path d="m6 6 12 12M18 6 6 18"/>',
+  wait: '<circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/>',
+  skip: '<circle cx="12" cy="12" r="8"/><path d="m6 18 12-12"/>',
+  grip: '<path d="M9 5h.01M15 5h.01M9 12h.01M15 12h.01M9 19h.01M15 19h.01" stroke-width="3"/>',
+  menu: '<path d="m7 10 5 5 5-5"/>',
+};
+
+function beginningIcon(name) {
+  return `<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round">${beginningIconPaths[name]}</svg>`;
+}
+
+function beginningControl(icon, label, { button = false, select, target, selected = Boolean(target), count } = {}) {
+  const control = document.createElement(button ? 'button' : 'span');
+  control.className = 'play-beginning-control';
+  control.title = label;
+  control.classList.toggle('is-chosen', selected);
+  control.innerHTML = beginningIcon(icon);
+  if (target) control.dataset.beginningTarget = target;
+  if (select) {
+    control.classList.add('play-beginning-picker');
+    select.title = label;
+    control.insertAdjacentHTML('beforeend', beginningIcon('menu'));
+    control.append(select);
+  } else {
+    if (button) control.type = 'button';
+    else control.setAttribute('role', 'img');
+    control.setAttribute('aria-label', label);
+  }
+  if (count !== undefined) {
+    const badge = document.createElement('span');
+    badge.className = 'play-beginning-control-count';
+    badge.setAttribute('aria-hidden', 'true');
+    badge.textContent = count;
+    control.append(badge);
+  }
+  return control;
+}
+
 export function playerOnline(timestamp, now = Date.now()) {
   return Boolean(timestamp && now - Date.parse(timestamp) < 45000);
 }
@@ -1429,13 +1478,13 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       row.draggable = own && !phaseBusy;
       const heading = document.createElement('div'); heading.className = 'play-beginning-effect-heading';
       const title = document.createElement('strong'); title.textContent = effect.card.title;
+      title.title = effect.card.title;
       if (own) {
-        const handle = document.createElement('span'); handle.textContent = '⋮⋮'; handle.setAttribute('aria-hidden', 'true');
-        heading.append(handle);
+        heading.insertAdjacentHTML('beforeend', beginningIcon('grip'));
       }
       heading.append(title);
       const controls = document.createElement('div'); controls.className = 'play-beginning-effect-controls';
-      const { options, target, choices, choice, valid, terrainOptions, eventOptions, fallback, targets, eventId, draws, loading } = plan.get(source);
+      const { options, target, choices, choice, terrainOptions, eventOptions, fallback, targets, eventId, draws, loading } = plan.get(source);
       const canStay = effect.kind === 'march_of_marshrooms';
       const targetPrompt = {
         march_of_marshrooms: 'Choose an adjacent unoccupied Symbiosis Terrain',
@@ -1447,44 +1496,42 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         efficient_grid: 'No Radiance Terrain',
         solar_converter: 'Requires 2 Lumens and an adjacent Terrain',
       }[effect.kind] || 'No adjacent empty Node';
+      let hoverMessage;
+      const showUnavailable = label => {
+        hoverMessage = label;
+        controls.append(beginningControl('skip', label));
+      };
       if (skipped) {
-        const status = document.createElement('span');
-        status.className = 'play-beginning-hover-status';
-        status.textContent = automaticSkip ? unavailableText : 'Skipped this turn';
-        controls.append(status);
-      } else if (effect.kind === 'garden_shared_roots') {
-        const status = document.createElement('span');
-        status.textContent = draws ? 'Entangled Terrain: draw 1 card' : 'Terrain not entangled: no card drawn';
-        if (!draws) status.className = 'play-beginning-hover-status';
-        controls.append(status);
-      } else if (effect.kind === 'mirrorpool_shrine') {
-        const status = document.createElement('span');
-        status.textContent = draws ? `Draw ${draws} card${draws === 1 ? '' : 's'}` : 'No adjacent Flow Entity on Flow Terrain';
-        if (!draws) status.className = 'play-beginning-hover-status';
-        controls.append(status);
+        showUnavailable(automaticSkip ? unavailableText : 'Skipped this turn');
+      } else if (effect.kind === 'garden_shared_roots' || effect.kind === 'mirrorpool_shrine') {
+        if (draws) {
+          const count = Number(draws);
+          controls.append(beginningControl('draw', `Draw ${count} card${count === 1 ? '' : 's'}`, { count }));
+        } else {
+          showUnavailable(effect.kind === 'garden_shared_roots'
+            ? 'Terrain not entangled: no card drawn' : 'No adjacent Flow Entity on Flow Terrain');
+        }
       } else if (effect.kind === 'bramble_briar') {
         if (loading) {
-          const status = document.createElement('span');
-          status.textContent = 'Loading Archive...';
-          controls.append(status);
+          controls.append(beginningControl('wait', 'Loading Archive'));
         } else if (!own) {
-          const status = document.createElement('span');
-          status.textContent = targets?.length === 2
-            ? `Dissolve Nodes ${targets.map(formatNodeCoordinates).join(' and ')}; recall an Event.`
-            : 'Opponent is resolving this effect.';
-          controls.append(status);
+          const chosenTargets = (targets || []).filter(Boolean);
+          for (const key of chosenTargets) {
+            controls.append(beginningControl('dissolve', `Dissolve Terrain at ${formatNodeCoordinates(key)}`, { target: key }));
+          }
+          controls.append(chosenTargets.length === 2
+            ? beginningControl('recall', 'Recall an Event')
+            : beginningControl('wait', 'Opponent is resolving this effect'));
         } else if (fallback) {
-          const status = document.createElement('span');
-          status.textContent = 'Cannot pay: dissolve this Entity (or remove its Protection).';
-          controls.append(status);
+          controls.append(beginningControl('dissolve', 'Cannot pay. Dissolve this Entity or remove its Protection.'));
         } else {
           for (const index of [0, 1]) {
             const select = document.createElement('select');
-            select.setAttribute('aria-label', `${index ? 'Second' : 'First'} empty Verdant Terrain for ${effect.card.title}`);
-            select.add(new Option(`${index ? 'Second' : 'First'} empty Verdant Terrain`, ''));
+            const label = `${index ? 'Second' : 'First'} empty Verdant Terrain`;
+            select.setAttribute('aria-label', `${label} for ${effect.card.title}`);
+            select.add(new Option(label, ''));
             for (const key of terrainOptions) select.add(new Option(formatNodeCoordinates(key), key));
             select.value = targets[index] || '';
-            if (select.value) select.dataset.beginningTarget = select.value;
             select.disabled = phaseBusy;
             select.addEventListener('change', () => {
               const selected = [...(beginningBrambleTargets.get(source) || [])];
@@ -1492,12 +1539,12 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
               beginningBrambleTargets.set(source, selected);
               renderBeginningEffects(); void saveBeginningPlan();
             });
-            controls.append(select);
+            controls.append(beginningControl('dissolve', select.value ? `${label} · ${formatNodeCoordinates(select.value)}` : label,
+              { select, target: select.value, count: index + 1 }));
           }
-          const recall = document.createElement('button');
-          recall.type = 'button';
-          recall.textContent = eventOptions.find(card => String(card.id) === eventId)?.title || 'Choose Event from Archive';
-          recall.setAttribute('aria-label', 'Choose an Event to Recall for ' + effect.card.title);
+          const eventTitle = eventOptions.find(card => String(card.id) === eventId)?.title;
+          const recall = beginningControl('recall', eventTitle ? `Recall ${eventTitle}` : 'Choose an Event to Recall',
+            { button: true, selected: Boolean(eventTitle) });
           recall.disabled = phaseBusy;
           recall.addEventListener('click', async () => {
             const selection = await chooseArchiveRecall('Event', eventOptions.map(card => ({
@@ -1511,24 +1558,20 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
           controls.append(recall);
         }
       } else if (!own) {
-        const status = document.createElement('span');
-        status.textContent = options.includes(target) ? formatNodeCoordinates(target)
-          : canStay ? 'Staying here' : options.length ? 'Waiting for target' : unavailableText;
-        if (!options.length && !canStay) status.className = 'play-beginning-hover-status';
-        if (options.includes(target)) status.dataset.beginningTarget = target;
-        controls.append(status);
-      } else if (options.length) {
-        const choose = document.createElement('button'); choose.type = 'button';
         if (options.includes(target)) {
-          choose.textContent = formatNodeCoordinates(target);
-          choose.dataset.beginningTarget = target;
+          controls.append(beginningControl(canStay ? 'move' : 'target', `Target · ${formatNodeCoordinates(target)}`, { target }));
         } else if (canStay) {
-          choose.textContent = 'Move';
-          choose.setAttribute('aria-label', 'Choose where to move ' + effect.card.title);
+          controls.append(beginningControl('stay', 'Staying here'));
+        } else if (options.length) {
+          controls.append(beginningControl('wait', 'Waiting for target'));
         } else {
-          choose.setAttribute('aria-label', `Choose target for ${effect.card.title}`);
-          choose.innerHTML = '<svg aria-hidden="true" width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="display:block"><circle cx="10" cy="10" r="6"/><path d="M10 1.5v4m0 9v4m-8.5-8.5h4m9 0h4"/><circle cx="10" cy="10" r="1" fill="currentColor" stroke="none"/></svg>';
+          showUnavailable(unavailableText);
         }
+      } else if (options.length) {
+        const chosenTarget = options.includes(target) ? target : undefined;
+        const label = chosenTarget ? `${targetPrompt} · ${formatNodeCoordinates(chosenTarget)}` : targetPrompt;
+        const choose = beginningControl(canStay ? 'move' : 'target', label, { button: true, target: chosenTarget });
+        choose.setAttribute('aria-pressed', String(beginningTargetSource === source));
         choose.disabled = phaseBusy;
         choose.addEventListener('click', () => {
           beginningTargetSource = beginningTargetSource === source ? null : source;
@@ -1536,10 +1579,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
           renderBeginningEffects(); syncEventTargets();
         });
         controls.append(choose);
-        if (canStay && target) {
-          const stay = document.createElement('button');
-          stay.type = 'button';
-          stay.textContent = 'Stay Here';
+        if (canStay && chosenTarget) {
+          const stay = beginningControl('stay', 'Stay here', { button: true });
           stay.disabled = phaseBusy;
           stay.addEventListener('click', () => {
             beginningTargetSource = null;
@@ -1551,70 +1592,39 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
           controls.append(stay);
         }
       } else if (canStay) {
-        const status = document.createElement('span');
-        status.textContent = 'Staying here';
-        controls.append(status);
+        controls.append(beginningControl('stay', 'Staying here'));
       } else if (target) {
-        const clear = document.createElement('button'); clear.type = 'button'; clear.textContent = 'Clear Target';
+        const clear = beginningControl('clear', 'Clear target', { button: true });
         clear.disabled = phaseBusy;
         clear.addEventListener('click', () => { beginningTargets.delete(source); beginningChoices.delete(source); renderBeginningEffects(); void saveBeginningPlan(); });
         controls.append(clear);
       } else {
-        const unavailable = document.createElement('span'); unavailable.textContent = unavailableText;
-        unavailable.className = 'play-beginning-hover-status';
-        controls.append(unavailable);
+        showUnavailable(unavailableText);
       }
-      if (choices?.length) {
-        const label = effect.kind === 'march_of_marshrooms' ? 'Terrain to Entangle' : 'Choose Protect or Crisis';
+      if (!skipped && choices?.length) {
+        const label = canStay ? 'Terrain to Entangle' : 'Choose Protect or Crisis';
+        const selected = choices.find(option => option.value === choice);
+        const icon = canStay ? 'entangle' : selected?.value || 'condition';
         if (own) {
           const select = document.createElement('select');
           select.setAttribute('aria-label', label);
           select.add(new Option(label, ''));
           for (const option of choices) select.add(new Option(option.label, option.value));
           select.value = choice || '';
-          if (effect.kind === 'march_of_marshrooms' && select.value) select.dataset.beginningTarget = select.value;
           select.disabled = phaseBusy;
           select.addEventListener('change', () => {
             beginningChoices.set(source, select.value);
             renderBeginningEffects(); void saveBeginningPlan();
           });
-          controls.append(select);
-        } else {
-          const selected = choices.find(option => option.value === choice);
-          if (selected) {
-            const status = document.createElement('span');
-            status.textContent = selected.label;
-            if (effect.kind === 'march_of_marshrooms') status.dataset.beginningTarget = selected.value;
-            controls.append(status);
-          }
+          controls.append(beginningControl(icon, selected ? `${label} · ${selected.label}` : label,
+            { select, target: canStay ? selected?.value : undefined, selected: Boolean(selected) }));
+        } else if (selected) {
+          controls.append(beginningControl(icon, canStay ? `Entangle ${selected.label}` : selected.label,
+            { target: canStay ? selected.value : undefined }));
         }
       }
-      for (const control of controls.children) {
-        if (control.matches('.play-beginning-hover-status')) continue;
-        if (control.matches('select')) {
-          const label = control.getAttribute('aria-label');
-          control.title = control.value ? control.selectedOptions[0].text : label;
-          control.options[0].text = label.includes('Entangle') ? '⛓' : label.includes('Crisis') ? '🛡 / ⚡' : '◎';
-          continue;
-        }
-        const label = control.getAttribute('aria-label') || control.textContent;
-        if (!control.textContent) { control.title = label; continue; }
-        const description = control.textContent;
-        control.title = description;
-        control.setAttribute('aria-label', label);
-        control.textContent = draws ? `▤ ${draws}`
-          : control.dataset.beginningTarget ? '◎'
-          : /recall|archive/i.test(label) ? '↶'
-          : /dissolve/i.test(label) ? '✕'
-          : /move/i.test(label) ? '↗'
-          : /stay/i.test(label) ? '⌂'
-          : /clear/i.test(label) ? '✕' : '…';
-      }
-      const hoverStatus = controls.querySelector('.play-beginning-hover-status');
-      const hoverMessage = hoverStatus?.textContent;
       if (hoverMessage) {
         row.setAttribute('aria-description', hoverMessage);
-        hoverStatus.remove();
       }
       row.append(heading, controls);
       row.addEventListener('pointerover', event => {
