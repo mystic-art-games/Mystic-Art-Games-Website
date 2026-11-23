@@ -113,7 +113,7 @@ export function extendedEventStep(kind, selected, context) {
   return step;
 }
 
-function eventStep(kind, selected, { board, archive, hand, eventIndex }) {
+function eventStep(kind, selected, { board, archive, hand, eventIndex, playerId }) {
   const cells = selected.filter(choice => choice.type === 'cell').map(choice => choice.key);
   const count = selected.length;
   const first = board?.[cells[0]] || {};
@@ -219,7 +219,14 @@ function eventStep(kind, selected, { board, archive, hand, eventIndex }) {
     case 'regrow':
       if (count === 0) return boardStep('Choose Verdant Terrain to Dissolve', board, node => node.terrain === 'Verdant');
       if (first.protected) return null;
-      if (count === 1) return archiveStep('Choose an Entity to Recall', archive, 'Entity');
+      if (count === 1) {
+        const step = archiveStep('Choose an Entity to Recall', archive, 'Entity');
+        const id = first.entity?.card_id || first.entity?.id;
+        if (id && playerId && first.entity.owner_id === playerId) {
+          step.options.unshift({ label: first.entity.title, value: { type: 'archive', id, dissolvedAt: source } });
+        }
+        return step;
+      }
       return null;
     case 'skyfire_pair':
       if (count === 0) return boardStep('Choose an Entity adjacent to an opposing Entity', board,

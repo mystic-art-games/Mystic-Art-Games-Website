@@ -1,4 +1,4 @@
-import { extendedEventRules, extendedKinds, extendedEventStep } from './play-extended-events.mjs?v=9';
+import { extendedEventRules, extendedKinds, extendedEventStep } from './play-extended-events.mjs?v=10';
 import { entityEffectKind, entityEffectStep } from './play-entity-effects.mjs?v=6';
 import { entityEffectsSuppressed, passiveEntityKind, vigilBlocksCreation, vigilBlocksPlacement } from './play-passive-entities.mjs';
 
@@ -3198,6 +3198,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   function continueExtendedEvent(event) {
     const step = extendedEventStep(event.rule[1], event.selected, {
       board: room?.board || {}, archive: gameState?.archive || [], hand: gameState?.hand || [], eventIndex: event.handIndex,
+      playerId: userId,
     });
     if (['shared_canal_gathering', 'hyphae', 'terrestrial_reorientation'].includes(event.rule[1])
       && event.selected.length === 1 && !step?.options.length) {
@@ -3227,7 +3228,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     eventNotice('');
     const archiveOptions = step.options.filter(option => option.value.type === 'archive');
     const entries = archiveOptions.flatMap(({ value }) => {
-      const card = gameState?.archive?.[value.index];
+      const card = value.dissolvedAt ? room?.board?.[value.dissolvedAt]?.entity : gameState?.archive?.[value.index];
       return card ? [{ card, value }] : [];
     });
     if (entries.length) {
@@ -3266,7 +3267,11 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     for (const choice of event.selected) {
       if (choice.type === 'cell') choices.cells.push(choice.key);
       else if (choice.type === 'terrain') choices.terrain = choice.terrain;
-      else if (choice.type === 'archive') { choices.archive_index = choice.index; choices.archive_card_id = choice.id; }
+      else if (choice.type === 'archive') {
+        if (choice.dissolvedAt) choices.recall_dissolved = true;
+        else choices.archive_index = choice.index;
+        choices.archive_card_id = choice.id;
+      }
       else if (choice.type === 'discard') { choices.discard_index = choice.index; choices.discard_card_id = choice.id; }
       else if (choice.type === 'skip') choices.skip = true;
     }
