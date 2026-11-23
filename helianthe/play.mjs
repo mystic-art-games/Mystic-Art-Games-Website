@@ -198,7 +198,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       <div class="play-game-board-wrap">
       <div class="play-game-left-stack">
         <aside id="play-game-card-preview" class="play-game-card-preview" aria-label="Card preview" hidden><button id="play-game-card-preview-close" class="play-game-card-preview-close action-delete" type="button" aria-label="Close card preview">×</button><canvas id="play-game-card-preview-canvas" hidden></canvas><img id="play-game-card-preview-image" alt="" hidden><span id="play-game-card-preview-fallback" class="play-hand-fallback"></span></aside>
-        <aside id="play-game-beginning-effects" class="play-beginning-effects" aria-label="Beginning of Turn Entity effects" hidden><strong>Beginning of Turn effects</strong><section class="play-beginning-zone" aria-label="Active effects"><ol id="play-game-beginning-list"></ol></section><section class="play-beginning-zone play-beginning-skipped-zone" aria-labelledby="play-game-beginning-skipped-title"><h3 id="play-game-beginning-skipped-title">Skip this turn</h3><ol id="play-game-beginning-skipped-list"></ol></section></aside>
+        <aside id="play-game-beginning-effects" class="play-beginning-effects" aria-label="Beginning of Turn Entity effects" hidden><strong>Beginning of Turn effects</strong><section class="play-beginning-zone" aria-label="Active effects"><ol id="play-game-beginning-list"></ol></section><section class="play-beginning-zone play-beginning-skipped-zone" aria-labelledby="play-game-beginning-skipped-title"><h3 id="play-game-beginning-skipped-title">Skip this turn</h3><ol id="play-game-beginning-skipped-list"></ol></section><div id="play-game-beginning-actions" class="play-beginning-actions" hidden><button id="play-game-beginning-one" type="button" class="action-add-save">Resolve One</button><button id="play-game-beginning-all" type="button" class="action-add-save">Resolve All</button></div></aside>
       </div>
       <svg class="play-beginning-connector" aria-hidden="true"><path id="play-game-beginning-connector"></path></svg>
       <div id="play-game-beginning-tooltip" class="play-beginning-tooltip" aria-hidden="true" hidden></div>
@@ -734,7 +734,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   function beginningEffects() {
     if (room?.status !== 'active' || room.turn_phase !== 'beginning'
       || room.beginning_effects_resolved_turn === room.turn_number) return [];
+    const saved = room.beginning_effects_plan;
+    const pending = saved?.turn === room.turn_number && Array.isArray(saved.pending_sources) ? saved.pending_sources : null;
     return Object.entries(room.board || {}).filter(([key, node]) => /^[0-4],[0-3]$/.test(key)
+      && (!pending || pending.includes(key))
       && node?.entity?.owner_id === room.turn_player_id && beginningEffectKind(node.entity)
       && !entityEffectsSuppressed(room.board, key)
       && beginningEffectAvailable(node.entity))
@@ -1019,11 +1022,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       else step.removeAttribute('aria-current');
     }
     const next = $('game-next-phase');
-    const hasBeginningEffects = phase === 'beginning' && beginningEffects().length > 0;
-    next.hidden = !own || (phase === 'main' ? !room?.main_played_card : phase !== 'beginning');
-    next.textContent = hasBeginningEffects ? 'Resolve Effects' : 'Next Phase';
-    next.disabled = !activeTurn || !own || phaseBusy || Boolean(pendingFestival)
-      || (phase === 'beginning' && !gameState);
+    next.hidden = !own || phase !== 'main' || !room?.main_played_card;
+    next.textContent = 'Next Phase';
+    next.disabled = !activeTurn || !own || phaseBusy || Boolean(pendingFestival);
     syncDiscardBar();
     const extra = $('game-extra-draw');
     extra.hidden = !own || phase !== 'main' || Boolean(room?.main_played_card);
@@ -1516,6 +1517,11 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     for (const effect of effects) if (!beginningOrder.includes(effect.source)) beginningOrder.push(effect.source);
     const bySource = new Map(effects.map(effect => [effect.source, effect]));
     const plan = beginningPlan();
+    const { active, skipped } = splitBeginningEntries(beginningPlanEntries(plan));
+    const canResolve = own && !phaseBusy && Boolean(gameState) && !room.forest_reactions?.length;
+    $('game-beginning-actions').hidden = !own;
+    $('game-beginning-one').disabled = !canResolve || !plan.get((active[0] || skipped[0])?.source)?.valid;
+    $('game-beginning-all').disabled = !canResolve || [...active, ...skipped].some(entry => !plan.get(entry.source)?.valid);
     if (plan.get(beginningTargetSource)?.automaticSkip) beginningTargetSource = null;
     const rows = beginningOrder.map(source => {
       const effect = bySource.get(source);
@@ -1768,12 +1774,20 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       renderBeginningEffects();
     }
   }
-  async function resolveBeginningEffects() {
-    if (phaseBusy || room?.turn_player_id !== userId || room.turn_phase !== 'beginning') return;
+  function splitBeginningEntries(entries) {
+    const active = [], skipped = [];
+    for (const entry of entries) (entry.skip ? skipped : active).push(entry);
+    return { active, skipped };
+  }
+  async function resolveBeginningEffects(one = false) {
+    if (phaseBusy || room?.turn_player_id !== userId || room.turn_phase !== 'beginning' || room.forest_reactions?.length) return;
     const effects = beginningEffects();
     if (!effects.length || beginningOrder.length !== effects.length) return;
     const plan = beginningPlan();
-    const entries = beginningPlanEntries(plan);
+    const { active, skipped } = splitBeginningEntries(beginningPlanEntries(plan));
+    const ordered = [...active, ...skipped];
+    const singleStep = one && active.length > 1;
+    const entries = singleStep ? ordered.slice(0, 1) : ordered;
     if (entries.some(({ source }) => !plan.get(source)?.valid)) {
       eventNotice('Complete the required choices before resolving.');
       return;
@@ -1786,10 +1800,11 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     renderBeginningEffects(); renderTurnPhase(); syncEventTargets();
     try {
       const result = await rpc('play_resolve_beginning_entity_effects', {
-        p_room_id: roomId, p_expected_turn: turn, p_effects: entries,
+        p_room_id: roomId, p_expected_turn: turn,
+        p_effects: singleStep ? { mode: 'one', effects: ordered } : entries,
       });
       if (expected !== epoch || room?.id !== roomId) return;
-      const drawn = horizon.slice(0, result?.drawn || 0);
+      const drawn = result?.drawn_cards || horizon.slice(0, result?.drawn || 0);
       const arrivals = [], recalls = [];
       let remainingRecalls = result?.recalled || 0;
       for (const entry of entries) {
@@ -1822,6 +1837,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       renderBeginningEffects(); renderTurnPhase(); syncEventTargets();
     }
   }
+  $('game-beginning-one').addEventListener('click', () => void resolveBeginningEffects(true));
+  $('game-beginning-all').addEventListener('click', () => void resolveBeginningEffects());
   for (const [id, skip] of [['game-beginning-list', false], ['game-beginning-skipped-list', true]]) {
     const zone = $(id).closest('.play-beginning-zone');
     zone.addEventListener('dragover', event => { event.preventDefault(); event.dataTransfer.dropEffect = 'move'; });
@@ -1988,16 +2005,24 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       },
     };
   }
-  async function finishDrawPhase(drawnCard = undefined) {
+  async function readPhaseDraw(roomId, turn, phase) {
+    const { data, error } = await client.from('play_game_decks').select('phase_draw')
+      .eq('room_id', roomId).eq('player_id', userId).single();
+    if (error) throw error;
+    const draw = data.phase_draw;
+    return draw?.turn === turn && draw.phase === phase ? draw.card : null;
+  }
+  async function finishDrawPhase() {
     if (!room || room.status !== 'active' || room.turn_player_id !== userId
       || room.turn_phase !== 'draw' || phaseBusy || Date.now() < drawRetryAt) return;
     const expected = epoch, roomId = room.id, turn = room.turn_number;
     phaseBusy = true;
     renderTurnPhase();
     try {
-      const flightCard = drawnCard === undefined
-        ? (gameState?.horizon?.length ? gameState.hand.at(-1) : null) : drawnCard;
-      if (flightCard) await animateCardsToHand([flightCard]);
+      const drawnCard = await readPhaseDraw(roomId, turn, 'draw');
+      if (expected !== epoch || room?.id !== roomId || room.turn_phase !== 'draw') return;
+      const drawnAlreadyInHand = gameState?.phase_draw?.turn === turn && gameState.phase_draw.phase === 'draw';
+      if (drawnCard && !drawnAlreadyInHand) await animateCardsToHand([drawnCard]);
       if (expected !== epoch || room?.id !== roomId || room.turn_phase !== 'draw') return;
       await rpc('play_advance_turn_phase', {
         p_room_id: roomId, p_expected_turn: turn, p_expected_phase: 'draw', p_take_extra_card: false,
@@ -2022,12 +2047,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (room.turn_phase === 'beginning' && !gameState) return;
     if (takeExtraCard && (room.turn_phase !== 'main' || !gameState?.horizon?.length)) return;
     const expected = epoch, roomId = room.id, turn = room.turn_number, phase = room.turn_phase;
-    const drawnCard = gameState?.horizon?.[0] || null;
     phaseBusy = true;
     renderTurnPhase();
     try {
-      if (takeExtraCard) await animateCardsToHand([drawnCard]);
-      if (expected !== epoch || room?.id !== roomId) return;
       await rpc('play_advance_turn_phase', {
         p_room_id: roomId,
         p_expected_turn: turn,
@@ -2035,10 +2057,15 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         p_take_extra_card: takeExtraCard,
       });
       if (expected !== epoch || room?.id !== roomId) return;
+      if (takeExtraCard) {
+        const drawnCard = await readPhaseDraw(roomId, turn, 'end');
+        if (expected !== epoch || room?.id !== roomId) return;
+        if (drawnCard) await animateCardsToHand([drawnCard]);
+      }
       await refreshRoom();
       if (expected === epoch && room?.id === roomId && phase === 'beginning' && room.turn_phase === 'draw') {
         phaseBusy = false;
-        await finishDrawPhase(drawnCard);
+        await finishDrawPhase();
         return;
       }
       if (expected === epoch && room?.id === roomId && takeExtraCard) {
@@ -2084,7 +2111,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   $('game-next-phase').addEventListener('click', () => {
     if (room?.forest_reactions?.length) void resolveForestReaction();
-    else if (room?.turn_phase === 'beginning' && beginningEffects().length) void resolveBeginningEffects();
     else void advanceTurnPhase();
   });
   $('game-extra-draw').addEventListener('click', () => void advanceTurnPhase(true));

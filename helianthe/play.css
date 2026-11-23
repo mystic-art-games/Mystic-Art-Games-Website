@@ -498,6 +498,9 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
   border-top: 1px solid color-mix(in srgb, currentColor 25%, transparent);
 }
 .play-beginning-zone h3 { margin: 0 0 .4rem; color: #f5f2e8; font: 800 .72rem/1.2 Nunito, sans-serif; }
+.play-beginning-actions { display: flex; flex: 0 0 auto; gap: .4rem; }
+.play-beginning-actions[hidden] { display: none; }
+.play-beginning-actions > button { flex: 1; margin: 0; padding: .35rem .45rem; white-space: nowrap; font-size: .72rem; }
 .play-beginning-zone ol { display: grid; grid-template-columns: minmax(0, 1fr); gap: .35rem; min-height: 1.4rem; margin: 0; padding: 0; list-style: none; }
 .play-beginning-effect {
   display: flex;
