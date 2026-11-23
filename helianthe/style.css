@@ -144,8 +144,6 @@ textarea { resize: vertical; }
 .vision-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 43%); align-items: start; gap: 1.25rem; }
 .vision-board-figure { min-width: 0; width: 100%; max-width: 520px; margin: .15rem auto; }
 .vision-board-art { display: block; width: 100%; height: auto; pointer-events: none; user-select: none; -webkit-user-select: none; -webkit-user-drag: none; }
-.vision-board-figure figcaption { margin: .8rem .3rem 0; color: #486755; font-size: .78rem; font-weight: 800; line-height: 1.35; text-align: center; }
-body.dark-mode .vision-board-figure figcaption { color: #d3e6d1; }
 .vision-copy { min-width: 0; }
 .vision-copy .about-faction { font-weight: 800; }
 .vision-copy .about-faction-verdant { color: #488057; }
