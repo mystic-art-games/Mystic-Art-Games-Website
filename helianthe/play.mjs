@@ -634,7 +634,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   function beginningEffectKind(card) {
     const effect = String(card?.effect || '').replace(/\s+/g, ' ').trim().toLowerCase();
-    if (['March of Mashrooms', 'March of Marshrooms', 'Marsh of Mashrooms', 'Marsh of Marshrooms'].includes(card?.title)
+    if (['March of Mushrooms', 'March of Mashrooms', 'March of Marshrooms', 'Marsh of Mashrooms', 'Marsh of Marshrooms'].includes(card?.title)
       && /^at the (?:beginning|begining|beginnig) of your turn, you may move this entity to (?:an )?adjacent empty symbiosis terrain\. then,? entangle (?:the )?terrain under this entity(?:, even if it did not move)?\.?$/.test(effect)) return 'march_of_marshrooms';
     if (card?.title === 'Efficient Grid'
       && /^at the (?:beginning|begining|beginnig) of (?:the )?radiant patron(?:'s)? turn, luminate 1\b/.test(effect)) return 'efficient_grid';
@@ -884,6 +884,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     return '';
   }
   function syncAutomaticPhase() {
+    if (room?.forest_reactions?.length) return;
     const key = automaticPhaseKey();
     if (key === phaseAdvanceKey) return;
     clearTimeout(phaseAdvanceTimer);
@@ -930,6 +931,15 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const extra = $('game-extra-draw');
     extra.hidden = !own || phase !== 'main' || Boolean(room?.main_played_card);
     extra.disabled = phaseBusy || pendingFestival || !Array.isArray(gameState?.horizon) || gameState.horizon.length === 0;
+    const forestSource = room?.forest_reactions?.[0];
+    if (forestSource) {
+      const canResolve = room.board?.[forestSource]?.entity?.owner_id === userId;
+      game.dataset.canPlayCards = 'false';
+      extra.hidden = true;
+      next.hidden = false;
+      next.disabled = !canResolve || phaseBusy;
+      next.textContent = canResolve ? 'Resolve Equatorial Forests' : 'Waiting for Equatorial Forests';
+    }
     next.parentElement.hidden = phases.hidden;
     syncAutomaticPhase();
   }
@@ -1962,8 +1972,36 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       renderTurnPhase();
     }
   }
+  async function resolveForestReaction() {
+    const source = room?.forest_reactions?.[0];
+    if (!source || phaseBusy || room.board?.[source]?.entity?.owner_id !== userId) return;
+    const roomId = room.id;
+    const expected = epoch;
+    const options = Array.from({ length: 20 }, (_, index) => `${index % 5},${Math.floor(index / 5)}`)
+      .filter(key => !room.board?.[key]?.terrain)
+      .map(key => ({ value: key, label: formatNodeCoordinates(key) }));
+    phaseBusy = true;
+    renderTurnPhase();
+    try {
+      const target = options.length
+        ? await new Promise(resolve => chooseEventOption('Choose an empty Node for Equatorial Forests', options, resolve, () => resolve(undefined)))
+        : null;
+      if (target === undefined || expected !== epoch || room?.id !== roomId) return;
+      await rpc('play_resolve_forest_reaction', { p_room_id: roomId, p_source: source, p_target: target });
+      await refreshRoom();
+      await loadGameState(true);
+    } catch (error) {
+      if (expected === epoch) message(friendly(error), true);
+    } finally {
+      if (expected === epoch) {
+        phaseBusy = false;
+        renderTurnPhase();
+      }
+    }
+  }
   $('game-next-phase').addEventListener('click', () => {
-    if (room?.turn_phase === 'beginning' && beginningEffects().length) void resolveBeginningEffects();
+    if (room?.forest_reactions?.length) void resolveForestReaction();
+    else if (room?.turn_phase === 'beginning' && beginningEffects().length) void resolveBeginningEffects();
     else void advanceTurnPhase();
   });
   $('game-extra-draw').addEventListener('click', () => void advanceTurnPhase(true));
