@@ -79,7 +79,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   let drawRetryAt = 0, activeHandShifts = [];
   const activeDrawFlights = new Set();
   const terrainArrivals = new Map();
-  const opponentCardFlights = new Set();
+  const gameCardFlights = new Set();
   const opponentArrivingEntities = new Set();
   const drawHiddenItems = new Set();
   const discardFlights = new Set();
@@ -1939,7 +1939,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     ++epoch; ++fetchSerial;
     delete $('game').dataset.turnAura;
     clearTerrainArrivals();
-    clearOpponentCardFlights();
+    clearGameCardFlights();
     openingDealRunningKey = '';
     clearTimeout(phaseAdvanceTimer);
     phaseAdvanceTimer = null;
@@ -2706,6 +2706,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   function renderArchiveCard(seat, raw, count) {
     const preview = archivePreviews[seat];
+    if (preview.dissolveFlight) {
+      preview.pendingDissolvePreview = [raw, count];
+      return;
+    }
     const card = count && raw ? (seat === 'self' ? resolveHandCard(raw) : resolveGameCard(raw)) : null;
     $(`game-${seat}-archive`)._playCard = card;
     const key = card ? archiveCardKey(card) : '';
@@ -3310,8 +3314,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     arrivingCardCanvases.clear();
     requestAnimationFrame(syncHoveredCardPreview);
   }
-  function clearOpponentCardFlights() {
-    for (const animation of opponentCardFlights) animation.cancel();
+  function clearGameCardFlights() {
+    for (const animation of gameCardFlights) animation.cancel();
     opponentArrivingEntities.clear();
     $('game-board').querySelectorAll('.play-node-entity-card.is-opponent-arriving')
       .forEach(entity => entity.classList.remove('is-arriving', 'is-opponent-arriving'));
@@ -3343,11 +3347,11 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const animation = flight.animate(draw ? [atZone, atEdge] : [atEdge, atZone], {
       duration: 460, delay, easing: 'cubic-bezier(.25,.7,.25,1)', fill: 'both',
     });
-    opponentCardFlights.add(animation);
+    gameCardFlights.add(animation);
     let drawSoundTimer;
     if (draw) {
       const playDrawSound = () => {
-        if (opponentCardFlights.has(animation) && animation.playState === 'running'
+        if (gameCardFlights.has(animation) && animation.playState === 'running'
           && visible && !inLobby && !game.hidden && !document.hidden) {
           playTableSound(drawCardSound.cloneNode());
         }
@@ -3371,7 +3375,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     catch { /* The match view may close during the flight. */ }
     finally {
       clearTimeout(drawSoundTimer);
-      opponentCardFlights.delete(animation);
+      gameCardFlights.delete(animation);
       flight.remove();
     }
   }
@@ -3483,6 +3487,84 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         finishTerrainArrival(key, arrival);
       }, () => finishTerrainArrival(key, arrival));
     }
+  }
+  function animateDissolvedCards(nextBoard, ownTurn) {
+    const game = $('game');
+    if (!visible || inLobby || game.hidden || document.hidden
+      || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    const terrainExit = ownTurn
+      ? $('game-hand').getBoundingClientRect().bottom
+      : Math.max(0, game.getBoundingClientRect().top);
+    for (const cell of $('game-board').children) {
+      const key = cell.dataset.key;
+      const previous = room.board?.[key];
+      const next = nextBoard?.[key];
+      if (previous?.terrain && !next?.terrain && cell._playTerrain) {
+        const bounds = cell.getBoundingClientRect();
+        const flight = document.createElement('img');
+        flight.className = 'play-terrain-flight';
+        flight.alt = '';
+        flight.src = cell._playTerrain.fullArtUrl;
+        const dy = terrainExit - bounds.top + (ownTurn ? bounds.height : -bounds.height);
+        animateDissolveFlight(flight, bounds, [
+          { transform: 'translateY(0)', opacity: 1 },
+          { transform: 'translateY(' + dy + 'px) rotate(' + (ownTurn ? 8 : -8) + 'deg) scale(.9)', opacity: 0 },
+        ], 460);
+      }
+      if (!previous?.entity || next?.entity) continue;
+      const entity = cell.querySelector('.play-node-entity-card');
+      if (!entity || entity.classList.contains('is-arriving')) continue;
+      const seat = previous.entity.owner_id === userId ? 'self' : 'opponent';
+      const destination = $('game-' + seat + '-archive').getBoundingClientRect();
+      const bounds = entity.getBoundingClientRect();
+      if (!destination.width || !destination.height || !bounds.width || !bounds.height) continue;
+      const flight = entity.cloneNode(true);
+      flight.classList.add('play-discard-flight');
+      const sourceCanvas = entity.querySelector('canvas:not([hidden])');
+      if (sourceCanvas?.width && sourceCanvas.height) {
+        const canvas = flight.querySelector('canvas');
+        canvas.width = sourceCanvas.width;
+        canvas.height = sourceCanvas.height;
+        canvas.getContext('2d').drawImage(sourceCanvas, 0, 0);
+      }
+      const dx = destination.left + (destination.width - bounds.width) / 2 - bounds.left;
+      const dy = destination.top + (destination.height - bounds.height) / 2 - bounds.top;
+      const animation = animateDissolveFlight(flight, bounds, [
+        { transform: 'translate(0, 0) scale(1)' },
+        { transform: 'translate(' + dx + 'px, ' + dy + 'px) scale('
+          + destination.width / bounds.width + ', ' + destination.height / bounds.height + ')' },
+      ], 560);
+      const preview = archivePreviews[seat];
+      const expected = epoch;
+      preview.dissolveFlight = animation;
+      const revealArchive = () => {
+        if (preview.dissolveFlight !== animation) return;
+        preview.dissolveFlight = null;
+        const pending = preview.pendingDissolvePreview;
+        preview.pendingDissolvePreview = null;
+        if (expected === epoch && pending) renderArchiveCard(seat, ...pending);
+      };
+      void animation.finished.then(revealArchive, revealArchive);
+    }
+  }
+  function animateDissolveFlight(flight, bounds, keyframes, duration) {
+    flight.setAttribute('aria-hidden', 'true');
+    Object.assign(flight.style, {
+      left: bounds.left + 'px', top: bounds.top + 'px',
+      width: bounds.width + 'px', height: bounds.height + 'px',
+    });
+    document.body.append(flight);
+    const animation = flight.animate(keyframes, {
+      duration, easing: 'cubic-bezier(.22,.7,.18,1)', fill: 'both',
+    });
+    gameCardFlights.add(animation);
+    const cleanup = () => {
+      gameCardFlights.delete(animation);
+      flight.remove();
+    };
+    void animation.finished.then(cleanup, cleanup);
+    return animation;
   }
   function renderGame() {
     if (!room || room.status !== 'active') return;
@@ -3811,6 +3893,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         }
       }
     }
+    if (room.status === 'active' && data.status === 'active') {
+      animateDissolvedCards(data.board, room.turn_player_id === userId);
+    }
     if (data.status !== 'active' || inLobby) clearTerrainArrivals();
     room = data; render();
     if (phaseChangedWithinTurn) playTableSound(nextPhaseSound);
@@ -4050,7 +4135,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       && (room.conceded_by || room.victory_winner_id || room.victory_shared));
     const playing = Boolean(userId && ((room?.status === 'active' && !inLobby) || finished));
     if (!playing) { hideCardPreview(); closeArchiveBrowser(false); }
-    if (!playing || finished) clearOpponentCardFlights();
+    if (!playing || finished) clearGameCardFlights();
     $('signin').hidden = Boolean(userId);
     $('lobby').hidden = !userId || Boolean(room && !inLobby);
     $('session').hidden = !userId || !room || playing || inLobby;
@@ -4250,7 +4335,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     syncLobbyRefresh();
     if (!value) {
       clearTerrainArrivals();
-      clearOpponentCardFlights();
+      clearGameCardFlights();
       if (wasVisible && room?.status === 'active' && !inLobby) void run(goAway);
       return;
     }
