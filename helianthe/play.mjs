@@ -2792,9 +2792,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       await flight.animate([
         { left: `${bounds.left}px`, top: `${bounds.top}px`, width: `${bounds.width}px`, height: `${bounds.height}px`, transform: 'rotate(-5deg)' },
         { left: `${landing.left}px`, top: `${landing.top}px`, width: `${landing.width}px`, height: `${landing.height}px`, transform: 'rotate(0deg)' },
-      ], { duration: 460, easing: 'cubic-bezier(.2,.8,.2,1)' }).finished;
+      ], { duration: 460, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'forwards' }).finished;
     } catch { /* The table may have been left while the card was moving. */ }
-    finally { flight.remove(); }
   }
   function chooseEventOption(title, options, onConfirm, onCancel = hideCardPreview) {
     const dialog = document.createElement('dialog');
@@ -3141,13 +3140,30 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       pendingEntity = null;
       if (result?.action === 'place' || result?.action === 'create_place') {
         playTableSound(playCardSound);
-        await animateEntityPlacement(flight, targetX, targetY);
+        await Promise.all([animateEntityPlacement(flight, targetX, targetY), refreshRoom()]);
+        if (expected !== epoch || room?.id !== roomId) return;
+        const terrainArrival = terrainArrivals.get(source);
+        if (terrainArrival && !document.hidden) {
+          animateTerrainArrivals();
+          await terrainArrival.animation?.finished.catch(() => {});
+        }
+        if (expected !== epoch || room?.id !== roomId) return;
+        const landed = $('game-board').querySelector('[data-key="' + CSS.escape(source) + '"] .play-node-entity-card');
+        const flightCanvas = flight?.flight.querySelector('canvas:not([hidden])');
+        if (landed && flightCanvas?.width && flightCanvas.height) {
+          const canvas = landed.querySelector('canvas');
+          canvas.width = flightCanvas.width;
+          canvas.height = flightCanvas.height;
+          canvas.getContext('2d').drawImage(flightCanvas, 0, 0);
+          canvas.hidden = false;
+          landed.querySelector('span').hidden = true;
+        }
+        arrivingEntityKey = null;
+        landed?.classList.remove('is-arriving');
+        flight?.flight.remove();
+      } else {
+        await refreshRoom();
       }
-      arrivingEntityKey = null;
-      Array.from($('game-board').children).find(cell => cell.dataset.key === `${targetX},${targetY}`)
-        ?.querySelector('.play-node-entity-card')?.classList.remove('is-arriving');
-      if (expected !== epoch || room?.id !== roomId) return;
-      await refreshRoom();
       let entityDrawn = 0;
       if (expected === epoch && room?.id === roomId && room.status === 'active' && effectKind !== 'dissolve_recall') {
         const handCount = room.host_id === userId ? room.host_hand_count : room.guest_hand_count;
@@ -3182,9 +3198,14 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         message(friendly(error), true);
       }
     } finally {
-      arrivingEntityKey = null;
-      $('game-board').querySelector('.play-node-entity-card.is-arriving')?.classList.remove('is-arriving');
-      if (expected === epoch) { clearDrawFlight(); clearDiscardHandMotion(); }
+      flight?.flight.remove();
+      if (expected === epoch) {
+        arrivingEntityKey = null;
+        $('game-board').querySelector('.play-node-entity-card.is-arriving:not(.is-opponent-arriving)')
+          ?.classList.remove('is-arriving');
+        clearDrawFlight();
+        clearDiscardHandMotion();
+      }
       phaseBusy = false;
       renderTurnPhase();
     }
@@ -3628,6 +3649,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       room.host_id === userId ? room.guest_deck_id : room.host_deck_id, false);
     gamePlayerCard(userId, ownDeckId(), true);
     const nodes = [];
+    const previousEntities = new Map(Array.from($('game-board').children,
+      cell => [cell.dataset.key, cell.querySelector('.play-node-entity-card')]));
     const boardSerial = ++boardRenderSerial;
     for (let row = 0; row < 4; row++) for (let column = 0; column < 5; column++) {
       const isCenter = column === 2 && (row === 1 || row === 2);
@@ -3651,11 +3674,17 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
           if (arrivingEntityKey === cell.dataset.key) entity.classList.add('is-arriving');
           if (opponentArrivingEntities.has(cell.dataset.key)) entity.classList.add('is-arriving', 'is-opponent-arriving');
           entity.setAttribute('aria-hidden', 'true');
-          const canvas = document.createElement('canvas'); canvas.hidden = true;
-          const fallback = document.createElement('span'); fallback.textContent = entityCard.title || 'Entity';
+          const previous = previousEntities.get(cell.dataset.key);
+          const previousCanvas = previous?._playCard && archiveCardKey(previous._playCard) === archiveCardKey(entityCard)
+            ? previous.querySelector('canvas:not([hidden])') : null;
+          const canvas = previousCanvas || document.createElement('canvas');
+          const fallback = document.createElement('span');
+          fallback.textContent = entityCard.title || 'Entity';
+          canvas.hidden = !previousCanvas;
+          fallback.hidden = Boolean(previousCanvas);
           entity.append(canvas, fallback);
           cell.append(entity);
-          void (async () => {
+          if (!previousCanvas) void (async () => {
             const artwork = entityCard.artwork_id ? await getArtworkUrl(entityCard.artwork_id).catch(() => '') : '';
             const result = await renderPlayCard(canvas, entityCard, artwork,
               () => boardSerial === boardRenderSerial && entity.isConnected);
