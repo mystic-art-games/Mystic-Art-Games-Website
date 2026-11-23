@@ -1579,6 +1579,27 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
           }
         }
       }
+      for (const control of controls.children) {
+        if (control.matches('.play-beginning-hover-status')) continue;
+        if (control.matches('select')) {
+          const label = control.getAttribute('aria-label');
+          control.title = control.value ? control.selectedOptions[0].text : label;
+          control.options[0].text = label.includes('Entangle') ? '⛓' : label.includes('Crisis') ? '🛡 / ⚡' : '◎';
+          continue;
+        }
+        const label = control.getAttribute('aria-label') || control.textContent;
+        if (!control.textContent) { control.title = label; continue; }
+        const description = control.textContent;
+        control.title = description;
+        control.setAttribute('aria-label', label);
+        control.textContent = draws ? `▤ ${draws}`
+          : control.dataset.beginningTarget ? '◎'
+          : /recall|archive/i.test(label) ? '↶'
+          : /dissolve/i.test(label) ? '✕'
+          : /move/i.test(label) ? '↗'
+          : /stay/i.test(label) ? '⌂'
+          : /clear/i.test(label) ? '✕' : '…';
+      }
       const hoverStatus = controls.querySelector('.play-beginning-hover-status');
       const hoverMessage = hoverStatus?.textContent;
       if (hoverMessage) {
