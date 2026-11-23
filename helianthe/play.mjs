@@ -535,7 +535,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   $('game-log-older').addEventListener('click', () => void loadGameLog(true));
   function eventNotice(text, temporary = false, error = false, dismissible = false, duration = 4500) {
-    logPrivateNotice(text);
+    if (temporary || dismissible) logPrivateNotice(text);
     if (eventNoticeTimer) clearTimeout(eventNoticeTimer);
     const notice = $('game-event-notice');
     $('game-event-notice-text').textContent = text || '';
