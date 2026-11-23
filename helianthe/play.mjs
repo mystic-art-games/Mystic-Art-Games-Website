@@ -1,4 +1,4 @@
-import { extendedEventRules, extendedKinds, extendedEventStep } from './play-extended-events.mjs?v=11';
+import { extendedEventRules, extendedKinds, extendedEventStep } from './play-extended-events.mjs?v=12';
 import { entityEffectKind, entityEffectStep } from './play-entity-effects.mjs?v=8';
 import { entityEffectsSuppressed, passiveEntityKind, vigilBlocksCreation, vigilBlocksPlacement } from './play-passive-entities.mjs';
 
@@ -169,6 +169,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   let archiveGalleryObserver = null;
   let selectedGameCard = null, pendingEvent = null, pendingEntity = null, pendingFestival = null, arrivingEntityKey = null, zoneCounts = null, zoneCountsRevision = null, zoneCountsRequest = null, eventNoticeTimer = null;
   let boardChoice = null;
+  let stagedEntityPlacement = null;
   const discardSelections = new Set();
   const gameDeckPatrons = new Map(), gamePlayerPatrons = new Map();
   const patronPreviews = { self: { key: '', serial: 0 }, opponent: { key: '', serial: 0 } };
@@ -2238,7 +2239,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     gameLogRequest = null;
     pendingDeckId = null;
     ++gameRenderSerial; gameState = null; gameLoading = false; gameLoadFailed = false; gameReloadPending = false; handSignature = '';
-    phaseBusy = false; drawRetryAt = 0; clearDrawFlight(); clearMulliganFlights(); clearDiscardHandMotion(); discardSelections.clear(); pendingFestival = null; arrivingEntityKey = null;
+    phaseBusy = false; drawRetryAt = 0; clearDrawFlight(); clearMulliganFlights(); clearDiscardHandMotion(); discardSelections.clear(); pendingFestival = null; arrivingEntityKey = null; stagedEntityPlacement = null;
     beginningTurnKey = ''; beginningOrder = []; beginningTargetSource = null; beginningTargets.clear();
     beginningChoices.clear();
     beginningBrambleTargets.clear(); beginningBrambleEvents.clear();
@@ -2847,8 +2848,11 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   function resolveHandCard(raw) {
     const card = resolveGameCard(raw);
-    return ['Entity', 'Event'].includes(raw?.card_type) && typeof raw.effect === 'string'
-      ? { ...card, effect: updatedIvyEffect(raw) } : card;
+    if (!['Entity', 'Event'].includes(raw?.card_type) || typeof raw.effect !== 'string') return card;
+    const effect = raw.title === 'Dematerialize'
+      ? raw.effect.replace(/(\bdissolve it) along with terrain under it\./i, '$1.')
+      : updatedIvyEffect(raw);
+    return { ...card, effect };
   }
   function updatedIvyEffect(card) {
     return card.title === 'Expansive Ivy' && beginningEffectKind(card) === 'expansive_ivy'
@@ -3167,6 +3171,11 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       flightCanvas.getContext('2d').drawImage(sourceCanvas, 0, 0);
     }
     return { flight, bounds };
+  }
+  function clearStagedEntityPlacement() {
+    if (!stagedEntityPlacement) return;
+    stagedEntityPlacement = null;
+    renderGame();
   }
   async function animateEntityPlacement(snapshot, targetX, targetY) {
     if (!snapshot || $('game').hidden || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -3539,13 +3548,36 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const expected = epoch, roomId = room.id, turn = room.turn_number;
     const suppressed = action === 'place' && entityEffectsSuppressed(room.board, source);
     const effectKind = suppressed ? null : entityEffectKind(card, action);
+    const stagesPlacement = effectKind === 'reclaim' && entityEffectStep(effectKind, room.board, source, {}).boardTargets.length > 0;
     let choices = {}, recall = null;
     if (effectKind) {
       phaseBusy = true;
       renderTurnPhase();
       let selection;
-      try { selection = await chooseEntityEffect(effectKind, source, entityShapeTerrain(card)); }
-      finally { if (expected === epoch) { phaseBusy = false; renderTurnPhase(); } }
+      try {
+        if (stagesPlacement) {
+          const motion = captureEntityFlight(handIndex);
+          stagedEntityPlacement = { source, card: { ...card, owner_id: userId }, handIndex };
+          arrivingEntityKey = source;
+          renderGame();
+          try { await animateEntityPlacement(motion, targetX, targetY); }
+          finally { motion?.flight.remove(); }
+          if (expected !== epoch || room?.id !== roomId || room.turn_number !== turn || !selectedGameCard) return;
+          arrivingEntityKey = null;
+          renderGame();
+        }
+        selection = await chooseEntityEffect(effectKind, source, entityShapeTerrain(card));
+      }
+      finally {
+        if (expected === epoch && room?.id === roomId) {
+          if (stagesPlacement && (!selection || room.turn_number !== turn)) {
+            arrivingEntityKey = null;
+            clearStagedEntityPlacement();
+          }
+          phaseBusy = false;
+          renderTurnPhase();
+        }
+      }
       if (expected !== epoch || room?.id !== roomId || room.turn_number !== turn) {
         releaseArchiveRecall(selection?.recall?.preview);
         return;
@@ -3555,12 +3587,13 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       if (legalEntityAction(card, room.board?.[source], source) !== action) {
         releaseArchiveRecall(recall?.preview);
         hideCardPreview();
+        if (stagesPlacement) clearStagedEntityPlacement();
         blockedPlayNotice('The board has changed. Select the Entity again.');
         return;
       }
     }
     const placesEntity = action === 'place' || action === 'create_place';
-    const flight = placesEntity ? captureEntityFlight(handIndex) : null;
+    const flight = placesEntity && !stagesPlacement ? captureEntityFlight(handIndex) : null;
     if (placesEntity) hideCardPreview();
     const entryEffects = {
       'Battery Orchard': 'when placed, add 2 lumens on terrain under this entity.',
@@ -3582,7 +3615,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       && normalizedEffect === 'draw cards equal to the amount of your entanglements.';
     const previousHandCount = gameState.hand.length;
     const horizon = [...(gameState.horizon || [])];
-    if (placesEntity) arrivingEntityKey = `${targetX},${targetY}`;
+    if (placesEntity && !stagesPlacement) arrivingEntityKey = source;
     phaseBusy = true;
     renderTurnPhase();
     try {
@@ -3673,6 +3706,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       flight?.flight.remove();
       if (expected === epoch) {
         arrivingEntityKey = null;
+        if (stagesPlacement) clearStagedEntityPlacement();
         $('game-board').querySelector('.play-node-entity-card.is-arriving:not(.is-opponent-arriving)')
           ?.classList.remove('is-arriving');
         clearDrawFlight();
@@ -3780,12 +3814,17 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   function displayedHand() {
     return pendingFestival?.hand || (Array.isArray(gameState?.hand) ? gameState.hand : []);
   }
+  function syncStagedEntityHand() {
+    for (const [index, item] of Array.from($('game-hand').children).entries()) {
+      item.classList.toggle('is-staged-entity', index === stagedEntityPlacement?.handIndex);
+    }
+  }
   function renderGameHand() {
     const hand = openingDealPending() ? []
       : displayedHand().map(resolveHandCard);
     const festivalIndex = pendingFestival?.handIndex;
     const signature = JSON.stringify([hand, festivalIndex]);
-    if (signature === handSignature) return;
+    if (signature === handSignature) { syncStagedEntityHand(); return; }
     const previousCanvases = new Map();
     for (const item of $('game-hand').children) {
       const canvas = item.querySelector('.play-hand-card canvas');
@@ -3841,6 +3880,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const handElement = $('game-hand');
     sizeHandGaps(handElement, cards.length);
     handElement.replaceChildren(...cards);
+    syncStagedEntityHand();
     arrivingCardCanvases.clear();
     requestAnimationFrame(syncHoveredCardPreview);
   }
@@ -4168,10 +4208,13 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const opponentId = room.host_id === userId ? room.guest_id : room.host_id;
     for (let row = 0; row < 4; row++) for (let column = 0; column < 5; column++) {
       const isCenter = column === 2 && (row === 1 || row === 2);
-      const node = room.board?.[`${column},${row}`];
+      const key = `${column},${row}`;
+      const storedNode = room.board?.[key];
+      const node = stagedEntityPlacement?.source === key && storedNode?.terrain && !storedNode.entity
+        ? { ...storedNode, entity: stagedEntityPlacement.card } : storedNode;
       const cell = document.createElement('div'); cell.className = 'play-game-node';
       if (isCenter && !node?.terrain) cell.classList.add('terrain-center');
-      cell.dataset.key = `${column},${row}`;
+      cell.dataset.key = key;
       const arrival = terrainArrivals.get(cell.dataset.key);
       if (arrival && arrival.terrain === node?.terrain) cell.classList.add('is-terrain-arriving');
       else if (arrival) finishTerrainArrival(cell.dataset.key, arrival);

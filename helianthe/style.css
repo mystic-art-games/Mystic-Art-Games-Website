@@ -2124,6 +2124,10 @@ body.dark-mode button:is(.action-cancel, .action-choose) {
 }
 body:not(.dark-mode) button:is(.action-cancel, .action-choose):hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.06); box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .7), 0 5px 12px rgba(34, 98, 49, .28) !important; }
 body.dark-mode button:is(.action-cancel, .action-choose):hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.12); box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .34), 0 6px 16px rgba(0, 18, 12, .38) !important; }
+button:is(#card-field-cancel, #cancel-deck-edit, #play-cancel-name) {
+  background: linear-gradient(145deg, #485d53, #30463c) !important;
+  color: #fff !important;
+}
 
 #play-game .play-menu-toggle,
 body:not(.dark-mode) button.action-add-save,

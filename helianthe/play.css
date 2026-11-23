@@ -283,6 +283,7 @@ body.dark-mode .play-deck-field.is-locked select { border-color: #596d5d; backgr
 #play-game-counts { font-size: .85rem; }
 .play-game-hand { display: flex; justify-content: safe center; gap: 1.2rem; overflow-x: auto; padding: .6rem .15rem .8rem; }
 .play-hand-item { position: relative; flex: 0 0 clamp(72px, 9vw, 92px); min-width: 0; }
+.play-hand-item.is-staged-entity { visibility: hidden; }
 .play-hand-card { display: flex; align-items: center; justify-content: center; box-sizing: border-box; width: 100%; min-width: 0; aspect-ratio: 63 / 88; margin: 0; padding: 0; overflow: hidden; border: 1px solid #8da79a; border-radius: 6px; background: #e9ece1; box-shadow: 0 4px 12px #183a2c33; }
 #play-game .play-hand-card { cursor: default; }
 #play-game[data-can-play-cards="true"] .play-hand-card { cursor: pointer; }

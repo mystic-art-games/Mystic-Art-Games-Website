@@ -7,7 +7,7 @@ export const extendedEventRules = {
   'Bubble Swap': ['switch places of any two entities.', 'swap_entities', 'an Entity'],
   'Bubble Switch': ['relocate any flow entity from a flow terrain to an adjacent terrain, after that change that terrain to a flow terrain.', 'bubble_switch', 'a Flow Entity on Flow Terrain'],
   'Compost Front': ['dissolve any empty verdant terrain to dissolve any entity.', 'compost_front', 'empty Verdant Terrain'],
-  'Dematerialize': ['choose any unprotected entity in the world and trigger its "when place" effect. then dissolve it along with terrain under it.', 'dematerialize', 'an unprotected Entity'],
+  'Dematerialize': ['choose any unprotected entity in the world and trigger its "when place" effect. then dissolve it.', 'dematerialize', 'an unprotected Entity'],
   'Fertile Rain': ['dissolve entity from any verdant terrain to fertilize 2 on any adjacent nodes.', 'fertile_rain_any', 'Verdant Terrain with an Entity'],
   'Fungal Rainwood': ['dissolve any entity from any entangled terrain.', 'fungal_rainwood', 'an Entity on entangled Terrain'],
   'Glade Surveyor': ['dissolve any verdant terrain to relocate protection from any terrain to its adjacent terrain.', 'glade_surveyor', 'Verdant Terrain'],
