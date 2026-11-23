@@ -733,19 +733,21 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const kind = beginningEffectKind(card);
     return ['solar_converter', 'expansive_ivy'].includes(kind) || /\byou may\b/i.test(String(card?.effect || ''));
   }
-  function beginningEffects() {
+  function beginningEffects({ includeSuppressed = false } = {}) {
     if (room?.status !== 'active' || room.turn_phase !== 'beginning'
       || room.beginning_effects_resolved_turn === room.turn_number) return [];
     const saved = room.beginning_effects_plan;
     const pending = saved?.turn === room.turn_number && Array.isArray(saved.pending_sources) ? saved.pending_sources : null;
-    return Object.entries(room.board || {}).filter(([key, node]) => /^[0-4],[0-3]$/.test(key)
-      && (!pending || pending.includes(key))
-      && node?.entity?.owner_id === room.turn_player_id && beginningEffectKind(node.entity)
-      && !entityEffectsSuppressed(room.board, key)
-      && beginningEffectAvailable(node.entity))
-      .map(([source, node]) => ({ source, kind: beginningEffectKind(node.entity), card: { ...resolveGameCard(node.entity),
-        title: node.entity.title, effect: updatedIvyEffect(node.entity) }, optional: beginningEffectOptional(node.entity) }))
-      .sort((a, b) => Number(a.source.split(',')[1]) - Number(b.source.split(',')[1])
+    return Object.entries(room.board || {}).flatMap(([source, node]) => {
+      const entity = node?.entity;
+      if (!/^[0-4],[0-3]$/.test(source) || entity?.owner_id !== room.turn_player_id) return [];
+      const kind = beginningEffectKind(entity);
+      if (!kind || !beginningEffectAvailable(entity)) return [];
+      const suppressed = entityEffectsSuppressed(room.board, source);
+      if (suppressed ? !includeSuppressed : pending && !pending.includes(source)) return [];
+      const card = { ...resolveGameCard(entity), title: entity.title, effect: updatedIvyEffect(entity) };
+      return [{ source, kind, card, suppressed, optional: beginningEffectOptional(entity) }];
+    }).sort((a, b) => Number(a.source.split(',')[1]) - Number(b.source.split(',')[1])
         || Number(a.source.split(',')[0]) - Number(b.source.split(',')[0]));
   }
   function beginningPlan() {
@@ -1474,10 +1476,12 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   window.addEventListener('resize', clearBeginningConnector);
   function renderBeginningEffects() {
     clearBeginningConnector();
-    const effects = beginningEffects();
+    const visibleEffects = beginningEffects({ includeSuppressed: true });
     const panel = $('game-beginning-effects');
-    panel.hidden = effects.length === 0;
+    panel.hidden = visibleEffects.length === 0;
     if (panel.hidden) { beginningTargetSource = null; return; }
+    const effects = visibleEffects.filter(effect => !effect.suppressed);
+    const suppressedSources = visibleEffects.filter(effect => effect.suppressed).map(effect => effect.source);
     const own = room.turn_player_id === userId;
     panel.classList.toggle('is-read-only', !own);
     panel.classList.toggle('is-your-turn', own);
@@ -1534,29 +1538,30 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       }
     }
     for (const effect of effects) if (!beginningOrder.includes(effect.source)) beginningOrder.push(effect.source);
-    const bySource = new Map(effects.map(effect => [effect.source, effect]));
+    const bySource = new Map(visibleEffects.map(effect => [effect.source, effect]));
     const plan = beginningPlan();
     const canResolve = own && !phaseBusy && Boolean(gameState) && !room.forest_reactions?.length;
-    $('game-beginning-actions').hidden = !own;
+    $('game-beginning-actions').hidden = !own || effects.length === 0;
     $('game-beginning-one').disabled = !canResolve || beginningResolution(plan, true).entries.some(entry => !plan.get(entry.source)?.valid);
     $('game-beginning-all').disabled = !canResolve || beginningResolution(plan).entries.some(entry => !plan.get(entry.source)?.valid);
     if (plan.get(beginningTargetSource)?.skipReason) beginningTargetSource = null;
-    const rows = beginningOrder.map(source => {
+    const rows = [...beginningOrder, ...suppressedSources].map(source => {
       const effect = bySource.get(source);
-      const skipReason = plan.get(source)?.skipReason;
+      const skipReason = effect.suppressed ? 'Sporebound Relay suppresses this Entity’s effect.' : plan.get(source)?.skipReason;
       const skipped = beginningSkipped.has(source) || Boolean(skipReason);
+      const canReorder = own && !effect.suppressed;
       const row = document.createElement('li');
       row.className = `play-beginning-effect${beginningTargetSource === source ? ' is-choosing' : ''}${skipped ? ' is-skipped' : ''}`;
-      row.draggable = own && !phaseBusy;
+      row.draggable = canReorder && !phaseBusy;
       const heading = document.createElement('div'); heading.className = 'play-beginning-effect-heading';
       const title = document.createElement('strong'); title.textContent = effect.card.title;
       title.title = effect.card.title;
-      if (own) {
+      if (canReorder) {
         heading.insertAdjacentHTML('beforeend', beginningIcon('grip'));
       }
       heading.append(title);
       const controls = document.createElement('div'); controls.className = 'play-beginning-effect-controls';
-      const { options, target, choices, choice, terrainOptions, eventOptions, fallback, targets, eventId, draws, loading, symbiosisOnly, entangleUnavailable } = plan.get(source);
+      const { options, target, choices, choice, terrainOptions, eventOptions, fallback, targets, eventId, draws, loading, symbiosisOnly, entangleUnavailable } = plan.get(source) || {};
       const canStay = effect.kind === 'march_of_marshrooms';
       const targetPrompt = {
         march_of_marshrooms: symbiosisOnly ? 'Choose an adjacent empty Symbiosis Terrain' : 'Choose an adjacent empty Terrain',
@@ -1566,7 +1571,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       let hoverMessage;
       const showUnavailable = label => {
         hoverMessage = label;
-        controls.append(beginningControl('skip', label));
+        controls.append(beginningControl('skip', label, { unavailable: effect.suppressed }));
       };
       if (skipped) {
         showUnavailable(skipReason || 'Skipped this turn');
@@ -1740,15 +1745,15 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       row.addEventListener('focusout', event => {
         if (event.target.matches('.play-beginning-control[aria-disabled="true"]')) clearBeginningConnector();
       });
-      if (own) row.addEventListener('dragstart', event => {
+      if (canReorder) row.addEventListener('dragstart', event => {
         clearBeginningConnector();
         event.dataTransfer.effectAllowed = 'move';
         event.dataTransfer.setData('text/plain', source);
         row.classList.add('is-dragging');
       });
-      if (own) row.addEventListener('dragend', () => row.classList.remove('is-dragging'));
-      if (own) row.addEventListener('dragover', event => { event.preventDefault(); event.dataTransfer.dropEffect = 'move'; });
-      if (own) row.addEventListener('drop', event => {
+      if (canReorder) row.addEventListener('dragend', () => row.classList.remove('is-dragging'));
+      if (canReorder) row.addEventListener('dragover', event => { event.preventDefault(); event.dataTransfer.dropEffect = 'move'; });
+      if (canReorder) row.addEventListener('drop', event => {
         event.preventDefault(); event.stopPropagation();
         const dragged = event.dataTransfer.getData('text/plain');
         if (!bySource.has(dragged) || dragged === source) return;
@@ -3522,7 +3527,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       await refreshRoom();
       if (expected === epoch && room?.id === roomId) await loadGameState(true);
       if (expected === epoch && room?.id === roomId && discardFlights.size) await archivePreviews.self.ready;
-      if (expected === epoch && room?.id === roomId) eventNotice(`${result?.title || card.title} evoked${result?.drawn ? ` · drew ${result.drawn}` : ''}${result?.applied ? ' · board updated' : ''}.`, true);
+      const drawNotice = result?.drawn ? ` · drew ${result.drawn}`
+        : card.title === 'Verdant Vineroots' && rule[1] === 'fertilize_draw' && result?.drawn === 0 ? ' · Horizon is empty' : '';
+      if (expected === epoch && room?.id === roomId) eventNotice(`${result?.title || card.title} evoked${drawNotice}${result?.applied ? ' · board updated' : ''}.`, true);
     } catch (error) {
       if (expected === epoch && room?.id === roomId) {
         await refreshRoom().catch(() => {});
