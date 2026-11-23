@@ -154,7 +154,7 @@ body.dark-mode .play-deck-field.is-locked select { border-color: #596d5d; backgr
 .play-archive-browser-body > .art-scroll-wrap { display: grid; grid-template-rows: minmax(0, 1fr); min-width: 0; padding-inline-end: 18px; }
 .play-archive-browser-list[data-art-scroll-ready="true"] { scrollbar-width: none; }
 .play-archive-browser-list[data-art-scroll-ready="true"]::-webkit-scrollbar { display: none; }
-.play-archive-browser-list button, .play-archive-browser-list button:hover:not(:disabled), .play-archive-browser-list button:active { display: block; width: 100%; padding: 0; border: 0; border-radius: 4px; background: transparent; box-shadow: none; text-align: center; }
+.play-archive-gallery-thumbnail { display: block; width: 100%; padding: 0; border: 0; border-radius: 4px; background: transparent; box-shadow: none; text-align: center; }
 .play-archive-browser-list canvas, .play-archive-gallery-fallback { display: block; box-sizing: border-box; width: 100%; aspect-ratio: 63 / 88; border-radius: 4px; }
 .play-archive-browser-list canvas[hidden], .play-archive-gallery-fallback[hidden] { display: none; }
 .play-archive-gallery-fallback { display: grid; place-items: center; padding: .4rem; background: #e9ece1; color: #173b2d; font-size: .72rem; }
@@ -390,12 +390,12 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
 #play-game .play-hand-card.is-queued { translate: 0 -.7rem; }
 .play-hand-item:has(.play-hand-card.is-queued) { z-index: 1; }
 @media (hover: hover) and (prefers-reduced-motion: no-preference) {
-  .play-game-patron-slot, .play-node-entity-card, .play-game-archive-card, .play-deck-stack, .play-archive-browser-list button { transition: scale .16s ease; }
+  .play-game-patron-slot, .play-node-entity-card, .play-game-archive-card, .play-deck-stack, .play-archive-gallery-thumbnail { transition: scale .16s ease; }
   #play-game .play-game-patron-slot:hover,
   #play-game .play-node-entity-card:hover,
   #play-game .play-game-archive-card:hover,
   #play-game .play-deck-stack:hover,
-  .play-archive-browser-list li:hover > button { scale: 1.045; }
+  .play-archive-browser-list li:hover > .play-archive-gallery-thumbnail { scale: 1.045; }
   #play-game .play-hand-card:hover { scale: 1.035; }
 }
 #play-game .play-hand-card.is-selected:not(.is-queued) { outline: 2px solid #c9cbd2; outline-offset: 1px; filter: brightness(.8); box-shadow: 0 4px 12px #0006; }

@@ -2570,34 +2570,34 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const serial = archiveBrowserRequestSerial;
     const entries = archiveBrowserCards.map((item, index) => {
       const row = document.createElement('li');
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.setAttribute('aria-label', `Preview ${item.title || 'card'} in Archive`);
+      const thumbnail = document.createElement('div');
+      thumbnail.className = 'play-archive-gallery-thumbnail';
+      thumbnail.setAttribute('role', 'img');
+      thumbnail.setAttribute('aria-label', `${item.title || 'card'} in Archive`);
       const canvas = document.createElement('canvas');
       canvas.hidden = true;
       canvas.setAttribute('aria-hidden', 'true');
       const fallback = document.createElement('span');
       fallback.className = 'play-archive-gallery-fallback';
       fallback.textContent = item.title || 'Card';
-      button.append(canvas, fallback);
+      thumbnail.append(canvas, fallback);
       const showCard = () => {
         if (archiveBrowserIndex === index) return;
         archiveBrowserIndex = index;
         renderArchiveBrowser();
       };
-      button.addEventListener('click', showCard);
-      button.addEventListener('pointerenter', event => {
+      thumbnail.addEventListener('pointerenter', event => {
         if (event.pointerType === 'mouse') showCard();
       });
-      row.append(button);
-      return { row, button, canvas, fallback, item };
+      row.append(thumbnail);
+      return { row, thumbnail, canvas, fallback, item };
     });
     list.replaceChildren(...entries.map(entry => entry.row));
     const drawThumbnail = entry => {
       void (async () => {
-        const { button, canvas, fallback, item } = entry;
+        const { thumbnail, canvas, fallback, item } = entry;
         const artwork = item.artwork_id ? await getArtworkUrl(item.artwork_id).catch(() => '') : '';
-        const current = () => serial === archiveBrowserRequestSerial && list.contains(button);
+        const current = () => serial === archiveBrowserRequestSerial && list.contains(thumbnail);
         const result = await renderPlayCard(canvas, item, artwork, current);
         if (!current() || !result || result.cancelled) return;
         canvas.hidden = false;
@@ -2605,7 +2605,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       })().catch(() => {});
     };
     if (typeof IntersectionObserver === 'function') {
-      const galleryEntries = new Map(entries.map(entry => [entry.button, entry]));
+      const galleryEntries = new Map(entries.map(entry => [entry.thumbnail, entry]));
       archiveGalleryObserver = new IntersectionObserver(entries => {
         for (const entry of entries) {
           if (!entry.isIntersecting) continue;
@@ -2614,7 +2614,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
           if (item) drawThumbnail(item);
         }
       }, { root: list, rootMargin: '120px' });
-      for (const entry of entries) archiveGalleryObserver.observe(entry.button);
+      for (const entry of entries) archiveGalleryObserver.observe(entry.thumbnail);
     } else {
       for (const entry of entries) drawThumbnail(entry);
     }
@@ -2626,8 +2626,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     status.textContent = archiveBrowserError || (archiveBrowserLoading ? 'Loading cards…'
       : `${archiveBrowserCards.length} card${archiveBrowserCards.length === 1 ? '' : 's'}`);
     Array.from($('game-archive-browser-list').children).forEach((row, index) => {
-      const button = row.firstElementChild;
-      button.setAttribute('aria-current', index === archiveBrowserIndex ? 'true' : 'false');
+      const thumbnail = row.firstElementChild;
+      thumbnail.setAttribute('aria-current', index === archiveBrowserIndex ? 'true' : 'false');
     });
     const canvas = $('game-archive-browser-canvas');
     const fallback = $('game-archive-browser-fallback');
