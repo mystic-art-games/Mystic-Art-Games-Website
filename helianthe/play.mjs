@@ -1,4 +1,4 @@
-import { extendedEventRules, extendedKinds, extendedEventStep } from './play-extended-events.mjs?v=6';
+import { extendedEventRules, extendedKinds, extendedEventStep } from './play-extended-events.mjs?v=7';
 import { entityEffectKind, entityEffectStep } from './play-entity-effects.mjs?v=2';
 
 const terrainFullArtUrl = terrain => new URL(`./assets/Terrain_${terrain}_Full_Art.png`, import.meta.url).href;

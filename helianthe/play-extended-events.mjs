@@ -17,7 +17,7 @@ export const extendedEventRules = {
   'Lilac Overgrowth': ['choose any terrain with 2 adjacent verdant terrains. dissolve its entity.', 'lilac_overgrowth', 'Terrain adjacent to two Verdant Terrain cards'],
   'Liquid Protection': ['choose a pair of adjacent flow entities. protect them.', 'liquid_protection', 'a Flow Entity'],
   'Migration of Wind-Sails': ['relocate any flow entity to any empty terrain.', 'migration_wind_sails', 'a Flow Entity'],
-  'Natural Habitat': ['choose any verdant terrain with entity. draw cards equal to the number of adjacent verdant terrains minus 3.', 'natural_habitat', 'Verdant Terrain with an Entity'],
+  'Natural Habitat': ['choose any verdant terrain with entity. draw cards equal to the number of adjacent verdant terrains minus 2.', 'natural_habitat', 'Verdant Terrain with an Entity'],
   "Poseidon's Chosen One": ['if you have 3 or more entities in your archive, you may recall one of them to your hand.', 'poseidons_chosen_one', ''],
   'Reclamation Pulse': ['dissolve any empty verdant terrain to protect any verdant terrain. draw 1 card.', 'reclamation_pulse', 'empty Verdant Terrain'],
   'Regrow': ['dissolve any verdant terrain to recall any entity from the archive.', 'regrow', 'Verdant Terrain'],
