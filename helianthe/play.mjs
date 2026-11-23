@@ -3729,7 +3729,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     $('game-board').querySelectorAll('.play-node-entity-card.is-opponent-arriving')
       .forEach(entity => entity.classList.remove('is-arriving', 'is-opponent-arriving'));
   }
-  async function animateOpponentCard(zone, { draw = false, card = null, title = '', delay = 0 } = {}) {
+  async function animateOpponentCard(zone, { draw = false, card = null, title = '', delay = 0, facesOpponent = false } = {}) {
     const game = $('game');
     const canPlayLandingSound = () => !draw && visible && !inLobby && !game.hidden && !document.hidden;
     if (!visible || inLobby || game.hidden || document.hidden) return;
@@ -3744,6 +3744,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const dy = top - bounds.height - bounds.top;
     const flight = document.createElement('div');
     flight.className = `play-opponent-card-flight${draw ? ' is-face-down' : ''}`;
+    flight.classList.toggle('faces-opponent', facesOpponent);
     flight.setAttribute('aria-hidden', 'true');
     Object.assign(flight.style, {
       left: `${bounds.left}px`, top: `${bounds.top}px`,
@@ -3876,6 +3877,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       }
       const flight = document.createElement('img');
       flight.className = 'play-terrain-flight';
+      flight.classList.toggle('faces-opponent', cell.classList.contains('terrain-faces-opponent'));
       flight.alt = '';
       flight.src = cell._playTerrain.fullArtUrl;
       Object.assign(flight.style, {
@@ -3916,6 +3918,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         flight.className = 'play-terrain-flight';
         flight.alt = '';
         flight.src = cell._playTerrain.fullArtUrl;
+        flight.classList.toggle('faces-opponent', cell.classList.contains('terrain-faces-opponent'));
         const dy = terrainExit - bounds.top + (ownTurn ? bounds.height : -bounds.height);
         terrainAnimation = animateBoardFlight(flight, bounds, [
           { transform: 'translateY(0)', opacity: 1 },
@@ -4034,6 +4037,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const previousEntities = new Map(Array.from($('game-board').children,
       cell => [cell.dataset.key, cell.querySelector('.play-node-entity-card')]));
     const boardSerial = ++boardRenderSerial;
+    const opponentId = room.host_id === userId ? room.guest_id : room.host_id;
     for (let row = 0; row < 4; row++) for (let column = 0; column < 5; column++) {
       const isCenter = column === 2 && (row === 1 || row === 2);
       const node = room.board?.[`${column},${row}`];
@@ -4045,6 +4049,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       else if (arrival) finishTerrainArrival(cell.dataset.key, arrival);
       if (node?.terrain) {
         cell.classList.add(`terrain-${node.terrain.toLowerCase()}`);
+        cell.classList.toggle('terrain-faces-opponent', Boolean(opponentId && node.owner_id === opponentId));
         cell._playTerrain = { id: `terrain:${node.terrain.toLowerCase()}`, title: node.terrain,
           card_type: 'Terrain', terrain: node.terrain, fullArtTerrain: true,
           fullArtUrl: terrainFullArtUrl(node.terrain) };
@@ -4052,6 +4057,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
           cell.classList.add('has-entity');
           const entityCard = resolveGameCard(node.entity);
           const entity = document.createElement('div'); entity.className = 'play-node-entity-card';
+          entity.classList.toggle('faces-opponent', Boolean(opponentId && node.entity.owner_id === opponentId));
           entity._playCard = entityCard;
           if (arrivingEntityKey === cell.dataset.key) entity.classList.add('is-arriving');
           if (opponentArrivingEntities.has(cell.dataset.key)) entity.classList.add('is-arriving', 'is-opponent-arriving');
@@ -4374,7 +4380,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       const [key, node] = opponentPlacement;
       const target = () => $('game-board').querySelector(`[data-key="${CSS.escape(key)}"] .play-node-entity-card`);
       const expected = epoch;
-      void animateOpponentCard(target(), { card: resolveGameCard(node.entity) }).finally(() => {
+      void animateOpponentCard(target(), { card: resolveGameCard(node.entity), facesOpponent: true }).finally(() => {
         if (expected !== epoch) return;
         opponentArrivingEntities.delete(key);
         target()?.classList.remove('is-arriving', 'is-opponent-arriving');
