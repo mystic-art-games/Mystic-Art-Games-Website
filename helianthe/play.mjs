@@ -1869,7 +1869,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         arrivals.push(...drawn.splice(0, Number(effect.draws || 0)));
       }
       arrivals.push(...drawn);
-      if (arrivals.length) await animateCardsToHand(arrivals, [], 110, null, recalls);
+      if (arrivals.length) await animateCardsToHand(arrivals, [], 110, null, recalls, result?.reshuffles);
       if (expected !== epoch || room?.id !== roomId) return;
       await refreshRoom();
       if (expected === epoch && room?.id === roomId) await loadGameState(true);
@@ -1919,7 +1919,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   function sizeHandGaps(hand, cardCount) {
     hand.style.setProperty('--play-hand-gap-count', String(Math.max(1, cardCount - 1)));
   }
-  async function animateCardsToHand(rawCards, removedIndexes = [], stagger = 0, batchSound = null, recalls = []) {
+  async function animateCardsToHand(rawCards, removedIndexes = [], stagger = 0, batchSound = null, recalls = [], reshuffles = []) {
     const source = $('game-self-horizon').getBoundingClientRect();
     const handElement = $('game-hand');
     const hand = handElement.getBoundingClientRect();
@@ -1959,42 +1959,60 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       const recall = recalls[index];
       const start = recall ? (recall.preview?.bounds || archive) : source;
       return createIncomingCardFlight(resolveHandCard(rawCard), start, destinations[index],
-        reduced ? 100 : recall ? 620 : duration, reduced ? 0 : index * stagger, recall);
+        reduced ? 100 : recall ? 620 : duration, recall);
     });
     const ready = await Promise.all(flights.map(flight => flight.ready));
     if (flights.some(({ element }) => !activeDrawFlights.has(element))) return;
+    if (ready.some(result => !result)) { clearDrawFlight(); return; }
     const drawRoomId = room?.id;
     const drawEpoch = epoch;
     if (batchSound) {
       if (visible && !inLobby) playTableSound(batchSound);
       animateOpponentDraws(5);
-    } else rawCards.forEach((_, index) => {
-      if (recalls[index]) return;
-      const playDraw = () => {
-        if (drawEpoch === epoch && room?.id === drawRoomId && visible && !inLobby) {
-          playTableSound(drawCardSound.cloneNode());
-        }
-      };
-      if (index === 0) playDraw();
-      else setTimeout(playDraw, index * (stagger || 110));
-    });
-    if (ready.some(result => !result)) { clearDrawFlight(); return; }
-
-    for (const item of removedItems) {
-      item.style.visibility = 'hidden';
-      drawHiddenItems.add(item);
     }
-    activeHandShifts = items.map((item, index) => {
-      const from = originalBounds[index];
-      const to = finalBounds[index];
-      return item.animate([
-        { transform: 'translate(0, 0) scale(1)', transformOrigin: 'top left' },
-        { transform: `translate(${to.left - from.left}px, ${to.top - from.top}px) scale(${from.width ? to.width / from.width : 1}, ${from.height ? to.height / from.height : 1})`, transformOrigin: 'top left' },
-      ], { duration: duration * .75, easing: 'ease-in-out', fill: 'forwards' });
-    });
-    await Promise.allSettled(flights.flatMap(flight => flight.start()));
+    const batches = [];
+    const refills = new Map((reshuffles || []).map(step => [step.before_draw, step.count]));
+    let drawnSoFar = 0;
+    for (const [index, flight] of flights.entries()) {
+      const recall = recalls[index];
+      const refill = recall ? null : refills.get(drawnSoFar++);
+      if (refill || !batches.length) batches.push({ refill, flights: [] });
+      batches.at(-1).flights.push({ flight, recall });
+    }
+
+    for (const [batchIndex, batch] of batches.entries()) {
+      if (batch.refill) await animateArchiveReshuffle('self', batch.refill).finished;
+      if (drawEpoch !== epoch || room?.id !== drawRoomId || !activeDrawFlights.has(batch.flights[0].flight.element)) return;
+      if (batchIndex === 0) {
+        for (const item of removedItems) {
+          item.style.visibility = 'hidden';
+          drawHiddenItems.add(item);
+        }
+        activeHandShifts = items.map((item, index) => {
+          const from = originalBounds[index];
+          const to = finalBounds[index];
+          return item.animate([
+            { transform: 'translate(0, 0) scale(1)', transformOrigin: 'top left' },
+            { transform: `translate(${to.left - from.left}px, ${to.top - from.top}px) scale(${from.width ? to.width / from.width : 1}, ${from.height ? to.height / from.height : 1})`, transformOrigin: 'top left' },
+          ], { duration: duration * .75, easing: 'ease-in-out', fill: 'forwards' });
+        });
+      }
+      await Promise.allSettled(batch.flights.flatMap(({ flight, recall }, index) => {
+        const delay = reduced ? 0 : index * stagger;
+        if (!batchSound && !recall) {
+          const playDraw = () => {
+            if (drawEpoch === epoch && room?.id === drawRoomId && activeDrawFlights.has(flight.element) && visible && !inLobby) {
+              playTableSound(drawCardSound.cloneNode());
+            }
+          };
+          if (delay) setTimeout(playDraw, delay);
+          else playDraw();
+        }
+        return flight.start(delay);
+      }));
+    }
   }
-  function createIncomingCardFlight(card, source, destination, duration, delay, recall) {
+  function createIncomingCardFlight(card, source, destination, duration, recall) {
     const flight = document.createElement('div');
     flight.className = 'play-draw-flight';
     flight.setAttribute('aria-hidden', 'true');
@@ -2030,7 +2048,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const dy = source.top + source.height / 2 - destination.top - destination.height / 2;
     return {
       element: flight, ready,
-      start() {
+      start(delay) {
         const motion = flight.animate([
           { transform: `translate(${dx}px, ${dy}px) scale(${source.width / destination.width}, ${source.height / destination.height})` },
           { transform: `translate(${dx * .45}px, ${dy * .45}px) rotate(-5deg)`, offset: .45 },
@@ -2057,7 +2075,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       .eq('room_id', roomId).eq('player_id', userId).single();
     if (error) throw error;
     const draw = data.phase_draw;
-    return draw?.turn === turn && draw.phase === phase ? draw.card : null;
+    return draw?.turn === turn && draw.phase === phase ? draw : null;
   }
   async function finishDrawPhase() {
     if (!room || room.status !== 'active' || room.turn_player_id !== userId
@@ -2066,10 +2084,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     phaseBusy = true;
     renderTurnPhase();
     try {
-      const drawnCard = await readPhaseDraw(roomId, turn, 'draw');
+      const draw = await readPhaseDraw(roomId, turn, 'draw');
       if (expected !== epoch || room?.id !== roomId || room.turn_phase !== 'draw') return;
       const drawnAlreadyInHand = gameState?.phase_draw?.turn === turn && gameState.phase_draw.phase === 'draw';
-      if (drawnCard && !drawnAlreadyInHand) await animateCardsToHand([drawnCard]);
+      if (draw?.card && !drawnAlreadyInHand) await animateCardsToHand([draw.card], [], 0, null, [], draw.reshuffles);
       if (expected !== epoch || room?.id !== roomId || room.turn_phase !== 'draw') return;
       await rpc('play_advance_turn_phase', {
         p_room_id: roomId, p_expected_turn: turn, p_expected_phase: 'draw', p_take_extra_card: false,
@@ -2105,9 +2123,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       });
       if (expected !== epoch || room?.id !== roomId) return;
       if (takeExtraCard) {
-        const drawnCard = await readPhaseDraw(roomId, turn, 'end');
+        const draw = await readPhaseDraw(roomId, turn, 'end');
         if (expected !== epoch || room?.id !== roomId) return;
-        if (drawnCard) await animateCardsToHand([drawnCard]);
+        if (draw?.card) await animateCardsToHand([draw.card], [], 0, null, [], draw.reshuffles);
       }
       await refreshRoom();
       if (expected === epoch && room?.id === roomId && phase === 'beginning' && room.turn_phase === 'draw') {
@@ -2669,15 +2687,16 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     phaseBusy = true;
     renderTurnPhase();
     try {
-      const drawn = await rpc('play_prepare_festival_draw', {
+      const { cards: drawn, reshuffles } = await rpc('play_prepare_festival_draw', {
         p_room_id: roomId, p_expected_turn: turn, p_hand_index: handIndex,
         p_card_id: card.card_id || card.id, p_expected_hand_count: originalState.hand.length,
+        p_include_reshuffles: true,
       });
       if (expected !== epoch || room?.id !== roomId || room.turn_number !== turn || room.turn_phase !== 'main') return;
       const hand = originalState.hand.concat(drawn);
       const twoDiscards = eventSupport(card)?.[1] === 'draw_two_discard_two';
       const discardCount = Math.min(twoDiscards ? 2 : 1, hand.length - 1);
-      await animateCardsToHand(drawn, [], 110);
+      await animateCardsToHand(drawn, [], 110, null, [], reshuffles);
       if (expected !== epoch || room?.id !== roomId || room.turn_number !== turn
         || room.turn_player_id !== userId || room.turn_phase !== 'main') return;
       pendingFestival = { card, handIndex, drawn, hand, targetX, targetY, twoDiscards, discardCount };
@@ -3429,11 +3448,11 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       const drawn = result?.drawn_cards || horizon.slice(0, result?.drawn || 0);
       if (event.recall) {
         await Promise.all([archiveMotion, animateCardsToHand([event.recall.card, ...drawn],
-          removedIndexes, 110, null, [event.recall])]);
+          removedIndexes, 110, null, [event.recall], result?.reshuffles)]);
       } else {
         await archiveMotion;
         if (expected !== epoch || room?.id !== roomId) return;
-        if (drawn.length) await animateCardsToHand(drawn, removedIndexes, 110);
+        if (drawn.length) await animateCardsToHand(drawn, removedIndexes, 110, null, [], result?.reshuffles);
       }
       if (expected !== epoch || room?.id !== roomId) return;
       await refreshRoom();
@@ -3553,12 +3572,12 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       hideCardPreview();
       const drawn = result?.drawn_cards || horizon.slice(0, result?.drawn || 0);
       if (recalled) {
-        await Promise.all([archiveMotion, animateCardsToHand([recall.card, ...drawn], [handIndex], 110, null, [recall])]);
+        await Promise.all([archiveMotion, animateCardsToHand([recall.card, ...drawn], [handIndex], 110, null, [recall], result?.reshuffles)]);
       } else {
         releaseArchiveRecall(recall?.preview);
         await archiveMotion;
         if (expected !== epoch || room?.id !== roomId) return;
-        if (drawn.length) await animateCardsToHand(drawn, [handIndex], 110);
+        if (drawn.length) await animateCardsToHand(drawn, [handIndex], 110, null, [], result?.reshuffles);
       }
       if (expected !== epoch || room?.id !== roomId) return;
       await refreshRoom();
@@ -3720,7 +3739,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         await archiveMotion;
       }
       if (expected === epoch && room?.id === roomId && entityDrawn) {
-        await animateCardsToHand(drawn, [handIndex], 110);
+        await animateCardsToHand(drawn, [handIndex], 110, null, [], result?.reshuffles);
       }
       if (expected === epoch && room?.id === roomId) await loadGameState(true);
       if (expected === epoch && room?.id === roomId && discardFlights.size) await archivePreviews.self.ready;
@@ -3929,13 +3948,50 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     arrivingCardCanvases.clear();
     requestAnimationFrame(syncHoveredCardPreview);
   }
+  let opponentAnimationsUntil = 0;
   function clearGameCardFlights() {
     for (const element of stagedRecallFlights) element.remove();
     stagedRecallFlights.clear();
     for (const animation of gameCardFlights) animation.cancel();
+    opponentAnimationsUntil = 0;
     opponentArrivingEntities.clear();
     $('game-board').querySelectorAll('.play-node-entity-card.is-opponent-arriving')
       .forEach(entity => entity.classList.remove('is-arriving', 'is-opponent-arriving'));
+  }
+  function animateArchiveReshuffle(seat, count, delay = 0) {
+    const idle = { duration: 0, finished: Promise.resolve() };
+    if (!visible || inLobby || $('game').hidden || document.hidden) return idle;
+    const expected = epoch, roomId = room?.id;
+    const playSound = () => {
+      if (expected === epoch && room?.id === roomId && visible && !inLobby && !$('game').hidden && !document.hidden) {
+        playTableSound(massiveDrawSound.cloneNode());
+      }
+    };
+    const timer = delay ? setTimeout(playSound, delay) : null;
+    if (!delay) playSound();
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return idle;
+    const archive = $(`game-${seat}-archive`).getBoundingClientRect();
+    const horizon = $(`game-${seat}-horizon`).getBoundingClientRect();
+    if (!archive.width || !archive.height || !horizon.width || !horizon.height) return idle;
+    const dx = horizon.left - archive.left + (horizon.width - archive.width) / 2;
+    const dy = horizon.top - archive.top + (horizon.height - archive.height) / 2;
+    const size = Math.min(6, Math.max(1, count));
+    const duration = 500, stagger = 65;
+    const flights = Array.from({ length: size }, (_, index) => {
+      const card = document.createElement('div');
+      card.className = 'play-opponent-card-flight is-face-down play-archive-shuffle-flight';
+      const spread = index - (size - 1) / 2;
+      return animateBoardFlight(card, archive, [
+        { transform: 'translate(0, 0)', opacity: 0 },
+        { transform: 'translate(0, 0)', opacity: 1, offset: .1 },
+        { transform: `translate(${dx * .55}px, ${dy * .55 - 15 + spread * 3}px) rotate(${spread * 3}deg) scale(.95)`, opacity: 1, offset: .57 },
+        { transform: `translate(${dx}px, ${dy}px) scale(${horizon.width / archive.width}, ${horizon.height / archive.height})`, opacity: 1 },
+      ], duration, delay + index * stagger);
+    });
+    return {
+      duration: duration + (size - 1) * stagger,
+      finished: Promise.allSettled(flights.map(flight => flight.finished)).then(() => clearTimeout(timer)),
+    };
   }
   async function animateOpponentCard(zone, { draw = false, card = null, title = '', delay = 0 } = {}) {
     const game = $('game');
@@ -4003,12 +4059,18 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     for (let index = 0; index < count; index++) {
       void animateOpponentCard(horizon, { draw: true, delay: delay + index * stagger });
     }
-    return Math.min(650, count * 110);
+    return count > 0 ? 460 + (count - 1) * stagger : 0;
   }
   function animateOpponentLogActions(rows) {
-    let delay = 0;
+    const startedAt = performance.now();
+    let delay = Math.max(0, opponentAnimationsUntil - startedAt);
     for (const row of rows) {
       if (!row.actor_id || row.actor_id === userId) continue;
+      const refill = /^shuffled (?:(\d+) cards? from )?Archive into Horizon\.$/.exec(row.message);
+      if (refill) {
+        delay += animateArchiveReshuffle('opponent', refill[1] ? Number(refill[1]) : 5, delay).duration;
+        continue;
+      }
       const draw = /^drew (\d+) cards?\.$/.exec(row.message);
       if (draw) {
         delay += animateOpponentDraws(Number(draw[1]), delay);
@@ -4021,6 +4083,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       void animateOpponentCard($('game-opponent-archive'), { card, title: played[2], delay });
       delay += 150;
     }
+    opponentAnimationsUntil = startedAt + delay;
   }
   function renderEntanglementTokens() {
     const board = room.board || {};
@@ -4221,7 +4284,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       void animation.finished.then(revealToken, revealToken);
     }
   }
-  function animateBoardFlight(flight, bounds, keyframes, duration) {
+  function animateBoardFlight(flight, bounds, keyframes, duration, delay = 0) {
     flight.setAttribute('aria-hidden', 'true');
     Object.assign(flight.style, {
       left: bounds.left + 'px', top: bounds.top + 'px',
@@ -4229,7 +4292,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     });
     document.body.append(flight);
     const animation = flight.animate(keyframes, {
-      duration, easing: 'cubic-bezier(.22,.7,.18,1)', fill: 'both',
+      duration, delay, easing: 'cubic-bezier(.22,.7,.18,1)', fill: 'both',
     });
     gameCardFlights.add(animation);
     const cleanup = () => {
