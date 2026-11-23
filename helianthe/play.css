@@ -123,7 +123,7 @@ body.dark-mode .play-deck-field.is-locked select { border-color: #596d5d; backgr
 .play-game-hand-wrap { position: relative; min-width: 0; width: 100%; }
 .play-game-hand-wrap #play-game-loading { position: absolute; inset: 0; display: grid; place-content: center; margin: 0; text-align: center; pointer-events: none; }
 :root { --play-card-back-and-log-bg: #1b352be8; --play-card-back-border: #648774; }
-.play-deck-stack { display: block; flex: 0 0 auto; width: 62px; aspect-ratio: 63 / 88; border: 1px solid var(--play-card-back-border); border-radius: 9px; background: url('../images/helianthe-logo.png') center / 62% no-repeat, var(--play-card-back-and-log-bg); box-shadow: inset 0 1px 0 #fff2cf36, 4px -4px 0 #1b352b, 5px -5px 0 var(--play-card-back-border), 0 4px 12px #130b0a55; }
+.play-deck-stack { display: block; flex: 0 0 auto; width: 62px; aspect-ratio: 63 / 88; border: 2px solid var(--play-card-back-border); border-radius: 9px; background: url('../images/helianthe-logo.png') center / 62% no-repeat, var(--play-card-back-and-log-bg); box-shadow: inset 0 1px 0 #fff2cf36, 4px -4px 0 #1b352b, 5px -5px 0 var(--play-card-back-border), 0 4px 12px #130b0a55; }
 .play-game-board-wrap { width: 100%; max-width: 1000px; margin: 0 auto; }
 .play-game-table { --play-map-card-gap: clamp(14px, 2.2cqh, 22px); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 5fr) minmax(0, 1fr); align-items: stretch; justify-content: center; gap: clamp(8px, 1.4vw, 18px); }
 .play-game-board { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); grid-template-rows: repeat(4, minmax(0, 1fr)); align-self: center; gap: var(--play-map-card-gap); min-width: 0; width: 100%; aspect-ratio: 334 / 352; }
@@ -251,13 +251,13 @@ body.dark-mode .play-deck-field.is-locked select { border-color: #596d5d; backgr
 .play-draw-flight { position: fixed; z-index: 85; box-sizing: border-box; margin: 0; pointer-events: none; perspective: 1000px; }
 .play-terrain-flight { position: fixed; z-index: 85; display: block; object-fit: cover; border-radius: 6px; box-shadow: 0 6px 14px #0007; pointer-events: none; }
 .play-opponent-card-flight { position: fixed; z-index: 86; display: grid; place-items: center; overflow: hidden; border: 1px solid #123c2d; border-radius: 6px; background: #e9ece1; color: #234536; box-shadow: 0 6px 14px #0c1f1b70; font: 800 .7rem Nunito, sans-serif; text-align: center; overflow-wrap: anywhere; pointer-events: none; }
-.play-opponent-card-flight.is-face-down { border-color: var(--play-card-back-border); background: url('../images/helianthe-logo.png') center / 62% no-repeat, var(--play-card-back-and-log-bg); }
+.play-opponent-card-flight.is-face-down { border: 2px solid var(--play-card-back-border); background: url('../images/helianthe-logo.png') center / 62% no-repeat, var(--play-card-back-and-log-bg); }
 .play-opponent-card-flight canvas { display: block; width: 100%; height: 100%; }
 #play-game .play-game-node.is-terrain-arriving { background-image: none; }
 .play-game-node.is-terrain-arriving > * { visibility: hidden; }
 .play-draw-flight-inner { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; }
 .play-draw-flight-face { position: absolute; inset: 0; overflow: hidden; border: 1px solid #123c2d; border-radius: 8px; backface-visibility: hidden; -webkit-backface-visibility: hidden; box-shadow: 0 12px 28px #0c1f1ba8; }
-.play-draw-flight-back { border-color: var(--play-card-back-border); background: url('../images/helianthe-logo.png') center / 62% no-repeat, var(--play-card-back-and-log-bg); }
+.play-draw-flight-back { border: 2px solid var(--play-card-back-border); background: url('../images/helianthe-logo.png') center / 62% no-repeat, var(--play-card-back-and-log-bg); }
 .play-draw-flight-front { display: grid; place-items: center; transform: rotateY(180deg); background: #e9ece1; color: #234536; }
 .play-draw-flight-front canvas { display: block; width: 100%; height: 100%; }
 .play-draw-flight-front canvas[hidden], .play-draw-flight-front span[hidden] { display: none; }
