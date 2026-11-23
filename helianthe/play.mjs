@@ -11,7 +11,7 @@ function formatNodeCoordinates(key) {
 
 const beginningIconPaths = {
   target: '<circle cx="12" cy="12" r="6"/><path d="M12 3v3m0 12v3M3 12h3m12 0h3"/><circle cx="12" cy="12" r="1"/>',
-  move: '<circle cx="5" cy="17" r="2.5"/><path d="M7.5 17H12a3 3 0 0 0 3-3v-4a3 3 0 0 1 3-3h3m-4-4 4 4-4 4"/>',
+  move: '<path d="m13 4 8.5 8-8.5 8-2-2.2 6.2-5.8L11 6.2Z" fill="#bde4ce" stroke="none"/><path d="M5 8h4m-6 4h10m-8 4h4" stroke="#bde4ce"/>',
   draw: '<rect x="7" y="3" width="12" height="15" rx="2"/><path d="M4 7v12a2 2 0 0 0 2 2h9m-2-14v7m-3-3h6"/>',
   recall: '<path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7l-3-5m-13 5 3-5m-3 5h4m8 0h4M12 15V3m-3 3 3-3 3 3"/>',
   protect: '<path d="M12 22s7-4 7-10V5l-7-3-7 3v7c0 6 7 10 7 10Z"/><path d="m9 12 2 2 4-4"/>',
