@@ -768,7 +768,14 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const activeSeat = room.turn_player_id === room.host_id ? 'host' : 'guest';
     let horizonRemaining = (room.turn_player_id === userId ? gameState?.horizon?.length
       : zoneCountsRevision === room.revision ? zoneCounts?.[activeSeat]?.horizon_count : null) ?? Infinity;
+    let archiveRemaining = room.turn_player_id === userId ? (gameState?.archive?.length || 0)
+      : (room[`${activeSeat}_archive_count`] || 0);
     const reserveDraws = count => {
+      if (count > horizonRemaining) {
+        horizonRemaining += archiveRemaining;
+        archiveRemaining = 0;
+        archiveEvents.length = 0;
+      }
       const draws = Math.min(horizonRemaining, count);
       horizonRemaining -= draws;
       return draws;
@@ -870,7 +877,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         const entangled = Boolean(links.get(source)?.size);
         const draws = reserveDraws(Number(entangled));
         plan.set(source, { options: [], target: null, valid: true, draws,
-          skipReason: draws ? '' : entangled ? 'The Horizon is empty.' : 'Terrain not entangled.' });
+          skipReason: draws ? '' : entangled ? 'The Horizon and Archive are empty.' : 'Terrain not entangled.' });
         continue;
       }
       if (kind === 'mirrorpool_shrine') {
@@ -878,7 +885,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
           && entities.get(key)?.terrain === 'Flow').length;
         const draws = reserveDraws(adjacentFlowEntities);
         plan.set(source, { options: [], target: null, valid: true, draws,
-          skipReason: draws ? '' : adjacentFlowEntities ? 'The Horizon is empty.' : 'No adjacent Flow Entity on Flow Terrain.' });
+          skipReason: draws ? '' : adjacentFlowEntities ? 'The Horizon and Archive are empty.' : 'No adjacent Flow Entity on Flow Terrain.' });
         continue;
       }
       if (kind === 'bramble_briar') {
@@ -906,13 +913,17 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         plan.set(source, { options: [], target: null, valid, terrainOptions, eventOptions, fallback, targets, eventId });
         if (fallback) {
           if (protectedNodes.has(source)) protectedNodes.delete(source);
-          else { occupied.delete(source); entities.delete(source); }
+          else {
+            if (occupied.delete(source)) archiveRemaining++;
+            entities.delete(source);
+          }
         } else if (valid) {
           for (const key of targets) {
             terrain.delete(key); fertilized.delete(key); links.delete(key);
             for (const linked of links.values()) linked.delete(key);
           }
           archiveEvents.splice(archiveEvents.findIndex(card => String(card.id) === eventId), 1);
+          archiveRemaining--;
         }
         continue;
       }
@@ -928,7 +939,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       const meetsDrawCondition = kind === 'expansive_ivy' && neighbors.filter(key => terrain.get(key) === 'Verdant').length >= 2;
       const draws = reserveDraws(Number(meetsDrawCondition));
       const skipReason = options.length || draws ? '' : meetsDrawCondition
-        ? 'No adjacent empty Node and the Horizon is empty.' : 'No adjacent empty Node';
+        ? 'No adjacent empty Node. The Horizon and Archive are empty.' : 'No adjacent empty Node';
       const valid = kind === 'expansive_ivy' || options.length === 0 || targetValid;
       plan.set(source, { options, target, valid, skipReason, draws });
     }
@@ -1066,7 +1077,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     syncDiscardBar();
     const extra = $('game-extra-draw');
     extra.hidden = !own || phase !== 'main' || Boolean(room?.main_played_card);
-    extra.disabled = phaseBusy || pendingFestival || !Array.isArray(gameState?.horizon) || gameState.horizon.length === 0;
+    extra.disabled = phaseBusy || pendingFestival || !(gameState?.horizon?.length || gameState?.archive?.length);
     const forestSource = room?.forest_reactions?.[0];
     if (forestSource) {
       const canResolve = room.board?.[forestSource]?.entity?.owner_id === userId;
@@ -2081,7 +2092,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   async function advanceTurnPhase(takeExtraCard = false, automatic = false) {
     if (!room || room.status !== 'active' || room.turn_player_id !== userId || phaseBusy) return;
     if (room.turn_phase === 'beginning' && !gameState) return;
-    if (takeExtraCard && (room.turn_phase !== 'main' || !gameState?.horizon?.length)) return;
+    if (takeExtraCard && (room.turn_phase !== 'main' || !(gameState?.horizon?.length || gameState?.archive?.length))) return;
     const expected = epoch, roomId = room.id, turn = room.turn_number, phase = room.turn_phase;
     phaseBusy = true;
     renderTurnPhase();
@@ -2653,21 +2664,31 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   async function stageFestival(card, handIndex, targetX = null, targetY = null) {
     pendingEvent = null;
-    const originalState = gameState, expected = epoch, roomId = room.id;
-    const drawn = (originalState.horizon || []).slice(0, 2);
-    const hand = originalState.hand.concat(drawn);
-    const twoDiscards = eventSupport(card)?.[1] === 'draw_two_discard_two';
-    const discardCount = Math.min(twoDiscards ? 2 : 1, hand.length - 1);
+    const originalState = gameState, expected = epoch, roomId = room.id, turn = room.turn_number;
     eventNotice('');
     phaseBusy = true;
     renderTurnPhase();
     try {
+      const drawn = await rpc('play_prepare_festival_draw', {
+        p_room_id: roomId, p_expected_turn: turn, p_hand_index: handIndex,
+        p_card_id: card.card_id || card.id, p_expected_hand_count: originalState.hand.length,
+      });
+      if (expected !== epoch || room?.id !== roomId || room.turn_number !== turn || room.turn_phase !== 'main') return;
+      const hand = originalState.hand.concat(drawn);
+      const twoDiscards = eventSupport(card)?.[1] === 'draw_two_discard_two';
+      const discardCount = Math.min(twoDiscards ? 2 : 1, hand.length - 1);
       await animateCardsToHand(drawn, [], 110);
-      if (expected !== epoch || room?.id !== roomId || room.turn_player_id !== userId || room.turn_phase !== 'main') return;
+      if (expected !== epoch || room?.id !== roomId || room.turn_number !== turn
+        || room.turn_player_id !== userId || room.turn_phase !== 'main') return;
       pendingFestival = { card, handIndex, drawn, hand, targetX, targetY, twoDiscards, discardCount };
       discardSelections.clear();
       handSignature = '';
       renderGame();
+    } catch (error) {
+      if (expected === epoch && room?.id === roomId) {
+        await refreshRoom().catch(() => {});
+        message(friendly(error), true);
+      }
     } finally {
       clearDrawFlight();
       phaseBusy = false;
@@ -3405,7 +3426,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       }
       const archiveMotion = animateDiscardToArchive(removedIndexes, { reflowHand: !event.recall && !(result?.drawn > 0) });
       hideCardPreview();
-      const drawn = horizon.slice(0, result?.drawn || 0);
+      const drawn = result?.drawn_cards || horizon.slice(0, result?.drawn || 0);
       if (event.recall) {
         await Promise.all([archiveMotion, animateCardsToHand([event.recall.card, ...drawn],
           removedIndexes, 110, null, [event.recall])]);
@@ -3530,7 +3551,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       const recalled = recall && result?.recalled;
       const archiveMotion = animateDiscardToArchive([handIndex], { reflowHand: !recalled && !(result?.drawn > 0) });
       hideCardPreview();
-      const drawn = horizon.slice(0, result?.drawn || 0);
+      const drawn = result?.drawn_cards || horizon.slice(0, result?.drawn || 0);
       if (recalled) {
         await Promise.all([archiveMotion, animateCardsToHand([recall.card, ...drawn], [handIndex], 110, null, [recall])]);
       } else {
@@ -3544,7 +3565,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       if (expected === epoch && room?.id === roomId) await loadGameState(true);
       if (expected === epoch && room?.id === roomId && discardFlights.size) await archivePreviews.self.ready;
       const drawNotice = result?.drawn ? ` · drew ${result.drawn}`
-        : card.title === 'Verdant Vineroots' && rule[1] === 'fertilize_draw' && result?.drawn === 0 ? ' · Horizon is empty' : '';
+        : card.title === 'Verdant Vineroots' && rule[1] === 'fertilize_draw' && result?.drawn === 0 ? ' · Horizon and Archive are empty' : '';
       if (expected === epoch && room?.id === roomId) eventNotice(`${result?.title || card.title} evoked${drawNotice}${result?.applied ? ' · board updated' : ''}.`, true);
     } catch (error) {
       if (expected === epoch && room?.id === roomId) {
@@ -3686,11 +3707,12 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       } else {
         await refreshRoom();
       }
-      let entityDrawn = 0;
-      if (expected === epoch && room?.id === roomId && room.status === 'active' && effectKind !== 'dissolve_recall') {
+      let drawn = result?.drawn_cards || [];
+      if (!result?.drawn_cards && expected === epoch && room?.id === roomId && room.status === 'active' && effectKind !== 'dissolve_recall') {
         const handCount = room.host_id === userId ? room.host_hand_count : room.guest_hand_count;
-        entityDrawn = Math.max(0, Math.min(horizon.length, Number(handCount) - previousHandCount + 1));
+        drawn = horizon.slice(0, Math.max(0, Number(handCount) - previousHandCount + 1));
       }
+      const entityDrawn = drawn.length;
       if (expected !== epoch || room?.id !== roomId) return;
       if (result?.action === 'shape') {
         const archiveMotion = animateDiscardToArchive([handIndex], { reflowHand: !entityDrawn });
@@ -3698,7 +3720,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         await archiveMotion;
       }
       if (expected === epoch && room?.id === roomId && entityDrawn) {
-        await animateCardsToHand(horizon.slice(0, entityDrawn), [handIndex], 110);
+        await animateCardsToHand(drawn, [handIndex], 110);
       }
       if (expected === epoch && room?.id === roomId) await loadGameState(true);
       if (expected === epoch && room?.id === roomId && discardFlights.size) await archivePreviews.self.ready;
