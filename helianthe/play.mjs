@@ -1,4 +1,4 @@
-import { extendedEventRules, extendedKinds, extendedEventStep } from './play-extended-events.mjs?v=10';
+import { extendedEventRules, extendedKinds, extendedEventStep } from './play-extended-events.mjs?v=11';
 import { entityEffectKind, entityEffectStep } from './play-entity-effects.mjs?v=7';
 import { entityEffectsSuppressed, passiveEntityKind, vigilBlocksCreation, vigilBlocksPlacement } from './play-passive-entities.mjs';
 
@@ -3254,8 +3254,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       board: room?.board || {}, archive: gameState?.archive || [], hand: gameState?.hand || [], eventIndex: event.handIndex,
       playerId: userId,
     });
-    if (['shared_canal_gathering', 'hyphae', 'terrestrial_reorientation'].includes(event.rule[1])
-      && event.selected.length === 1 && !step?.options.length) {
+    const requiredEntanglementTargets = { shared_canal_gathering: 2, hyphae: 2, terrestrial_reorientation: 3 }[event.rule[1]] || 0;
+    if (event.selected.length > 0 && event.selected.length < requiredEntanglementTargets && !step?.options.length) {
       pendingEvent = null;
       syncEventTargets();
       hideCardPreview();

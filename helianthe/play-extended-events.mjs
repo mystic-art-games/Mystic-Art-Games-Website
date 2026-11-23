@@ -56,21 +56,24 @@ const visibleCells = board => {
 
 const verdantNeighbors = (board, key) => visibleCells(board).filter(cell => adjacent(key, cell.key) && cell.node.terrain === 'Verdant').length;
 
-function sameSymbiosisGroup(board, start, finish) {
+function adjacentSymbiosisGroup(board, start) {
+  const symbiosis = visibleCells(board).filter(({ node }) => node.terrain === 'Symbiosis');
   const seen = new Set([start]);
   const queue = [start];
-  while (queue.length) {
-    const current = queue.shift();
-    const source = board?.[current] || {};
-    for (const { key, node } of visibleCells(board)) {
-      if (seen.has(key) || !adjacent(current, key)) continue;
-      const connected = source.terrain === 'Symbiosis' && node.terrain === 'Symbiosis'
-        || source.entanglements?.includes(key) && node.entanglements?.includes(current);
-      if (connected) { seen.add(key); queue.push(key); }
+  for (const current of queue) {
+    for (const { key } of symbiosis) {
+      if (!seen.has(key) && adjacent(current, key)) {
+        seen.add(key);
+        queue.push(key);
+      }
     }
   }
-  return seen.has(finish);
+  return seen;
 }
+
+const canRelocateEntanglementToNeighbor = (node, key, symbiosis) =>
+  ['Flow', 'Verdant', 'Radiance'].includes(node.terrain)
+  && adjacent(key, symbiosis) && !node.entanglements?.includes(symbiosis);
 
 function boardStep(label, board, predicate) {
   return { label, options: visibleCells(board).filter(({ key, node }) => predicate(node, key)).map(({ key, label: text }) => ({ label: text, value: { type: 'cell', key } })) };
@@ -258,11 +261,14 @@ function eventStep(kind, selected, { board, archive, hand, eventIndex, playerId 
       if (count === 1) {
         const linked = first.entanglements?.[0];
         if (!linked || first.terrain !== 'Symbiosis' || !board[linked]?.entanglements?.includes(source)) return null;
-        return boardStep('Choose a Symbiosis Terrain for that Entanglement', board,
-          (node, key) => node.terrain === 'Symbiosis' && key !== source && !entangled(node)
-            && adjacent(linked, key) && !board[linked].entanglements.includes(key)
-            && sameSymbiosisGroup(board, source, key));
+        const group = adjacentSymbiosisGroup(board, source);
+        const neighbors = visibleCells(board);
+        return boardStep('Choose an unentangled Symbiosis Terrain in the same group', board,
+          (node, key) => key !== source && group.has(key) && !entangled(node)
+            && neighbors.some(other => canRelocateEntanglementToNeighbor(other.node, other.key, key)));
       }
+      if (count === 2) return boardStep('Choose an adjacent non-Symbiosis Terrain to Entangle', board,
+        (node, key) => canRelocateEntanglementToNeighbor(node, key, cells[1]));
       return null;
     case 'waterish_doppelganger':
       return count ? null : boardStep('Choose an Entity to transform to Flow', board, entity);
