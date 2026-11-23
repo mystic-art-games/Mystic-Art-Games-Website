@@ -183,6 +183,7 @@ body.dark-mode .play-deck-field.is-locked select { border-color: #596d5d; backgr
 .play-game-archive-card canvas { display: block; width: 100%; height: 100%; border-radius: inherit; object-fit: fill; }
 .play-game-archive-card canvas[hidden], .play-game-archive-card span[hidden] { display: none; }
 .play-game-archive-card span { padding: .3rem; }
+.play-game-archive-card.has-opponent-card > :is(canvas, span) { rotate: 180deg; }
 .play-game-node { position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: .15rem; min-width: 0; min-height: 0; padding: .2rem; overflow: hidden; border: 1px dashed #8c929dcc; border-radius: 6px; background: #f8e8c814; text-align: center; }
 .play-game-node { --play-entity-offset: 7px; }
 .play-game-node.is-first-fertilize-target::after {

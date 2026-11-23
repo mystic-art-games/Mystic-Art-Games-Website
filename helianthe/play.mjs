@@ -3075,7 +3075,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   function sameArchiveEntry(a, b) {
     return (a?.card_id || a?.id) === (b?.card_id || b?.id) && a?.title === b?.title && a?.card_type === b?.card_type;
   }
-  function renderArchiveCard(seat, raw, count) {
+  function renderArchiveCard(seat, raw, count, landing = null) {
     const preview = archivePreviews[seat];
     if (preview.dissolveFlight) {
       preview.pendingDissolvePreview = [raw, count];
@@ -3084,7 +3084,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const card = count && raw ? (seat === 'self' ? resolveHandCard(raw) : resolveGameCard(raw)) : null;
     const slot = $(`game-${seat}-archive`);
     slot._playCard = card;
-    slot.classList.toggle('faces-opponent', seat === 'opponent' && Boolean(card));
+    slot.classList.toggle('has-opponent-card', seat === 'opponent' && Boolean(card));
     const key = card ? archiveCardKey(card) : '';
     if (preview.key === key) return;
     preview.key = key;
@@ -3097,8 +3097,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     preview.ready = null;
     if (!card) return;
     const flight = seat === 'self' ? Array.from(discardFlights).at(-1) : null;
-    const landedCanvas = flight?.dataset.landed === 'true' && flight._archiveCardKey === key
-      ? flight.querySelector('canvas:not([hidden])') : null;
+    const landedCanvas = sameArchiveEntry(raw, landing?.card) && landing?.canvas
+      || (flight?.dataset.landed === 'true' && flight._archiveCardKey === key
+        ? flight.querySelector('canvas:not([hidden])') : null);
     if (landedCanvas) {
       canvas.width = landedCanvas.width;
       canvas.height = landedCanvas.height;
@@ -3115,6 +3116,36 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         fallback.hidden = true;
       }
     })().catch(() => { if (serial === preview.serial) preview.key = ''; });
+  }
+  function opponentArchiveReport(table) {
+    const seat = table.host_id === userId ? 'guest' : 'host';
+    const top = table[`${seat}_archive_top`];
+    const count = table[`${seat}_archive_count`] || 0;
+    const key = JSON.stringify([table.id, table.activated_at, seat, count, top]);
+    return { top, count, key, playerId: table[`${seat}_id`] };
+  }
+  function renderOpponentArchive(landing = null) {
+    const preview = archivePreviews.opponent;
+    if (preview.dissolveFlight) return;
+    const report = opponentArchiveReport(room);
+    const { top, count } = preview.confirmedArchive?.key === report.key ? preview.confirmedArchive : report;
+    const slot = $('game-opponent-archive');
+    slot.setAttribute('aria-label', `Opponent's Archive, ${count} cards`);
+    slot.dataset.count = String(count);
+    slot.classList.toggle('is-empty', count === 0);
+    slot.classList.toggle('has-stack', count > 1);
+    renderArchiveCard('opponent', top, count, landing);
+  }
+  async function refreshOpponentArchive(table) {
+    const preview = archivePreviews.opponent;
+    const report = opponentArchiveReport(table);
+    const request = preview.archiveRequest = {};
+    const expected = epoch;
+    const cards = await rpc('play_archive_cards', { p_room_id: table.id, p_player_id: report.playerId }).catch(() => null);
+    if (!Array.isArray(cards) || expected !== epoch || preview.archiveRequest !== request || room?.status !== 'active'
+      || opponentArchiveReport(room).key !== report.key) return;
+    preview.confirmedArchive = { key: report.key, top: cards.at(-1), count: cards.length };
+    renderOpponentArchive();
   }
   function captureEntityFlight(handIndex) {
     const source = $('game-hand').children[handIndex]?.querySelector('.play-hand-card');
@@ -4020,11 +4051,13 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       const flight = entity.cloneNode(true);
       flight.classList.add('play-discard-flight');
       const sourceCanvas = entity.querySelector('canvas:not([hidden])');
+      let landingCanvas = null;
       if (sourceCanvas?.width && sourceCanvas.height) {
         const canvas = flight.querySelector('canvas');
         canvas.width = sourceCanvas.width;
         canvas.height = sourceCanvas.height;
         canvas.getContext('2d').drawImage(sourceCanvas, 0, 0);
+        landingCanvas = canvas;
       }
       const dx = destination.left + (destination.width - bounds.width) / 2 - bounds.left;
       const dy = destination.top + (destination.height - bounds.height) / 2 - bounds.top;
@@ -4041,7 +4074,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         preview.dissolveFlight = null;
         const pending = preview.pendingDissolvePreview;
         preview.pendingDissolvePreview = null;
-        if (expected === epoch && pending) renderArchiveCard(seat, ...pending);
+        if (expected !== epoch) return;
+        const landing = { card: previous.entity, canvas: landingCanvas };
+        if (seat === 'opponent') renderOpponentArchive(landing);
+        else if (pending) renderArchiveCard(seat, ...pending, landing);
       };
       terrainAnimation?.pause();
       void animation.finished.then(() => {
@@ -4256,15 +4292,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     $('game-self-archive').classList.toggle('has-stack', archiveCount > 1);
     renderArchiveCard('self', archiveTop, archiveCount);
     const opponentSeat = selfSeat === 'host' ? 'guest' : 'host';
-    const opponentArchiveCount = room[`${opponentSeat}_archive_count`] || 0;
     const opponentHorizonCount = zoneCounts?.[opponentSeat]?.horizon_count;
     $('game-opponent-horizon').dataset.count = Number.isInteger(opponentHorizonCount) ? String(opponentHorizonCount) : '';
     $('game-opponent-horizon').setAttribute('aria-label', Number.isInteger(opponentHorizonCount) ? `Opponent's Horizon, ${opponentHorizonCount} cards` : "Opponent's Horizon, draw deck");
-    $('game-opponent-archive').setAttribute('aria-label', `Opponent's Archive, ${opponentArchiveCount} cards`);
-    $('game-opponent-archive').dataset.count = String(opponentArchiveCount);
-    $('game-opponent-archive').classList.toggle('is-empty', opponentArchiveCount === 0);
-    $('game-opponent-archive').classList.toggle('has-stack', opponentArchiveCount > 1);
-    renderArchiveCard('opponent', room[`${opponentSeat}_archive_top`], opponentArchiveCount);
+    renderOpponentArchive();
     updateAwayDisplays();
     renderGameHand();
     renderTurnPhase();
@@ -4482,6 +4513,11 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     }
     if (data.status !== 'active' || inLobby) clearTerrainArrivals();
     room = data; render();
+    const opponentId = selfSeat === 'host' ? data.guest_id : data.host_id;
+    if (activeMatch && Object.entries(previousBoard || {}).some(([key, node]) =>
+      node?.entity?.owner_id === opponentId && !data.board?.[key]?.entity)) {
+      void refreshOpponentArchive(data);
+    }
     for (const [key, from] of protectionDepartures) {
       const token = $('game-board').querySelector(`[data-key="${CSS.escape(key)}"] .play-protection-token`);
       if (!token) continue;
