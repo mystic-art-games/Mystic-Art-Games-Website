@@ -132,7 +132,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       <div class="play-game-board-wrap">
       <div class="play-game-left-stack">
         <aside id="play-game-card-preview" class="play-game-card-preview" aria-label="Card preview" hidden><button id="play-game-card-preview-close" class="play-game-card-preview-close action-delete" type="button" aria-label="Close card preview">×</button><canvas id="play-game-card-preview-canvas" hidden></canvas><img id="play-game-card-preview-image" alt="" hidden><span id="play-game-card-preview-fallback" class="play-hand-fallback"></span></aside>
-        <aside id="play-game-beginning-effects" class="play-beginning-effects" aria-label="Beginning of Turn Entity effects" hidden><strong>Beginning of Turn effects</strong><section class="play-beginning-zone" aria-labelledby="play-game-beginning-active-title"><h3 id="play-game-beginning-active-title">Resolve in this order</h3><ol id="play-game-beginning-list"></ol></section><section class="play-beginning-zone play-beginning-skipped-zone" aria-labelledby="play-game-beginning-skipped-title"><h3 id="play-game-beginning-skipped-title">Skip this turn</h3><ol id="play-game-beginning-skipped-list"></ol></section></aside>
+        <aside id="play-game-beginning-effects" class="play-beginning-effects" aria-label="Beginning of Turn Entity effects" hidden><strong>Beginning of Turn effects</strong><section class="play-beginning-zone" aria-label="Active effects"><ol id="play-game-beginning-list"></ol></section><section class="play-beginning-zone play-beginning-skipped-zone" aria-labelledby="play-game-beginning-skipped-title"><h3 id="play-game-beginning-skipped-title">Skip this turn</h3><ol id="play-game-beginning-skipped-list"></ol></section></aside>
       </div>
       <svg class="play-beginning-connector" aria-hidden="true"><path id="play-game-beginning-connector"></path></svg>
       <div id="play-game-beginning-tooltip" class="play-beginning-tooltip" aria-hidden="true" hidden></div>
@@ -636,7 +636,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         "at the beginning of verdant patron's turn, fertilize 1 on any adjacent empty node."].includes(effect)) return 'orchard_warden';
     if (card?.title === 'Expansive Ivy'
       && ['at the beginning of your every turn fertilize an adjacent node with no terrain. then if there are 4 or more adjacent verdant terrains, draw a card.',
-        "at the beginning of the verdant patron's turn, fertilize 1 on any adjacent node. then if there are 4 or more adjacent verdant terrains, draw 1 card."].includes(effect)) return 'expansive_ivy';
+        "at the beginning of the verdant patron's turn, fertilize 1 on any adjacent node. then if there are 4 or more adjacent verdant terrains, draw 1 card."].includes(effect.replace(/\byour (?:every )?turn,?\s+/, 'your every turn ').replace(/\b(?:you )?may fertilize\b/, 'fertilize'))) return 'expansive_ivy';
     if (card?.title === 'Bramble Briar'
       && effect === "at the beginning of the verdant patron's turn, dissolve two empty verdant terrains to recall any event from the archive to your hand. if you can't, dissolve this entity.") return 'bramble_briar';
     if (card?.title === 'Garden of Shared Roots'
@@ -653,7 +653,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     return getPatronFactionIcon(patron).faction === 'Verdant';
   }
   function beginningEffectOptional(card) {
-    return beginningEffectKind(card) === 'solar_converter' || /\byou may\b/i.test(String(card?.effect || ''));
+    return ['solar_converter', 'expansive_ivy'].includes(beginningEffectKind(card)) || /\byou may\b/i.test(String(card?.effect || ''));
   }
   function beginningEffects() {
     if (room?.status !== 'active' || room.turn_phase !== 'beginning'
