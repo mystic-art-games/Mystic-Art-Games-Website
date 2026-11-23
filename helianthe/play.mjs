@@ -634,8 +634,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   function beginningEffectKind(card) {
     const effect = String(card?.effect || '').replace(/\s+/g, ' ').trim().toLowerCase();
-    if (['March of Mashrooms', 'March of Marshrooms', 'Marsh of Marshrooms'].includes(card?.title)
-      && /^at the (?:beginning|begining|beginnig) of your turn, you may move this entity to (?:an )?adjacent empty symbiosis terrain\. then,? entangle (?:the )?terrain under this entity\.?$/.test(effect)) return 'march_of_marshrooms';
+    if (['March of Mashrooms', 'March of Marshrooms', 'Marsh of Mashrooms', 'Marsh of Marshrooms'].includes(card?.title)
+      && /^at the (?:beginning|begining|beginnig) of your turn, you may move this entity to (?:an )?adjacent empty symbiosis terrain\. then,? entangle (?:the )?terrain under this entity(?:, even if it did not move)?\.?$/.test(effect)) return 'march_of_marshrooms';
     if (card?.title === 'Efficient Grid'
       && /^at the (?:beginning|begining|beginnig) of (?:the )?radiant patron(?:'s)? turn, luminate 1\b/.test(effect)) return 'efficient_grid';
     if (card?.title === 'Solar Converter'
@@ -662,7 +662,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     return getPatronFactionIcon(patron).faction === 'Verdant';
   }
   function beginningEffectOptional(card) {
-    return ['solar_converter', 'expansive_ivy'].includes(beginningEffectKind(card)) || /\byou may\b/i.test(String(card?.effect || ''));
+    const kind = beginningEffectKind(card);
+    if (kind === 'march_of_marshrooms') return false;
+    return ['solar_converter', 'expansive_ivy'].includes(kind) || /\byou may\b/i.test(String(card?.effect || ''));
   }
   function beginningEffects() {
     if (room?.status !== 'active' || room.turn_phase !== 'beginning'
@@ -690,38 +692,53 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     for (const source of beginningOrder) {
       if (beginningSkipped.has(source)) { plan.set(source, { options: [], target: null, valid: true }); continue; }
       const kind = effectsBySource.get(source)?.kind;
-      if (['march_of_marshrooms', 'efficient_grid', 'solar_converter'].includes(kind)) {
+      if (kind === 'march_of_marshrooms') {
+        const options = eventNeighbors(source).filter(key => terrain.get(key) === 'Symbiosis' && !occupied.has(key));
+        const selected = beginningTargets.get(source);
+        const target = options.includes(selected) ? selected : null;
+        const destination = target || source;
+        const choice = beginningChoices.get(source);
+        const destinationType = terrain.get(destination);
+        const choices = eventNeighbors(destination).filter(key => {
+          const otherType = terrain.get(key);
+          if (destinationType === 'Symbiosis') {
+            return ['Flow', 'Radiance', 'Verdant'].includes(otherType)
+              && !links.get(destination)?.size && !links.get(key)?.has(destination);
+          }
+          return ['Flow', 'Radiance', 'Verdant'].includes(destinationType)
+            && otherType === 'Symbiosis' && !links.get(key)?.size && !links.get(destination)?.has(key);
+        }).map(key => ({ value: key, label: formatNodeCoordinates(key) }));
+        const valid = !choices.length || choices.some(option => option.value === choice);
+        plan.set(source, { options, target, choices, choice, valid, automaticSkip: !options.length && !choices.length });
+        if (valid) {
+          if (target) { occupied.delete(source); occupied.add(target); }
+          if (choices.length) {
+            if (!links.has(destination)) links.set(destination, new Set());
+            if (!links.has(choice)) links.set(choice, new Set());
+            links.get(destination).add(choice);
+            links.get(choice).add(destination);
+          }
+        }
+        continue;
+      }
+      if (kind === 'efficient_grid' || kind === 'solar_converter') {
         const neighbors = eventNeighbors(source);
         const target = beginningTargets.get(source);
         const choice = beginningChoices.get(source);
         let options = [];
-        if (kind === 'march_of_marshrooms') {
-          options = neighbors.filter(key => terrain.get(key) === 'Symbiosis' && !occupied.has(key));
-        } else if (kind === 'efficient_grid') {
+        if (kind === 'efficient_grid') {
           options = [...terrain].filter(([key, type]) => /^[0-4],[0-3]$/.test(key) && type === 'Radiance').map(([key]) => key);
         } else if ((lumens.get(source) || 0) >= 2) {
           options = neighbors.filter(key => terrain.has(key));
         }
         const targetValid = options.includes(target);
-        const choices = !targetValid ? [] : kind === 'solar_converter'
-          ? [{ value: 'protect', label: 'Protect' }, { value: 'crisis', label: 'Affect with Crisis' }]
-          : kind === 'march_of_marshrooms' && !links.get(target)?.size
-            ? eventNeighbors(target).filter(key => ['Flow', 'Radiance', 'Verdant'].includes(terrain.get(key)))
-              .map(key => ({ value: key, label: formatNodeCoordinates(key) }))
-            : [];
+        const choices = targetValid && kind === 'solar_converter'
+          ? [{ value: 'protect', label: 'Protect' }, { value: 'crisis', label: 'Affect with Crisis' }] : [];
         const automaticSkip = options.length === 0;
         const valid = automaticSkip || (targetValid && (choices.length === 0 || choices.some(option => option.value === choice)));
         plan.set(source, { options, target, choices, choice, valid, automaticSkip });
         if (targetValid && valid) {
-          if (kind === 'march_of_marshrooms') {
-            occupied.delete(source); occupied.add(target);
-            if (choices.length) {
-              if (!links.has(target)) links.set(target, new Set());
-              if (!links.has(choice)) links.set(choice, new Set());
-              links.get(target).add(choice);
-              links.get(choice).add(target);
-            }
-          } else if (kind === 'efficient_grid') {
+          if (kind === 'efficient_grid') {
             const count = lumens.get(target) || 0;
             lumens.set(target, Math.min(5, count + 1));
             if (count >= 5 && !protectedNodes.delete(target)) crisisNodes.add(target);
@@ -1343,6 +1360,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       && Array.isArray(saved.effects) ? saved.effects : null;
     const turnKey = `${room.id}:${room.turn_number}`;
     const sources = new Set(effects.map(effect => effect.source));
+    const optionalSources = new Set(effects.filter(effect => effect.optional).map(effect => effect.source));
     if (turnKey !== beginningTurnKey) {
       beginningTurnKey = turnKey;
       beginningOrder = effects.map(effect => effect.source);
@@ -1361,7 +1379,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
           if (Array.isArray(entry.targets)) beginningBrambleTargets.set(entry.source, entry.targets);
           if (entry.event_id) beginningBrambleEvents.set(entry.source, entry.event_id);
         }
-        for (const entry of shared) if (sources.has(entry.source) && entry.skip) beginningSkipped.add(entry.source);
+        for (const entry of shared) if (optionalSources.has(entry.source) && entry.skip) beginningSkipped.add(entry.source);
       }
     } else {
       beginningOrder = beginningOrder.filter(source => sources.has(source));
@@ -1385,7 +1403,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
           if (Array.isArray(entry.targets)) beginningBrambleTargets.set(entry.source, entry.targets);
           if (entry.event_id) beginningBrambleEvents.set(entry.source, entry.event_id);
         }
-        for (const entry of shared) if (sources.has(entry.source) && entry.skip) beginningSkipped.add(entry.source);
+        for (const entry of shared) if (optionalSources.has(entry.source) && entry.skip) beginningSkipped.add(entry.source);
       }
     }
     for (const effect of effects) if (!beginningOrder.includes(effect.source)) beginningOrder.push(effect.source);
@@ -1408,13 +1426,14 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       heading.append(title);
       const controls = document.createElement('div'); controls.className = 'play-beginning-effect-controls';
       const { options, target, choices, choice, valid, terrainOptions, eventOptions, fallback, targets, eventId, draws, loading } = plan.get(source);
+      const canStay = effect.kind === 'march_of_marshrooms';
       const targetPrompt = {
         march_of_marshrooms: 'Choose an adjacent unoccupied Symbiosis Terrain',
         efficient_grid: 'Choose a Radiance Terrain',
         solar_converter: 'Choose an adjacent Terrain',
       }[effect.kind] || 'Choose an adjacent empty Node';
       const unavailableText = {
-        march_of_marshrooms: 'No adjacent unoccupied Symbiosis Terrain',
+        march_of_marshrooms: 'No legal move or Entanglement',
         efficient_grid: 'No Radiance Terrain',
         solar_converter: 'Requires 2 Lumens and an adjacent Terrain',
       }[effect.kind] || 'No adjacent empty Node';
@@ -1483,8 +1502,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         }
       } else if (!own) {
         const status = document.createElement('span');
-        status.textContent = options.includes(target) ? formatNodeCoordinates(target) : options.length ? 'Waiting for target' : unavailableText;
-        if (!options.length) status.className = 'play-beginning-hover-status';
+        status.textContent = options.includes(target) ? formatNodeCoordinates(target)
+          : canStay ? 'Staying here' : options.length ? 'Waiting for target' : unavailableText;
+        if (!options.length && !canStay) status.className = 'play-beginning-hover-status';
         if (options.includes(target)) status.dataset.beginningTarget = target;
         controls.append(status);
       } else if (options.length) {
@@ -1492,6 +1512,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         if (options.includes(target)) {
           choose.textContent = formatNodeCoordinates(target);
           choose.dataset.beginningTarget = target;
+        } else if (canStay) {
+          choose.textContent = 'Move';
+          choose.setAttribute('aria-label', 'Choose where to move ' + effect.card.title);
         } else {
           choose.setAttribute('aria-label', `Choose target for ${effect.card.title}`);
           choose.innerHTML = '<svg aria-hidden="true" width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="display:block"><circle cx="10" cy="10" r="6"/><path d="M10 1.5v4m0 9v4m-8.5-8.5h4m9 0h4"/><circle cx="10" cy="10" r="1" fill="currentColor" stroke="none"/></svg>';
@@ -1503,6 +1526,24 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
           renderBeginningEffects(); syncEventTargets();
         });
         controls.append(choose);
+        if (canStay && target) {
+          const stay = document.createElement('button');
+          stay.type = 'button';
+          stay.textContent = 'Stay Here';
+          stay.disabled = phaseBusy;
+          stay.addEventListener('click', () => {
+            beginningTargetSource = null;
+            beginningTargets.delete(source);
+            beginningChoices.delete(source);
+            eventNotice('');
+            renderBeginningEffects(); syncEventTargets(); void saveBeginningPlan();
+          });
+          controls.append(stay);
+        }
+      } else if (canStay) {
+        const status = document.createElement('span');
+        status.textContent = 'Staying here';
+        controls.append(status);
       } else if (target) {
         const clear = document.createElement('button'); clear.type = 'button'; clear.textContent = 'Clear Target';
         clear.disabled = phaseBusy;
@@ -1584,7 +1625,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   function beginningPlanEntries(plan = beginningPlan()) {
     return beginningOrder.map(source => ({ source,
-      target: plan.get(source)?.options.length ? beginningTargets.get(source) || null : null,
+      target: plan.get(source)?.options.includes(beginningTargets.get(source)) ? beginningTargets.get(source) : null,
       choice: plan.get(source)?.choices?.some(option => option.value === beginningChoices.get(source))
         ? beginningChoices.get(source) : null,
       targets: beginningSkipped.has(source) ? [] : beginningBrambleTargets.get(source) || [],
