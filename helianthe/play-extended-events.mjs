@@ -1,4 +1,5 @@
 import { entityEffectsSuppressed, vigilBlocksCreation, vigilBlocksPlacement } from './play-passive-entities.mjs';
+import { entityEffectKind, entityEffectStep } from './play-entity-effects.mjs?v=8';
 
 // These are the Event texts currently present in the online card catalog.
 // Match the dealt card's text, not just its title, so edited cards cannot
@@ -148,6 +149,11 @@ function eventStep(kind, selected, { board, archive, hand, eventIndex, playerId 
       return null;
     case 'dematerialize':
       if (count === 0) return boardStep('Choose an unprotected Entity', board, node => entity(node) && !node.protected);
+      if (count === 1 && first.entity && !first.protected && !entityEffectsSuppressed(board, source)
+        && entityEffectKind(first.entity, 'place') === 'reclaim') {
+        const transform = entityEffectStep('reclaim', board, source, {});
+        return boardStep(transform.label, board, (_, key) => transform.boardTargets.includes(key));
+      }
       if (count === 1 && !entityEffectsSuppressed(board, source)
         && ['Equatorial Forests', 'Garden of Shared Roots'].includes(first.entity?.title))
         return boardStep('Choose an empty Node for its When Placed effect', board,
