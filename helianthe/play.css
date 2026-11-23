@@ -523,6 +523,7 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
   white-space: nowrap;
 }
 #play-game .play-beginning-control > svg { display: block; flex: 0 0 auto; width: .86rem; height: .86rem; pointer-events: none; }
+#play-game .play-beginning-control > img { display: block; flex: 0 0 auto; width: .95rem; height: .95rem; object-fit: contain; pointer-events: none; }
 #play-game :is(button.play-beginning-control, .play-beginning-picker) {
   border-color: #88b09a80;
   background: linear-gradient(155deg, #3d6653, #294a3d);

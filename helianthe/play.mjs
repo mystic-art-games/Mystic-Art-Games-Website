@@ -12,7 +12,6 @@ function formatNodeCoordinates(key) {
 const beginningIconPaths = {
   target: '<circle cx="12" cy="12" r="6"/><path d="M12 3v3m0 12v3M3 12h3m12 0h3"/><circle cx="12" cy="12" r="1"/>',
   move: '<path d="M5 18 18 5M10 5h8v8"/>',
-  entangle: '<path d="m10 14 4-4m-5 7-2 2a3.5 3.5 0 0 1-5-5l5-5a3.5 3.5 0 0 1 5 0m0 6a3.5 3.5 0 0 0 5 0l5-5a3.5 3.5 0 0 0-5-5l-2 2"/>',
   draw: '<rect x="7" y="3" width="12" height="15" rx="2"/><path d="M4 7v12a2 2 0 0 0 2 2h9m-2-14v7m-3-3h6"/>',
   recall: '<path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7l-3-5m-13 5 3-5m-3 5h4m8 0h4M12 15V3m-3 3 3-3 3 3"/>',
   protect: '<path d="M12 22s7-4 7-10V5l-7-3-7 3v7c0 6 7 10 7 10Z"/><path d="m9 12 2 2 4-4"/>',
@@ -30,13 +29,20 @@ function beginningIcon(name) {
   return `<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round">${beginningIconPaths[name]}</svg>`;
 }
 
+const entanglementTokenUrl = new URL('./assets/Entanglement_Simple.png', import.meta.url).href;
+
 function beginningControl(icon, label, { button = false, select, target, selected = Boolean(target), count, symbol } = {}) {
   const control = document.createElement(button ? 'button' : 'span');
   control.className = 'play-beginning-control';
   control.dataset.beginningTooltip = label;
   control.classList.toggle('is-chosen', selected);
   control.innerHTML = beginningIcon(icon);
-  if (symbol) control.insertAdjacentHTML('beforeend', beginningIcon(symbol));
+  if (symbol === 'entangle') {
+    const token = document.createElement('img');
+    token.src = entanglementTokenUrl;
+    token.alt = '';
+    control.append(token);
+  } else if (symbol) control.insertAdjacentHTML('beforeend', beginningIcon(symbol));
   if (target) control.dataset.beginningTarget = target;
   if (select) {
     control.classList.add('play-beginning-picker');
@@ -3791,7 +3797,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         links.add(link);
         const token = document.createElement('img');
         token.className = 'play-entanglement-token';
-        token.src = './assets/Entanglement_Simple.png';
+        token.src = entanglementTokenUrl;
         token.alt = '';
         token.dataset.from = from;
         token.dataset.to = to;
