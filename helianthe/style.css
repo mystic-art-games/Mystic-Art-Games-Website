@@ -2125,6 +2125,7 @@ body.dark-mode button:is(.action-cancel, .action-choose) {
 body:not(.dark-mode) button:is(.action-cancel, .action-choose):hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.06); box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .7), 0 5px 12px rgba(34, 98, 49, .28) !important; }
 body.dark-mode button:is(.action-cancel, .action-choose):hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.12); box-shadow: inset 1px 1px 0 rgba(235, 255, 243, .34), 0 6px 16px rgba(0, 18, 12, .38) !important; }
 
+#play-game .play-menu-toggle,
 body:not(.dark-mode) button.action-add-save,
 body.dark-mode button.action-add-save,
 body.dark-mode #sign-out {
@@ -2135,6 +2136,8 @@ body.dark-mode #sign-out {
   font-weight: 400;
   transition: transform .15s ease, filter .15s ease, box-shadow .15s ease;
 }
+#play-game .play-menu-toggle:hover,
+#play-game .play-table-menu[open] .play-menu-toggle,
 body:not(.dark-mode) button.action-add-save:hover:not(:disabled),
 body.dark-mode button.action-add-save:hover:not(:disabled),
 body.dark-mode #sign-out:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.06); box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .65), 0 5px 12px rgba(34, 98, 49, .28) !important; }
