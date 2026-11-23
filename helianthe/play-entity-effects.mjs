@@ -1,5 +1,7 @@
 const terrainTypes = ['Symbiosis', 'Flow', 'Verdant', 'Radiance'];
 const placementRules = {
+  'Equatorial Forests': ['equatorial_forests', 'when placed, create verdant terrain. when this terrain becomes fully surrounded by any terrains, put an extra verdant terrain on any node. then, dissolve this entity.'],
+  'Equatorial Forests': ['equatorial_forests', 'when placed, create verdant terrain. when this terrain becomes fully surrounded by any terrains, put an extra verdant terrain on any node. then, dissolve this entity.'],
   'Garden of Shared Roots': ['garden', 'when placed, create any terrain on adjacent empty node. at the beginning of your turn, draw 1 card if terrain under this entity is entangled.'],
   'Green Reclamation': ['reclaim', 'transform any adjacent empty terrain to verdant.'],
   'Hypervine': ['fertilize', 'if there are two or more adjacent verdant terrains, fertilize 2 on adjacent nodes.'],
@@ -41,6 +43,12 @@ export function entityEffectStep(kind, board, source, choices, archive = []) {
     })),
   });
   switch (kind) {
+    case 'equatorial_forests':
+      return choices.target ? null : cell('Choose an empty Node for Verdant Terrain', 'target',
+        key => empty(key) && boardKeys.some(other => present(other) && adjacent(key, other)));
+    case 'equatorial_forests':
+      return choices.target ? null : cell('Choose an empty Node for Verdant Terrain', 'target',
+        key => empty(key) && boardKeys.some(other => present(other) && adjacent(key, other)));
     case 'garden':
       if (!choices.target) return cell('Choose an adjacent empty Node', 'target', key => nearby(key) && empty(key));
       return choices.terrain ? null : { label: 'Choose Terrain to create', field: 'terrain',

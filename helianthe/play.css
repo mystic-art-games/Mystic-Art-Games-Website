@@ -457,7 +457,13 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
 }
 .play-beginning-zone { min-height: 0; overflow-y: auto; }
 .play-beginning-zone:first-of-type { flex: 1 1 auto; }
-.play-beginning-skipped-zone { flex: 0 1 auto; min-height: 4rem; margin: .45rem 0; }
+.play-beginning-skipped-zone {
+  flex: 0 1 auto;
+  min-height: 4rem;
+  margin: .45rem 0;
+  padding-top: .45rem;
+  border-top: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+}
 .play-beginning-zone h3 { margin: 0 0 .4rem; color: #f5f2e8; font: 800 .72rem/1.2 Nunito, sans-serif; }
 .play-beginning-zone ol { display: grid; gap: .4rem; min-height: 1.4rem; margin: 0; padding: 0; list-style: none; }
 .play-beginning-effect { display: flex; align-items: center; gap: .35rem; padding: .08rem .45rem; border: 1px solid #8a9b80; border-radius: 7px; background: #264638; cursor: grab; }
