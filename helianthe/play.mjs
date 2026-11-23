@@ -1,5 +1,5 @@
-import { extendedEventRules, extendedKinds, extendedEventStep } from './play-extended-events.mjs?v=13';
-import { entityEffectKind, entityEffectStep } from './play-entity-effects.mjs?v=8';
+import { extendedEventRules, extendedKinds, extendedEventStep } from './play-extended-events.mjs?v=14';
+import { entityEffectKind, entityEffectStep, isEmptyTerrain } from './play-entity-effects.mjs?v=9';
 import { entityEffectsSuppressed, passiveEntityKind, vigilBlocksCreation, vigilBlocksPlacement } from './play-passive-entities.mjs';
 
 const terrainFullArtUrl = terrain => new URL(`./assets/Terrain_${terrain}_Full_Art.png`, import.meta.url).href;
@@ -806,7 +806,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       }
       if (kind === 'march_of_marshrooms') {
         const symbiosisOnly = /adjacent\s+empty\s+symbiosis\s+terrain/i.test(effect.card.effect);
-        const options = eventNeighbors(source).filter(key => terrain.has(key) && !occupied.has(key)
+        const options = eventNeighbors(source).filter(key => isEmptyTerrain(projectedBoard[key])
           && (!symbiosisOnly || terrain.get(key) === 'Symbiosis'));
         const selected = beginningTargets.get(source);
         const target = options.includes(selected) ? selected : null;
@@ -903,7 +903,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
           continue;
         }
         const terrainOptions = [...terrain].filter(([key, type]) => /^[0-4],[0-3]$/.test(key)
-          && type === 'Verdant' && !occupied.has(key) && !protectedNodes.has(key)).map(([key]) => key);
+          && type === 'Verdant' && isEmptyTerrain(projectedBoard[key]) && !protectedNodes.has(key)).map(([key]) => key);
         const eventOptions = [...new Map(archiveEvents.map(card => [String(card.id), card])).values()];
         const fallback = terrainOptions.length < 2 || eventOptions.length === 0;
         const targets = beginningBrambleTargets.get(source) || [];
@@ -1652,7 +1652,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         }
       } else if (canStay && !options.length) {
         const terrain = symbiosisOnly ? 'Symbiosis Terrain' : 'Terrain';
-        controls.append(beginningControl('target', `Staying here. No adjacent unoccupied ${terrain} is available.`,
+        controls.append(beginningControl('target', `Staying here. No adjacent ${terrain} is free of both Entities and Entanglements.`,
           { symbol: 'move', unavailable: true }));
       } else if (!own) {
         if (options.includes(target)) {
@@ -2632,7 +2632,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         selectHandCard(card, source, true);
         syncEventTargets();
         eventNotice(entityEffectKind(card, 'place') === 'reclaim'
-          ? 'Place Green Reclamation on unoccupied Verdant Terrain to transform an adjacent Terrain. Choose a blank Node to Shape.'
+          ? 'Place Green Reclamation on unoccupied Verdant Terrain to transform an adjacent empty Terrain. Choose a blank Node to Shape.'
           : 'Choose compatible Terrain to Place, or an empty space to Shape.');
         playTableSound(selectCardSound);
       } else if (card.card_type === 'Event') {
@@ -3727,7 +3727,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       const reclamationNotice = effectKind === 'reclaim'
         ? choices.target
           ? `${card.title} transformed Terrain at ${formatNodeCoordinates(choices.target)} to Verdant.`
-          : `${card.title} placed. No adjacent unoccupied Terrain was available to transform.`
+          : `${card.title} placed. No adjacent empty Terrain was available to transform.`
         : null;
       if (expected === epoch && room?.id === roomId) eventNotice(reclamationNotice || (result?.action === 'create_place'
         ? `${result?.title || card.title} created ${result?.terrain || card.terrain} Terrain and landed on it.`

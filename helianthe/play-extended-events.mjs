@@ -1,5 +1,5 @@
 import { entityEffectsSuppressed, vigilBlocksCreation, vigilBlocksPlacement } from './play-passive-entities.mjs';
-import { entityEffectKind, entityEffectStep } from './play-entity-effects.mjs?v=8';
+import { entityEffectKind, entityEffectStep, isEmptyTerrain } from './play-entity-effects.mjs?v=9';
 
 // These are the Event texts currently present in the online card catalog.
 // Match the dealt card's text, not just its title, so edited cards cannot
@@ -142,7 +142,7 @@ function eventStep(kind, selected, { board, archive, hand, eventIndex, playerId 
       return null;
     case 'compost_front':
     case 'reclamation_pulse':
-      if (count === 0) return boardStep('Choose empty Verdant Terrain to Dissolve', board, node => node.terrain === 'Verdant' && !entity(node));
+      if (count === 0) return boardStep('Choose empty Verdant Terrain to Dissolve', board, node => node.terrain === 'Verdant' && isEmptyTerrain(node));
       if (first.protected) return null;
       if (count === 1) return boardStep(kind === 'compost_front' ? 'Choose an Entity to Dissolve' : 'Choose Verdant Terrain to Protect', board,
         (node, key) => key !== source && (kind === 'compost_front' ? entity(node) : node.terrain === 'Verdant'));
@@ -203,7 +203,7 @@ function eventStep(kind, selected, { board, archive, hand, eventIndex, playerId 
       return null;
     case 'landshift':
       if (count === 0) return boardStep('Choose a Verdant Entity', board, node => node.entity?.terrain === 'Verdant');
-      if (count === 1) return boardStep('Choose empty Verdant Terrain', board, (node, key) => node.terrain === 'Verdant' && !entity(node) && key !== source);
+      if (count === 1) return boardStep('Choose empty Verdant Terrain', board, node => node.terrain === 'Verdant' && isEmptyTerrain(node));
       return null;
     case 'lilac_overgrowth':
       return count ? null : boardStep('Choose an Entity next to two Verdant Terrain cards', board,
@@ -215,7 +215,7 @@ function eventStep(kind, selected, { board, archive, hand, eventIndex, playerId 
       return null;
     case 'migration_wind_sails':
       if (count === 0) return boardStep('Choose a Flow Entity', board, node => node.entity?.terrain === 'Flow');
-      if (count === 1) return boardStep('Choose empty Terrain', board, (node, key) => terrain(node) && !entity(node) && key !== source);
+      if (count === 1) return boardStep('Choose empty Terrain', board, isEmptyTerrain);
       return null;
     case 'natural_habitat':
       return count ? null : boardStep('Choose Verdant Terrain with an Entity', board, node => node.terrain === 'Verdant' && entity(node));

@@ -33,6 +33,8 @@ const boardKeys = Array.from({ length: 20 }, (_, index) => `${index % 5},${Math.
 const adjacent = (a, b) => Math.abs(Number(a[0]) - Number(b[0])) + Math.abs(Number(a[2]) - Number(b[2])) === 1;
 const lumens = node => Number(node?.lumens || 0);
 
+export const isEmptyTerrain = node => Boolean(node?.terrain && !node.entity && !node.entanglements?.length);
+
 export function entityEffectStep(kind, board, source, choices, archive = []) {
   const node = key => board[key] || {};
   const nearby = key => adjacent(source, key);
@@ -67,8 +69,8 @@ export function entityEffectStep(kind, board, source, choices, archive = []) {
       return choices.terrain ? null : { label: 'Choose Terrain to create', field: 'terrain',
         options: terrainTypes.map(terrain => ({ label: terrain, value: { terrain } })) };
     case 'reclaim':
-      return choices.target ? null : cell('Choose an adjacent unoccupied Terrain to transform to Verdant', 'target',
-        key => nearby(key) && node(key).terrain && !node(key).entity);
+      return choices.target ? null : cell('Choose an adjacent empty Terrain to transform to Verdant', 'target',
+        key => nearby(key) && isEmptyTerrain(node(key)));
     case 'fertilize':
       if (boardKeys.filter(key => nearby(key) && node(key).terrain === 'Verdant').length < 2) return null;
       if (!choices.target) return cell('Choose a Node for the first Fertilize token', 'target', key => nearby(key) && canCreate(key));
