@@ -12,10 +12,8 @@ function formatNodeCoordinates(key) {
 const beginningIconPaths = {
   target: '<circle cx="12" cy="12" r="6"/><path d="M12 3v3m0 12v3M3 12h3m12 0h3"/><circle cx="12" cy="12" r="1"/>',
   move: '<path d="M5 18 18 5M10 5h8v8"/>',
-  stay: '<path d="m5 11 7-6 7 6m-12-1v9h10v-9m-7 9v-5h4v5"/>',
   draw: '<rect x="7" y="3" width="12" height="15" rx="2"/><path d="M4 7v12a2 2 0 0 0 2 2h9m-2-14v7m-3-3h6"/>',
   recall: '<path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7l-3-5m-13 5 3-5m-3 5h4m8 0h4M12 15V3m-3 3 3-3 3 3"/>',
-  entangle: '<path d="m10 14 4-4m-5 7-2 2a3.5 3.5 0 0 1-5-5l5-5a3.5 3.5 0 0 1 5 0m0 6a3.5 3.5 0 0 0 5 0l5-5a3.5 3.5 0 0 0-5-5l-2 2"/>',
   protect: '<path d="M12 22s7-4 7-10V5l-7-3-7 3v7c0 6 7 10 7 10Z"/><path d="m9 12 2 2 4-4"/>',
   crisis: '<path d="m13 2-8 12h6l-1 8 9-12h-6l1-8z"/>',
   condition: '<path d="M12 22s7-4 7-10V5l-7-3-7 3v7c0 6 7 10 7 10Z"/><path d="m13 7-3 5h4l-2 5"/>',
@@ -34,13 +32,12 @@ function beginningIcon(name) {
 function beginningControl(icon, label, { button = false, select, target, selected = Boolean(target), count } = {}) {
   const control = document.createElement(button ? 'button' : 'span');
   control.className = 'play-beginning-control';
-  control.title = label;
+  control.dataset.beginningTooltip = label;
   control.classList.toggle('is-chosen', selected);
   control.innerHTML = beginningIcon(icon);
   if (target) control.dataset.beginningTarget = target;
   if (select) {
     control.classList.add('play-beginning-picker');
-    select.title = label;
     control.insertAdjacentHTML('beforeend', beginningIcon('menu'));
     control.append(select);
   } else {
@@ -1492,7 +1489,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         solar_converter: 'Choose an adjacent Terrain',
       }[effect.kind] || 'Choose an adjacent empty Node';
       const unavailableText = {
-        march_of_marshrooms: 'No legal move or Entanglement',
+        march_of_marshrooms: 'Skipped this turn. No legal move or Entanglement is available.',
         efficient_grid: 'No Radiance Terrain',
         solar_converter: 'Requires 2 Lumens and an adjacent Terrain',
       }[effect.kind] || 'No adjacent empty Node';
@@ -1561,7 +1558,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         if (options.includes(target)) {
           controls.append(beginningControl(canStay ? 'move' : 'target', `Target · ${formatNodeCoordinates(target)}`, { target }));
         } else if (canStay) {
-          controls.append(beginningControl('stay', 'Staying here'));
+          controls.append(beginningControl('target', 'Staying here'));
         } else if (options.length) {
           controls.append(beginningControl('wait', 'Waiting for target'));
         } else {
@@ -1580,7 +1577,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         });
         controls.append(choose);
         if (canStay && chosenTarget) {
-          const stay = beginningControl('stay', 'Stay here', { button: true });
+          const stay = beginningControl('target', 'Stay here', { button: true });
           stay.disabled = phaseBusy;
           stay.addEventListener('click', () => {
             beginningTargetSource = null;
@@ -1592,7 +1589,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
           controls.append(stay);
         }
       } else if (canStay) {
-        controls.append(beginningControl('stay', 'Staying here'));
+        controls.append(beginningControl('target', 'Staying here'));
       } else if (target) {
         const clear = beginningControl('clear', 'Clear target', { button: true });
         clear.disabled = phaseBusy;
@@ -1604,7 +1601,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       if (!skipped && choices?.length) {
         const label = canStay ? 'Terrain to Entangle' : 'Choose Protect or Crisis';
         const selected = choices.find(option => option.value === choice);
-        const icon = canStay ? 'entangle' : selected?.value || 'condition';
+        const icon = canStay ? 'target' : selected?.value || 'condition';
         if (own) {
           const select = document.createElement('select');
           select.setAttribute('aria-label', label);
@@ -1632,10 +1629,11 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         const target = event.target.closest('[data-beginning-target]');
         if (target) showBeginningConnector(target, target.dataset.beginningTarget, true);
         else showBeginningConnector(row, source);
-        if (hoverMessage) {
+        const description = event.target.closest('[data-beginning-tooltip]')?.dataset.beginningTooltip || hoverMessage;
+        if (description) {
           const tooltip = $('game-beginning-tooltip');
           const bounds = row.getBoundingClientRect();
-          tooltip.textContent = hoverMessage;
+          tooltip.textContent = description;
           tooltip.hidden = false;
           const { width, height } = tooltip.getBoundingClientRect();
           const left = bounds.right + 8 + width <= window.innerWidth
