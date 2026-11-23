@@ -793,7 +793,14 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     }
     return plan;
   }
+  let firstEntityFertilizeTarget = null;
   function syncEventTargets() {
+    const eventKind = pendingEvent?.rule[1];
+    const firstFertilizeTarget = eventKind === 'fertile_rain_any'
+      ? pendingEvent.selected[1]?.key
+      : ['fertile_rain', 'fertilize_two'].includes(eventKind)
+        ? pendingEvent.targets?.[0]?.join(',')
+        : firstEntityFertilizeTarget;
     const beginningOptions = beginningTargetSource ? beginningPlan().get(beginningTargetSource)?.options : null;
     const targetsEntity = pendingEvent?.extended ? pendingEvent.step.targetsEntity
       : pendingEvent && !pendingEvent.nextKeys && ['dissolve_entity', 'unprotect_entity', 'fertile_rain'].includes(pendingEvent.rule[1]);
@@ -807,6 +814,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         || (pendingEntity && legalEntityAction(pendingEntity.card, node, cell.dataset.key))
         || beginningOptions?.includes(cell.dataset.key)));
       cell.classList.toggle('is-event-target', legal);
+      cell.classList.toggle('is-first-fertilize-target', cell.dataset.key === firstFertilizeTarget);
       const entityInteraction = legal && node?.entity;
       cell.classList.toggle('is-entity-target', Boolean(entityInteraction));
       cell.classList.toggle('is-entity-only-target', Boolean(entityInteraction && targetsEntity));
@@ -2858,7 +2866,20 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     for (let step = entityEffectStep(kind, board, source, choices, archive); step?.options.length;
       step = entityEffectStep(kind, board, source, choices, archive)) {
       const options = step.optional ? [{ label: 'Skip this choice', value: null }, ...step.options] : step.options;
-      const choice = await new Promise(resolve => chooseEventOption(step.label, options, resolve, () => resolve()));
+      let choice;
+      const selectingSecondFertilize = kind === 'fertilize' && step.field === 'second';
+      if (selectingSecondFertilize) {
+        firstEntityFertilizeTarget = choices.target;
+        syncEventTargets();
+      }
+      try {
+        choice = await new Promise(resolve => chooseEventOption(step.label, options, resolve, () => resolve()));
+      } finally {
+        if (selectingSecondFertilize) {
+          firstEntityFertilizeTarget = null;
+          syncEventTargets();
+        }
+      }
       if (choice === undefined) return null;
       choices[step.field] = choice?.terrain ?? choice;
     }
@@ -3243,6 +3264,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (event.rule[1] === 'fertilize_two') {
       event.targets.push([column, row]);
       if (event.targets.length < 2) {
+        syncEventTargets();
         eventNotice('Choose an empty space for the second Fertilize token. You may choose the same space again.');
         return;
       }
