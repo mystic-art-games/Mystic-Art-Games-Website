@@ -557,7 +557,7 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
   background: #514b31;
   color: #ffe4a5;
 }
-#play-game :is(button.play-beginning-control:not(:disabled), .play-beginning-picker:has(select:enabled)):hover {
+#play-game :is(button.play-beginning-control:not(:disabled, [aria-disabled="true"]), .play-beginning-picker:has(select:enabled)):hover {
   border-color: #e2ce94;
   filter: brightness(1.2);
 }
@@ -566,6 +566,7 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
   outline-offset: -2px;
 }
 #play-game .play-beginning-control:is(:disabled, :has(select:disabled)) { cursor: default; opacity: .5; }
+#play-game .play-beginning-control[aria-disabled="true"] { cursor: default; filter: grayscale(1); opacity: .55; }
 #play-game .play-beginning-picker > svg:nth-of-type(2) { width: .44rem; height: .44rem; }
 #play-game .play-beginning-picker:has(.play-beginning-control-count) > svg:nth-of-type(2) { display: none; }
 #play-game .play-beginning-picker select {

@@ -32,8 +32,8 @@ function beginningIcon(name) {
 
 const entanglementTokenUrl = new URL('./assets/Entanglement_Simple.png', import.meta.url).href;
 
-function beginningControl(icon, label, { button = false, select, target, selected = Boolean(target), count, symbol } = {}) {
-  const control = document.createElement(button ? 'button' : 'span');
+function beginningControl(icon, label, { button = false, select, target, selected = Boolean(target), count, symbol, unavailable = false } = {}) {
+  const control = document.createElement(button || unavailable ? 'button' : 'span');
   control.className = 'play-beginning-control';
   control.dataset.beginningTooltip = label;
   control.classList.toggle('is-chosen', selected);
@@ -50,10 +50,11 @@ function beginningControl(icon, label, { button = false, select, target, selecte
     control.insertAdjacentHTML('beforeend', beginningIcon('menu'));
     control.append(select);
   } else {
-    if (button) control.type = 'button';
+    if (button || unavailable) control.type = 'button';
     else control.setAttribute('role', 'img');
     control.setAttribute('aria-label', label);
   }
+  if (unavailable) control.setAttribute('aria-disabled', 'true');
   if (count !== undefined) {
     const badge = document.createElement('span');
     badge.className = 'play-beginning-control-count';
@@ -797,7 +798,11 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
           return ['Flow', 'Radiance', 'Verdant'].includes(destinationType)
             && otherType === 'Symbiosis' && !links.get(key)?.size && !links.get(destination)?.has(key);
         }).map(key => ({ value: key, label: formatNodeCoordinates(key) }));
-        plan.set(source, { options, target, choices, choice, valid: true, symbiosisOnly,
+        const entangleUnavailable = destinationType === 'Symbiosis'
+          ? links.get(destination)?.size ? 'This Symbiosis Terrain already has an Entanglement.'
+            : 'No adjacent non-Symbiosis Terrain is available.'
+          : 'No adjacent unentangled Symbiosis Terrain is available.';
+        plan.set(source, { options, target, choices, choice, valid: true, symbiosisOnly, entangleUnavailable,
           skipReason: options.length || choices.length ? '' : 'No legal move or Entanglement is available.' });
         if (target) {
           occupied.delete(source); occupied.add(target);
@@ -1550,7 +1555,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       }
       heading.append(title);
       const controls = document.createElement('div'); controls.className = 'play-beginning-effect-controls';
-      const { options, target, choices, choice, terrainOptions, eventOptions, fallback, targets, eventId, draws, loading, symbiosisOnly } = plan.get(source);
+      const { options, target, choices, choice, terrainOptions, eventOptions, fallback, targets, eventId, draws, loading, symbiosisOnly, entangleUnavailable } = plan.get(source);
       const canStay = effect.kind === 'march_of_marshrooms';
       const targetPrompt = {
         march_of_marshrooms: symbiosisOnly ? 'Choose an adjacent empty Symbiosis Terrain' : 'Choose an adjacent empty Terrain',
@@ -1612,6 +1617,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
           });
           controls.append(recall);
         }
+      } else if (canStay && !options.length) {
+        const terrain = symbiosisOnly ? 'Symbiosis Terrain' : 'Terrain';
+        controls.append(beginningControl('target', `Staying here. No adjacent unoccupied ${terrain} is available.`,
+          { symbol: 'move', unavailable: true }));
       } else if (!own) {
         if (options.includes(target)) {
           controls.append(beginningControl('target', `Target · ${formatNodeCoordinates(target)}`, { target, symbol: canStay ? 'move' : undefined }));
@@ -1654,8 +1663,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
           });
           controls.append(stay);
         }
-      } else if (canStay) {
-        controls.append(beginningControl('target', 'Staying here', { symbol: 'move' }));
       } else if (target) {
         const clear = beginningControl('clear', 'Clear target', { button: true });
         clear.disabled = phaseBusy;
@@ -1663,14 +1670,17 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         controls.append(clear);
       }
       if (!skipped && effect.kind === 'expansive_ivy' && draws) controls.append(beginningControl('draw', 'Draw 1 card', { count: 1 }));
-      if (!skipped && choices?.length) {
-        const label = canStay ? 'Terrain to Entangle' : 'Choose Protect or Crisis';
+      if (!skipped && (canStay || choices?.length)) {
+        const label = 'Choose Protect or Crisis';
         const selected = choices.find(option => option.value === choice);
-        const icon = canStay ? 'target' : selected?.value || 'condition';
+        const icon = selected?.value || 'condition';
         if (canStay) {
-          const label = selected ? `Entangle ${selected.label}` : 'Choose Terrain to Entangle';
-          const entangle = beginningControl('target', label, { button: own, target: selected?.value, symbol: 'entangle' });
-          if (own) {
+          const unavailable = choices.length === 0;
+          const label = unavailable ? `Cannot Entangle. ${entangleUnavailable}`
+            : selected ? `Entangle ${selected.label}` : 'Choose Terrain to Entangle';
+          const entangle = beginningControl('target', label,
+            { button: own, target: selected?.value, symbol: 'entangle', unavailable });
+          if (own && !unavailable) {
             entangle.disabled = phaseBusy;
             entangle.setAttribute('aria-pressed', String(beginningTargetSource === source && beginningTargetMode === 'entangle'));
             entangle.addEventListener('click', () => {
@@ -1702,12 +1712,11 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         row.setAttribute('aria-description', hoverMessage);
       }
       row.append(heading, controls);
-      row.addEventListener('pointerover', event => {
-        if (event.pointerType !== 'mouse' || row.classList.contains('is-dragging')) return;
-        const target = event.target.closest('[data-beginning-target]');
+      const showDetails = element => {
+        const target = element.closest('[data-beginning-target]');
         if (target) showBeginningConnector(target, target.dataset.beginningTarget, true);
         else showBeginningConnector(row, source);
-        const description = event.target.closest('[data-beginning-tooltip]')?.dataset.beginningTooltip || hoverMessage;
+        const description = element.closest('[data-beginning-tooltip]')?.dataset.beginningTooltip || hoverMessage;
         if (description) {
           const tooltip = $('game-beginning-tooltip');
           const bounds = row.getBoundingClientRect();
@@ -1719,8 +1728,17 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
           tooltip.style.left = `${left}px`;
           tooltip.style.top = `${Math.max(8, Math.min(window.innerHeight - height - 8, (bounds.top + bounds.bottom - height) / 2))}px`;
         }
+      };
+      row.addEventListener('pointerover', event => {
+        if (event.pointerType === 'mouse' && !row.classList.contains('is-dragging')) showDetails(event.target);
       });
       row.addEventListener('pointerleave', clearBeginningConnector);
+      row.addEventListener('focusin', event => {
+        if (event.target.matches('.play-beginning-control[aria-disabled="true"]')) showDetails(event.target);
+      });
+      row.addEventListener('focusout', event => {
+        if (event.target.matches('.play-beginning-control[aria-disabled="true"]')) clearBeginningConnector();
+      });
       if (own) row.addEventListener('dragstart', event => {
         clearBeginningConnector();
         event.dataTransfer.effectAllowed = 'move';
