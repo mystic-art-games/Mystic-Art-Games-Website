@@ -704,7 +704,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         "at the beginning of verdant patron's turn, fertilize 1 on any adjacent empty node."].includes(effect)) return 'orchard_warden';
     if (card?.title === 'Expansive Ivy'
       && ['at the beginning of your every turn fertilize an adjacent node with no terrain. then if there are 4 or more adjacent verdant terrains, draw a card.',
-        "at the beginning of the verdant patron's turn, fertilize 1 on any adjacent node. then if there are 4 or more adjacent verdant terrains, draw 1 card."].includes(effect.replace(/\byour (?:every )?turn,?\s+/, 'your every turn ').replace(/\b(?:you )?may fertilize\b/, 'fertilize').replace('3 or more adjacent verdant terrains', '4 or more adjacent verdant terrains'))) return 'expansive_ivy';
+        "at the beginning of the verdant patron's turn, fertilize 1 on any adjacent node. then if there are 4 or more adjacent verdant terrains, draw 1 card."].includes(effect.replace(/\byour (?:every )?turn,?\s+/, 'your every turn ').replace(/\b(?:you )?may fertilize\b/, 'fertilize').replace(/\b[23] or more adjacent verdant terrains\b/, '4 or more adjacent verdant terrains'))) return 'expansive_ivy';
     if (card?.title === 'Bramble Briar'
       && effect === "at the beginning of the verdant patron's turn, dissolve two empty verdant terrains to recall any event from the archive to your hand. if you can't, dissolve this entity.") return 'bramble_briar';
     if (card?.title === 'Garden of Shared Roots'
@@ -879,7 +879,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         if (fertilized.has(target)) { fertilized.delete(target); terrain.set(target, 'Verdant'); }
         else fertilized.add(target);
       }
-      const draws = kind === 'expansive_ivy' && neighbors.filter(key => terrain.get(key) === 'Verdant').length >= 3;
+      const draws = kind === 'expansive_ivy' && neighbors.filter(key => terrain.get(key) === 'Verdant').length >= 2;
       const automaticSkip = options.length === 0 && !draws;
       const valid = kind === 'expansive_ivy' || options.length === 0 || targetValid;
       plan.set(source, { options, target, valid, automaticSkip, draws });
@@ -2788,7 +2788,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   function updatedIvyEffect(card) {
     return card.title === 'Expansive Ivy' && beginningEffectKind(card) === 'expansive_ivy'
-      ? card.effect.replace(/\b4 or more adjacent verdant terrains\b/i, text => `3${text.slice(1)}`) : card.effect;
+      ? card.effect.replace(/\b[34] or more adjacent verdant terrains\b/i, text => `2${text.slice(1)}`) : card.effect;
   }
   function renderArchiveGallery() {
     archiveGalleryObserver?.disconnect();
