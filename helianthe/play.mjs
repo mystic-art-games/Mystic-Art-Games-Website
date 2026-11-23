@@ -739,8 +739,12 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const saved = room.beginning_effects_plan;
     const pending = saved?.turn === room.turn_number && Array.isArray(saved.pending_sources) ? saved.pending_sources : null;
     return Object.entries(room.board || {}).flatMap(([source, node]) => {
+      if (!/^[0-4],[0-3]$/.test(source)) return [];
+      if (!node?.terrain && node?.fertilize?.owner_id === room.turn_player_id && (!pending || pending.includes(source))) {
+        return [{ source, kind: 'fertilize_conversion', card: { title: `Fertilize · ${formatNodeCoordinates(source)}` }, optional: false }];
+      }
       const entity = node?.entity;
-      if (!/^[0-4],[0-3]$/.test(source) || entity?.owner_id !== room.turn_player_id) return [];
+      if (entity?.owner_id !== room.turn_player_id) return [];
       const kind = beginningEffectKind(entity);
       if (!kind || !beginningEffectAvailable(entity)) return [];
       const suppressed = entityEffectsSuppressed(room.board, source);
@@ -779,6 +783,16 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       const projectedBoard = Object.fromEntries(Array.from(terrain.keys(), key => [key, {
         terrain: terrain.get(key), entity: entities.get(key), entanglements: [...(links.get(key) || [])],
       }]));
+      if (kind === 'fertilize_conversion') {
+        const skipReason = terrain.has(source) || !fertilized.has(source) ? 'The Fertilize marker is already gone.'
+          : vigilBlocksPlacement(projectedBoard, source) ? 'Eldervine’s Vigil blocks Terrain creation here.' : '';
+        if (!skipReason) {
+          fertilized.delete(source);
+          terrain.set(source, 'Verdant');
+        }
+        plan.set(source, { options: [], target: null, valid: true, skipReason });
+        continue;
+      }
       if (entityEffectsSuppressed(projectedBoard, source)) {
         plan.set(source, { options: [], target: null, valid: true, skipReason: 'Sporebound Relay suppresses this Entity’s effect.' });
         continue;
@@ -1575,6 +1589,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       };
       if (skipped) {
         showUnavailable(skipReason || 'Skipped this turn');
+      } else if (effect.kind === 'fertilize_conversion') {
+        controls.append(beginningControl('target', `Create Verdant Terrain at ${formatNodeCoordinates(source)}`, { target: source }));
       } else if (effect.kind === 'garden_shared_roots' || effect.kind === 'mirrorpool_shrine') {
         controls.append(beginningControl('draw', `Draw ${draws} card${draws === 1 ? '' : 's'}`, { count: draws }));
       } else if (effect.kind === 'bramble_briar') {
@@ -1721,7 +1737,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       const showDetails = element => {
         const target = element.closest('[data-beginning-target]');
         if (target) showBeginningConnector(target, target.dataset.beginningTarget, true);
-        else showBeginningConnector(row, source);
+        else showBeginningConnector(row, source, effect.kind === 'fertilize_conversion');
         const description = element.closest('[data-beginning-tooltip]')?.dataset.beginningTooltip || hoverMessage;
         if (description) {
           const tooltip = $('game-beginning-tooltip');
