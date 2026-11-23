@@ -757,6 +757,14 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const links = new Map(Object.entries(room?.board || {}).map(([key, node]) => [key, new Set(node?.entanglements || [])]));
     const lumens = new Map(Object.entries(room?.board || {}).map(([key, node]) => [key, Number(node?.lumens || 0)]));
     const archiveEvents = (gameState?.archive || []).filter(card => card?.card_type === 'Event' && card.id).slice();
+    const activeSeat = room.turn_player_id === room.host_id ? 'host' : 'guest';
+    let horizonRemaining = (room.turn_player_id === userId ? gameState?.horizon?.length
+      : zoneCountsRevision === room.revision ? zoneCounts?.[activeSeat]?.horizon_count : null) ?? Infinity;
+    const reserveDraws = count => {
+      const draws = Math.min(horizonRemaining, count);
+      horizonRemaining -= draws;
+      return draws;
+    };
     const entities = new Map(Object.entries(board).filter(([, node]) => node?.entity).map(([key, node]) => [key, node.entity]));
     const effectsBySource = new Map(beginningEffects().map(effect => [effect.source, effect]));
     const plan = new Map();
@@ -768,7 +776,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         terrain: terrain.get(key), entity: entities.get(key), entanglements: [...(links.get(key) || [])],
       }]));
       if (entityEffectsSuppressed(projectedBoard, source)) {
-        plan.set(source, { options: [], target: null, valid: true, automaticSkip: true, suppressed: true });
+        plan.set(source, { options: [], target: null, valid: true, skipReason: 'Sporebound Relay suppresses this Entity’s effect.' });
         continue;
       }
       if (kind === 'march_of_marshrooms') {
@@ -790,7 +798,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
             && otherType === 'Symbiosis' && !links.get(key)?.size && !links.get(destination)?.has(key);
         }).map(key => ({ value: key, label: formatNodeCoordinates(key) }));
         plan.set(source, { options, target, choices, choice, valid: true, symbiosisOnly,
-          automaticSkip: !options.length && !choices.length });
+          skipReason: options.length || choices.length ? '' : 'No legal move or Entanglement is available.' });
         if (target) {
           occupied.delete(source); occupied.add(target);
           entities.set(target, entities.get(source)); entities.delete(source);
@@ -816,9 +824,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         const targetValid = options.includes(target);
         const choices = targetValid && kind === 'solar_converter'
           ? [{ value: 'protect', label: 'Protect' }, { value: 'crisis', label: 'Affect with Crisis' }] : [];
-        const automaticSkip = options.length === 0;
-        const valid = automaticSkip || (targetValid && (choices.length === 0 || choices.some(option => option.value === choice)));
-        plan.set(source, { options, target, choices, choice, valid, automaticSkip });
+        const skipReason = options.length ? '' : kind === 'efficient_grid' ? 'No Radiance Terrain'
+          : 'Requires 2 Lumens and an adjacent Terrain';
+        const valid = Boolean(skipReason) || (targetValid && (choices.length === 0 || choices.some(option => option.value === choice)));
+        plan.set(source, { options, target, choices, choice, valid, skipReason });
         if (targetValid && valid) {
           if (kind === 'efficient_grid') {
             const count = lumens.get(target) || 0;
@@ -836,13 +845,18 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         continue;
       }
       if (kind === 'garden_shared_roots') {
-        plan.set(source, { options: [], target: null, valid: true, draws: (links.get(source)?.size || 0) > 0 });
+        const entangled = Boolean(links.get(source)?.size);
+        const draws = reserveDraws(Number(entangled));
+        plan.set(source, { options: [], target: null, valid: true, draws,
+          skipReason: draws ? '' : entangled ? 'The Horizon is empty.' : 'Terrain not entangled.' });
         continue;
       }
       if (kind === 'mirrorpool_shrine') {
-        const draws = eventNeighbors(source).filter(key => terrain.get(key) === 'Flow'
-          && occupied.has(key) && room.board?.[key]?.entity?.terrain === 'Flow').length;
-        plan.set(source, { options: [], target: null, valid: true, draws });
+        const adjacentFlowEntities = eventNeighbors(source).filter(key => terrain.get(key) === 'Flow'
+          && entities.get(key)?.terrain === 'Flow').length;
+        const draws = reserveDraws(adjacentFlowEntities);
+        plan.set(source, { options: [], target: null, valid: true, draws,
+          skipReason: draws ? '' : adjacentFlowEntities ? 'The Horizon is empty.' : 'No adjacent Flow Entity on Flow Terrain.' });
         continue;
       }
       if (kind === 'bramble_briar') {
@@ -889,10 +903,12 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         if (fertilized.has(target)) { fertilized.delete(target); terrain.set(target, 'Verdant'); }
         else fertilized.add(target);
       }
-      const draws = kind === 'expansive_ivy' && neighbors.filter(key => terrain.get(key) === 'Verdant').length >= 2;
-      const automaticSkip = options.length === 0 && !draws;
+      const meetsDrawCondition = kind === 'expansive_ivy' && neighbors.filter(key => terrain.get(key) === 'Verdant').length >= 2;
+      const draws = reserveDraws(Number(meetsDrawCondition));
+      const skipReason = options.length || draws ? '' : meetsDrawCondition
+        ? 'No adjacent empty Node and the Horizon is empty.' : 'No adjacent empty Node';
       const valid = kind === 'expansive_ivy' || options.length === 0 || targetValid;
-      plan.set(source, { options, target, valid, automaticSkip, draws });
+      plan.set(source, { options, target, valid, skipReason, draws });
     }
     return plan;
   }
@@ -1392,10 +1408,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const effect = beginningEffects().find(entry => entry.source === source);
     if (!effect || phaseBusy) return;
     const plan = beginningPlan();
-    if (plan.get(source)?.automaticSkip) {
-      if (!skip) blockedPlayNotice(`${effect.card.title} has no legal target.`);
-      return;
-    }
+    if (skip && plan.get(source)?.skipReason) return;
     if (skip && !effect.optional) {
       blockedPlayNotice(`${effect.card.title} is mandatory and cannot be skipped while it has a legal target.`);
       return;
@@ -1404,7 +1417,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (skip) { beginningSkipped.add(source); beginningTargets.delete(source); beginningChoices.delete(source); beginningBrambleTargets.delete(source); beginningBrambleEvents.delete(source); }
     else beginningSkipped.delete(source);
     if (beginningTargetSource === source) beginningTargetSource = null;
-    const isSkipped = key => beginningSkipped.has(key) || Boolean(plan.get(key)?.automaticSkip);
+    const isSkipped = key => beginningSkipped.has(key) || Boolean(plan.get(key)?.skipReason);
     const before = beforeSource && isSkipped(beforeSource) === skip
       ? beginningOrder.indexOf(beforeSource) : -1;
     if (before >= 0) beginningOrder.splice(before, 0, source);
@@ -1517,16 +1530,15 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     for (const effect of effects) if (!beginningOrder.includes(effect.source)) beginningOrder.push(effect.source);
     const bySource = new Map(effects.map(effect => [effect.source, effect]));
     const plan = beginningPlan();
-    const { active, skipped } = splitBeginningEntries(beginningPlanEntries(plan));
     const canResolve = own && !phaseBusy && Boolean(gameState) && !room.forest_reactions?.length;
     $('game-beginning-actions').hidden = !own;
-    $('game-beginning-one').disabled = !canResolve || !plan.get((active[0] || skipped[0])?.source)?.valid;
-    $('game-beginning-all').disabled = !canResolve || [...active, ...skipped].some(entry => !plan.get(entry.source)?.valid);
-    if (plan.get(beginningTargetSource)?.automaticSkip) beginningTargetSource = null;
+    $('game-beginning-one').disabled = !canResolve || beginningResolution(plan, true).entries.some(entry => !plan.get(entry.source)?.valid);
+    $('game-beginning-all').disabled = !canResolve || beginningResolution(plan).entries.some(entry => !plan.get(entry.source)?.valid);
+    if (plan.get(beginningTargetSource)?.skipReason) beginningTargetSource = null;
     const rows = beginningOrder.map(source => {
       const effect = bySource.get(source);
-      const automaticSkip = plan.get(source)?.automaticSkip;
-      const skipped = beginningSkipped.has(source) || automaticSkip;
+      const skipReason = plan.get(source)?.skipReason;
+      const skipped = beginningSkipped.has(source) || Boolean(skipReason);
       const row = document.createElement('li');
       row.className = `play-beginning-effect${beginningTargetSource === source ? ' is-choosing' : ''}${skipped ? ' is-skipped' : ''}`;
       row.draggable = own && !phaseBusy;
@@ -1545,27 +1557,15 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         efficient_grid: 'Choose a Radiance Terrain',
         solar_converter: 'Choose an adjacent Terrain',
       }[effect.kind] || 'Choose an adjacent empty Node';
-      const unavailableText = {
-        march_of_marshrooms: 'Skipped this turn. No legal move or Entanglement is available.',
-        efficient_grid: 'No Radiance Terrain',
-        solar_converter: 'Requires 2 Lumens and an adjacent Terrain',
-      }[effect.kind] || 'No adjacent empty Node';
       let hoverMessage;
       const showUnavailable = label => {
         hoverMessage = label;
         controls.append(beginningControl('skip', label));
       };
       if (skipped) {
-        showUnavailable(plan.get(source)?.suppressed ? 'Sporebound Relay suppresses this Entity’s effect.'
-          : automaticSkip ? unavailableText : 'Skipped this turn');
+        showUnavailable(skipReason || 'Skipped this turn');
       } else if (effect.kind === 'garden_shared_roots' || effect.kind === 'mirrorpool_shrine') {
-        if (draws) {
-          const count = Number(draws);
-          controls.append(beginningControl('draw', `Draw ${count} card${count === 1 ? '' : 's'}`, { count }));
-        } else {
-          showUnavailable(effect.kind === 'garden_shared_roots'
-            ? 'Terrain not entangled: no card drawn' : 'No adjacent Flow Entity on Flow Terrain');
-        }
+        controls.append(beginningControl('draw', `Draw ${draws} card${draws === 1 ? '' : 's'}`, { count: draws }));
       } else if (effect.kind === 'bramble_briar') {
         if (loading) {
           controls.append(beginningControl('wait', 'Loading Archive'));
@@ -1619,8 +1619,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
           controls.append(beginningControl('target', 'Staying here', { symbol: 'move' }));
         } else if (options.length) {
           controls.append(beginningControl('wait', 'Waiting for target'));
-        } else if (!draws) {
-          showUnavailable(unavailableText);
         }
       } else if (options.length) {
         const chosenTarget = options.includes(target) ? target : undefined;
@@ -1663,8 +1661,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         clear.disabled = phaseBusy;
         clear.addEventListener('click', () => { beginningTargets.delete(source); beginningChoices.delete(source); renderBeginningEffects(); void saveBeginningPlan(); });
         controls.append(clear);
-      } else if (!draws) {
-        showUnavailable(unavailableText);
       }
       if (!skipped && effect.kind === 'expansive_ivy' && draws) controls.append(beginningControl('draw', 'Draw 1 card', { count: 1 }));
       if (!skipped && choices?.length) {
@@ -1774,20 +1770,20 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       renderBeginningEffects();
     }
   }
-  function splitBeginningEntries(entries) {
+  function beginningResolution(plan, one = false) {
     const active = [], skipped = [];
-    for (const entry of entries) (entry.skip ? skipped : active).push(entry);
-    return { active, skipped };
+    for (const entry of beginningPlanEntries(plan)) (entry.skip ? skipped : active).push(entry);
+    const ordered = [...active, ...skipped];
+    const actionable = active.filter(entry => !plan.get(entry.source)?.skipReason);
+    const through = one && actionable.length > 1 ? actionable[0].source : null;
+    return { ordered, through, entries: through ? ordered.slice(0, ordered.findIndex(entry => entry.source === through) + 1) : ordered };
   }
   async function resolveBeginningEffects(one = false) {
     if (phaseBusy || room?.turn_player_id !== userId || room.turn_phase !== 'beginning' || room.forest_reactions?.length) return;
     const effects = beginningEffects();
     if (!effects.length || beginningOrder.length !== effects.length) return;
     const plan = beginningPlan();
-    const { active, skipped } = splitBeginningEntries(beginningPlanEntries(plan));
-    const ordered = [...active, ...skipped];
-    const singleStep = one && active.length > 1;
-    const entries = singleStep ? ordered.slice(0, 1) : ordered;
+    const { ordered, through, entries } = beginningResolution(plan, one);
     if (entries.some(({ source }) => !plan.get(source)?.valid)) {
       eventNotice('Complete the required choices before resolving.');
       return;
@@ -1801,7 +1797,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     try {
       const result = await rpc('play_resolve_beginning_entity_effects', {
         p_room_id: roomId, p_expected_turn: turn,
-        p_effects: singleStep ? { mode: 'one', effects: ordered } : entries,
+        p_effects: through ? { mode: 'one', effects: ordered, through } : entries,
       });
       if (expected !== epoch || room?.id !== roomId) return;
       const drawn = result?.drawn_cards || horizon.slice(0, result?.drawn || 0);
