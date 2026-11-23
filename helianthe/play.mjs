@@ -3500,6 +3500,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       const key = cell.dataset.key;
       const previous = room.board?.[key];
       const next = nextBoard?.[key];
+      let terrainAnimation;
       if (previous?.terrain && !next?.terrain && cell._playTerrain) {
         const bounds = cell.getBoundingClientRect();
         const flight = document.createElement('img');
@@ -3507,7 +3508,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         flight.alt = '';
         flight.src = cell._playTerrain.fullArtUrl;
         const dy = terrainExit - bounds.top + (ownTurn ? bounds.height : -bounds.height);
-        animateDissolveFlight(flight, bounds, [
+        terrainAnimation = animateDissolveFlight(flight, bounds, [
           { transform: 'translateY(0)', opacity: 1 },
           { transform: 'translateY(' + dy + 'px) rotate(' + (ownTurn ? 8 : -8) + 'deg) scale(.9)', opacity: 0 },
         ], 460);
@@ -3545,7 +3546,14 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         preview.pendingDissolvePreview = null;
         if (expected === epoch && pending) renderArchiveCard(seat, ...pending);
       };
-      void animation.finished.then(revealArchive, revealArchive);
+      terrainAnimation?.pause();
+      void animation.finished.then(() => {
+        revealArchive();
+        if (terrainAnimation?.playState === 'paused') terrainAnimation.play();
+      }, () => {
+        terrainAnimation?.cancel();
+        revealArchive();
+      });
     }
   }
   function animateDissolveFlight(flight, bounds, keyframes, duration) {
