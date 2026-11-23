@@ -4,6 +4,11 @@ import { entityEffectKind, entityEffectStep } from './play-entity-effects.mjs?v=
 const terrainFullArtUrl = terrain => new URL(`./assets/Terrain_${terrain}_Full_Art.png`, import.meta.url).href;
 const defaultTableName = hostName => `${Array.from(String(hostName ?? '').trim() || 'Player').slice(0, 52).join("")}'s Table`;
 
+function formatNodeCoordinates(key) {
+  const [column, row] = key.split(',').map(Number);
+  return 'R' + (row + 1) + ' C' + (column + 1);
+}
+
 export function playerOnline(timestamp, now = Date.now()) {
   return Boolean(timestamp && now - Date.parse(timestamp) < 45000);
 }
@@ -698,7 +703,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
           ? [{ value: 'protect', label: 'Protect' }, { value: 'crisis', label: 'Affect with Crisis' }]
           : kind === 'march_of_marshrooms' && !links.get(target)?.size
             ? eventNeighbors(target).filter(key => ['Flow', 'Radiance', 'Verdant'].includes(terrain.get(key)))
-              .map(key => ({ value: key, label: key }))
+              .map(key => ({ value: key, label: formatNodeCoordinates(key) }))
             : [];
         const automaticSkip = options.length === 0;
         const valid = automaticSkip || (targetValid && (choices.length === 0 || choices.some(option => option.value === choice)));
@@ -1423,7 +1428,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         } else if (!own) {
           const status = document.createElement('span');
           status.textContent = targets?.length === 2
-            ? `Dissolve Nodes ${targets.join(' and ')}; recall an Event.`
+            ? `Dissolve Nodes ${targets.map(formatNodeCoordinates).join(' and ')}; recall an Event.`
             : 'Opponent is resolving this effect.';
           controls.append(status);
         } else if (fallback) {
@@ -1435,7 +1440,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
             const select = document.createElement('select');
             select.setAttribute('aria-label', `${index ? 'Second' : 'First'} empty Verdant Terrain for ${effect.card.title}`);
             select.add(new Option(`${index ? 'Second' : 'First'} empty Verdant Terrain`, ''));
-            for (const key of terrainOptions) select.add(new Option(key, key));
+            for (const key of terrainOptions) select.add(new Option(formatNodeCoordinates(key), key));
             select.value = targets[index] || '';
             if (select.value) select.dataset.beginningTarget = select.value;
             select.disabled = phaseBusy;
@@ -1461,14 +1466,14 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         }
       } else if (!own) {
         const status = document.createElement('span');
-        status.textContent = options.includes(target) ? target : options.length ? 'Waiting for target' : unavailableText;
+        status.textContent = options.includes(target) ? formatNodeCoordinates(target) : options.length ? 'Waiting for target' : unavailableText;
         if (!options.length) status.className = 'play-beginning-hover-status';
         if (options.includes(target)) status.dataset.beginningTarget = target;
         controls.append(status);
       } else if (options.length) {
         const choose = document.createElement('button'); choose.type = 'button';
         if (options.includes(target)) {
-          choose.textContent = target;
+          choose.textContent = formatNodeCoordinates(target);
           choose.dataset.beginningTarget = target;
         } else {
           choose.setAttribute('aria-label', `Choose target for ${effect.card.title}`);
