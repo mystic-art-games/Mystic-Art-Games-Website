@@ -1,5 +1,5 @@
-import { extendedEventRules, extendedKinds, extendedEventStep } from './play-extended-events.mjs?v=8';
-import { entityEffectKind, entityEffectStep } from './play-entity-effects.mjs?v=5';
+import { extendedEventRules, extendedKinds, extendedEventStep } from './play-extended-events.mjs?v=9';
+import { entityEffectKind, entityEffectStep } from './play-entity-effects.mjs?v=6';
 import { entityEffectsSuppressed, passiveEntityKind, vigilBlocksCreation, vigilBlocksPlacement } from './play-passive-entities.mjs';
 
 const terrainFullArtUrl = terrain => new URL(`./assets/Terrain_${terrain}_Full_Art.png`, import.meta.url).href;
@@ -704,7 +704,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         "at the beginning of verdant patron's turn, fertilize 1 on any adjacent empty node."].includes(effect)) return 'orchard_warden';
     if (card?.title === 'Expansive Ivy'
       && ['at the beginning of your every turn fertilize an adjacent node with no terrain. then if there are 4 or more adjacent verdant terrains, draw a card.',
-        "at the beginning of the verdant patron's turn, fertilize 1 on any adjacent node. then if there are 4 or more adjacent verdant terrains, draw 1 card."].includes(effect.replace(/\byour (?:every )?turn,?\s+/, 'your every turn ').replace(/\b(?:you )?may fertilize\b/, 'fertilize'))) return 'expansive_ivy';
+        "at the beginning of the verdant patron's turn, fertilize 1 on any adjacent node. then if there are 4 or more adjacent verdant terrains, draw 1 card."].includes(effect.replace(/\byour (?:every )?turn,?\s+/, 'your every turn ').replace(/\b(?:you )?may fertilize\b/, 'fertilize').replace('3 or more adjacent verdant terrains', '4 or more adjacent verdant terrains'))) return 'expansive_ivy';
     if (card?.title === 'Bramble Briar'
       && effect === "at the beginning of the verdant patron's turn, dissolve two empty verdant terrains to recall any event from the archive to your hand. if you can't, dissolve this entity.") return 'bramble_briar';
     if (card?.title === 'Garden of Shared Roots'
@@ -732,7 +732,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       && !entityEffectsSuppressed(room.board, key)
       && beginningEffectAvailable(node.entity))
       .map(([source, node]) => ({ source, kind: beginningEffectKind(node.entity), card: { ...resolveGameCard(node.entity),
-        title: node.entity.title, effect: node.entity.effect }, optional: beginningEffectOptional(node.entity) }))
+        title: node.entity.title, effect: updatedIvyEffect(node.entity) }, optional: beginningEffectOptional(node.entity) }))
       .sort((a, b) => Number(a.source.split(',')[1]) - Number(b.source.split(',')[1])
         || Number(a.source.split(',')[0]) - Number(b.source.split(',')[0]));
   }
@@ -873,16 +873,16 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       const neighbors = eventNeighbors(source);
       const options = neighbors.filter(key => !terrain.has(key)
         && (!fertilized.has(key) || !vigilBlocksPlacement(projectedBoard, key)));
-      const draws = kind === 'expansive_ivy' && neighbors.filter(key => terrain.get(key) === 'Verdant').length >= 4;
-      const automaticSkip = options.length === 0 && !draws;
       const target = beginningTargets.get(source);
       const targetValid = options.includes(target);
-      const valid = options.length === 0 || targetValid;
-      plan.set(source, { options, target, valid, automaticSkip });
       if (targetValid) {
         if (fertilized.has(target)) { fertilized.delete(target); terrain.set(target, 'Verdant'); }
         else fertilized.add(target);
       }
+      const draws = kind === 'expansive_ivy' && neighbors.filter(key => terrain.get(key) === 'Verdant').length >= 3;
+      const automaticSkip = options.length === 0 && !draws;
+      const valid = kind === 'expansive_ivy' || options.length === 0 || targetValid;
+      plan.set(source, { options, target, valid, automaticSkip, draws });
     }
     return plan;
   }
@@ -1591,7 +1591,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
           controls.append(beginningControl('target', 'Staying here', { symbol: 'move' }));
         } else if (options.length) {
           controls.append(beginningControl('wait', 'Waiting for target'));
-        } else {
+        } else if (!draws) {
           showUnavailable(unavailableText);
         }
       } else if (options.length) {
@@ -1607,6 +1607,15 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
           renderBeginningEffects(); syncEventTargets();
         });
         controls.append(choose);
+        if (effect.kind === 'expansive_ivy' && chosenTarget) {
+          const clear = beginningControl('clear', 'Skip Fertilize', { button: true });
+          clear.disabled = phaseBusy;
+          clear.addEventListener('click', () => {
+            beginningTargets.delete(source);
+            renderBeginningEffects(); syncEventTargets(); void saveBeginningPlan();
+          });
+          controls.append(clear);
+        }
         if (canStay && chosenTarget) {
           const stay = beginningControl('target', 'Stay here', { button: true, symbol: 'move' });
           stay.disabled = phaseBusy;
@@ -1626,9 +1635,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         clear.disabled = phaseBusy;
         clear.addEventListener('click', () => { beginningTargets.delete(source); beginningChoices.delete(source); renderBeginningEffects(); void saveBeginningPlan(); });
         controls.append(clear);
-      } else {
+      } else if (!draws) {
         showUnavailable(unavailableText);
       }
+      if (!skipped && effect.kind === 'expansive_ivy' && draws) controls.append(beginningControl('draw', 'Draw 1 card', { count: 1 }));
       if (!skipped && choices?.length) {
         const label = canStay ? 'Terrain to Entangle' : 'Choose Protect or Crisis';
         const selected = choices.find(option => option.value === choice);
@@ -2774,7 +2784,11 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   function resolveHandCard(raw) {
     const card = resolveGameCard(raw);
     return ['Entity', 'Event'].includes(raw?.card_type) && typeof raw.effect === 'string'
-      ? { ...card, effect: raw.effect } : card;
+      ? { ...card, effect: updatedIvyEffect(raw) } : card;
+  }
+  function updatedIvyEffect(card) {
+    return card.title === 'Expansive Ivy' && beginningEffectKind(card) === 'expansive_ivy'
+      ? card.effect.replace(/\b4 or more adjacent verdant terrains\b/i, text => `3${text.slice(1)}`) : card.effect;
   }
   function renderArchiveGallery() {
     archiveGalleryObserver?.disconnect();
@@ -3185,9 +3199,12 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const step = extendedEventStep(event.rule[1], event.selected, {
       board: room?.board || {}, archive: gameState?.archive || [], hand: gameState?.hand || [], eventIndex: event.handIndex,
     });
-    if (event.rule[1] === 'shared_canal_gathering' && event.selected.length < 2 && !step?.options.length) {
+    if (['shared_canal_gathering', 'hyphae', 'terrestrial_reorientation'].includes(event.rule[1])
+      && event.selected.length === 1 && !step?.options.length) {
+      pendingEvent = null;
+      syncEventTargets();
       hideCardPreview();
-      blockedPlayNotice(cardPlayBlockReason(event.card) || 'Choose an adjacent Terrain to complete the Entanglement.');
+      blockedPlayNotice('The board has changed. Select an Entanglement target again.');
       return;
     }
     if (!step || !step.options.length) {

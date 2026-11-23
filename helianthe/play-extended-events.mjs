@@ -92,7 +92,7 @@ function terrainStep(label, excluded) {
 }
 
 const pairedEvents = new Set([
-  'restoration_nursery',
+  'restoration_nursery', 'terrestrial_reorientation',
   'swap_entities', 'bubble_switch', 'relocate_terrain', 'landshift', 'liquid_protection',
   'migration_wind_sails', 'wave_of_change',
 ]);
@@ -164,7 +164,8 @@ function eventStep(kind, selected, { board, archive, hand, eventIndex }) {
     case 'glade_surveyor':
       if (count === 0) return boardStep('Choose Verdant Terrain to Dissolve', board, node => node.terrain === 'Verdant');
       if (first.protected) return null;
-      if (count === 1) return boardStep('Choose protected Terrain', board, (node, key) => terrain(node) && node.protected && key !== source);
+      if (count === 1) return boardStep('Choose protected Terrain', board, (node, key) => terrain(node) && node.protected && key !== source
+        && visibleCells(board).some(other => other.key !== source && terrain(other.node) && adjacent(key, other.key)));
       if (count === 2) return boardStep('Choose adjacent destination Terrain', board, (node, key) => terrain(node) && adjacent(cells[1], key) && key !== source);
       return null;
     case 'relocate_terrain':
@@ -244,11 +245,17 @@ function eventStep(kind, selected, { board, archive, hand, eventIndex }) {
       return null;
     case 'terrestrial_reorientation':
       if (count === 0) return boardStep('Choose entangled Symbiosis Terrain', board,
-        node => node.terrain === 'Symbiosis' && entangled(node));
-      if (count === 1) return boardStep('Choose a Symbiosis Terrain for that Entanglement', board,
-        (node, key) => node.terrain === 'Symbiosis' && key !== source && !entangled(node)
-          && sameSymbiosisGroup(board, source, key)
-          && (first.entanglements || []).some(other => adjacent(other, key)));
+        (node, key) => node.terrain === 'Symbiosis' && node.entanglements?.length === 1
+          && ['Flow', 'Verdant', 'Radiance'].includes(board[node.entanglements[0]]?.terrain)
+          && adjacent(key, node.entanglements[0]) && board[node.entanglements[0]].entanglements?.includes(key));
+      if (count === 1) {
+        const linked = first.entanglements?.[0];
+        if (!linked || first.terrain !== 'Symbiosis' || !board[linked]?.entanglements?.includes(source)) return null;
+        return boardStep('Choose a Symbiosis Terrain for that Entanglement', board,
+          (node, key) => node.terrain === 'Symbiosis' && key !== source && !entangled(node)
+            && adjacent(linked, key) && !board[linked].entanglements.includes(key)
+            && sameSymbiosisGroup(board, source, key));
+      }
       return null;
     case 'waterish_doppelganger':
       return count ? null : boardStep('Choose an Entity to transform to Flow', board, entity);

@@ -4,7 +4,6 @@ const terrainTypes = ['Symbiosis', 'Flow', 'Verdant', 'Radiance'];
 const placementRules = {
   'Through Fire Reborn': ['through_fire_reborn', 'fertilize 1. if you sacrifice a verdant terrain, fertilize 3'],
   'Equatorial Forests': ['equatorial_forests', 'when placed, create verdant terrain. when this terrain becomes fully surrounded by any terrains, put an extra verdant terrain on any node. then, dissolve this entity.'],
-  'Equatorial Forests': ['equatorial_forests', 'when placed, create verdant terrain. when this terrain becomes fully surrounded by any terrains, put an extra verdant terrain on any node. then, dissolve this entity.'],
   'Garden of Shared Roots': ['garden', 'when placed, create any terrain on adjacent empty node. at the beginning of your turn, draw 1 card if terrain under this entity is entangled.'],
   'Green Reclamation': ['reclaim', 'transform any adjacent empty terrain to verdant.'],
   'Hypervine': ['fertilize', 'if there are two or more adjacent verdant terrains, fertilize 2 on adjacent nodes.'],
