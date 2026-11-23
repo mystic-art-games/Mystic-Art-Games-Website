@@ -3047,15 +3047,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     $('game-archive-browser-close').focus();
     const serial = ++archiveBrowserRequestSerial, roomId = room.id;
     try {
-      let cards;
-      if (seat === 'self') {
-        if (!gameState) await loadGameState(true);
-        if (!gameState) throw new Error('Your Archive is unavailable right now.');
-        cards = gameState.archive;
-      } else {
-        const opponentId = room.host_id === userId ? room.guest_id : room.host_id;
-        cards = await rpc('play_archive_cards', { p_room_id: roomId, p_player_id: opponentId });
-      }
+      const playerId = seat === 'self' ? userId : room.host_id === userId ? room.guest_id : room.host_id;
+      const cards = await rpc('play_archive_cards', { p_room_id: roomId, p_player_id: playerId });
       if (serial !== archiveBrowserRequestSerial || room?.id !== roomId) return;
       archiveBrowserCards = (Array.isArray(cards) ? cards : []).slice().reverse().map(resolveGameCard);
       renderArchiveGallery();
@@ -3078,6 +3071,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     .addEventListener('click', () => closeArchiveBrowser());
   function archiveCardKey(card) {
     return JSON.stringify([card.id, card.title, card.card_type, card.terrain, card.effect, card.artwork_id]);
+  }
+  function sameArchiveEntry(a, b) {
+    return (a?.card_id || a?.id) === (b?.card_id || b?.id) && a?.title === b?.title && a?.card_type === b?.card_type;
   }
   function renderArchiveCard(seat, raw, count) {
     const preview = archivePreviews[seat];
@@ -4246,12 +4242,20 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     }
     $('game-self-horizon').setAttribute('aria-label', gameState ? `Your Horizon, ${horizon.length} cards` : 'Your Horizon, draw deck');
     $('game-self-horizon').dataset.count = gameState ? String(horizon.length) : '';
-    $('game-self-archive').setAttribute('aria-label', gameState ? `Your Archive, ${archive.length} cards` : 'Your Archive');
-    $('game-self-archive').dataset.count = gameState ? String(archive.length) : '';
-    $('game-self-archive').classList.toggle('is-empty', archive.length === 0);
-    $('game-self-archive').classList.toggle('has-stack', archive.length > 1);
-    renderArchiveCard('self', archive.at(-1), archive.length);
-    const opponentSeat = room.host_id === userId ? 'guest' : 'host';
+    const selfSeat = room.host_id === userId ? 'host' : 'guest';
+    // Let our own pending hand animation reach the Archive before showing its update.
+    const useLocalArchive = Boolean(gameState && phaseBusy && room.turn_player_id === userId);
+    const reportedArchiveCount = useLocalArchive ? null : room[`${selfSeat}_archive_count`];
+    const reportedArchiveTop = useLocalArchive ? null : room[`${selfSeat}_archive_top`];
+    const archiveCount = reportedArchiveCount ?? archive.length;
+    const cachedTop = archive.at(-1);
+    const archiveTop = reportedArchiveTop && !sameArchiveEntry(reportedArchiveTop, cachedTop) ? reportedArchiveTop : cachedTop;
+    $('game-self-archive').setAttribute('aria-label', `Your Archive, ${archiveCount} cards`);
+    $('game-self-archive').dataset.count = String(archiveCount);
+    $('game-self-archive').classList.toggle('is-empty', archiveCount === 0);
+    $('game-self-archive').classList.toggle('has-stack', archiveCount > 1);
+    renderArchiveCard('self', archiveTop, archiveCount);
+    const opponentSeat = selfSeat === 'host' ? 'guest' : 'host';
     const opponentArchiveCount = room[`${opponentSeat}_archive_count`] || 0;
     const opponentHorizonCount = zoneCounts?.[opponentSeat]?.horizon_count;
     $('game-opponent-horizon').dataset.count = Number.isInteger(opponentHorizonCount) ? String(opponentHorizonCount) : '';
@@ -4406,6 +4410,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     }
     const turnChanged = room.turn_number !== data.turn_number || room.turn_phase !== data.turn_phase
       || room.turn_player_id !== data.turn_player_id;
+    const selfSeat = data.host_id === seatId ? 'host' : 'guest';
+    const archiveChanged = room[`${selfSeat}_archive_count`] !== data[`${selfSeat}_archive_count`]
+      || !sameArchiveEntry(room[`${selfSeat}_archive_top`], data[`${selfSeat}_archive_top`]);
     const phaseChangedWithinTurn = visible && !inLobby && !document.hidden
       && room.status === 'active' && data.status === 'active'
       && data.turn_player_id && room.turn_player_id === data.turn_player_id
@@ -4501,7 +4508,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (matchEnded) playTableSound(data.victory_shared || data.victory_winner_id === userId
       || (data.conceded_by && data.conceded_by !== userId) ? winSound : loseSound);
     if (room.status === 'active') {
-      void loadGameState(turnChanged && !phaseBusy && !mulliganBusy);
+      void loadGameState((archiveChanged && !ownAction) || ((turnChanged || archiveChanged) && !phaseBusy && !mulliganBusy));
       void loadGamePatrons().catch(() => { patronDeckRequest = ''; });
     }
     if (room.status === 'closed' && !room.conceded_by && !room.victory_winner_id && !room.victory_shared) {
