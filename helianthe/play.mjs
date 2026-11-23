@@ -1,5 +1,5 @@
 import { extendedEventRules, extendedKinds, extendedEventStep } from './play-extended-events.mjs?v=11';
-import { entityEffectKind, entityEffectStep } from './play-entity-effects.mjs?v=7';
+import { entityEffectKind, entityEffectStep } from './play-entity-effects.mjs?v=8';
 import { entityEffectsSuppressed, passiveEntityKind, vigilBlocksCreation, vigilBlocksPlacement } from './play-passive-entities.mjs';
 
 const terrainFullArtUrl = terrain => new URL(`./assets/Terrain_${terrain}_Full_Art.png`, import.meta.url).href;
@@ -2598,7 +2598,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         pendingEntity = { card, handIndex };
         selectHandCard(card, source, true);
         syncEventTargets();
-        eventNotice('Choose compatible Terrain to Place, or an empty space to Shape.');
+        eventNotice(entityEffectKind(card, 'place') === 'reclaim'
+          ? 'Place Green Reclamation on unoccupied Verdant Terrain to transform an adjacent Terrain. Choose a blank Node to Shape.'
+          : 'Choose compatible Terrain to Place, or an empty space to Shape.');
         playTableSound(selectCardSound);
       } else if (card.card_type === 'Event') {
         void evokeEvent(card, handIndex);
@@ -3644,7 +3646,12 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       }
       if (expected === epoch && room?.id === roomId) await loadGameState(true);
       if (expected === epoch && room?.id === roomId && discardFlights.size) await archivePreviews.self.ready;
-      if (expected === epoch && room?.id === roomId) eventNotice(result?.action === 'create_place'
+      const reclamationNotice = effectKind === 'reclaim'
+        ? choices.target
+          ? `${card.title} transformed Terrain at ${formatNodeCoordinates(choices.target)} to Verdant.`
+          : `${card.title} placed. No adjacent unoccupied Terrain was available to transform.`
+        : null;
+      if (expected === epoch && room?.id === roomId) eventNotice(reclamationNotice || (result?.action === 'create_place'
         ? `${result?.title || card.title} created ${result?.terrain || card.terrain} Terrain and landed on it.`
         : result?.action === 'shape'
           ? knownEntryEffect && card.title === 'River Pact Crossing'
@@ -3654,7 +3661,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
             ? `${result?.title || card.title} placed · drew ${entityDrawn} card${entityDrawn === 1 ? '' : 's'} for Entanglements.`
             : knownEntryEffect || effectKind
               ? `${result?.title || card.title} placed · effect resolved${entityDrawn ? ` · drew ${entityDrawn}` : ''}.`
-            : `${result?.title || card.title} placed on ${result?.terrain || room.board?.[source]?.terrain} Terrain.${normalizedEffect && !hasOngoingEffect ? ' Card-specific effects are not automated yet.' : ''}`, true);
+              : `${result?.title || card.title} placed on ${result?.terrain || room.board?.[source]?.terrain} Terrain.${normalizedEffect && !hasOngoingEffect ? ' Card-specific effects are not automated yet.' : ''}`), true);
     } catch (error) {
       if (expected === epoch && room?.id === roomId) {
         await refreshRoom().catch(() => {});

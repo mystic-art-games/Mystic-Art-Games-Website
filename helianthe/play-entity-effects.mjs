@@ -67,7 +67,7 @@ export function entityEffectStep(kind, board, source, choices, archive = []) {
       return choices.terrain ? null : { label: 'Choose Terrain to create', field: 'terrain',
         options: terrainTypes.map(terrain => ({ label: terrain, value: { terrain } })) };
     case 'reclaim':
-      return choices.target ? null : cell('Choose adjacent unoccupied Terrain to Transform', 'target',
+      return choices.target ? null : cell('Choose an adjacent unoccupied Terrain to transform to Verdant', 'target',
         key => nearby(key) && node(key).terrain && !node(key).entity);
     case 'fertilize':
       if (boardKeys.filter(key => nearby(key) && node(key).terrain === 'Verdant').length < 2) return null;
