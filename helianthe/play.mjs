@@ -1,5 +1,5 @@
 import { extendedEventRules, extendedKinds, extendedEventStep } from './play-extended-events.mjs?v=10';
-import { entityEffectKind, entityEffectStep } from './play-entity-effects.mjs?v=6';
+import { entityEffectKind, entityEffectStep } from './play-entity-effects.mjs?v=7';
 import { entityEffectsSuppressed, passiveEntityKind, vigilBlocksCreation, vigilBlocksPlacement } from './play-passive-entities.mjs';
 
 const terrainFullArtUrl = terrain => new URL(`./assets/Terrain_${terrain}_Full_Art.png`, import.meta.url).href;
@@ -167,6 +167,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   let unreadGameLogCount = 0;
   let archiveGalleryObserver = null;
   let selectedGameCard = null, pendingEvent = null, pendingEntity = null, pendingFestival = null, arrivingEntityKey = null, zoneCounts = null, zoneCountsRevision = null, zoneCountsRequest = null, eventNoticeTimer = null;
+  let boardChoice = null;
   const discardSelections = new Set();
   const gameDeckPatrons = new Map(), gamePlayerPatrons = new Map();
   const patronPreviews = { self: { key: '', serial: 0 }, opponent: { key: '', serial: 0 } };
@@ -250,7 +251,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         <div class="play-hand-notices">
           <div id="play-opening-choice" class="play-opening-choice" role="status" hidden><strong id="play-opening-choice-message"></strong><div id="play-opening-choice-actions"><button id="play-opening-choose-self" type="button">I start</button><button id="play-opening-choose-opponent" type="button">Opponent starts</button></div></div>
           <div id="play-opening-mulligan" class="play-opening-choice play-opening-mulligan" role="status" aria-live="polite" hidden><strong id="play-opening-mulligan-message"></strong><p id="play-opening-mulligan-instructions" hidden>Select cards in the order they should go to the bottom of your Horizon. Then draw the same number.</p><div id="play-opening-mulligan-actions" hidden><button id="play-opening-mulligan-keep" type="button">Keep</button><button id="play-opening-mulligan-confirm" type="button" hidden>Replace selected cards</button></div></div>
-          <div id="play-game-event-notice" class="play-game-event-notice" role="status" aria-live="polite" hidden><span id="play-game-event-notice-text"></span><button id="play-game-event-notice-cancel" type="button" hidden>Cancel</button><button id="play-game-event-notice-close" type="button" aria-label="Dismiss message" hidden>×</button></div>
+          <div id="play-game-event-notice" class="play-game-event-notice" role="status" aria-live="polite" hidden><span id="play-game-event-notice-text"></span><button id="play-game-event-notice-skip" type="button" hidden>Skip this choice</button><button id="play-game-event-notice-cancel" type="button" hidden>Cancel</button><button id="play-game-event-notice-close" type="button" aria-label="Dismiss message" hidden>×</button></div>
           <div id="play-game-discard-bar" class="play-game-discard-bar" hidden><strong id="play-game-discard-text" role="status" aria-live="polite"></strong><button id="play-game-confirm-discard" type="button" disabled>Confirm Discard</button></div>
         </div>
         <div class="play-game-hand-wrap"><p id="play-game-loading" role="status">Preparing the opening hands…</p><div id="play-game-hand" class="play-game-hand"></div></div>
@@ -603,7 +604,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     notice.classList.toggle('is-message', Boolean(text && dismissible));
     $('game-event-notice-close').hidden = !text || !dismissible;
     $('game-event-notice-cancel').hidden = !text || temporary || dismissible
-      || !(beginningTargetSource || pendingEvent || pendingEntity);
+      || !(boardChoice || beginningTargetSource || pendingEvent || pendingEntity);
+    $('game-event-notice-skip').hidden = !text || temporary || dismissible || !boardChoice?.optional;
     if (text && temporary) eventNoticeTimer = setTimeout(() => { notice.hidden = true; eventNoticeTimer = null; }, duration);
   }
   function blockedPlayNotice(reason) {
@@ -611,7 +613,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   $('game-event-notice-close').addEventListener('click', () => eventNotice(''));
   function cancelTargetSelection() {
-    if (beginningTargetSource) {
+    if (boardChoice) {
+      finishBoardChoice();
+    } else if (beginningTargetSource) {
       beginningTargetSource = null;
       eventNotice(''); renderBeginningEffects(); syncEventTargets();
     } else {
@@ -619,6 +623,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     }
   }
   $('game-event-notice-cancel').addEventListener('click', cancelTargetSelection);
+  $('game-event-notice-skip').addEventListener('click', () => {
+    if (boardChoice?.optional) finishBoardChoice(null);
+  });
   function eventNeighbors(key) {
     const [x, y] = key.split(',').map(Number);
     return [[x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]]
@@ -886,20 +893,35 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     }
     return plan;
   }
-  let firstEntityFertilizeTarget = null;
+  function chooseEffectBoardTarget(label, keys, { optional = false, firstFertilize = null } = {}) {
+    return new Promise(resolve => {
+      boardChoice = { keys, optional, firstFertilize, resolve };
+      syncEventTargets();
+      eventNotice(label);
+      $('game-board').querySelector('.is-event-target')?.focus({ preventScroll: true });
+    });
+  }
+  function finishBoardChoice(value) {
+    if (!boardChoice) return;
+    const { resolve } = boardChoice;
+    boardChoice = null;
+    eventNotice('');
+    syncEventTargets();
+    resolve(value);
+  }
   function syncEventTargets() {
     const eventKind = pendingEvent?.rule[1];
     const firstFertilizeTarget = eventKind === 'fertile_rain_any'
       ? pendingEvent.selected[1]?.key
       : ['fertile_rain', 'fertilize_two'].includes(eventKind)
         ? pendingEvent.targets?.[0]?.join(',')
-        : firstEntityFertilizeTarget;
+        : boardChoice?.firstFertilize;
     const beginningOptions = beginningBoardOptions();
     const targetsEntity = pendingEvent?.extended ? pendingEvent.step.targetsEntity
       : pendingEvent && !pendingEvent.nextKeys && ['dissolve_entity', 'unprotect_entity', 'fertile_rain'].includes(pendingEvent.rule[1]);
     for (const cell of $('game-board').children) {
       const node = room?.board?.[cell.dataset.key];
-      const legal = Boolean(cell.dataset.key && (
+      const legal = Boolean(cell.dataset.key && (boardChoice ? boardChoice.keys.includes(cell.dataset.key) : (
         (pendingEvent && (pendingEvent.extended
           ? pendingEvent.step.options.some(option => option.value.type === 'cell' && option.value.key === cell.dataset.key)
           : pendingEvent.nextKeys ? pendingEvent.nextKeys.includes(cell.dataset.key)
@@ -907,12 +929,12 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         || (pendingEntity && legalEntityAction(pendingEntity.card, node, cell.dataset.key))
         || beginningOptions?.includes(cell.dataset.key))
         && !(pendingEvent?.rule[1] === 'fertilize_two'
-          && firstFertilizeTarget === cell.dataset.key && (node?.fertilize || vigilBlocksPlacement(room.board, cell.dataset.key))));
+          && firstFertilizeTarget === cell.dataset.key && (node?.fertilize || vigilBlocksPlacement(room.board, cell.dataset.key)))));
       cell.classList.toggle('is-event-target', legal);
       cell.classList.toggle('is-first-fertilize-target', cell.dataset.key === firstFertilizeTarget);
       const entityInteraction = legal && node?.entity;
       cell.classList.toggle('is-entity-target', Boolean(entityInteraction));
-      cell.classList.toggle('is-entity-only-target', Boolean(entityInteraction && targetsEntity));
+      cell.classList.toggle('is-entity-only-target', Boolean(entityInteraction && !boardChoice && targetsEntity));
       if (legal) { cell.tabIndex = 0; cell.setAttribute('role', 'button'); }
       else { cell.removeAttribute('tabindex'); cell.removeAttribute('role'); }
     }
@@ -1553,21 +1575,21 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
           controls.append(beginningControl('dissolve', 'Cannot pay. Dissolve this Entity or remove its Protection.'));
         } else {
           for (const index of [0, 1]) {
-            const select = document.createElement('select');
             const label = `${index ? 'Second' : 'First'} empty Verdant Terrain`;
-            select.setAttribute('aria-label', `${label} for ${effect.card.title}`);
-            select.add(new Option(label, ''));
-            for (const key of terrainOptions) select.add(new Option(formatNodeCoordinates(key), key));
-            select.value = targets[index] || '';
-            select.disabled = phaseBusy;
-            select.addEventListener('change', () => {
-              const selected = [...(beginningBrambleTargets.get(source) || [])];
-              selected[index] = select.value;
-              beginningBrambleTargets.set(source, selected);
-              renderBeginningEffects(); void saveBeginningPlan();
+            const mode = `bramble-${index}`;
+            const target = terrainOptions.includes(targets[index]) ? targets[index] : '';
+            const choosing = beginningTargetSource === source && beginningTargetMode === mode;
+            const button = beginningControl('dissolve', target ? `${label} · ${formatNodeCoordinates(target)}` : `Choose ${label.toLowerCase().replace('verdant terrain', 'Verdant Terrain')}`,
+              { button: true, target, selected: Boolean(target), count: index + 1 });
+            button.setAttribute('aria-pressed', String(choosing));
+            button.disabled = phaseBusy;
+            button.addEventListener('click', () => {
+              beginningTargetSource = choosing ? null : source;
+              beginningTargetMode = mode;
+              eventNotice(choosing ? '' : `Choose ${index ? 'the second' : 'the first'} empty Verdant Terrain to Dissolve.`);
+              renderBeginningEffects(); syncEventTargets();
             });
-            controls.append(beginningControl('dissolve', select.value ? `${label} · ${formatNodeCoordinates(select.value)}` : label,
-              { select, target: select.value, count: index + 1 }));
+            controls.append(button);
           }
           const eventTitle = eventOptions.find(card => String(card.id) === eventId)?.title;
           const recall = beginningControl('recall', eventTitle ? `Recall ${eventTitle}` : 'Choose an Event to Recall',
@@ -2039,14 +2061,13 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (!source || phaseBusy || room.board?.[source]?.entity?.owner_id !== userId) return;
     const roomId = room.id;
     const expected = epoch;
-    const options = Array.from({ length: 20 }, (_, index) => `${index % 5},${Math.floor(index / 5)}`)
-      .filter(key => !room.board?.[key]?.terrain && !vigilBlocksCreation(room.board, key))
-      .map(key => ({ value: key, label: formatNodeCoordinates(key) }));
+    const targets = Array.from({ length: 20 }, (_, index) => `${index % 5},${Math.floor(index / 5)}`)
+      .filter(key => !room.board?.[key]?.terrain && !vigilBlocksCreation(room.board, key));
     phaseBusy = true;
     renderTurnPhase();
     try {
-      const target = options.length
-        ? await new Promise(resolve => chooseEventOption('Choose an empty Node for Equatorial Forests', options, resolve, () => resolve(undefined)))
+      const target = targets.length
+        ? await chooseEffectBoardTarget('Choose an empty Node for Equatorial Forests', targets)
         : null;
       if (target === undefined || expected !== epoch || room?.id !== roomId) return;
       await rpc('play_resolve_forest_reaction', { p_room_id: roomId, p_source: source, p_target: target });
@@ -2072,7 +2093,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       if (!menu.contains(event.target)) menu.open = false;
     }
     if (event.button !== 0 || $('game').hidden || !selectedGameCard) return;
-    if (event.target.closest('.play-hand-card, .play-event-choice-dialog, .play-game-patron-slot, .play-game-card-preview, .play-beginning-effects, .play-game-archive-card, .play-deck-stack, .play-game-node.has-entity, .play-game-node.is-event-target')) return;
+    if (event.target.closest('.play-hand-card, .play-event-choice-dialog, .play-game-event-notice, .play-game-patron-slot, .play-game-card-preview, .play-beginning-effects, .play-game-archive-card, .play-deck-stack, .play-game-node.has-entity, .play-game-node.is-event-target')) return;
     hideCardPreview();
   });
   document.addEventListener('keydown', event => {
@@ -2366,6 +2387,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   function hideCardPreview() {
     hideHoveredCardPreview();
+    finishBoardChoice();
     pendingEvent = null;
     pendingEntity = null;
     selectedGameCard = null;
@@ -3163,9 +3185,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       ? { ...room.board, [source]: { ...room.board?.[source], terrain } }
       : room.board || {};
     const archive = gameState?.archive || [];
-    for (let step = entityEffectStep(kind, board, source, choices, archive); step?.options.length;
+    for (let step = entityEffectStep(kind, board, source, choices, archive); step?.boardTargets?.length || step?.options?.length;
       step = entityEffectStep(kind, board, source, choices, archive)) {
-      const options = step.optional ? [{ label: 'Skip this choice', value: null }, ...step.options] : step.options;
       if (step.field === 'recall') {
         const entries = step.options.flatMap(({ value }) => {
           const card = archive.find(item => item.card_type === 'Entity' && item.id === value);
@@ -3176,20 +3197,11 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         choices.recall = recall.value;
         continue;
       }
-      let choice;
-      const selectingSecondFertilize = kind === 'fertilize' && step.field === 'second';
-      if (selectingSecondFertilize) {
-        firstEntityFertilizeTarget = choices.target;
-        syncEventTargets();
-      }
-      try {
-        choice = await new Promise(resolve => chooseEventOption(step.label, options, resolve, () => resolve()));
-      } finally {
-        if (selectingSecondFertilize) {
-          firstEntityFertilizeTarget = null;
-          syncEventTargets();
-        }
-      }
+      const choice = step.boardTargets
+        ? await chooseEffectBoardTarget(step.label, step.boardTargets, {
+          optional: step.optional, firstFertilize: kind === 'fertilize' && step.field === 'second' ? choices.target : null,
+        })
+        : await new Promise(resolve => chooseEventOption(step.label, step.options, resolve, () => resolve()));
       if (choice === undefined) return null;
       choices[step.field] = choice?.terrain ?? choice;
     }
@@ -3650,15 +3662,28 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   function beginningBoardOptions() {
     if (!beginningTargetSource) return [];
     const effect = beginningPlan().get(beginningTargetSource);
+    if (beginningTargetMode.startsWith('bramble-')) {
+      const other = effect?.targets?.[beginningTargetMode === 'bramble-0' ? 1 : 0];
+      return (effect?.terrainOptions || []).filter(key => key !== other);
+    }
     return beginningTargetMode === 'entangle' ? (effect?.choices || []).map(option => option.value) : effect?.options || [];
   }
   function chooseBoardTarget(column, row) {
+    if (boardChoice) {
+      const target = `${column},${row}`;
+      if (boardChoice.keys.includes(target)) finishBoardChoice(target);
+      return;
+    }
     if (beginningTargetSource) {
       const target = `${column},${row}`;
       if (!beginningBoardOptions().includes(target)) return;
       if (beginningTargetMode === 'entangle') {
         if (beginningChoices.get(beginningTargetSource) === target) beginningChoices.delete(beginningTargetSource);
         else beginningChoices.set(beginningTargetSource, target);
+      } else if (beginningTargetMode.startsWith('bramble-')) {
+        const targets = [...(beginningBrambleTargets.get(beginningTargetSource) || [])];
+        targets[beginningTargetMode === 'bramble-0' ? 0 : 1] = target;
+        beginningBrambleTargets.set(beginningTargetSource, targets);
       } else {
         if (beginningTargets.get(beginningTargetSource) !== target) beginningChoices.delete(beginningTargetSource);
         beginningTargets.set(beginningTargetSource, target);

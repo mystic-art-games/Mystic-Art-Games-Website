@@ -40,11 +40,7 @@ export function entityEffectStep(kind, board, source, choices, archive = []) {
   const canCreate = key => empty(key) && !vigilBlocksCreation(board, key);
   const present = key => key === source || Boolean(node(key).terrain);
   const cell = (label, field, predicate, optional = false) => ({
-    label, field, optional,
-    options: boardKeys.filter(predicate).map(key => ({
-      label: `R${Number(key[2]) + 1} C${Number(key[0]) + 1} · ${node(key).terrain || (key === source ? 'New Terrain' : 'Empty')}${node(key).entity ? ` · ${node(key).entity.title}` : ''}`,
-      value: key,
-    })),
+    label, field, optional, boardTargets: boardKeys.filter(predicate),
   });
   switch (kind) {
     case 'through_fire_reborn': {
