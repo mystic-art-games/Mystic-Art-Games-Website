@@ -119,7 +119,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   const loseSound = new Audio(new URL('./assets/Lose.mp3', import.meta.url));
   const backToLobbySound = new Audio(new URL('./assets/Back_To_Lobby.mp3', import.meta.url));
   let pendingDeckId = null, deckSaveInFlight = false;
-  let gameState = null, gameLoading = false, gameLoadFailed = false, gameReloadPending = false, handSignature = '', gameRenderSerial = 0, boardRenderSerial = 0, cardPreviewSerial = 0;
+  let gameState = null, gameStateRequest = null, gameLoadFailed = false, handSignature = '', gameRenderSerial = 0, boardRenderSerial = 0, cardPreviewSerial = 0;
   let phaseBusy = false, selectedCardElement = null, hoveredCardElement = null, hoveredCardKey = '', mousePosition = null, patronDeckRequest = '', patronDeckLoadedAt = 0;
   let openingRollBusy = false, openingChoiceBusy = false, openingRollError = '', openingMatchKey = '';
   let openingDealPendingKey = '', openingDealRunningKey = '', openingDealDoneKey = '';
@@ -2172,7 +2172,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       if (expected === epoch && room?.id === roomId) {
         drawRetryAt = Date.now() + 5000;
         await refreshRoom().catch(() => {});
-        message(friendly(error), true);
+        if (expected === epoch && room?.id === roomId) {
+          await loadGameState(true).catch(() => {});
+          message(friendly(error), true);
+        }
       }
     } finally {
       clearDrawFlight();
@@ -2213,7 +2216,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       if (expected === epoch && room?.id === roomId) {
         if (automatic) phaseAdvanceRetryAt = Date.now() + 5000;
         await refreshRoom().catch(() => {});
-        message(friendly(error), true);
+        if (expected === epoch && room?.id === roomId) {
+          if (takeExtraCard) await loadGameState(true).catch(() => {});
+          message(friendly(error), true);
+        }
       }
     } finally {
       clearDrawFlight();
@@ -2361,7 +2367,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     gameLogKey = '';
     gameLogRequest = null;
     pendingDeckId = null;
-    ++gameRenderSerial; gameState = null; gameLoading = false; gameLoadFailed = false; gameReloadPending = false; handSignature = '';
+    ++gameRenderSerial; gameState = null; gameStateRequest = null; gameLoadFailed = false; handSignature = '';
     phaseBusy = false; drawRetryAt = 0; clearDrawFlight(); clearMulliganFlights(); clearDiscardHandMotion(); discardSelections.clear(); pendingFestival = null; arrivingEntityKey = null; stagedEntityPlacement = null;
     beginningTurnKey = ''; beginningOrder = []; beginningTargetSource = null; beginningTargets.clear();
     beginningChoices.clear();
@@ -4592,26 +4598,54 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     finally { if (zoneCountsRequest === `${roomId}:${revision}`) zoneCountsRequest = null; }
   }
   async function loadGameState(force = false) {
-    if (!room || room.status !== 'active' || gameLoadFailed) return;
-    if (gameLoading) { if (force) gameReloadPending = true; return; }
+    if (!room || room.status !== 'active' || (gameLoadFailed && !force)) return;
+    if (gameStateRequest) {
+      if (force) gameStateRequest.reload = true;
+      return gameStateRequest.promise;
+    }
     if (!force && gameState?.room_id === room.id) return;
-    const id = room.id, expected = epoch;
-    gameLoading = true;
-    const { data, error } = await client.from('play_game_decks').select('*').eq('room_id', id).eq('player_id', userId).maybeSingle();
-    if (expected !== epoch || room?.id !== id) return;
-    gameLoading = false;
-    if (error || !data) {
-      gameLoadFailed = true;
-      const setupMissing = ['42P01', 'PGRST205'].includes(error?.code)
-        || /play_game_decks|schema cache/i.test(error?.message || '');
-      message(setupMissing
-        ? 'Opening hands are not available on the server yet. The game database update still needs to be applied.'
-        : error
-          ? 'Your opening hand could not be loaded. Return to the Lobby and try entering the table again.'
-          : 'This table has no opening hands. Start a new table after game setup is available.', true);
-    } else gameState = data;
-    renderGame();
-    if (gameReloadPending) { gameReloadPending = false; void loadGameState(true); }
+    const request = { roomId: room.id, playerId: userId, epoch, reload: false };
+    gameStateRequest = request;
+    request.promise = readGameState(request);
+    return request.promise;
+  }
+  async function readGameState(request) {
+    const current = () => gameStateRequest === request && request.epoch === epoch
+      && room?.id === request.roomId && room.status === 'active' && userId === request.playerId;
+    const fetchDeck = () => client.from('play_game_decks').select('*')
+      .eq('room_id', request.roomId).eq('player_id', request.playerId).maybeSingle();
+    try {
+      do {
+        request.reload = false;
+        let { data, error } = await fetchDeck();
+        if (!current()) return;
+        if (request.reload) continue;
+        if (error && gameState) {
+          await new Promise(resolve => setTimeout(resolve, 350));
+          if (!current()) return;
+          ({ data, error } = await fetchDeck());
+          if (!current()) return;
+          if (request.reload) continue;
+        }
+        if (data && !error) {
+          gameLoadFailed = false;
+          gameState = data;
+          renderGame();
+        } else if (!gameState) {
+          gameLoadFailed = true;
+          const setupMissing = ['42P01', 'PGRST205'].includes(error?.code)
+            || /play_game_decks|schema cache/i.test(error?.message || '');
+          message(setupMissing
+            ? 'Opening hands are not available on the server yet. The game database update still needs to be applied.'
+            : error
+              ? 'Your opening hand could not be loaded. Return to the Lobby and try entering the table again.'
+              : 'This table has no opening hands. Start a new table after game setup is available.', true);
+          renderGame();
+        }
+      } while (request.reload);
+    } finally {
+      if (gameStateRequest === request) gameStateRequest = null;
+    }
   }
   function syncLobbyRefresh() {
     const directoryIdentity = visible && userId && (!room || inLobby) ? userId : null;
@@ -4725,7 +4759,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     userId = seatId;
     if ((effectChoice || archiveRecallPicker) && (turnChanged || data.status !== 'active')) hideCardPreview();
     if (room.activated_at && !data.activated_at) {
-      ++gameRenderSerial; gameState = null; gameLoading = false; gameLoadFailed = false; gameReloadPending = false; handSignature = '';
+      ++gameRenderSerial; gameState = null; gameStateRequest = null; gameLoadFailed = false; handSignature = '';
       hideCardPreview();
     }
     if (data.status === 'closed' && (data.conceded_by || data.victory_winner_id || data.victory_shared)) {
@@ -4813,7 +4847,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (matchEnded) playTableSound(data.victory_shared || data.victory_winner_id === userId
       || (data.conceded_by && data.conceded_by !== userId) ? winSound : loseSound);
     if (room.status === 'active') {
-      void loadGameState((archiveChanged && !ownAction) || ((turnChanged || archiveChanged) && !phaseBusy && !mulliganBusy));
+      const reportedHandCount = room[`${selfSeat}_hand_count`];
+      const handOutOfSync = Number.isInteger(reportedHandCount) && gameState?.hand?.length !== reportedHandCount;
+      void loadGameState((archiveChanged && !ownAction)
+        || ((turnChanged || archiveChanged || (handOutOfSync && room.turn_phase !== 'draw')) && !phaseBusy && !mulliganBusy));
       void loadGamePatrons().catch(() => { patronDeckRequest = ''; });
     }
     if (room.status === 'closed' && !room.conceded_by && !room.victory_winner_id && !room.victory_shared) {
