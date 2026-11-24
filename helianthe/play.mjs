@@ -1708,22 +1708,34 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         const selected = choices.find(option => option.value === choice);
         const icon = selected?.value || 'condition';
         if (canStay) {
-          const unavailable = choices.length === 0;
-          const label = unavailable ? `Cannot Entangle. ${entangleUnavailable}`
-            : selected ? `Entangle ${selected.label}` : 'Choose Terrain to Entangle';
-          const entangle = beginningControl('target', label,
-            { button: own, target: selected?.value, symbol: 'entangle', unavailable });
-          if (own && !unavailable) {
-            entangle.disabled = phaseBusy;
-            entangle.setAttribute('aria-pressed', String(beginningTargetSource === source && beginningTargetMode === 'entangle'));
-            entangle.addEventListener('click', () => {
-              beginningTargetSource = beginningTargetSource === source && beginningTargetMode === 'entangle' ? null : source;
-              beginningTargetMode = 'entangle';
-              eventNotice(beginningTargetSource ? 'Choose Terrain to Entangle. Select the current target again to skip Entangle.' : '');
-              renderBeginningEffects(); syncEventTargets();
+          if (!choices.length) {
+            controls.append(beginningControl('skip', `Cannot Entangle. ${entangleUnavailable}`,
+              { symbol: 'entangle', unavailable: true }));
+          } else if (own) {
+            const setEntangle = key => {
+              if (key) beginningChoices.set(source, key);
+              else beginningChoices.delete(source);
+              beginningTargetSource = null;
+              eventNotice('');
+              renderBeginningEffects(); syncEventTargets(); void saveBeginningPlan();
+            };
+            const yes = beginningControl('skip', selected ? `Entangle ${selected.label}` : 'Entangle: Yes',
+              { button: true, target: selected?.value, symbol: 'entangle' });
+            const no = beginningControl('skip', 'Entangle: No', { button: true });
+            yes.replaceChildren('Yes');
+            no.textContent = 'No';
+            yes.setAttribute('aria-pressed', String(Boolean(selected)));
+            no.setAttribute('aria-pressed', String(!selected));
+            yes.disabled = no.disabled = phaseBusy;
+            yes.addEventListener('click', () => {
+              if (choices.length === 1) setEntangle(choices[0].value);
+              else chooseEventOption('Choose Terrain to Entangle', choices, setEntangle, () => {});
             });
+            no.addEventListener('click', () => setEntangle(null));
+            controls.append(yes, no);
+          } else if (selected) {
+            controls.append(beginningControl('skip', `Entangle ${selected.label}`, { target: selected.value, symbol: 'entangle' }));
           }
-          controls.append(entangle);
         } else if (own) {
           const select = document.createElement('select');
           select.setAttribute('aria-label', label);
@@ -3839,7 +3851,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       const other = effect?.targets?.[beginningTargetMode === 'bramble-0' ? 1 : 0];
       return (effect?.terrainOptions || []).filter(key => key !== other);
     }
-    return beginningTargetMode === 'entangle' ? (effect?.choices || []).map(option => option.value) : effect?.options || [];
+    return effect?.options || [];
   }
   function chooseBoardTarget(column, row) {
     if (boardChoice) {
@@ -3850,10 +3862,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (beginningTargetSource) {
       const target = `${column},${row}`;
       if (!beginningBoardOptions().includes(target)) return;
-      if (beginningTargetMode === 'entangle') {
-        if (beginningChoices.get(beginningTargetSource) === target) beginningChoices.delete(beginningTargetSource);
-        else beginningChoices.set(beginningTargetSource, target);
-      } else if (beginningTargetMode.startsWith('bramble-')) {
+      if (beginningTargetMode.startsWith('bramble-')) {
         const targets = [...(beginningBrambleTargets.get(beginningTargetSource) || [])];
         targets[beginningTargetMode === 'bramble-0' ? 0 : 1] = target;
         beginningBrambleTargets.set(beginningTargetSource, targets);
