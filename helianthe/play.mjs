@@ -7,7 +7,7 @@ const defaultTableName = hostName => `${Array.from(String(hostName ?? '').trim()
 
 function formatNodeCoordinates(key) {
   const [column, row] = key.split(',').map(Number);
-  return 'R' + (row + 1) + ' C' + (column + 1);
+  return 'ABCD'[row] + (column + 1);
 }
 
 const beginningIconPaths = {
@@ -474,7 +474,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       const turn = !entry.local && entry.message.match(/^Turn (\d+)(?: · (.+)| began\.)$/);
       let owner = entry.local ? userId : entry.actor_id;
       let message = entry.message === 'Opening dice resolved. Choose who starts.'
-        ? openingDiceResultText(openingDiceWinner()) : entry.message;
+        ? openingDiceResultText(openingDiceWinner())
+        : entry.message.replace(/^R([1-4]) C([1-5])(?= · )/, (_, row, column) =>
+          formatNodeCoordinates(`${Number(column) - 1},${Number(row) - 1}`));
       if (turn && knownTurn && seats.every(Boolean)) {
         const sameSeat = Math.abs(Number(turn[1]) - knownTurn.number) % 2 === 0;
         owner = sameSeat ? knownTurn.player : seats.find(id => id !== knownTurn.player);
@@ -3858,22 +3860,23 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       }
       if (expected === epoch && room?.id === roomId) await loadGameState(true);
       if (expected === epoch && room?.id === roomId && discardFlights.size) await archivePreviews.self.ready;
+      const placementCoordinates = formatNodeCoordinates(source);
       const reclamationNotice = effectKind === 'reclaim'
         ? choices.target
-          ? `${card.title} transformed Terrain at ${formatNodeCoordinates(choices.target)} to Verdant.`
-          : `${card.title} placed. No adjacent empty Terrain was available to transform.`
+          ? `${card.title} placed at ${placementCoordinates} · transformed Terrain at ${formatNodeCoordinates(choices.target)} to Verdant.`
+          : `${card.title} placed at ${placementCoordinates}. No adjacent empty Terrain was available to transform.`
         : null;
       if (expected === epoch && room?.id === roomId) eventNotice(reclamationNotice || (result?.action === 'create_place'
-        ? `${result?.title || card.title} created ${result?.terrain || card.terrain} Terrain and landed on it.`
+        ? `${result?.title || card.title} created ${result?.terrain || card.terrain} Terrain and landed on it at ${placementCoordinates}.`
         : result?.action === 'shape'
           ? knownEntryEffect && card.title === 'River Pact Crossing'
             ? `${result?.title || card.title} shaped ${result?.terrain || entityShapeTerrain(card)} Terrain · drew ${entityDrawn} card${entityDrawn === 1 ? '' : 's'}.`
             : `${result?.title || card.title} shaped ${result?.terrain || entityShapeTerrain(card)} Terrain.${effectKind ? ' Shape effect resolved.' : /\bwhen shaped\b/i.test(normalizedEffect) ? ' This Shape effect is not automated yet.' : ''}`
           : kupalaNight
-            ? `${result?.title || card.title} placed · drew ${entityDrawn} card${entityDrawn === 1 ? '' : 's'} for Entanglements.`
+            ? `${result?.title || card.title} placed at ${placementCoordinates} · drew ${entityDrawn} card${entityDrawn === 1 ? '' : 's'} for Entanglements.`
             : knownEntryEffect || effectKind
-              ? `${result?.title || card.title} placed · effect resolved${entityDrawn ? ` · drew ${entityDrawn}` : ''}.`
-              : `${result?.title || card.title} placed on ${result?.terrain || room.board?.[source]?.terrain} Terrain.${normalizedEffect && !hasOngoingEffect ? ' Card-specific effects are not automated yet.' : ''}`), true);
+              ? `${result?.title || card.title} placed at ${placementCoordinates} · effect resolved${entityDrawn ? ` · drew ${entityDrawn}` : ''}.`
+              : `${result?.title || card.title} placed on ${result?.terrain || room.board?.[source]?.terrain} Terrain at ${placementCoordinates}.${normalizedEffect && !hasOngoingEffect ? ' Card-specific effects are not automated yet.' : ''}`), true);
     } catch (error) {
       if (expected === epoch && room?.id === roomId) {
         await refreshRoom().catch(() => {});
@@ -4439,6 +4442,18 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       const cell = document.createElement('div'); cell.className = 'play-game-node';
       if (isCenter && !node?.terrain) cell.classList.add('terrain-center');
       cell.dataset.key = key;
+      if (row === 0 || column === 0) {
+        cell.classList.add('has-coordinate-label');
+        const addCoordinate = (axis, text) => {
+          const label = document.createElement('span');
+          label.className = `play-board-coordinate is-${axis}`;
+          label.setAttribute('aria-hidden', 'true');
+          label.textContent = text;
+          cell.append(label);
+        };
+        if (row === 0) addCoordinate('column', column + 1);
+        if (column === 0) addCoordinate('row', 'ABCD'[row]);
+      }
       const arrival = terrainArrivals.get(cell.dataset.key);
       if (arrival && arrival.terrain === node?.terrain) cell.classList.add('is-terrain-arriving');
       else if (arrival) finishTerrainArrival(cell.dataset.key, arrival);
