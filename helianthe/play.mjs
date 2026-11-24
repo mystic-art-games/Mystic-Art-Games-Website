@@ -163,6 +163,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   let selectedGameCard = null, pendingEvent = null, pendingEntity = null, pendingFestival = null, arrivingEntityKey = null, zoneCounts = null, zoneCountsRevision = null, zoneCountsRequest = null, eventNoticeTimer = null;
   let boardChoice = null;
   let effectChoice = null;
+  let matchClock = null;
+  let matchClockInterval = null;
+  const openingRevealDuration = 3000;
   let stagedEntityPlacement = null;
   const discardSelections = new Set();
   const gameDeckPatrons = new Map(), gamePlayerPatrons = new Map();
@@ -189,7 +192,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     </section>
     <section id="play-game" hidden>
       <div class="play-game-player-block">
-      <div class="play-game-opponent-footer"><div class="play-game-opponent-identity play-game-player-identity"><div class="play-game-identity-name"><span class="play-game-player-label"><span id="play-game-opponent-avatar" class="user-avatar play-game-player-avatar" aria-hidden="true"></span><strong id="play-game-opponent-name"></strong></span></div><span id="play-game-opponent-hand-count" class="play-game-hand-count" aria-live="polite" hidden></span></div><span id="play-game-opponent-presence" class="play-away-pill" hidden></span><div class="play-game-actions"><details class="play-table-menu"><summary class="play-menu-toggle" aria-label="Table actions" title="Table actions"><svg class="play-menu-bars" aria-hidden="true" viewBox="0 0 22 22"><path d="M3 5h16 M3 11h16 M3 17h16"/></svg></summary><div class="play-table-menu-panel"><strong id="play-game-name" class="play-menu-table-name"></strong><button id="play-game-leave" type="button">Concede</button><button id="play-game-back" class="play-menu-lobby" type="button">Back to Lobby</button></div></details></div></div>
+      <div class="play-game-opponent-footer"><div class="play-game-opponent-identity play-game-player-identity"><div class="play-game-identity-name"><span class="play-game-player-label"><span id="play-game-opponent-avatar" class="user-avatar play-game-player-avatar" aria-hidden="true"></span><strong id="play-game-opponent-name"></strong></span></div><span id="play-game-opponent-hand-count" class="play-game-hand-count" aria-live="polite" hidden></span></div><span id="play-game-opponent-presence" class="play-away-pill" hidden></span><div class="play-game-actions"><span id="play-game-match-clock" class="play-game-match-clock" role="timer" aria-label="Elapsed game time" hidden>00:00</span><details class="play-table-menu"><summary class="play-menu-toggle" aria-label="Table actions" title="Table actions"><svg class="play-menu-bars" aria-hidden="true" viewBox="0 0 22 22"><path d="M3 5h16 M3 11h16 M3 17h16"/></svg></summary><div class="play-table-menu-panel"><strong id="play-game-name" class="play-menu-table-name"></strong><button id="play-game-leave" type="button">Concede</button><button id="play-game-back" class="play-menu-lobby" type="button">Back to Lobby</button></div></details></div></div>
       </div>
       <div class="play-game-board-wrap">
       <div class="play-game-left-stack">
@@ -1122,6 +1125,58 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   function openingDiceResultText(winnerId) {
     return winnerId === userId ? 'You decide who plays first' : 'Opponent decides who plays first';
   }
+  function renderMatchClock() {
+    const clock = $('game-match-clock');
+    const start = matchClock?.startedAt;
+    clock.hidden = !visible || inLobby || $('game').hidden || !start || room?.turn_phase === 'roll'
+      || (room?.status === 'active' && !$('opening-roll').hidden);
+    if (clock.hidden) return;
+    const end = room.status === 'closed' ? Date.parse(room.updated_at) || Date.now() : Date.now();
+    const elapsed = Math.max(0, Math.floor((end - start) / 1000));
+    const hours = Math.floor(elapsed / 3600);
+    const minutes = Math.floor(elapsed / 60) % 60;
+    const seconds = elapsed % 60;
+    const mmss = [minutes, seconds].map(part => String(part).padStart(2, '0')).join(':');
+    const text = hours ? `${hours}:${mmss}` : mmss;
+    if (clock.textContent !== text) clock.textContent = text;
+  }
+  async function recoverMatchClock(clock) {
+    clock.retryAt = Date.now() + 10000;
+    const { data, error } = await client.from('play_game_log').select('created_at')
+      .eq('room_id', room.id).eq('match_started_at', room.activated_at)
+      .eq('message', 'Opening dice resolved. Choose who starts.')
+      .order('id', { ascending: true }).limit(1).maybeSingle();
+    if (error || matchClock !== clock || clock.startedAt) return;
+    const rolledAt = Date.parse(data?.created_at);
+    if (Number.isFinite(rolledAt)) {
+      clock.startedAt = rolledAt + openingRevealDuration;
+      syncMatchClock();
+    }
+  }
+  function syncMatchClock(choiceVisible = false) {
+    const key = matchLogKey();
+    if (matchClock?.key !== key) {
+      let startedAt = 0;
+      try { if (key) startedAt = Number(sessionStorage.getItem(`helianthe-match-clock:${key}`)) || 0; } catch {}
+      matchClock = { key, startedAt, retryAt: 0 };
+    }
+    if (visible && !inLobby && !$('game').hidden && key) {
+      if (!matchClock.startedAt && choiceVisible) {
+        matchClock.startedAt = Date.now();
+        try { sessionStorage.setItem(`helianthe-match-clock:${key}`, String(matchClock.startedAt)); } catch {}
+      } else if (!matchClock.startedAt && room.turn_phase !== 'roll' && room.turn_phase !== 'choose_first'
+        && Date.now() >= matchClock.retryAt) {
+        void recoverMatchClock(matchClock).catch(() => {});
+      }
+    }
+    renderMatchClock();
+    if (!$('game-match-clock').hidden && room.status === 'active') {
+      matchClockInterval ??= setInterval(renderMatchClock, 1000);
+    } else {
+      clearInterval(matchClockInterval);
+      matchClockInterval = null;
+    }
+  }
   function renderOpeningRoll() {
     const overlay = $('opening-roll');
     const phases = $('game-phases');
@@ -1165,6 +1220,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     renderTurnPhase();
     const choice = $('opening-choice');
     choice.hidden = !choosing || revealing;
+    syncMatchClock(!choice.hidden);
     renderMulligan();
     if (visible && !inLobby && !rolling && !revealing && !openingRollBusy && openingDealPending()
       && openingDealRunningKey !== key && gameState?.hand?.length) {
@@ -1186,7 +1242,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         openingRevealDoneKey = key;
         try { sessionStorage.setItem(revealStorageKey, 'shown'); } catch {}
         renderOpeningRoll();
-      }, 3000);
+      }, openingRevealDuration);
     }
     if (overlay.hidden) {
       if (!phases.hidden && key && openingPanelAnimatedKey !== key && room?.turn_number === 1) {
@@ -4986,6 +5042,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     $('session').hidden = !userId || !room || playing || inLobby;
     $('game').hidden = !playing;
     $('game-result').hidden = !finished;
+    if (!playing || finished) syncMatchClock();
     if (playing) void loadGameLog();
     if (finished) {
       const winnerId = room.victory_winner_id || (room.conceded_by === room.host_id ? room.guest_id : room.host_id);
@@ -5177,6 +5234,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   function setVisible(value) {
     const wasVisible = visible;
     visible = value;
+    syncMatchClock(room?.turn_phase === 'choose_first' && !$('opening-choice').hidden);
     syncLobbyRefresh();
     if (!value) {
       clearTerrainArrivals();
