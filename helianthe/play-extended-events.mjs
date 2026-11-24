@@ -1,5 +1,5 @@
 import { entityEffectsSuppressed, vigilBlocksCreation, vigilBlocksPlacement } from './play-passive-entities.mjs';
-import { entityEffectKind, entityEffectStep, isEmptyTerrain } from './play-entity-effects.mjs?v=9';
+import { entityEffectKind, entityEffectStep, isEmptyTerrain } from './play-entity-effects.mjs?v=11';
 
 // These are the Event texts currently present in the online card catalog.
 // Match the dealt card's text, not just its title, so edited cards cannot

@@ -1,5 +1,5 @@
-import { extendedEventRules, extendedKinds, extendedEventStep } from './play-extended-events.mjs?v=14';
-import { entityEffectKind, entityEffectStep, isEmptyTerrain } from './play-entity-effects.mjs?v=10';
+import { extendedEventRules, extendedKinds, extendedEventStep } from './play-extended-events.mjs?v=15';
+import { entityEffectKind, entityEffectStep, isEmptyTerrain } from './play-entity-effects.mjs?v=11';
 import { entityEffectsSuppressed, passiveEntityKind, vigilBlocksCreation, vigilBlocksPlacement } from './play-passive-entities.mjs';
 
 const terrainFullArtUrl = terrain => new URL(`./assets/Terrain_${terrain}_Full_Art.png`, import.meta.url).href;
@@ -1652,7 +1652,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         }
       } else if (canStay && !options.length) {
         const terrain = symbiosisOnly ? 'Symbiosis Terrain' : 'Terrain';
-        controls.append(beginningControl('target', `Staying here. No adjacent ${terrain} is free of both Entities and Entanglements.`,
+        controls.append(beginningControl('target', `Staying here. No adjacent ${terrain} is free of Entities.`,
           { symbol: 'move', unavailable: true }));
       } else if (!own) {
         if (options.includes(target)) {
