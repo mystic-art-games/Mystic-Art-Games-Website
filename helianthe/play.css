@@ -109,7 +109,7 @@ body.dark-mode .play-deck-field.is-locked select { border-color: #596d5d; backgr
 #play-game .play-table-menu-panel .play-menu-lobby { margin-bottom: .15rem; border-color: transparent; background: transparent; color: #fff8e8; }
 .play-game-seat { padding: .35rem .75rem; }
 .play-game-player-identity { display: grid; align-content: center; gap: .1rem; min-height: 1.4rem; padding: 0 .5rem .2rem; }
-.play-game-player-identity strong { font-size: 1rem; overflow-wrap: anywhere; }
+.play-game-player-identity strong { color: #fff; font-size: 1rem; overflow-wrap: anywhere; }
 .play-game-identity-name { display: flex; align-items: center; flex-wrap: wrap; gap: .6rem; }
 .play-game-player-label { display: inline-flex; align-items: center; gap: .4rem; min-width: 0; }
 .play-game-player-label strong { min-width: 0; }
@@ -123,7 +123,7 @@ body.dark-mode .play-deck-field.is-locked select { border-color: #596d5d; backgr
   border: 1px solid #8bb4a280;
   border-radius: 6px;
   background: #1b352be8;
-  color: #fff7e8;
+  color: #fff;
   font: 800 .85rem/1.25 Nunito, sans-serif;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
@@ -347,7 +347,7 @@ body.dark-mode .play-game-card-preview { background: #204537; border-color: #668
 body:has(#play-view:not([hidden]) #play-game:not([hidden])) .masthead { display: none; }
 .play-away-pill { display: inline-flex; align-items: center; padding: .25rem .55rem; border: 1px solid #c49958; border-radius: 999px; background: #fff4dd; color: #704d15; font-size: .78rem; font-weight: 800; white-space: nowrap; }
 .play-away-pill[hidden] { display: none; }
-#play-game-opponent-presence { position: fixed; z-index: 19; top: clamp(.35rem, 1vh, .7rem); left: 50%; transform: translateX(-50%); max-width: calc(100vw - 7rem); padding: 0; border: 0; border-radius: 0; background: transparent; color: #fff1bd; font-size: clamp(1.05rem, 2.4vw, 1.4rem); font-weight: 900; line-height: 1.2; text-align: center; text-shadow: 0 2px 8px #281809, 0 0 12px #281809aa; white-space: normal; pointer-events: none; }
+#play-game-opponent-presence { position: fixed; z-index: 19; top: clamp(.35rem, 1vh, .7rem); left: 50%; transform: translateX(-50%); max-width: calc(100vw - 7rem); padding: 0; border: 0; border-radius: 0; background: transparent; color: #fff; font-size: clamp(1.05rem, 2.4vw, 1.4rem); font-weight: 900; line-height: 1.2; text-align: center; text-shadow: 0 2px 8px #281809, 0 0 12px #281809aa; white-space: normal; pointer-events: none; }
 html:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100%; overflow-y: hidden; }
 body:has(#play-view:not([hidden]) #play-game:not([hidden])),
 .play-opening-roll {
@@ -383,7 +383,7 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
   background: radial-gradient(ellipse 56% 100% at top, #629fff99, #4378ce3d 58%, transparent 100%);
   pointer-events: none;
 }
-.play-game-hand-count { display: inline-flex; align-items: center; width: max-content; padding: .2rem .45rem; border: 1px solid #b9d4c1; border-radius: 999px; background: #1b352b; color: #fff7e8; font-size: .72rem; font-weight: 800; line-height: 1.2; white-space: nowrap; box-shadow: 0 2px 7px #0e241a88; }
+.play-game-hand-count { display: inline-flex; align-items: center; width: max-content; padding: .2rem .45rem; border: 1px solid #b9d4c1; border-radius: 999px; background: #1b352b; color: #fff; font-size: .72rem; font-weight: 800; line-height: 1.2; white-space: nowrap; box-shadow: 0 2px 7px #0e241a88; }
 .play-game-hand-count[hidden] { display: none; }
 .play-game-hand-count svg { width: 1rem; height: 1rem; margin-inline-end: .25rem; }
 .play-table-choice {
@@ -675,11 +675,11 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
 #play-game .play-game-phase-stack { position: absolute; grid-column: 3; inset-block: var(--play-sidebar-top-gap, 3.5rem) var(--play-sidebar-bottom-gap, 0px); inset-inline: 0; }
 .play-game-phase-stack > .play-game-phases, .play-game-phase-stack > .play-game-phase-actions { flex: 0 0 auto; }
 .play-game-phases .play-eyebrow { color: #d7c9a7; }
-.play-game-turn-owner { margin: 0; color: var(--play-turn-accent, #f5f2e8); font-size: .8rem; font-weight: 800; }
+.play-game-turn-owner { margin: 0; color: #fff; font-size: .8rem; font-weight: 800; }
 .play-game-phase-list { display: grid; gap: .1rem; margin: .35rem 0 0; padding: 0; list-style: none; }
-.play-game-phase-list li { display: flex; align-items: center; gap: .4rem; min-height: 1.1rem; padding: .08rem .2rem; color: #f5f2e8; font-size: .75rem; font-weight: 700; line-height: 1.15; }
-.play-game-phase-list li.is-current { color: var(--play-turn-accent, #d4eadf); font-weight: 900; }
-.play-game-phase-list li.is-skipped { opacity: .42; filter: grayscale(1); }
+.play-game-phase-list li { display: flex; align-items: center; gap: .4rem; min-height: 1.1rem; padding: .08rem .2rem; color: #fff; font-size: .75rem; font-weight: 700; line-height: 1.15; }
+.play-game-phase-list li.is-current { font-weight: 900; }
+.play-game-phase-list li.is-skipped .play-game-phase-marker { opacity: .42; filter: grayscale(1); }
 .play-game-discard-bar { display: flex; align-items: center; justify-content: space-between; gap: .65rem; box-sizing: border-box; width: min(28rem, calc(100% - 1rem)); margin: 0; padding: .45rem .65rem; border: 1px solid #c07770; border-radius: 9px; background: #713e3bef; color: #fff; box-shadow: 0 4px 12px #130b0a55; }
 .play-game-discard-bar[hidden] { display: none; }
 .play-game-discard-bar strong { font-size: .82rem; line-height: 1.25; }
