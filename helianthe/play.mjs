@@ -1,4 +1,4 @@
-import { extendedEventRules, extendedKinds, extendedEventStep } from './play-extended-events.mjs?v=17';
+import { extendedEventRules, extendedKinds, extendedEventStep } from './play-extended-events.mjs?v=18';
 import { entityEffectKind, entityEffectStep, isEmptyTerrain } from './play-entity-effects.mjs?v=12';
 import { entityEffectsSuppressed, passiveEntityKind, vigilBlocksCreation, vigilBlocksPlacement } from './play-passive-entities.mjs';
 

@@ -265,7 +265,7 @@ function eventStep(kind, selected, { board, archive, hand, eventIndex, playerId 
         && node.entanglements?.includes(other.key) && other.node.entanglements?.includes(key)
         && ['Flow', 'Verdant', 'Radiance'].includes(other.node.terrain) && adjacent(key, other.key);
       const destinations = key => [...adjacentSymbiosisGroup(board, key)].filter(destination =>
-        destination !== key && neighbors.some(other =>
+        neighbors.some(other =>
           !board[destination].entanglements?.includes(other.key)
           && canRelocateEntanglementToNeighbor(other.node, other.key, destination)));
       if (count === 0) return boardStep('Choose entangled Symbiosis Terrain', board,
