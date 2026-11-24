@@ -34,6 +34,7 @@ const adjacent = (a, b) => Math.abs(Number(a[0]) - Number(b[0])) + Math.abs(Numb
 const lumens = node => Number(node?.lumens || 0);
 
 export const isEmptyTerrain = node => Boolean(node?.terrain && !node.entity);
+export const canReceiveProtection = node => Boolean(node?.terrain && !node.protected);
 
 export function entityEffectStep(kind, board, source, choices, archive = []) {
   const node = key => board[key] || {};
@@ -83,12 +84,12 @@ export function entityEffectStep(kind, board, source, choices, archive = []) {
           && !node(source).entanglements?.includes(key) && !node(key).entanglements?.includes(source));
     case 'protect':
       return 'target' in choices ? null : cell('Choose adjacent Verdant Terrain to Protect', 'target',
-        key => nearby(key) && node(key).terrain === 'Verdant', true);
+        key => nearby(key) && node(key).terrain === 'Verdant' && canReceiveProtection(node(key)), true);
     case 'double':
       return choices.target ? null : cell('Choose adjacent Radiance Terrain', 'target',
         key => nearby(key) && node(key).terrain === 'Radiance');
     case 'spend':
-      return choices.target || lumens(node(source)) < 3 ? null : cell('Choose Terrain to Protect', 'target', present);
+      return choices.target || lumens(node(source)) < 3 ? null : cell('Choose Terrain to Protect', 'target', key => canReceiveProtection(node(key)));
     case 'transfer': {
       const radiance = boardKeys.filter(key => node(key).terrain === 'Radiance');
       if (radiance.length < 2 || !radiance.some(key => lumens(node(key)))) return null;
@@ -106,7 +107,7 @@ export function entityEffectStep(kind, board, source, choices, archive = []) {
       return 'target' in choices ? null : cell('Choose Terrain to Unprotect', 'target',
         key => present(key) && node(key).protected, true);
     case 'protect_any':
-      return 'target' in choices ? null : cell('Choose Terrain to Protect', 'target', present, true);
+      return 'target' in choices ? null : cell('Choose Terrain to Protect', 'target', key => canReceiveProtection(node(key)), true);
     case 'dissolve_adjacent':
       return choices.target ? null : cell('Choose an adjacent Entity to Dissolve', 'target', key => nearby(key) && node(key).entity);
     case 'dissolve_recall': {
@@ -121,7 +122,7 @@ export function entityEffectStep(kind, board, source, choices, archive = []) {
     case 'relocate_protection':
       if (!choices.target) return cell('Choose an adjacent Terrain', 'target', key => nearby(key) && present(key));
       if (choices.second || !node(choices.target).protected) return null;
-      return cell('Choose adjacent Terrain to receive Protection', 'second', key => adjacent(choices.target, key) && present(key));
+      return cell('Choose adjacent Terrain to receive Protection', 'second', key => adjacent(choices.target, key) && canReceiveProtection(node(key)));
     case 'relocate':
       if (!choices.target) return cell('Choose Terrain to relocate', 'target',
         key => present(key) && boardKeys.some(destination => empty(destination) && adjacent(key, destination)));

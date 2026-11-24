@@ -1,5 +1,5 @@
 import { entityEffectsSuppressed, vigilBlocksCreation, vigilBlocksPlacement } from './play-passive-entities.mjs';
-import { entityEffectKind, entityEffectStep, isEmptyTerrain } from './play-entity-effects.mjs?v=12';
+import { entityEffectKind, entityEffectStep, isEmptyTerrain, canReceiveProtection } from './play-entity-effects.mjs?v=13';
 
 // These are the Event texts currently present in the online card catalog.
 // Match the dealt card's text, not just its title, so edited cards cannot
@@ -131,7 +131,7 @@ function eventStep(kind, selected, { board, archive, hand, eventIndex, playerId 
     case 'restoration_nursery':
       if (count === 0) return boardStep('Choose protected Terrain', board, node => terrain(node) && node.protected);
       if (count === 1) return boardStep('Choose another Terrain to receive Protection', board,
-        (node, key) => terrain(node) && key !== source);
+        (node, key) => canReceiveProtection(node) && key !== source);
       return null;
     case 'swap_entities':
       if (count === 0) return boardStep('Choose the first Entity', board, entity);
@@ -146,7 +146,7 @@ function eventStep(kind, selected, { board, archive, hand, eventIndex, playerId 
       if (count === 0) return boardStep('Choose empty Verdant Terrain to Dissolve', board, node => node.terrain === 'Verdant' && isEmptyTerrain(node));
       if (first.protected) return null;
       if (count === 1) return boardStep(kind === 'compost_front' ? 'Choose an Entity to Dissolve' : 'Choose Verdant Terrain to Protect', board,
-        (node, key) => key !== source && (kind === 'compost_front' ? entity(node) : node.terrain === 'Verdant'));
+        (node, key) => key !== source && (kind === 'compost_front' ? entity(node) : node.terrain === 'Verdant' && canReceiveProtection(node)));
       return null;
     case 'dematerialize':
       if (count === 0) return boardStep('Choose an unprotected Entity', board, node => entity(node) && !node.protected);
@@ -175,8 +175,8 @@ function eventStep(kind, selected, { board, archive, hand, eventIndex, playerId 
       if (count === 0) return boardStep('Choose Verdant Terrain to Dissolve', board, node => node.terrain === 'Verdant');
       if (first.protected) return null;
       if (count === 1) return boardStep('Choose protected Terrain', board, (node, key) => terrain(node) && node.protected && key !== source
-        && visibleCells(board).some(other => other.key !== source && terrain(other.node) && adjacent(key, other.key)));
-      if (count === 2) return boardStep('Choose adjacent destination Terrain', board, (node, key) => terrain(node) && adjacent(cells[1], key) && key !== source);
+        && visibleCells(board).some(other => other.key !== source && canReceiveProtection(other.node) && adjacent(key, other.key)));
+      if (count === 2) return boardStep('Choose adjacent destination Terrain', board, (node, key) => canReceiveProtection(node) && adjacent(cells[1], key) && key !== source);
       return null;
     case 'relocate_terrain':
       if (count === 0) return boardStep('Choose Terrain to relocate', board, terrain);
@@ -208,11 +208,13 @@ function eventStep(kind, selected, { board, archive, hand, eventIndex, playerId 
     case 'lilac_overgrowth':
       return count ? null : boardStep('Choose an Entity next to two Verdant Terrain cards', board,
         (node, key) => terrain(node) && entity(node) && verdantNeighbors(board, key) >= 2);
-    case 'liquid_protection':
-      if (count === 0) return boardStep('Choose a Flow Entity', board, node => node.entity?.terrain === 'Flow');
+    case 'liquid_protection': {
+      const eligible = node => node.entity?.terrain === 'Flow' && canReceiveProtection(node);
+      if (count === 0) return boardStep('Choose a Flow Entity', board, eligible);
       if (count === 1) return boardStep('Choose an adjacent Flow Entity', board,
-        (node, key) => node.entity?.terrain === 'Flow' && adjacent(source, key));
+        (node, key) => eligible(node) && adjacent(source, key));
       return null;
+    }
     case 'migration_wind_sails':
       if (count === 0) return boardStep('Choose a Flow Entity', board, node => node.entity?.terrain === 'Flow');
       if (count === 1) return boardStep('Choose empty Terrain', board, isEmptyTerrain);

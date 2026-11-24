@@ -1,5 +1,5 @@
-import { extendedEventRules, extendedKinds, extendedEventStep } from './play-extended-events.mjs?v=19';
-import { entityEffectKind, entityEffectStep, isEmptyTerrain } from './play-entity-effects.mjs?v=12';
+import { extendedEventRules, extendedKinds, extendedEventStep } from './play-extended-events.mjs?v=20';
+import { entityEffectKind, entityEffectStep, isEmptyTerrain, canReceiveProtection } from './play-entity-effects.mjs?v=13';
 import { entityEffectsSuppressed, passiveEntityKind, vigilBlocksCreation, vigilBlocksPlacement } from './play-passive-entities.mjs';
 
 const terrainFullArtUrl = terrain => new URL(`./assets/Terrain_${terrain}_Full_Art.png`, import.meta.url).href;
@@ -694,10 +694,14 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (kind === 'fertilize_two' || kind === 'fertilize_draw') return !node?.terrain && !vigilBlocksCreation(board, key);
     if (kind === 'fertilize_existing_draw') return !node?.terrain && Boolean(node?.fertilize) && !vigilBlocksCreation(board, key);
     if (!node?.terrain) return false;
-    if (kind === 'protect' || kind === 'restore_draw' || kind === 'dissolve_terrain') return true;
+    if (kind === 'protect') return canReceiveProtection(node);
+    if (kind === 'restore_draw' || kind === 'dissolve_terrain') return true;
     if (kind === 'dissolve_entity') return Boolean(node.entity);
     if (kind === 'unprotect_entity') return Boolean(node.entity && node.protected);
-    if (kind === 'protect_radiance_draw' || kind === 'restore_radiance_draw') return node.terrain === 'Radiance' && Number(node.lumens || 0) >= 1;
+    if (kind === 'protect_radiance_draw' || kind === 'restore_radiance_draw') {
+      return node.terrain === 'Radiance' && Number(node.lumens || 0) >= 1
+        && (kind === 'restore_radiance_draw' || canReceiveProtection(node));
+    }
     return node.terrain === 'Radiance';
   }
   const terrainTypes = ['Symbiosis', 'Flow', 'Verdant', 'Radiance'];
@@ -892,7 +896,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         }
         const targetValid = options.includes(target);
         const choices = targetValid && kind === 'solar_converter'
-          ? [{ value: 'protect', label: 'Protect' }, { value: 'crisis', label: 'Affect with Crisis' }] : [];
+          ? [{ value: 'protect', label: 'Protect' }, { value: 'crisis', label: 'Affect with Crisis' }]
+            .filter(option => option.value !== 'protect' || !protectedNodes.has(target)) : [];
         const skipReason = options.length ? '' : kind === 'efficient_grid' ? 'No Radiance Terrain'
           : 'Requires 2 Lumens and an adjacent Terrain';
         const valid = Boolean(skipReason) || (targetValid && (choices.length === 0 || choices.some(option => option.value === choice)));
