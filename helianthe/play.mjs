@@ -83,7 +83,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   let lobbyTimer = null, directoryChannel = null, directoryUserId = null, listSerial = 0, tableListSignature = '';
   let busy = false, epoch = 0, fetchSerial = 0, live = false, lastHeartbeat = 0, autoDeckPending = false;
   const sitAtTableSoundUrl = new URL('./assets/Sit_At_The_Table.wav?v=2', import.meta.url);
-  const tableSoundVolume = 0.3;
+  const tableSoundVolume = 0.22;
   const TableAudioContext = window.AudioContext || window.webkitAudioContext;
   const buildTableSoundData = TableAudioContext && fetch(sitAtTableSoundUrl)
     .then(response => response.ok ? response.arrayBuffer() : null)

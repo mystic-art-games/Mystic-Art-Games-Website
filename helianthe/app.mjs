@@ -7,7 +7,7 @@ import { CARD_TAGS, normalizeCardTags, seedTagsForCard, tagLabel } from './card-
 import { createPlayView } from './play.mjs?v=play-303';
 
 const clickSound = new Audio(new URL('./assets/Click.mp3', import.meta.url));
-clickSound.volume = 0.3;
+clickSound.volume = 0.22;
 document.addEventListener('click', event => {
   if (!event.isTrusted || !(event.target instanceof Element)) return;
   const button = event.target.closest('button, summary, [role="button"], input[type="button"], input[type="submit"], input[type="reset"]');
