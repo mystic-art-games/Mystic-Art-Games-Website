@@ -1,5 +1,5 @@
 import { extendedEventRules, extendedKinds, extendedEventStep } from './play-extended-events.mjs?v=14';
-import { entityEffectKind, entityEffectStep, isEmptyTerrain } from './play-entity-effects.mjs?v=9';
+import { entityEffectKind, entityEffectStep, isEmptyTerrain } from './play-entity-effects.mjs?v=10';
 import { entityEffectsSuppressed, passiveEntityKind, vigilBlocksCreation, vigilBlocksPlacement } from './play-passive-entities.mjs';
 
 const terrainFullArtUrl = terrain => new URL(`./assets/Terrain_${terrain}_Full_Art.png`, import.meta.url).href;
@@ -2662,7 +2662,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         selectHandCard(card, source, true);
         syncEventTargets();
         eventNotice(entityEffectKind(card, 'place') === 'reclaim'
-          ? 'Place Green Reclamation on unoccupied Verdant Terrain to transform an adjacent empty Terrain. Choose a blank Node to Shape.'
+          ? 'Place Green Reclamation on unoccupied Verdant Terrain to transform an adjacent Terrain without an Entity. Choose a blank Node to Shape.'
           : 'Choose compatible Terrain to Place, or an empty space to Shape.');
         playTableSound(selectCardSound);
       } else if (card.card_type === 'Event') {
