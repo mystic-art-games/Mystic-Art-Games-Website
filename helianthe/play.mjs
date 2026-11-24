@@ -199,7 +199,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       </div>
       <div class="play-game-board-wrap">
       <div class="play-game-left-stack">
-        <aside id="play-game-card-preview" class="play-game-card-preview" aria-label="Card preview" hidden><button id="play-game-card-preview-close" class="play-game-card-preview-close action-delete" type="button" aria-label="Close card preview">×</button><canvas id="play-game-card-preview-canvas" hidden></canvas><img id="play-game-card-preview-image" alt="" hidden><span id="play-game-card-preview-fallback" class="play-hand-fallback"></span></aside>
+        <aside id="play-game-card-preview" class="play-game-card-preview" aria-label="Card preview" hidden><canvas id="play-game-card-preview-canvas" hidden></canvas><img id="play-game-card-preview-image" alt="" hidden><span id="play-game-card-preview-fallback" class="play-hand-fallback"></span></aside>
         <aside id="play-game-beginning-effects" class="play-beginning-effects" aria-label="Beginning of Turn Entity effects" hidden><strong>Beginning of Turn effects</strong><section class="play-beginning-zone" aria-label="Active effects"><ol id="play-game-beginning-list"></ol></section><section class="play-beginning-zone play-beginning-skipped-zone" aria-labelledby="play-game-beginning-skipped-title"><h3 id="play-game-beginning-skipped-title">Skip this turn</h3><ol id="play-game-beginning-skipped-list"></ol></section><div id="play-game-beginning-actions" class="play-beginning-actions" hidden><button id="play-game-beginning-one" type="button" class="action-add-save">Resolve One</button><button id="play-game-beginning-all" type="button" class="action-add-save">Resolve All</button></div></aside>
       </div>
       <svg class="play-beginning-connector" aria-hidden="true"><path id="play-game-beginning-connector"></path></svg>
@@ -2672,7 +2672,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     playTableSound(selectCardSound);
     syncDiscardBar();
   }
-  $('game-card-preview-close').addEventListener('click', hideCardPreview);
   function cancelFestival() {
     pendingFestival = null;
     discardSelections.clear();
