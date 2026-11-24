@@ -375,44 +375,61 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
 .play-game-hand-count { display: inline-flex; align-items: center; width: max-content; padding: .2rem .45rem; border: 1px solid #b9d4c1; border-radius: 999px; background: #1b352b; color: #fff7e8; font-size: .72rem; font-weight: 800; line-height: 1.2; white-space: nowrap; box-shadow: 0 2px 7px #0e241a88; }
 .play-game-hand-count[hidden] { display: none; }
 .play-game-hand-count svg { width: 1rem; height: 1rem; margin-inline-end: .25rem; }
-.play-event-choice-dialog { max-width: calc(100vw - 2rem); padding: 1rem; border: 1px solid #b9d4c1; border-radius: 12px; background: #1b352b; color: #fff7e8; font-family: Nunito, sans-serif; }
-.play-event-choice-dialog::backdrop { background: #07191099; }
-.play-event-choice-dialog form { display: flex; flex-wrap: wrap; align-items: end; gap: .5rem; }
-.play-event-choice-dialog label { display: grid; gap: .35rem; width: 100%; }
-.play-event-choice-dialog select, .play-event-choice-dialog button { font-family: inherit; }
-.play-terrain-choice-dialog { width: min(34rem, calc(100% - 2rem)); }
-.play-terrain-choice-dialog h2 { width: 100%; margin: 0; font-size: 1.15rem; }
-.play-terrain-choices {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 4.25rem), 1fr));
-  gap: .5rem;
-  width: 100%;
+.play-table-choice {
+  position: absolute;
+  z-index: 24;
+  inset: auto 0 .35rem;
+  width: fit-content;
+  max-width: 100%;
+  margin: auto;
+  font: 700 .8rem Nunito, sans-serif;
 }
-.play-terrain-choice-dialog .play-terrain-choices > button {
-  display: grid;
+#play-game-effect-choice {
+  box-sizing: border-box;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
   gap: .35rem;
-  min-width: 0;
-  padding: .35rem;
-  border-color: #739786;
+  padding: .4rem .55rem;
+  border: 1px solid #8bb4a2;
+  border-radius: 8px;
+  background: #1b352bf5;
+  color: #f5f2e8;
+  box-shadow: 0 4px 12px #130b0a55;
+}
+#play-game-effect-choice[hidden] { display: none; }
+.play-table-choice p { margin: 0; text-align: center; }
+.play-table-choice-options { display: flex; flex-wrap: wrap; justify-content: center; gap: .3rem; }
+.play-table-choice-options:empty { display: none; }
+#play-game-effect-choice button {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  margin: 0;
+  padding: .3rem .45rem;
+  border: 1px solid #8bb4a2;
+  border-radius: 5px;
   background: #254439;
   color: #fff7e8;
-  font-size: .85rem;
-  font-weight: 800;
-  overflow-wrap: anywhere;
+  font: inherit;
 }
-.play-terrain-choice-dialog .play-terrain-choices > button:is(:hover, :focus-visible):not(:disabled) {
-  border-color: #ead497;
-  background: #365a48;
+#play-game-effect-choice button:is(:hover, :focus-visible) { border-color: #ead497; background: #365a48; }
+.play-table-choice-options img { width: 1.35rem; aspect-ratio: 63 / 88; border-radius: 2px; object-fit: cover; }
+#play-game .play-hand-card.is-effect-discard-target { cursor: pointer; outline: 2px solid #e88b81; outline-offset: 1px; }
+#play-game .play-hand-card.is-effect-discard-target:is(:hover, :focus-visible) { outline-color: #fff; }
+.play-archive-browser.is-recall-picker { padding: 0; width: min(100%, 25rem); }
+.play-archive-browser.is-recall-picker :is(.play-archive-browser-backdrop, .play-archive-browser-view) { display: none; }
+.play-archive-browser.is-recall-picker .play-archive-browser-panel { width: 100%; border-radius: 8px; }
+.play-archive-browser.is-recall-picker .play-archive-browser-panel header { padding: .3rem .45rem; gap: .4rem; }
+.play-archive-browser.is-recall-picker .play-archive-browser-panel h2 { font-size: .88rem; }
+.play-archive-browser.is-recall-picker .play-archive-browser-body { grid-template-columns: minmax(0, 1fr); padding: .3rem; }
+.play-archive-browser.is-recall-picker .play-archive-browser-list {
+  grid-template-columns: repeat(auto-fill, minmax(2.8rem, 1fr));
+  max-height: min(24dvh, 8rem);
+  gap: .3rem;
 }
-.play-terrain-choices > button:focus-visible { outline: 2px solid #ead497; outline-offset: 2px; }
-.play-terrain-choices img {
-  display: block;
-  width: 100%;
-  max-height: 45dvh;
-  aspect-ratio: 63 / 88;
-  border-radius: 5px;
-  object-fit: contain;
-}
+.play-archive-browser.is-recall-picker .play-archive-gallery-fallback { padding: .1rem; overflow-wrap: anywhere; font-size: .6rem; }
 #play-game .play-menu-toggle { width: 2.5rem; height: 2.5rem; padding: 0; border-radius: 7px; }
 #play-game .play-menu-toggle:focus-visible { outline-color: #e0e3e3; }
 .play-game-result { position: fixed; z-index: 90; inset: 0; display: grid; place-items: center; padding: 1rem; background: #071a13d9; font-family: Nunito, sans-serif; }
@@ -548,7 +565,7 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
 }
 #play-game .play-beginning-control > svg { display: block; flex: 0 0 auto; width: .86rem; height: .86rem; pointer-events: none; }
 #play-game .play-beginning-control > img { display: block; flex: 0 0 auto; width: .95rem; height: .95rem; object-fit: contain; pointer-events: none; }
-#play-game :is(button.play-beginning-control, .play-beginning-picker) {
+#play-game button.play-beginning-control {
   border-color: #88b09a80;
   background: linear-gradient(155deg, #3d6653, #294a3d);
   color: #e6f0e5;
@@ -559,7 +576,7 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
   background: #514b31;
   color: #ffe4a5;
 }
-#play-game :is(button.play-beginning-control:not(:disabled, [aria-disabled="true"]), .play-beginning-picker:has(select:enabled)):hover {
+#play-game button.play-beginning-control:not(:disabled, [aria-disabled="true"]):hover {
   border-color: #e2ce94;
   filter: brightness(1.2);
 }
@@ -569,23 +586,6 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
 }
 #play-game .play-beginning-control:is(:disabled, :has(select:disabled)) { cursor: default; opacity: .5; }
 #play-game .play-beginning-control[aria-disabled="true"] { cursor: default; filter: grayscale(1); opacity: .55; }
-#play-game .play-beginning-picker > svg:nth-of-type(2) { width: .44rem; height: .44rem; }
-#play-game .play-beginning-picker:has(.play-beginning-control-count) > svg:nth-of-type(2) { display: none; }
-#play-game .play-beginning-picker select {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  appearance: none;
-  border: 0;
-  background: transparent;
-  color: transparent;
-  cursor: pointer;
-}
-#play-game .play-beginning-picker select:disabled { cursor: default; }
-#play-game .play-beginning-picker option { background: #254335; color: #f5f2e8; }
 .play-game-phase-stack { position: relative; display: flex; flex-direction: column; gap: .45rem; min-width: 0; min-height: 0; }
 .play-game-phase-stack[hidden] { display: none !important; }
 .play-game-log { display: flex; flex: 1 1 auto; flex-direction: column; min-height: 0; padding: .45rem; border: 2px solid #739786; border-radius: 10px; background: var(--play-card-back-and-log-bg); color: #f5f2e8; box-shadow: 0 4px 12px #130b0a55; }

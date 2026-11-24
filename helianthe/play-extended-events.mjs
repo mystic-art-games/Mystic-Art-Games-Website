@@ -87,7 +87,8 @@ function archiveStep(label, archive, type) {
 
 function discardStep(hand, eventIndex) {
   return { label: 'Choose a card to discard', options: (hand || []).flatMap((card, index) => index === eventIndex
-    ? [] : [{ label: card.title || 'Card', value: { type: 'discard', index: index > eventIndex ? index - 1 : index, id: card.card_id || card.id } }]) };
+    ? [] : [{ label: card.title || 'Card', handIndex: index,
+      value: { type: 'discard', index: index > eventIndex ? index - 1 : index, id: card.card_id || card.id } }]) };
 }
 
 function terrainStep(label, excluded) {

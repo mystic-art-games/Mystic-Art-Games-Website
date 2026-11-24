@@ -1,4 +1,4 @@
-import { extendedEventRules, extendedKinds, extendedEventStep } from './play-extended-events.mjs?v=15';
+import { extendedEventRules, extendedKinds, extendedEventStep } from './play-extended-events.mjs?v=16';
 import { entityEffectKind, entityEffectStep, isEmptyTerrain } from './play-entity-effects.mjs?v=11';
 import { entityEffectsSuppressed, passiveEntityKind, vigilBlocksCreation, vigilBlocksPlacement } from './play-passive-entities.mjs';
 
@@ -23,7 +23,6 @@ const beginningIconPaths = {
   wait: '<circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/>',
   skip: '<circle cx="12" cy="12" r="8"/><path d="m6 18 12-12"/>',
   grip: '<path d="M9 5h.01M15 5h.01M9 12h.01M15 12h.01M9 19h.01M15 19h.01" stroke-width="3"/>',
-  menu: '<path d="m7 10 5 5 5-5"/>',
 };
 
 function beginningIcon(name) {
@@ -32,7 +31,7 @@ function beginningIcon(name) {
 
 const entanglementTokenUrl = new URL('./assets/Entanglement_Simple.png', import.meta.url).href;
 
-function beginningControl(icon, label, { button = false, select, target, selected = Boolean(target), count, symbol, unavailable = false } = {}) {
+function beginningControl(icon, label, { button = false, target, selected = Boolean(target), count, symbol, unavailable = false } = {}) {
   const control = document.createElement(button || unavailable ? 'button' : 'span');
   control.className = 'play-beginning-control';
   control.dataset.beginningTooltip = label;
@@ -45,15 +44,9 @@ function beginningControl(icon, label, { button = false, select, target, selecte
     control.append(token);
   } else if (symbol) control.insertAdjacentHTML('beforeend', beginningIcon(symbol));
   if (target) control.dataset.beginningTarget = target;
-  if (select) {
-    control.classList.add('play-beginning-picker');
-    control.insertAdjacentHTML('beforeend', beginningIcon('menu'));
-    control.append(select);
-  } else {
-    if (button || unavailable) control.type = 'button';
-    else control.setAttribute('role', 'img');
-    control.setAttribute('aria-label', label);
-  }
+  if (button || unavailable) control.type = 'button';
+  else control.setAttribute('role', 'img');
+  control.setAttribute('aria-label', label);
   if (unavailable) control.setAttribute('aria-disabled', 'true');
   if (count !== undefined) {
     const badge = document.createElement('span');
@@ -169,6 +162,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   let archiveGalleryObserver = null;
   let selectedGameCard = null, pendingEvent = null, pendingEntity = null, pendingFestival = null, arrivingEntityKey = null, zoneCounts = null, zoneCountsRevision = null, zoneCountsRequest = null, eventNoticeTimer = null;
   let boardChoice = null;
+  let effectChoice = null;
   let stagedEntityPlacement = null;
   const discardSelections = new Set();
   const gameDeckPatrons = new Map(), gamePlayerPatrons = new Map();
@@ -211,6 +205,11 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         </div>
         <div id="play-game-board" class="play-game-board" role="group" aria-label="Shared five-column, four-row Terrain board"></div>
         <div id="play-game-entanglements" class="play-game-entanglements" aria-hidden="true"></div>
+        <section id="play-game-effect-choice" class="play-table-choice" aria-labelledby="play-game-effect-choice-label" hidden>
+          <p id="play-game-effect-choice-label" role="status"></p>
+          <div id="play-game-effect-options" class="play-table-choice-options"></div>
+          <button id="play-game-effect-choice-cancel" type="button">Cancel</button>
+        </section>
         <div class="play-game-zones-right">
           <div class="play-game-zone-pair play-game-zone-pair-opponent" aria-label="Opponent's card zones"><div class="play-game-zone play-game-zone-archive"><button id="play-game-opponent-archive" class="play-game-archive-card is-empty" type="button" aria-label="Browse opponent's Archive"><canvas id="play-game-opponent-archive-canvas" aria-hidden="true" hidden></canvas><span id="play-game-opponent-archive-top"></span></button></div><div class="play-game-zone play-game-zone-horizon"><div id="play-game-opponent-horizon" class="play-deck-stack" role="img" aria-label="Opponent's Horizon, draw deck"></div></div></div>
           <div class="play-game-zone play-game-zone-self-patron"><div id="play-game-self-patron-slot" class="play-game-patron-slot" role="img" aria-label="Your Patron"><canvas id="play-game-self-patron" hidden></canvas><span id="play-game-self-patron-fallback" class="play-game-patron-fallback" aria-hidden="true"></span></div></div>
@@ -615,7 +614,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   }
   $('game-event-notice-close').addEventListener('click', () => eventNotice(''));
   function cancelTargetSelection() {
-    if (boardChoice) {
+    if (effectChoice) {
+      hideCardPreview();
+    } else if (boardChoice) {
       finishBoardChoice();
     } else if (beginningTargetSource) {
       beginningTargetSource = null;
@@ -1050,7 +1051,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const own = Boolean(room?.turn_player_id && room.turn_player_id === userId);
     const activeTurn = room?.status === 'active' && phaseIndex >= 0 && room.turn_player_id;
     const game = $('game');
-    game.dataset.canPlayCards = String(Boolean(activeTurn && own && phase === 'main' && !phaseBusy && !pendingFestival));
+    const choosingEffect = Boolean(effectChoice || archiveRecallPicker);
+    game.dataset.canPlayCards = String(Boolean(activeTurn && own && phase === 'main' && !phaseBusy && !pendingFestival && !choosingEffect));
     const previousAura = game.dataset.turnAura;
     const turnAura = activeTurn ? (own ? 'own' : 'opponent') : '';
     game.dataset.turnAura = turnAura;
@@ -1073,11 +1075,11 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const next = $('game-next-phase');
     next.hidden = !own || phase !== 'main' || !room?.main_played_card;
     next.textContent = 'Next Phase';
-    next.disabled = !activeTurn || !own || phaseBusy || Boolean(pendingFestival);
+    next.disabled = !activeTurn || !own || phaseBusy || choosingEffect || Boolean(pendingFestival);
     syncDiscardBar();
     const extra = $('game-extra-draw');
     extra.hidden = !own || phase !== 'main' || Boolean(room?.main_played_card);
-    extra.disabled = phaseBusy || pendingFestival || !(gameState?.horizon?.length || gameState?.archive?.length);
+    extra.disabled = phaseBusy || choosingEffect || pendingFestival || !(gameState?.horizon?.length || gameState?.archive?.length);
     const forestSource = room?.forest_reactions?.[0];
     if (forestSource) {
       const canResolve = room.board?.[forestSource]?.entity?.owner_id === userId;
@@ -1565,7 +1567,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     for (const effect of effects) if (!beginningOrder.includes(effect.source)) beginningOrder.push(effect.source);
     const bySource = new Map(visibleEffects.map(effect => [effect.source, effect]));
     const plan = beginningPlan();
-    const canResolve = own && !phaseBusy && Boolean(gameState) && !room.forest_reactions?.length;
+    const choosingEntangle = beginningTargetSource && beginningTargetMode === 'entangle';
+    const canResolve = own && !phaseBusy && !archiveRecallPicker && !choosingEntangle
+      && Boolean(gameState) && !room.forest_reactions?.length;
     $('game-beginning-actions').hidden = !own || effects.length === 0;
     $('game-beginning-one').disabled = !canResolve || beginningResolution(plan, true).entries.some(entry => !plan.get(entry.source)?.valid);
     $('game-beginning-all').disabled = !canResolve || beginningResolution(plan).entries.some(entry => !plan.get(entry.source)?.valid);
@@ -1704,7 +1708,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       }
       if (!skipped && effect.kind === 'expansive_ivy' && draws) controls.append(beginningControl('draw', 'Draw 1 card', { count: 1 }));
       if (!skipped && (canStay || choices?.length)) {
-        const label = 'Choose Protect or Crisis';
         const selected = choices.find(option => option.value === choice);
         const icon = selected?.value || 'condition';
         if (canStay) {
@@ -1724,12 +1727,19 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
             const no = beginningControl('skip', 'Entangle: No', { button: true });
             yes.replaceChildren('Yes');
             no.textContent = 'No';
-            yes.setAttribute('aria-pressed', String(Boolean(selected)));
-            no.setAttribute('aria-pressed', String(!selected));
+            const choosing = beginningTargetSource === source && beginningTargetMode === 'entangle';
+            yes.setAttribute('aria-pressed', String(choosing || Boolean(selected)));
+            no.setAttribute('aria-pressed', String(!choosing && !selected));
             yes.disabled = no.disabled = phaseBusy;
             yes.addEventListener('click', () => {
               if (choices.length === 1) setEntangle(choices[0].value);
-              else chooseEventOption('Choose Terrain to Entangle', choices, setEntangle, () => {});
+              else {
+                beginningTargetSource = source;
+                beginningTargetMode = 'entangle';
+                eventNotice('Choose a highlighted Terrain to Entangle.');
+                renderBeginningEffects(); syncEventTargets();
+                $('game-board').querySelector('.is-event-target')?.focus({ preventScroll: true });
+              }
             });
             no.addEventListener('click', () => setEntangle(null));
             controls.append(yes, no);
@@ -1737,18 +1747,17 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
             controls.append(beginningControl('skip', `Entangle ${selected.label}`, { target: selected.value, symbol: 'entangle' }));
           }
         } else if (own) {
-          const select = document.createElement('select');
-          select.setAttribute('aria-label', label);
-          select.add(new Option(label, ''));
-          for (const option of choices) select.add(new Option(option.label, option.value));
-          select.value = selected?.value || '';
-          select.disabled = phaseBusy;
-          select.addEventListener('change', () => {
-            beginningChoices.set(source, select.value);
-            renderBeginningEffects(); void saveBeginningPlan();
-          });
-          controls.append(beginningControl(icon, selected ? `${label} · ${selected.label}` : label,
-            { select, selected: Boolean(selected) }));
+          for (const option of choices) {
+            const isSelected = selected?.value === option.value;
+            const button = beginningControl(option.value, option.label, { button: true, selected: isSelected });
+            button.setAttribute('aria-pressed', String(isSelected));
+            button.disabled = phaseBusy;
+            button.addEventListener('click', () => {
+              beginningChoices.set(source, option.value);
+              renderBeginningEffects(); void saveBeginningPlan();
+            });
+            controls.append(button);
+          }
         } else if (selected) {
           controls.append(beginningControl(icon, selected.label, { selected: true }));
         }
@@ -1842,7 +1851,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     return { ordered, through, entries: through ? ordered.slice(0, ordered.findIndex(entry => entry.source === through) + 1) : ordered };
   }
   async function resolveBeginningEffects(one = false) {
-    if (phaseBusy || room?.turn_player_id !== userId || room.turn_phase !== 'beginning' || room.forest_reactions?.length) return;
+    if (phaseBusy || archiveRecallPicker || (beginningTargetSource && beginningTargetMode === 'entangle')
+      || room?.turn_player_id !== userId || room.turn_phase !== 'beginning' || room.forest_reactions?.length) return;
     const effects = beginningEffects();
     if (!effects.length || beginningOrder.length !== effects.length) return;
     const plan = beginningPlan();
@@ -2120,7 +2130,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     }
   }
   async function advanceTurnPhase(takeExtraCard = false, automatic = false) {
-    if (!room || room.status !== 'active' || room.turn_player_id !== userId || phaseBusy) return;
+    if (!room || room.status !== 'active' || room.turn_player_id !== userId || phaseBusy || effectChoice || archiveRecallPicker) return;
     if (room.turn_phase === 'beginning' && !gameState) return;
     if (takeExtraCard && (room.turn_phase !== 'main' || !(gameState?.horizon?.length || gameState?.archive?.length))) return;
     const expected = epoch, roomId = room.id, turn = room.turn_number, phase = room.turn_phase;
@@ -2196,7 +2206,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       if (!menu.contains(event.target)) menu.open = false;
     }
     if (event.button !== 0 || $('game').hidden || !selectedGameCard) return;
-    if (event.target.closest('.play-hand-card, .play-event-choice-dialog, .play-game-event-notice, .play-game-patron-slot, .play-game-card-preview, .play-beginning-effects, .play-game-archive-card, .play-deck-stack, .play-game-node.has-entity, .play-game-node.is-event-target')) return;
+    if (event.target.closest('.play-hand-card, .play-table-choice, .play-archive-browser, .play-game-event-notice, .play-game-patron-slot, .play-game-card-preview, .play-beginning-effects, .play-game-archive-card, .play-deck-stack, .play-game-node.has-entity, .play-game-node.is-event-target')) return;
     hideCardPreview();
   });
   document.addEventListener('keydown', event => {
@@ -2206,7 +2216,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         event.preventDefault(); --archiveBrowserIndex; renderArchiveBrowser();
       } else if (event.key === 'ArrowRight' && archiveBrowserIndex < archiveBrowserCards.length - 1) {
         event.preventDefault(); ++archiveBrowserIndex; renderArchiveBrowser();
-      } else if (event.key === 'Tab') {
+      } else if (event.key === 'Tab' && !archiveRecallPicker) {
         const buttons = Array.from($('game-archive-browser').querySelectorAll('button:not(:disabled):not([hidden])'));
         if (event.shiftKey && document.activeElement === buttons[0]) {
           event.preventDefault(); buttons.at(-1)?.focus();
@@ -2216,7 +2226,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       }
       return;
     }
-    if (event.key === 'Escape' && !root.querySelector('.play-event-choice-dialog[open]')) {
+    if (event.key === 'Escape') {
       for (const menu of root.querySelectorAll('.play-table-menu[open]')) menu.open = false;
       if (pendingFestival && !phaseBusy) cancelFestival();
       else cancelTargetSelection();
@@ -2491,6 +2501,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   function hideCardPreview() {
     hideHoveredCardPreview();
     finishBoardChoice();
+    finishEffectChoice();
+    if (archiveRecallPicker) closeArchiveBrowser(false);
     pendingEvent = null;
     pendingEntity = null;
     selectedGameCard = null;
@@ -2620,6 +2632,15 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     renderTurnPhase();
   }
   function chooseHandCard(card, source, handIndex) {
+    if (effectChoice) {
+      const choice = effectChoice.options.find(option => option.handIndex === handIndex);
+      if (choice) {
+        playTableSound(selectCardSound);
+        finishEffectChoice(choice.value);
+      }
+      return;
+    }
+    if (archiveRecallPicker) return;
     if (['mulligan_first', 'mulligan_second'].includes(room?.turn_phase)) {
       const actorId = room.turn_phase === 'mulligan_first' ? room.turn_player_id
         : room.turn_player_id === room.host_id ? room.guest_id : room.host_id;
@@ -2667,7 +2688,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         playTableSound(selectCardSound);
       } else if (card.card_type === 'Event') {
         void evokeEvent(card, handIndex);
-        if (pendingEvent || root.querySelector('.play-event-choice-dialog[open]')) {
+        if (pendingEvent || effectChoice || archiveRecallPicker) {
           selectHandCard(card, source, true);
           playTableSound(selectCardSound);
         }
@@ -3004,6 +3025,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       const thumbnail = row.firstElementChild;
       thumbnail.setAttribute('aria-current', index === archiveBrowserIndex ? 'true' : 'false');
     });
+    if (archiveRecallPicker) return;
     const canvas = $('game-archive-browser-canvas');
     const fallback = $('game-archive-browser-fallback');
     const serial = ++archiveBrowserCardSerial;
@@ -3028,7 +3050,14 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     archiveGalleryObserver = null;
     ++archiveBrowserRequestSerial;
     ++archiveBrowserCardSerial;
-    $('game-archive-browser').hidden = true;
+    const browser = $('game-archive-browser');
+    browser.hidden = true;
+    browser.classList.remove('is-recall-picker', 'play-table-choice');
+    $('game-beginning-effects').inert = false;
+    const panel = browser.querySelector('.play-archive-browser-panel');
+    panel.setAttribute('role', 'dialog');
+    panel.setAttribute('aria-modal', 'true');
+    if (browser.parentElement === $('game-board').parentElement) $('game').insertBefore(browser, $('game-self').closest('.play-game-player-block'));
     archiveBrowserSeat = null;
     archiveBrowserCards = [];
     $('game-archive-browser-list').replaceChildren();
@@ -3039,7 +3068,11 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     $('game-archive-browser-skip').hidden = true;
     const picker = archiveRecallPicker;
     archiveRecallPicker = null;
-    picker?.resolve(null);
+    if (picker) {
+      renderTurnPhase();
+      renderBeginningEffects();
+      picker.resolve(null);
+    }
   }
   function chooseArchiveRecall(type, entries, { skip = null, hold = true } = {}) {
     if (!entries.length || room?.status !== 'active') return Promise.resolve(null);
@@ -3054,11 +3087,20 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       archiveBrowserOpener = document.activeElement;
       $('game-archive-browser-title').textContent = 'Your Archive';
       $('game-archive-browser-skip').hidden = !skip;
-      $('game-archive-browser').hidden = false;
+      const browser = $('game-archive-browser');
+      const panel = browser.querySelector('.play-archive-browser-panel');
+      panel.setAttribute('role', 'region');
+      panel.removeAttribute('aria-modal');
+      browser.classList.add('is-recall-picker', 'play-table-choice');
+      $('game-beginning-effects').inert = true;
+      $('game-board').parentElement.append(browser);
+      browser.hidden = false;
       ++archiveBrowserRequestSerial;
       renderArchiveGallery();
       renderArchiveBrowser();
-      $('game-archive-browser-close').focus();
+      renderTurnPhase();
+      renderBeginningEffects();
+      $('game-archive-browser-list').querySelector('button')?.focus({ preventScroll: true });
     });
   }
   function selectArchiveRecall(index, thumbnail) {
@@ -3073,6 +3115,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const preview = thumbnail ? captureArchiveRecall(thumbnail, picker.hold) : null;
     archiveRecallPicker = null;
     closeArchiveBrowser();
+    renderTurnPhase();
+    renderBeginningEffects();
     picker.resolve({ ...entry, preview });
   }
   function captureArchiveRecall(thumbnail, hold) {
@@ -3110,7 +3154,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     preview.element.remove();
   }
   async function openArchiveBrowser(seat) {
-    if (archiveRecallPicker || room?.status !== 'active' || !userId) return;
+    if (effectChoice || archiveRecallPicker || room?.status !== 'active' || !userId) return;
     hideCardPreview();
     archiveBrowserSeat = seat;
     archiveBrowserCards = [];
@@ -3276,60 +3320,60 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       ], { duration: 460, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'forwards' }).finished;
     } catch { /* The table may have been left while the card was moving. */ }
   }
-  function chooseEventOption(title, options, onConfirm, onCancel = hideCardPreview) {
-    const dialog = document.createElement('dialog');
-    dialog.className = 'play-event-choice-dialog';
-    dialog.setAttribute('aria-label', title);
-    const form = document.createElement('form');
-    form.method = 'dialog';
-    const terrainChoices = options.length > 0 && options.every(({ value }) => terrainTypes.includes(value?.terrain));
-    let select;
-    if (terrainChoices) {
-      dialog.classList.add('play-terrain-choice-dialog');
-      const heading = document.createElement('h2');
-      heading.textContent = title;
-      const cards = document.createElement('div');
-      cards.className = 'play-terrain-choices';
-      for (const [index, option] of options.entries()) {
-        const card = document.createElement('button');
-        card.type = 'submit';
-        card.value = String(index);
-        const art = document.createElement('img');
-        art.src = terrainFullArtUrl(option.value.terrain);
-        art.alt = '';
-        const caption = document.createElement('span');
-        caption.textContent = option.label;
-        card.append(art, caption);
-        cards.append(card);
+  function chooseTableEffect(label, options) {
+    const tray = $('game-effect-choice');
+    const container = $('game-effect-options');
+    const cancel = $('game-effect-choice-cancel');
+    const pickingFromHand = options.every(option => Number.isInteger(option.handIndex));
+    $('game-effect-choice-label').textContent = label;
+
+    return new Promise(resolve => {
+      effectChoice = { options, resolve, epoch, roomId: room.id, turn: room.turn_number,
+        phase: room.turn_phase, opener: document.activeElement };
+      if (pickingFromHand) {
+        for (const { handIndex } of options) {
+          const card = $('game-hand').children[handIndex]?.querySelector('.play-hand-card');
+          card?.classList.add('is-effect-discard-target');
+          card?.setAttribute('aria-description', 'Choose this card to discard');
+        }
+      } else {
+        container.replaceChildren(...options.map(({ label: optionLabel, value }) => {
+          const button = document.createElement('button');
+          button.type = 'button';
+          if (terrainTypes.includes(value?.terrain)) {
+            const art = document.createElement('img');
+            art.src = terrainFullArtUrl(value.terrain);
+            art.alt = '';
+            button.append(art);
+          }
+          button.append(optionLabel);
+          button.addEventListener('click', () => finishEffectChoice(value));
+          return button;
+        }));
       }
-      form.append(heading, cards);
-    } else {
-      const label = document.createElement('label');
-      label.textContent = title;
-      select = document.createElement('select');
-      for (const [index, option] of options.entries()) select.add(new Option(option.label, String(index)));
-      label.append(select);
-      const confirm = document.createElement('button');
-      confirm.value = 'confirm';
-      confirm.textContent = 'Confirm';
-      form.append(label, confirm);
-    }
-    const cancel = document.createElement('button');
-    cancel.value = 'cancel';
-    cancel.textContent = 'Cancel';
-    form.append(cancel);
-    dialog.append(form);
-    root.append(dialog);
-    const roomId = room.id, turn = room.turn_number;
-    dialog.addEventListener('close', () => {
-      const index = select && dialog.returnValue === 'confirm' ? select.value : dialog.returnValue;
-      const chosen = /^\d+$/.test(index) ? options[Number(index)] : null;
-      dialog.remove();
-      if (chosen && room?.id === roomId && room.turn_number === turn) onConfirm(chosen.value);
-      else onCancel();
-    }, { once: true });
-    dialog.showModal();
+      tray.hidden = false;
+      renderTurnPhase();
+      const firstChoice = pickingFromHand ? $('game-hand').querySelector('.is-effect-discard-target') : container.firstElementChild;
+      (firstChoice || cancel).focus({ preventScroll: true });
+    });
   }
+  function finishEffectChoice(value) {
+    if (!effectChoice) return;
+    const choice = effectChoice;
+    effectChoice = null;
+    $('game-effect-choice').hidden = true;
+    $('game-effect-options').replaceChildren();
+    for (const card of $('game-hand').querySelectorAll('.is-effect-discard-target')) {
+      card.classList.remove('is-effect-discard-target');
+      card.removeAttribute('aria-description');
+    }
+    renderTurnPhase();
+    const current = epoch === choice.epoch && room?.status === 'active' && room.id === choice.roomId
+      && room.turn_number === choice.turn && room.turn_phase === choice.phase;
+    if (current && choice.opener?.isConnected && value === undefined) choice.opener.focus({ preventScroll: true });
+    choice.resolve(current ? value : undefined);
+  }
+  $('game-effect-choice-cancel').addEventListener('click', cancelTargetSelection);
   async function chooseEntityEffect(kind, source, terrain) {
     const choices = {};
     let recall = null;
@@ -3353,13 +3397,13 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         ? await chooseEffectBoardTarget(step.label, step.boardTargets, {
           optional: step.optional, firstFertilize: kind === 'fertilize' && step.field === 'second' ? choices.target : null,
         })
-        : await new Promise(resolve => chooseEventOption(step.label, step.options, resolve, () => resolve()));
+        : await chooseTableEffect(step.label, step.options);
       if (choice === undefined) return null;
       choices[step.field] = choice?.terrain ?? choice;
     }
     return { choices, recall };
   }
-  function continueExtendedEvent(event) {
+  async function continueExtendedEvent(event) {
     const step = extendedEventStep(event.rule[1], event.selected, {
       board: room?.board || {}, archive: gameState?.archive || [], hand: gameState?.hand || [], eventIndex: event.handIndex,
       playerId: userId,
@@ -3406,10 +3450,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       });
       return;
     }
-    chooseEventOption(step.label, step.options, choice => {
-      event.selected.push(choice);
-      continueExtendedEvent(event);
-    });
+    const choice = await chooseTableEffect(step.label, step.options);
+    if (choice === undefined) return;
+    event.selected.push(choice);
+    return continueExtendedEvent(event);
   }
   function startExtendedEvent(card, handIndex, rule, targetX, targetY) {
     const event = { extended: true, card, handIndex, rule, selected: [] };
@@ -3514,8 +3558,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       if (rule[1] === 'reconfigure') {
         const options = terrainTypes.filter(type => type !== node?.terrain)
           .map(type => ({ label: type, value: { terrain: type } }));
-        chooseEventOption('Choose the replacement Terrain', options,
-          choice => void evokeEvent(card, handIndex, targetX, targetY, choice));
+        const choice = await chooseTableEffect('Choose the replacement Terrain', options);
+        if (choice !== undefined) return evokeEvent(card, handIndex, targetX, targetY, choice);
         return;
       }
       if (rule[1] === 'greenway' || rule[1] === 'fertile_rain') {
@@ -3851,9 +3895,11 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       const other = effect?.targets?.[beginningTargetMode === 'bramble-0' ? 1 : 0];
       return (effect?.terrainOptions || []).filter(key => key !== other);
     }
+    if (beginningTargetMode === 'entangle') return (effect?.choices || []).map(({ value }) => value);
     return effect?.options || [];
   }
   function chooseBoardTarget(column, row) {
+    if (effectChoice || archiveRecallPicker) return;
     if (boardChoice) {
       const target = `${column},${row}`;
       if (boardChoice.keys.includes(target)) finishBoardChoice(target);
@@ -3862,7 +3908,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     if (beginningTargetSource) {
       const target = `${column},${row}`;
       if (!beginningBoardOptions().includes(target)) return;
-      if (beginningTargetMode.startsWith('bramble-')) {
+      if (beginningTargetMode === 'entangle') {
+        beginningChoices.set(beginningTargetSource, target);
+      } else if (beginningTargetMode.startsWith('bramble-')) {
         const targets = [...(beginningBrambleTargets.get(beginningTargetSource) || [])];
         targets[beginningTargetMode === 'bramble-0' ? 0 : 1] = target;
         beginningBrambleTargets.set(beginningTargetSource, targets);
@@ -4621,6 +4669,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       handSignature = '';
     }
     userId = seatId;
+    if ((effectChoice || archiveRecallPicker) && (turnChanged || data.status !== 'active')) hideCardPreview();
     if (room.activated_at && !data.activated_at) {
       ++gameRenderSerial; gameState = null; gameLoading = false; gameLoadFailed = false; gameReloadPending = false; handSignature = '';
       hideCardPreview();
