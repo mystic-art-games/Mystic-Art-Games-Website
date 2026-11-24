@@ -157,6 +157,8 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
   let gameLogKey = '', gameLogRevision = null, gameLogRequest = null, gameLogRetryAt = 0;
   let gameLogEntries = [], localGameLog = [], gameLogHasOlder = false, gameLogError = '';
   const loggedHandPrompts = new Map();
+  let logHighlightedNodes = new Set();
+  let logHighlightTimer = null;
   let followGameLog = true;
   let unreadGameLogCount = 0;
   let archiveGalleryObserver = null;
@@ -396,6 +398,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const key = matchLogKey();
     if (key === gameLogKey) return;
     gameLogKey = key;
+    clearLogBoardHighlight();
     gameLogEntries = [];
     localGameLog = [];
     loggedHandPrompts.clear();
@@ -406,6 +409,42 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     gameLogError = '';
     renderGameLog(true);
   }
+  function appendGameLogText(container, text) {
+    let start = 0;
+    for (const match of text.matchAll(/\b([A-D])([1-5])\b/g)) {
+      container.append(text.slice(start, match.index));
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'play-game-log-coordinate';
+      button.dataset.node = `${Number(match[2]) - 1},${'ABCD'.indexOf(match[1])}`;
+      button.dataset.customClickSound = '';
+      button.textContent = match[0];
+      button.setAttribute('aria-label', `Show affected fields, including ${match[0]}`);
+      container.append(button);
+      start = match.index + match[0].length;
+    }
+    container.append(text.slice(start));
+  }
+  function paintLogBoardHighlight() {
+    for (const cell of $('game-board').children) {
+      cell.classList.toggle('is-log-highlighted', logHighlightedNodes.has(cell.dataset.key));
+    }
+  }
+  function clearLogBoardHighlight() {
+    clearTimeout(logHighlightTimer);
+    logHighlightTimer = null;
+    logHighlightedNodes.clear();
+    paintLogBoardHighlight();
+  }
+  $('game-log-list').addEventListener('click', event => {
+    const button = event.target.closest('.play-game-log-coordinate');
+    if (!button) return;
+    clearTimeout(logHighlightTimer);
+    logHighlightedNodes = new Set(Array.from(button.closest('li').querySelectorAll('.play-game-log-coordinate'),
+      coordinate => coordinate.dataset.node));
+    paintLogBoardHighlight();
+    logHighlightTimer = setTimeout(clearLogBoardHighlight, 4000);
+  });
   function appendGameLogMessage(container, message, cards) {
     const lower = message.toLocaleLowerCase();
     const letterOrDigit = character => Boolean(character && /[\p{L}\p{N}]/u.test(character));
@@ -424,7 +463,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         }
       }
       if (!match) break;
-      if (match.index > position) container.append(message.slice(position, match.index));
+      if (match.index > position) appendGameLogText(container, message.slice(position, match.index));
       const name = document.createElement('span');
       name.className = 'play-game-log-card';
       name.textContent = message.slice(match.index, match.index + match.entry.title.length);
@@ -432,7 +471,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       container.append(name);
       position = match.index + match.entry.title.length;
     }
-    if (position < message.length) container.append(message.slice(position));
+    if (position < message.length) appendGameLogText(container, message.slice(position));
   }
   function renderGameLog(scrollToLatest = false, prepended = false) {
     const scroll = $('game-log-scroll');
@@ -2272,7 +2311,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       if (!menu.contains(event.target)) menu.open = false;
     }
     if (event.button !== 0 || $('game').hidden || !selectedGameCard) return;
-    if (event.target.closest('.play-hand-card, .play-table-choice, .play-archive-browser, .play-game-event-notice, .play-game-patron-slot, .play-game-card-preview, .play-beginning-effects, .play-game-archive-card, .play-deck-stack, .play-game-node.has-entity, .play-game-node.is-event-target, .play-entanglement-token.is-event-target')) return;
+    if (event.target.closest('.play-hand-card, .play-table-choice, .play-archive-browser, .play-game-event-notice, .play-game-log-coordinate, .play-game-patron-slot, .play-game-card-preview, .play-beginning-effects, .play-game-archive-card, .play-deck-stack, .play-game-node.has-entity, .play-game-node.is-event-target, .play-entanglement-token.is-event-target')) return;
     hideCardPreview();
   });
   document.addEventListener('keydown', event => {
@@ -4471,6 +4510,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       const cell = document.createElement('div'); cell.className = 'play-game-node';
       if (isCenter && !node?.terrain) cell.classList.add('terrain-center');
       cell.dataset.key = key;
+      const logHighlight = document.createElement('div');
+      logHighlight.className = 'play-node-log-highlight';
+      logHighlight.setAttribute('aria-hidden', 'true');
+      cell.append(logHighlight);
       if (row === 0 || column === 0) {
         cell.classList.add('has-coordinate-label');
         const addCoordinate = (axis, text) => {
@@ -4567,6 +4610,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       nodes.push(cell);
     }
     $('game-board').replaceChildren(...nodes);
+    paintLogBoardHighlight();
     renderEntanglementTokens();
     requestAnimationFrame(syncHoveredCardPreview);
     renderBeginningEffects();

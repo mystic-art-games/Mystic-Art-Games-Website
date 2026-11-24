@@ -657,6 +657,31 @@ body:has(#play-view:not([hidden]) #play-game:not([hidden])) { height: 100dvh; mi
 .play-game-log-scroll button { margin: 0 0 .25rem; padding: .18rem .35rem; border-color: #739786; background: #305443; color: inherit; font: inherit; }
 .play-game-log-scroll button:hover:not(:disabled) { background: #477452; }
 .play-game-log-scroll [hidden] { display: none; }
+#play-game .play-game-log-coordinate {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #ffe78e;
+  font: inherit;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: .15em;
+  cursor: pointer;
+}
+#play-game .play-game-log-coordinate:is(:hover, :focus-visible) { color: #fff; }
+.play-node-log-highlight {
+  position: absolute;
+  z-index: 5;
+  inset: 0;
+  display: none;
+  border: 2px solid #ffe78e;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 2px #5d432d, inset 0 0 .65rem #ffe78e99;
+  pointer-events: none;
+}
+.play-game-node.is-log-highlighted > .play-node-log-highlight { display: block; }
 .play-game-phases { box-sizing: border-box; min-width: 0; width: 100%; padding: .6rem; overflow: visible; border: 2px solid #123c2d; border-radius: 12px; background: #1b352bd9; color: #f5f2e8; box-shadow: inset 0 1px 0 #fff2cf36, 0 4px 12px #130b0a55; }
 #play-game[data-turn-aura="own"] .play-game-log,
 :is(.play-game-phases, .play-beginning-effects).is-your-turn { --play-turn-accent: #f8e6b5; border-color: #efd894; box-shadow: inset 0 1px 0 #fff2cf36, 0 0 0 2px #efd89438, 0 0 18px #efd89442, 0 4px 12px #130b0a55; }
