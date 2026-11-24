@@ -1,5 +1,5 @@
-import { extendedEventRules, extendedKinds, extendedEventStep } from './play-extended-events.mjs?v=16';
-import { entityEffectKind, entityEffectStep, isEmptyTerrain } from './play-entity-effects.mjs?v=11';
+import { extendedEventRules, extendedKinds, extendedEventStep } from './play-extended-events.mjs?v=17';
+import { entityEffectKind, entityEffectStep, isEmptyTerrain } from './play-entity-effects.mjs?v=12';
 import { entityEffectsSuppressed, passiveEntityKind, vigilBlocksCreation, vigilBlocksPlacement } from './play-passive-entities.mjs';
 
 const terrainFullArtUrl = terrain => new URL(`./assets/Terrain_${terrain}_Full_Art.png`, import.meta.url).href;
@@ -819,17 +819,12 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
         const destinationType = terrain.get(destination);
         const choices = eventNeighbors(destination).filter(key => {
           const otherType = terrain.get(key);
-          if (destinationType === 'Symbiosis') {
-            return ['Flow', 'Radiance', 'Verdant'].includes(otherType)
-              && !links.get(destination)?.size && !links.get(key)?.has(destination);
-          }
-          return ['Flow', 'Radiance', 'Verdant'].includes(destinationType)
-            && otherType === 'Symbiosis' && !links.get(key)?.size && !links.get(destination)?.has(key);
+          if (links.get(destination)?.has(key) || links.get(key)?.has(destination)) return false;
+          return destinationType === 'Symbiosis'
+            ? ['Flow', 'Radiance', 'Verdant'].includes(otherType)
+            : ['Flow', 'Radiance', 'Verdant'].includes(destinationType) && otherType === 'Symbiosis';
         }).map(key => ({ value: key, label: formatNodeCoordinates(key) }));
-        const entangleUnavailable = destinationType === 'Symbiosis'
-          ? links.get(destination)?.size ? 'This Symbiosis Terrain already has an Entanglement.'
-            : 'No adjacent non-Symbiosis Terrain is available.'
-          : 'No adjacent unentangled Symbiosis Terrain is available.';
+        const entangleUnavailable = 'No adjacent Terrain is available for a new Entanglement.';
         plan.set(source, { options, target, choices, choice, valid: true, symbiosisOnly, entangleUnavailable,
           skipReason: options.length || choices.length ? '' : 'No legal move or Entanglement is available.' });
         if (target) {
@@ -3464,7 +3459,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       board: room?.board || {}, archive: gameState?.archive || [], hand: gameState?.hand || [], eventIndex: event.handIndex,
       playerId: userId,
     });
-    const requiredEntanglementTargets = { shared_canal_gathering: 2, hyphae: 2, terrestrial_reorientation: 3 }[event.rule[1]] || 0;
+    const requiredEntanglementTargets = { shared_canal_gathering: 2, hyphae: 2, terrestrial_reorientation: 4 }[event.rule[1]] || 0;
     if (event.selected.length > 0 && event.selected.length < requiredEntanglementTargets && !step?.options.length) {
       pendingEvent = null;
       syncEventTargets();
@@ -3538,6 +3533,9 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       }
       else if (choice.type === 'discard') { choices.discard_index = choice.index; choices.discard_card_id = choice.id; }
       else if (choice.type === 'skip') choices.skip = true;
+    }
+    if (event.rule[1] === 'terrestrial_reorientation' && choices.cells.length === 4) {
+      [choices.old_entanglement_neighbor] = choices.cells.splice(1, 1);
     }
     const expected = epoch, roomId = room.id, horizon = gameState.horizon || [];
     phaseBusy = true;

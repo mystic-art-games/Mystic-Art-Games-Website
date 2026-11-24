@@ -77,9 +77,10 @@ export function entityEffectStep(kind, board, source, choices, archive = []) {
       return choices.second ? null : cell('Choose a Node for the second Fertilize token', 'second',
         key => nearby(key) && canCreate(key) && (key !== choices.target || (!node(key).fertilize && !vigilBlocksPlacement(board, key))));
     case 'entangle':
-      if (choices.target || node(source).terrain !== 'Symbiosis' || node(source).entanglements?.length) return null;
+      if (choices.target || node(source).terrain !== 'Symbiosis') return null;
       return cell('Choose adjacent non-Symbiosis Terrain to Entangle', 'target',
-        key => nearby(key) && present(key) && node(key).terrain !== 'Symbiosis' && !node(key).entanglements?.includes(source));
+        key => nearby(key) && present(key) && node(key).terrain !== 'Symbiosis'
+          && !node(source).entanglements?.includes(key) && !node(key).entanglements?.includes(source));
     case 'protect':
       return 'target' in choices ? null : cell('Choose adjacent Verdant Terrain to Protect', 'target',
         key => nearby(key) && node(key).terrain === 'Verdant', true);
