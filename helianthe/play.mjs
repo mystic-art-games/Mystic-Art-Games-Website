@@ -1,4 +1,4 @@
-import { extendedEventRules, extendedKinds, extendedEventStep } from './play-extended-events.mjs?v=18';
+import { extendedEventRules, extendedKinds, extendedEventStep } from './play-extended-events.mjs?v=19';
 import { entityEffectKind, entityEffectStep, isEmptyTerrain } from './play-entity-effects.mjs?v=12';
 import { entityEffectsSuppressed, passiveEntityKind, vigilBlocksCreation, vigilBlocksPlacement } from './play-passive-entities.mjs';
 
@@ -207,7 +207,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
           <div class="play-game-zone-pair play-game-zone-pair-self" aria-label="Your card zones"><div class="play-game-zone play-game-zone-horizon"><div id="play-game-self-horizon" class="play-deck-stack" role="img" aria-label="Your Horizon, draw deck"></div></div><div class="play-game-zone play-game-zone-archive"><button id="play-game-self-archive" class="play-game-archive-card is-empty" type="button" aria-label="Browse your Archive"><canvas id="play-game-self-archive-canvas" aria-hidden="true" hidden></canvas><span id="play-game-archive-top"></span></button></div></div>
         </div>
         <div id="play-game-board" class="play-game-board" role="group" aria-label="Shared five-column, four-row Terrain board"></div>
-        <div id="play-game-entanglements" class="play-game-entanglements" aria-hidden="true"></div>
+        <div id="play-game-entanglements" class="play-game-entanglements"></div>
         <section id="play-game-effect-choice" class="play-table-choice" aria-labelledby="play-game-effect-choice-label" hidden>
           <p id="play-game-effect-choice-label" role="status"></p>
           <div id="play-game-effect-options" class="play-table-choice-options"></div>
@@ -963,6 +963,13 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     resolve(value);
   }
   function syncEventTargets() {
+    for (const token of $('game-entanglements').children) {
+      const choice = entanglementEventChoice(token);
+      token.disabled = !choice;
+      token.classList.toggle('is-event-target', Boolean(choice));
+      if (choice) token.removeAttribute('aria-hidden');
+      else token.setAttribute('aria-hidden', 'true');
+    }
     const eventKind = pendingEvent?.rule[1];
     const firstFertilizeTarget = eventKind === 'fertile_rain_any'
       ? pendingEvent.selected[1]?.key
@@ -2265,7 +2272,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       if (!menu.contains(event.target)) menu.open = false;
     }
     if (event.button !== 0 || $('game').hidden || !selectedGameCard) return;
-    if (event.target.closest('.play-hand-card, .play-table-choice, .play-archive-browser, .play-game-event-notice, .play-game-patron-slot, .play-game-card-preview, .play-beginning-effects, .play-game-archive-card, .play-deck-stack, .play-game-node.has-entity, .play-game-node.is-event-target')) return;
+    if (event.target.closest('.play-hand-card, .play-table-choice, .play-archive-browser, .play-game-event-notice, .play-game-patron-slot, .play-game-card-preview, .play-beginning-effects, .play-game-archive-card, .play-deck-stack, .play-game-node.has-entity, .play-game-node.is-event-target, .play-entanglement-token.is-event-target')) return;
     hideCardPreview();
   });
   document.addEventListener('keydown', event => {
@@ -3467,7 +3474,7 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       board: room?.board || {}, archive: gameState?.archive || [], hand: gameState?.hand || [], eventIndex: event.handIndex,
       playerId: userId,
     });
-    const requiredEntanglementTargets = { shared_canal_gathering: 2, hyphae: 2, terrestrial_reorientation: 4 }[event.rule[1]] || 0;
+    const requiredEntanglementTargets = { shared_canal_gathering: 2, hyphae: 2, terrestrial_reorientation: 3 }[event.rule[1]] || 0;
     if (event.selected.length > 0 && event.selected.length < requiredEntanglementTargets && !step?.options.length) {
       pendingEvent = null;
       syncEventTargets();
@@ -3483,11 +3490,14 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       if (reason) { blockedPlayNotice(reason); return; }
       return resolveExtendedEvent(event);
     }
-    if (step.options.some(option => option.value.type === 'cell')) {
+    if (step.options.some(option => ['cell', 'entanglement'].includes(option.value.type))) {
       event.step = step;
       pendingEvent = event;
       syncEventTargets();
       eventNotice(`${step.label}. Press Esc to cancel.`);
+      if (step.options[0]?.value.type === 'entanglement') {
+        $('game-entanglements').querySelector('.is-event-target:not([hidden])')?.focus({ preventScroll: true });
+      }
       return;
     }
     pendingEvent = null;
@@ -3533,6 +3543,10 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     const choices = { cells: [] };
     for (const choice of event.selected) {
       if (choice.type === 'cell') choices.cells.push(choice.key);
+      else if (choice.type === 'entanglement') {
+        choices.cells.push(choice.source);
+        choices.old_entanglement_neighbor = choice.neighbor;
+      }
       else if (choice.type === 'terrain') choices.terrain = choice.terrain;
       else if (choice.type === 'archive') {
         if (choice.dissolvedAt) choices.recall_dissolved = true;
@@ -3541,9 +3555,6 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
       }
       else if (choice.type === 'discard') { choices.discard_index = choice.index; choices.discard_card_id = choice.id; }
       else if (choice.type === 'skip') choices.skip = true;
-    }
-    if (event.rule[1] === 'terrestrial_reorientation' && choices.cells.length === 4) {
-      [choices.old_entanglement_neighbor] = choices.cells.splice(1, 1);
     }
     const expected = epoch, roomId = room.id, horizon = gameState.horizon || [];
     phaseBusy = true;
@@ -4204,6 +4215,11 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     }
     opponentAnimationsUntil = startedAt + delay;
   }
+  function entanglementEventChoice(token) {
+    const { from, to } = token.dataset;
+    return pendingEvent?.step?.options.find(({ value }) => value.type === 'entanglement'
+      && ((value.source === from && value.neighbor === to) || (value.source === to && value.neighbor === from)))?.value;
+  }
   function renderEntanglementTokens() {
     const board = room.board || {};
     const links = new Set();
@@ -4211,17 +4227,30 @@ export function createPlayView({ client, getUser, getDecks, getCards, getProfile
     for (const [from, node] of Object.entries(board)) {
       if (!node?.terrain || !Array.isArray(node.entanglements)) continue;
       for (const to of node.entanglements) {
-        if (typeof to !== 'string' || from === to || !board[to]?.terrain) continue;
+        if (!/^[0-4],[0-3]$/.test(from) || !/^[0-4],[0-3]$/.test(to) || from === to || !board[to]?.terrain) continue;
         const link = [from, to].sort().join(':');
         if (links.has(link)) continue;
         links.add(link);
-        const token = document.createElement('img');
+        const token = document.createElement('button');
+        token.type = 'button';
         token.className = 'play-entanglement-token';
-        token.src = entanglementTokenUrl;
-        token.alt = '';
+        token.setAttribute('aria-label', `Entanglement between ${formatNodeCoordinates(from)} and ${formatNodeCoordinates(to)}`);
         token.dataset.from = from;
         token.dataset.to = to;
         token.hidden = true;
+        token.disabled = true;
+        const art = document.createElement('img');
+        art.src = entanglementTokenUrl;
+        art.alt = '';
+        token.append(art);
+        token.addEventListener('click', () => {
+          const choice = entanglementEventChoice(token);
+          if (!choice) return;
+          const event = pendingEvent;
+          event.selected.push(choice);
+          pendingEvent = null;
+          void continueExtendedEvent(event);
+        });
         tokens.push(token);
       }
     }

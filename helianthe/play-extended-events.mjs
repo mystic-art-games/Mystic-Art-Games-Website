@@ -50,7 +50,7 @@ const visibleCells = board => {
   for (let y = 0; y < 4; y++) for (let x = 0; x < 5; x++) {
     const key = `${x},${y}`;
     const node = board?.[key] || {};
-    cells.push({ key, node, label: `R${y + 1} C${x + 1} · ${node.terrain || 'Empty'}${node.entity ? ` · ${node.entity.title || 'Entity'}` : ''}` });
+    cells.push({ key, node, label: `${'ABCD'[y]}${x + 1} · ${node.terrain || 'Empty'}${node.entity ? ` · ${node.entity.title || 'Entity'}` : ''}` });
   }
   return cells;
 };
@@ -97,7 +97,7 @@ function terrainStep(label, excluded) {
 }
 
 const pairedEvents = new Set([
-  'restoration_nursery', 'terrestrial_reorientation',
+  'restoration_nursery',
   'swap_entities', 'bubble_switch', 'relocate_terrain', 'landshift', 'liquid_protection',
   'migration_wind_sails', 'wave_of_change',
 ]);
@@ -268,17 +268,24 @@ function eventStep(kind, selected, { board, archive, hand, eventIndex, playerId 
         neighbors.some(other =>
           !board[destination].entanglements?.includes(other.key)
           && canRelocateEntanglementToNeighbor(other.node, other.key, destination)));
-      if (count === 0) return boardStep('Choose entangled Symbiosis Terrain', board,
-        (node, key) => neighbors.some(other => existingLink(key, node, other)) && destinations(key).length > 0);
-      if (count === 1) return boardStep('Choose the linked Terrain to disconnect', board,
-        (node, key) => existingLink(source, first, { key, node }));
-      if (count === 2) {
-        const eligible = destinations(source);
+      if (count === 0) {
+        const options = neighbors.flatMap(({ key, node }) => {
+          const linked = neighbors.filter(other => existingLink(key, node, other));
+          if (!linked.length || !destinations(key).length) return [];
+          return linked.map(other => ({ value: { type: 'entanglement', source: key, neighbor: other.key } }));
+        });
+        return { label: 'Choose a highlighted Entanglement token to move', options };
+      }
+      const link = selected[0];
+      if (link.type !== 'entanglement'
+        || !neighbors.some(other => other.key === link.neighbor && existingLink(link.source, board[link.source] || {}, other))) return null;
+      if (count === 1) {
+        const eligible = destinations(link.source);
         return boardStep('Choose Symbiosis Terrain in the same group', board, (_, key) => eligible.includes(key));
       }
-      if (count === 3) return boardStep('Choose an adjacent non-Symbiosis Terrain to Entangle', board,
-        (node, key) => !board[cells[2]]?.entanglements?.includes(key)
-          && canRelocateEntanglementToNeighbor(node, key, cells[2]));
+      if (count === 2) return boardStep('Choose an adjacent non-Symbiosis Terrain to Entangle', board,
+        (node, key) => !board[cells[0]]?.entanglements?.includes(key)
+          && canRelocateEntanglementToNeighbor(node, key, cells[0]));
       return null;
     }
     case 'waterish_doppelganger':
